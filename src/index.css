@@ -8,10 +8,7 @@
   --lagoon: #22d3ee;
   --reef: #14b8a6;
   --kelp: #0f766e;
-  --sand: #fff7d6;
-  --sand-2: #f7edc8;
   --volcano: #f97316;
-  --coral: #fb7185;
   --white: rgba(255, 255, 255, .84);
   --glass: rgba(255, 255, 255, .62);
   --stroke: rgba(14, 116, 144, .18);
@@ -293,7 +290,6 @@ button, input { font: inherit; }
 .contact-action-card,
 .empty-card {
   border: 1px solid rgba(14,116,144,.15) !important;
-  background: linear-gradient(150deg, rgba(255,255,255,.78), rgba(255,255,255,.48)) !important;
   backdrop-filter: blur(18px) saturate(1.15);
   box-shadow: var(--shadow);
 }
@@ -563,7 +559,6 @@ button, input { font: inherit; }
   width: 150px;
   height: 110px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(249,115,22,.13), transparent 68%);
   pointer-events: none;
 }
 .timeline-category, .project-status, .featured-badge, .current-badge {

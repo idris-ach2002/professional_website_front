@@ -6,7 +6,6 @@ import ProjectsShowcase from "./components/ProjectsShowcase";
 import SEOHead from "./components/MetadataHead";
 import StatusBanner from "./components/StatusBanner";
 import TopNavigation from "./components/TopNavigation";
-import VisualIdentityBackground from "./components/VisualIdentityBackground";
 import { loadPortfolio } from "./services/portfolioApi";
 import { getOwnerFullName, sortByDisplayOrder } from "./utils/portfolio";
 import "./index.css";
@@ -55,7 +54,6 @@ export default function App() {
   return (
     <main id="top" className="app-shell">
       <SEOHead owner={owner} projects={projects} experiences={experiences} />
-      <VisualIdentityBackground owner={owner} />
       <TopNavigation owner={owner} source={state.source} />
       <Stack gap="xl" className="content-shell">
         <StatusBanner source={state.source} error={state.error} />

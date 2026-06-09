@@ -36,25 +36,6 @@ export default function ExpertisePanel({ projects, experiences }) {
       ease: "power3.out",
       scrollTrigger: { trigger: rootRef.current, start: "top 76%" },
     });
-
-    gsap.from(".coral-node", {
-      autoAlpha: 0,
-      y: 20,
-      scale: 0.82,
-      stagger: 0.08,
-      duration: 0.48,
-      ease: "back.out(1.7)",
-      scrollTrigger: { trigger: ".architecture-flow", start: "top 82%" },
-    });
-
-    gsap.to(".coral-node.active", {
-      y: (index) => (index % 2 ? -5 : 6),
-      duration: 3.8,
-      repeat: -1,
-      yoyo: true,
-      ease: "sine.inOut",
-      stagger: 0.1,
-    });
   }, [stacks.length, experiences.length]);
 
   return (

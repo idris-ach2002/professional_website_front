@@ -20,12 +20,6 @@ function ProjectVisual({ project, index }) {
 
   return (
     <div className="project-visual">
-      <svg viewBox="0 0 180 130" aria-hidden="true">
-        <path d="M22 81 C34 21 117 6 153 49 C185 88 122 130 63 121 C33 116 16 103 22 81Z" />
-        <circle cx="61" cy="62" r="12" />
-        <path d="M72 81 C96 51 126 55 146 79" />
-      </svg>
-      <span>Île 0{index + 1}</span>
       <strong>{project.title?.slice(0, 2)?.toUpperCase()}</strong>
     </div>
   );
@@ -124,14 +118,6 @@ export default function ProjectsShowcase({ projects }) {
   useGsap(rootRef, (gsap, ScrollTrigger) => {
     if (!ScrollTrigger) return;
 
-    gsap.from(".project-toolbar", {
-      autoAlpha: 0,
-      y: 22,
-      duration: 0.55,
-      ease: "power3.out",
-      scrollTrigger: { trigger: ".projects-section", start: "top 78%" },
-    });
-
     gsap.from(".project-island", {
       autoAlpha: 0,
       y: 66,
@@ -198,7 +184,7 @@ export default function ProjectsShowcase({ projects }) {
       </div>
 
       <Group gap="xs" className="result-line">
-        <Badge className="executive-badge">{filteredProjects.length} île{filteredProjects.length > 1 ? "s" : ""}</Badge>
+        <Badge className="executive-badge">{filteredProjects.length} projet{filteredProjects.length > 1 ? "s" : ""}</Badge>
         {selectedStacks.map((stack) => (
           <Badge key={stack} className="filter-chip">{stack}</Badge>
         ))}
@@ -212,7 +198,7 @@ export default function ProjectsShowcase({ projects }) {
         </div>
       ) : (
         <Card className="empty-card island-card" radius="xl">
-          <Title order={3}>Aucune île ne correspond aux filtres.</Title>
+          <Title order={3}>Aucun projet ne correspond aux filtres.</Title>
           <Text>Réduis la recherche ou retire une stack pour retrouver les projets disponibles.</Text>
         </Card>
       )}

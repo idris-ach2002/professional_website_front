@@ -53,7 +53,7 @@ export default function PortfolioTimeline({ timeline, experiences }) {
         ease: "none",
         scrollTrigger: {
           trigger: rootRef.current,
-          start: "top 72%",
+          start: "top 62%",
           end: "bottom 65%",
           scrub: 1.1,
         },
@@ -63,8 +63,8 @@ export default function PortfolioTimeline({ timeline, experiences }) {
     gsap.utils.toArray(".timeline-island").forEach((item, index) => {
       gsap.from(item, {
         autoAlpha: 0,
-        scale: 0.92,
-        duration: 0.85,
+        scale: 0.52,
+        duration: 0.65,
         ease: "power3.out",
         scrollTrigger: {
           trigger: item,

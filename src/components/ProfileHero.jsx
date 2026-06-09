@@ -66,18 +66,12 @@ export default function ProfileHero({ owner, profile, projects, experiences }) {
   useGsap(rootRef, (gsap) => {
     const timeline = gsap.timeline({ defaults: { ease: "power3.out" } });
     timeline
-      .from(".hero-badge", { y: 16, autoAlpha: 0, duration: 0.45 })
       .from(".hero-title-main", { y: 36, autoAlpha: 0, duration: 0.72 }, "-=0.12")
       .from(".hero-keyword", { y: 22, autoAlpha: 0, rotateX: -48, transformOrigin: "50% 50% -40", stagger: 0.09, duration: 0.58 }, "-=0.35")
       .from(".hero-lead, .hero-description", { y: 20, autoAlpha: 0, stagger: 0.08, duration: 0.55 }, "-=0.28")
       .from(".hero-actions .mantine-Button-root", { y: 14, autoAlpha: 0, stagger: 0.06, duration: 0.45 }, "-=0.25")
       .from(".hero-panel", { x: 36, y: 18, rotate: 1.8, autoAlpha: 0, duration: 0.78 }, "-=0.62")
-      .from(".metric-card", { y: 20, autoAlpha: 0, stagger: 0.055, duration: 0.48 }, "-=0.38")
-      .from(".specialty-chip", { y: 10, autoAlpha: 0, scale: 0.86, stagger: 0.05, duration: 0.34 }, "-=0.2");
 
-    gsap.to(".portrait-orbit.orbit-a", { rotate: 360, transformOrigin: "50% 50%", duration: 28, repeat: -1, ease: "none" });
-    gsap.to(".portrait-orbit.orbit-b", { rotate: -360, transformOrigin: "50% 50%", duration: 34, repeat: -1, ease: "none" });
-    gsap.to(".portrait-route", { strokeDashoffset: -420, duration: 9, repeat: -1, ease: "none" });
     gsap.to(".hero-keyword", { y: -3, duration: 2.8, repeat: -1, yoyo: true, ease: "sine.inOut", stagger: 0.18 });
   }, [fullName]);
 
