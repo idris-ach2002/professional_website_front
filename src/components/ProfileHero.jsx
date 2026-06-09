@@ -13,9 +13,22 @@ import {
 
 function AnimatedTitle({ title, headline }) {
   const words = String(headline ?? "").split(" · ").filter(Boolean);
+  const titleChars = String(title ?? "").split("");
+
   return (
     <Title className="hero-title">
-      <span className="hero-title-main">{title}</span>
+      <span className="hero-title-main" style={{ display: "block" }}>
+        {titleChars.map((char, index) => (
+          <span
+            key={index}
+            className="hero-title-char"
+            style={{ display: "inline-block" }}
+          >
+            {/* Gestion de l'espace pour éviter l'effondrement du layout */}
+            {char === " " ? "\u00A0" : char}
+          </span>
+        ))}
+      </span>
       <span className="hero-title-current">
         {words.map((word, index) => (
           <em key={word} className="hero-keyword" style={{ "--delay": index }}>
@@ -64,13 +77,33 @@ export default function ProfileHero({ owner, profile, projects, experiences }) {
   const linkedin = getPrimaryContact(owner, "LINKEDIN");
 
   useGsap(rootRef, (gsap) => {
+    gsap.set(".hero-title-main", { perspective: 800, transformStyle: "preserve-3d" });
+
     const timeline = gsap.timeline({ defaults: { ease: "power3.out" } });
+    
     timeline
-      .from(".hero-title-main", { y: 36, autoAlpha: 0, duration: 0.72 }, "-=0.12")
+      .fromTo(
+        ".hero-title-char",
+        { 
+          rotationX: -90, 
+          autoAlpha: 0, 
+          y: 20 
+        },
+        { 
+          rotationX: 0, 
+          autoAlpha: 1, 
+          y: 0,
+          stagger: 0.04, 
+          duration: 0.55, 
+          transformOrigin: "50% 50% -30px",
+          ease: "back.out(1.5)"
+        }, 
+        "-=0.12"
+      )
       .from(".hero-keyword", { y: 22, autoAlpha: 0, rotateX: -48, transformOrigin: "50% 50% -40", stagger: 0.09, duration: 0.58 }, "-=0.35")
       .from(".hero-lead, .hero-description", { y: 20, autoAlpha: 0, stagger: 0.08, duration: 0.55 }, "-=0.28")
       .from(".hero-actions .mantine-Button-root", { y: 14, autoAlpha: 0, stagger: 0.06, duration: 0.45 }, "-=0.25")
-      .from(".hero-panel", { x: 36, y: 18, rotate: 1.8, autoAlpha: 0, duration: 0.78 }, "-=0.62")
+      .from(".hero-panel", { x: 36, y: 18, rotate: 1.8, autoAlpha: 0, duration: 0.78 }, "-=0.62");
 
     gsap.to(".hero-keyword", { y: -3, duration: 2.8, repeat: -1, yoyo: true, ease: "sine.inOut", stagger: 0.18 });
   }, [fullName]);
