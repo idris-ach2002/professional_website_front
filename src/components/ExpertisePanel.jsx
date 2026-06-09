@@ -2,7 +2,7 @@ import { Badge, Card, Group, Progress, SimpleGrid, Stack, Text, Title } from "@m
 import { useRef } from "react";
 import { useGsap } from "../animations/useGsap";
 import SectionTitle from "./SectionTitle";
-import { CATEGORY_LABELS, collectStacks, getAvailableStatuses, getPublicProjects } from "../utils/portfolio";
+import { collectStacks, getPublicProjects } from "../utils/portfolio";
 
 function ArchitectureNode({ label, value, active }) {
   return (
@@ -17,13 +17,6 @@ export default function ExpertisePanel({ projects, experiences }) {
   const rootRef = useRef(null);
   const publicProjects = getPublicProjects(projects);
   const stacks = collectStacks(publicProjects);
-  const statuses = getAvailableStatuses(publicProjects);
-  const categories = experiences.reduce((acc, experience) => {
-    const key = experience.category ?? "OTHER";
-    acc[key] = (acc[key] ?? 0) + 1;
-    return acc;
-  }, {});
-
   useGsap(rootRef, (gsap, ScrollTrigger) => {
     if (!ScrollTrigger) return;
     gsap.from(".expertise-card, .architecture-card, .system-card", {

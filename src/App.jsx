@@ -1,6 +1,6 @@
 import { Loader, Select, Stack, Text } from "@mantine/core";
 import { Suspense, lazy, useEffect, useMemo, useState } from "react";
-import ExpertisePanel from "./components/ExpertisePanel";
+import OceanMorphBackground from "./components/OceanMorphBackground";
 import ProfileHero from "./components/ProfileHero";
 import ProjectsShowcase from "./components/ProjectsShowcase";
 import SEOHead from "./components/MetadataHead";
@@ -54,6 +54,7 @@ export default function App() {
   return (
     <main id="top" className="app-shell">
       <SEOHead owner={owner} projects={projects} experiences={experiences} />
+      <OceanMorphBackground />
       <TopNavigation owner={owner} source={state.source} />
       <Stack gap="xl" className="content-shell">
         <StatusBanner source={state.source} error={state.error} />
@@ -72,7 +73,6 @@ export default function App() {
           <PortfolioTimeline timeline={owner?.timeline} experiences={experiences} />
         </Suspense>
         <ProjectsShowcase projects={projects} />
-        <ExpertisePanel projects={projects} experiences={experiences} />
       </Stack>
       <footer className="footer-shell">
         <Text>Spring · React · Mantine · GSAP</Text>

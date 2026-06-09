@@ -1,5 +1,5 @@
 import { Anchor, Badge, Button, Card, Divider, Group, Image, RingProgress, SimpleGrid, Stack, Text, Title } from "@mantine/core";
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 import { useGsap } from "../animations/useGsap";
 import {
   CONTACT_LABELS,
@@ -7,7 +7,6 @@ import {
   getInitials,
   getOwnerFullName,
   getPrimaryContact,
-  inferSpecialty,
   normalizeUrl,
 } from "../utils/portfolio";
 
@@ -68,11 +67,10 @@ function ContactPill({ contact }) {
   );
 }
 
-export default function ProfileHero({ owner, profile, projects, experiences }) {
+export default function ProfileHero({ owner, profile }) {
   const rootRef = useRef(null);
   const fullName = getOwnerFullName(owner);
   const contacts = owner?.contacts ?? [];
-  const specialties = useMemo(() => inferSpecialty(projects, experiences), [projects, experiences]);
   const email = getPrimaryContact(owner, "EMAIL");
   const linkedin = getPrimaryContact(owner, "LINKEDIN");
 

@@ -15,17 +15,14 @@ const categoryClasses = {
   VOLUNTEERING: "timeline-volunteering",
 };
 
-const VERTICAL_GAP = 300; // px entre deux îles
-const START_TOP = 20; // premier top (px)
+const VERTICAL_GAP = 300;
+const START_TOP = 20;
 
 function generateSvgPath(numItems, gap, startY) {
-  // Construit un chemin cohérent qui passe près des positions des îles
-  const totalHeight = numItems * gap + 200;
-  // Points approximatifs : on place les points de contrôle entre les positions des îles
   let d = `M 100 ${startY}`;
-  for (let i = 0; i < numItems; i++) {
+  for (let i = 0; i < numItems; i += 1) {
     const y = startY + i * gap;
-    const x = i % 2 === 0 ? 200 : 1000; // gauche/droite alternés
+    const x = i % 2 === 0 ? 200 : 1000;
     d += ` C ${x} ${y + gap / 2}, ${1200 - x} ${y + gap / 2}, ${x} ${y + gap}`;
   }
   return d;
@@ -33,18 +30,18 @@ function generateSvgPath(numItems, gap, startY) {
 
 export default function PortfolioTimeline({ timeline, experiences }) {
   const rootRef = useRef(null);
-  const totalHeight = experiences.length * VERTICAL_GAP + START_TOP + 200; // hauteur minimum
+  const totalHeight = experiences.length * VERTICAL_GAP + START_TOP + 200;
 
   const svgPath = useMemo(
-    () =>
-      generateSvgPath(experiences.length, VERTICAL_GAP, START_TOP),
+    () => generateSvgPath(experiences.length, VERTICAL_GAP, START_TOP),
     [experiences.length]
   );
 
   useGsap(rootRef, (gsap, ScrollTrigger) => {
     if (!ScrollTrigger) return;
 
-    const route = rootRef.current?.querySelector(".timeline-route-progress");
+    const root = rootRef.current;
+    const route = root?.querySelector(".timeline-route-progress");
     if (route) {
       const length = route.getTotalLength?.() ?? 2000;
       gsap.set(route, { strokeDasharray: length, strokeDashoffset: length });
@@ -52,7 +49,7 @@ export default function PortfolioTimeline({ timeline, experiences }) {
         strokeDashoffset: 0,
         ease: "none",
         scrollTrigger: {
-          trigger: rootRef.current,
+          trigger: root,
           start: "top 62%",
           end: "bottom 65%",
           scrub: 1.1,
@@ -60,33 +57,53 @@ export default function PortfolioTimeline({ timeline, experiences }) {
       });
     }
 
-    gsap.utils.toArray(".timeline-island").forEach((item, index) => {
-      gsap.from(item, {
-        autoAlpha: 0,
-        scale: 0.52,
-        duration: 0.65,
-        ease: "power3.out",
+    const paths = gsap.utils.toArray(root.querySelectorAll(".timeline-wave-path"));
+    if (paths.length > 0) {
+      const numPoints = 10;
+      const allPoints = paths.map(() => Array.from({ length: numPoints }, () => 100));
+
+      const renderWave = () => {
+        paths.forEach((path, pathIndex) => {
+          const points = allPoints[pathIndex];
+          let d = `M 0 100 V ${points[0]} C`;
+
+          for (let pointIndex = 0; pointIndex < numPoints - 1; pointIndex += 1) {
+            const p = ((pointIndex + 1) / (numPoints - 1)) * 100;
+            const cp = p - (100 / (numPoints - 1)) / 2;
+            d += ` ${cp} ${points[pointIndex]} ${cp} ${points[pointIndex + 1]} ${p} ${points[pointIndex + 1]}`;
+          }
+
+          d += " V 100 H 0";
+          path.setAttribute("d", d);
+        });
+      };
+
+      renderWave();
+      const waveTl = gsap.timeline({
+        onUpdate: renderWave,
         scrollTrigger: {
-          trigger: item,
+          trigger: root.querySelector(".timeline-wave-gate"),
           start: "top 82%",
-          toggleActions: "play none none reverse",
+          end: "bottom 26%",
+          scrub: true,
         },
       });
-    });
 
-    gsap.to(".timeline-float", {
-      y: (index) => (index % 2 ? -6 : 8),
-      rotate: (index) => (index % 2 ? -0.9 : 0.9),
-      duration: 5.5,
-      ease: "sine.inOut",
-      repeat: -1,
-      yoyo: true,
-      stagger: 0.18,
-    });
+      allPoints.forEach((points, pathIndex) => {
+        points.forEach((_, pointIndex) => {
+          waveTl.to(points, {
+            [pointIndex]: pathIndex === 0 ? 34 + (pointIndex % 2) * 10 : 48 + (pointIndex % 2) * 14,
+            duration: 0.92,
+            ease: "power2.inOut",
+          }, pointIndex * 0.025 + pathIndex * 0.12);
+        });
+      });
+    }
   }, [experiences.length]);
 
   return (
     <section ref={rootRef} id="timeline" className="page-section timeline-section island-section route-island">
+
       <SectionTitle
         title={timeline?.title ?? "Parcours"}
         description={
@@ -116,7 +133,7 @@ export default function PortfolioTimeline({ timeline, experiences }) {
           return (
             <article
               key={experience.id ?? `${experience.title}-${index}`}
-              className={`timeline-island timeline-float ${categoryClasses[experience.category] ?? ""}`}
+              className={`timeline-island ${categoryClasses[experience.category] ?? ""}`}
               style={{
                 top: `${top}px`,
                 left: isLeft ? "2%" : "auto",

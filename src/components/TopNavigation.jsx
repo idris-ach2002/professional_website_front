@@ -1,4 +1,4 @@
-import { Anchor, Badge, Burger, Button, Drawer, Group, Stack, Text } from "@mantine/core";
+import { Anchor, Burger, Drawer, Group, Stack, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useRef } from "react";
 import { useGsap } from "../animations/useGsap";
@@ -8,10 +8,9 @@ const links = [
   { href: "#profile", label: "Profil" },
   { href: "#timeline", label: "Timeline" },
   { href: "#projects", label: "Projets" },
-  { href: "#expertise", label: "Stack" },
 ];
 
-export default function TopNavigation({ owner, source }) {
+export default function TopNavigation({ owner }) {
   const rootRef = useRef(null);
   const [opened, { toggle, close }] = useDisclosure(false);
   const ownerName = getOwnerFullName(owner);
