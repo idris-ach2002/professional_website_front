@@ -13,5 +13,19 @@ export default defineConfig(({ mode }) => {
         '/manager': env.VITE_API_PROXY_TARGET || 'http://localhost:8080',
       },
     },
+    build: {
+      chunkSizeWarningLimit: 700,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return undefined
+            if (id.includes('@mantine')) return 'vendor-mantine'
+            if (id.includes('@mui') || id.includes('@emotion')) return 'vendor-mui'
+            if (id.includes('react') || id.includes('scheduler')) return 'vendor-react'
+            return 'vendor'
+          },
+        },
+      },
+    },
   }
 })
