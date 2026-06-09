@@ -5,12 +5,10 @@ import { useGsap } from "../animations/useGsap";
 import { getInitials, getOwnerFullName } from "../utils/portfolio";
 
 const links = [
-  { href: "#profile", label: "Île profil" },
-  { href: "#timeline", label: "Route" },
-  { href: "#projects", label: "Îles projets" },
-  { href: "#reef", label: "Récif" },
+  { href: "#profile", label: "Profil" },
+  { href: "#timeline", label: "Timeline" },
+  { href: "#projects", label: "Projets" },
   { href: "#expertise", label: "Stack" },
-  { href: "#contact", label: "Port" },
 ];
 
 export default function TopNavigation({ owner, source }) {
@@ -62,21 +60,11 @@ export default function TopNavigation({ owner, source }) {
           <span className="brand-mark">{getInitials(owner)}</span>
           <span>
             <Text className="brand-name">{ownerName}</Text>
-            <Text className="brand-subtitle">Archipel professionnel</Text>
           </span>
         </a>
 
         <Group gap="xs" className="desktop-nav">
           {navLinks}
-        </Group>
-
-        <Group gap="sm" className="nav-status">
-          <Badge className="api-badge" data-source={source}>
-            {source === "api" ? "Spring API live" : "Mode démo"}
-          </Badge>
-          <Button component="a" href="#contact" radius="xl" className="nav-cta">
-            Accoster
-          </Button>
         </Group>
 
         <Burger opened={opened} onClick={toggle} className="mobile-burger" aria-label="Menu" />

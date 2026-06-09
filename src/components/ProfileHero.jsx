@@ -7,7 +7,6 @@ import {
   getInitials,
   getOwnerFullName,
   getPrimaryContact,
-  getProfessionalMetrics,
   inferSpecialty,
   normalizeUrl,
 } from "../utils/portfolio";
@@ -33,12 +32,6 @@ function ProfilePortrait({ owner, profile }) {
 
   return (
     <Card className="portrait-card island-card" radius="xl">
-      <svg className="portrait-svg-orbits" viewBox="0 0 280 280" aria-hidden="true">
-        <ellipse className="portrait-orbit orbit-a" cx="140" cy="140" rx="118" ry="93" />
-        <ellipse className="portrait-orbit orbit-b" cx="140" cy="140" rx="98" ry="123" />
-        <path className="portrait-route" d="M43 153 C77 56 190 36 237 118 C277 189 180 260 92 218 C59 202 42 179 43 153Z" />
-      </svg>
-      <div className="portrait-glow" />
       {profile?.profileImageUrl ? (
         <Image src={profile.profileImageUrl} alt={fullName} className="portrait-image" />
       ) : (
@@ -48,21 +41,6 @@ function ProfilePortrait({ owner, profile }) {
         <Text className="portrait-name">{fullName}</Text>
         <Text className="portrait-role">{profile?.subtitle ?? "Portfolio professionnel"}</Text>
       </Stack>
-      <Divider className="soft-divider" />
-      <SimpleGrid cols={3} spacing="xs" className="portrait-stats">
-        <div>
-          <Text>Backend</Text>
-          <strong>Spring</strong>
-        </div>
-        <div>
-          <Text>Frontend</Text>
-          <strong>React</strong>
-        </div>
-        <div>
-          <Text>Motion</Text>
-          <strong>GSAP</strong>
-        </div>
-      </SimpleGrid>
     </Card>
   );
 }
@@ -81,7 +59,6 @@ export default function ProfileHero({ owner, profile, projects, experiences }) {
   const rootRef = useRef(null);
   const fullName = getOwnerFullName(owner);
   const contacts = owner?.contacts ?? [];
-  const metrics = useMemo(() => getProfessionalMetrics(projects, experiences).slice(0, 4), [projects, experiences]);
   const specialties = useMemo(() => inferSpecialty(projects, experiences), [projects, experiences]);
   const email = getPrimaryContact(owner, "EMAIL");
   const linkedin = getPrimaryContact(owner, "LINKEDIN");
@@ -108,9 +85,6 @@ export default function ProfileHero({ owner, profile, projects, experiences }) {
     <section ref={rootRef} id="profile" className="hero-grid island-section profile-island">
       <div className="hero-copy">
         <div className="hero-map-line" />
-        <Badge className="hero-badge" radius="xl">
-          Archipel du recrutement · Portfolio générique alimenté par Spring
-        </Badge>
         <AnimatedTitle title={profile?.title ?? fullName} headline={profile?.headline ?? "Ingénierie logicielle · Architecture backend · Interfaces produit"} />
         <Text className="hero-lead">{profile?.shortDescription ?? profile?.description}</Text>
         <Text className="hero-description">{profile?.description}</Text>
@@ -132,29 +106,9 @@ export default function ProfileHero({ owner, profile, projects, experiences }) {
             </Button>
           )}
           <Button component="a" href="#projects" radius="xl" variant="subtle" className="ghost-action">
-            Explorer les îles projets
+            Explorer les projets
           </Button>
         </Group>
-
-        <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} spacing="sm" className="hero-metrics">
-          {metrics.map((metric) => (
-            <Card key={metric.label} className="metric-card island-mini-card">
-              <Text>{metric.label}</Text>
-              <strong>{metric.value}</strong>
-              <small>{metric.detail}</small>
-            </Card>
-          ))}
-        </SimpleGrid>
-
-        {specialties.length > 0 && (
-          <Group gap="xs" className="specialty-row">
-            {specialties.map((specialty) => (
-              <Badge key={specialty.label} className="specialty-chip" radius="xl">
-                {specialty.label}
-              </Badge>
-            ))}
-          </Group>
-        )}
       </div>
 
       <aside className="hero-panel">

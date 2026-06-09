@@ -279,23 +279,10 @@ button, input { font: inherit; }
 /* ──────────────────────────────────────────────────────────────────────────
    Generic sections / organic islands
 ────────────────────────────────────────────────────────────────────────── */
-.page-section, .island-section {
+.page-section {
   position: relative;
   margin: 34px 0 78px;
   scroll-margin-top: 140px;
-}
-
-.island-section::before {
-  content: "";
-  position: absolute;
-  inset: -28px -22px;
-  z-index: -1;
-  border-radius: 58px 38px 66px 44px;
-  background:
-    radial-gradient(circle at 12% 20%, rgba(34,211,238,.16), transparent 28%),
-    radial-gradient(circle at 88% 72%, rgba(20,184,166,.12), transparent 30%),
-    rgba(255,255,255,.18);
-  border: 1px solid rgba(255,255,255,.46);
 }
 
 .island-card,
@@ -529,7 +516,6 @@ button, input { font: inherit; }
 ────────────────────────────────────────────────────────────────────────── */
 .timeline-map {
   position: relative;
-  min-height: 1120px;
   margin-top: 30px;
 }
 .timeline-route-svg {
@@ -559,11 +545,7 @@ button, input { font: inherit; }
   position: absolute;
   width: min(560px, 48%);
 }
-.timeline-island-0 { left: 2%; top: 0; }
-.timeline-island-1 { right: 2%; top: 230px; }
-.timeline-island-2 { left: 8%; top: 470px; }
-.timeline-island-3 { right: 9%; top: 710px; }
-.timeline-island-4 { left: 24%; top: 910px; }
+
 .timeline-card {
   padding: 28px !important;
   border-radius: 40px 26px 44px 30px !important;

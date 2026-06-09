@@ -57,7 +57,7 @@ function ProjectIsland({ project, index, featured }) {
     <article className={`project-island island-card ${featured ? "featured-project-island" : ""}`}>
       <div className="project-island-topline">
         <Badge className="project-status">{STATUS_LABELS[project.status] ?? project.status}</Badge>
-        {project.featured && <Badge className="featured-badge">Signal fort</Badge>}
+        {project.featured}
       </div>
       <ProjectVisual project={project} index={index} />
       <Stack gap="sm" className="project-content">
@@ -159,11 +159,9 @@ export default function ProjectsShowcase({ projects }) {
   };
 
   return (
-    <section ref={rootRef} id="projects" className="page-section projects-section island-section projects-archipelago-section">
+    <section ref={rootRef} id="projects" className="page-section projects-section">
       <SectionTitle
-        eyebrow="Archipel des réalisations"
-        title="Chaque projet devient une île technique à explorer"
-        description="Recherche, filtres et export restent branchés au modèle Project, mais l’agencement abandonne la grille classique au profit d’un archipel organique."
+        title="Mes projets"
         rightSlot={<Button onClick={exportProjects} radius="xl" variant="light">Exporter JSON</Button>}
       />
 
@@ -175,16 +173,6 @@ export default function ProjectsShowcase({ projects }) {
           radius="xl"
           className="project-search"
           aria-label="Rechercher dans les projets"
-        />
-        <SegmentedControl
-          value={mode}
-          onChange={setMode}
-          radius="xl"
-          data={[
-            { label: "Tous", value: "all" },
-            { label: "Signal fort", value: "featured" },
-          ]}
-          className="project-mode"
         />
         <MultiSelect
           data={[{ value: "ALL", label: "Tous les statuts" }, ...statuses.map((item) => ({ value: item, label: STATUS_LABELS[item] ?? item }))]}
@@ -218,10 +206,6 @@ export default function ProjectsShowcase({ projects }) {
 
       {filteredProjects.length > 0 ? (
         <div className="project-archipelago">
-          <svg className="project-route-svg" viewBox="0 0 1200 620" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M68 424 C246 204 410 520 594 285 C733 109 900 330 1126 138" />
-            <path d="M120 506 C322 360 496 566 670 410 C842 256 978 464 1140 302" />
-          </svg>
           {filteredProjects.map((project, index) => (
             <ProjectIsland key={project.id ?? project.title} project={project} index={index} featured={project.featured || index === 0} />
           ))}

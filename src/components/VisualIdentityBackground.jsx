@@ -169,7 +169,7 @@ export default function VisualIdentityBackground({ owner }) {
         <span>· Archipel portfolio</span>
         <span>· Récif senior</span>
         <span>· Recrutement</span>
-        <span>· Îles projets</span>
+        <span>· Projets s</span>
       </div>
     </div>
   );

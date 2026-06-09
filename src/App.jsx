@@ -1,10 +1,8 @@
 import { Loader, Select, Stack, Text } from "@mantine/core";
 import { Suspense, lazy, useEffect, useMemo, useState } from "react";
-import ContactSection from "./components/ContactSection";
 import ExpertisePanel from "./components/ExpertisePanel";
 import ProfileHero from "./components/ProfileHero";
 import ProjectsShowcase from "./components/ProjectsShowcase";
-import OceanRecruitmentReef from "./components/OceanRecruitmentReef";
 import SEOHead from "./components/MetadataHead";
 import StatusBanner from "./components/StatusBanner";
 import TopNavigation from "./components/TopNavigation";
@@ -76,12 +74,10 @@ export default function App() {
           <PortfolioTimeline timeline={owner?.timeline} experiences={experiences} />
         </Suspense>
         <ProjectsShowcase projects={projects} />
-        <OceanRecruitmentReef projects={projects} experiences={experiences} />
         <ExpertisePanel projects={projects} experiences={experiences} />
-        <ContactSection owner={owner} source={state.source} />
       </Stack>
       <footer className="footer-shell">
-        <Text>Portfolio professionnel généré depuis Spring · React · Mantine · GSAP · SEO dynamique</Text>
+        <Text>Spring · React · Mantine · GSAP</Text>
       </footer>
     </main>
   );

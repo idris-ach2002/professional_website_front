@@ -60,9 +60,7 @@ export default function ExpertisePanel({ projects, experiences }) {
   return (
     <section ref={rootRef} id="expertise" className="page-section expertise-section island-section">
       <SectionTitle
-        eyebrow="Coraux techniques"
-        title="Un système générique, mais une présence visuelle singulière"
-        description="Le front reste découplé des données exactes, mais il transforme les stacks, statuts et catégories en récifs techniques plutôt qu’en simples cards alignées."
+        title="Mes stacks"
       />
 
       <div className="expertise-layout">
@@ -86,43 +84,6 @@ export default function ExpertisePanel({ projects, experiences }) {
             ))}
           </Stack>
         </Card>
-
-        <div className="architecture-board">
-          <Card className="architecture-card island-card" radius="xl">
-            <Text className="card-kicker">Architecture fonctionnelle</Text>
-            <Title order={3}>Backend Spring → API → Archipel SEO</Title>
-            <div className="architecture-flow">
-              <ArchitectureNode label="Owner" value="identité" active />
-              <ArchitectureNode label="Profile" value="pitch" active />
-              <ArchitectureNode label="Timeline" value="route" active />
-              <ArchitectureNode label="Project" value="îles" active />
-              <ArchitectureNode label="Contact" value="port" active />
-            </div>
-          </Card>
-
-          <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md" className="system-grid">
-            <Card className="system-card island-card" radius="xl">
-              <Text className="card-kicker">Publication</Text>
-              <Title order={3}>{publicProjects.length}</Title>
-              <Text>projets visibles après filtrage du champ <strong>published</strong>.</Text>
-            </Card>
-            <Card className="system-card island-card" radius="xl">
-              <Text className="card-kicker">Statuts projet</Text>
-              <Title order={3}>{statuses.length}</Title>
-              <Text>{statuses.map((status) => status).join(" · ") || "Aucun statut"}</Text>
-            </Card>
-            <Card className="system-card island-card" radius="xl">
-              <Text className="card-kicker">Catégories parcours</Text>
-              <Group gap="xs" mt="md">
-                {Object.entries(categories).map(([category, count]) => (
-                  <Badge key={category} className="category-chip">
-                    {CATEGORY_LABELS[category] ?? category} · {count}
-                  </Badge>
-                ))}
-              </Group>
-            </Card>
-          </SimpleGrid>
-        </div>
       </div>
     </section>
   );

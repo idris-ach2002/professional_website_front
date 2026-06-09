@@ -141,24 +141,6 @@ export function getAvailableStacks(projects = []) {
   return collectStacks(getPublicProjects(projects)).map((stack) => stack.label);
 }
 
-export function getProfessionalMetrics(projects = [], experiences = []) {
-  const publicProjects = getPublicProjects(projects);
-  const stacks = collectStacks(publicProjects);
-  const currentExperiences = experiences.filter((experience) => experience.currentPosition);
-  const projectLinks = publicProjects.reduce((total, project) => {
-    const directLinks = [project.githubUrl, project.demoUrl, project.documentationUrl].filter(Boolean).length;
-    return total + directLinks + (project.links?.length ?? 0);
-  }, 0);
-
-  return [
-    { label: "Projets publiés", value: publicProjects.length, detail: "alimentés par Project" },
-    { label: "Stacks détectées", value: stacks.length, detail: "normalisées côté front" },
-    { label: "Étapes parcours", value: experiences.length, detail: "depuis Timeline" },
-    { label: "Liens vérifiés", value: projectLinks, detail: "GitHub · démos · docs" },
-    { label: "Postes actuels", value: currentExperiences.length, detail: "currentPosition" },
-  ];
-}
-
 export function inferSpecialty(projects = [], experiences = []) {
   const text = `${projects.map((project) => `${project.title} ${project.subtitle} ${(project.stacks ?? []).join(" ")}`).join(" ")} ${experiences
     .map((experience) => `${experience.title} ${(experience.skills ?? []).join(" ")}`)
