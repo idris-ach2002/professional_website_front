@@ -1,0 +1,19 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1024" height="1024" rx="96" fill="#030712"/>
+  <g opacity=".45" stroke="#7DD3FC" stroke-width="2">
+    <path d="M112 112H912V912H112z"/>
+    <path d="M112 272H912M112 432H912M112 592H912M112 752H912M272 112V912M432 112V912M592 112V912M752 112V912"/>
+  </g>
+  <g filter="url(#glow)">
+    <circle cx="512" cy="512" r="248" stroke="#22D3EE" stroke-width="11"/>
+    <circle cx="512" cy="512" r="142" stroke="#A78BFA" stroke-width="9" opacity=".75"/>
+    <path d="M219 532C351 423 469 661 620 500C747 365 785 455 841 378" stroke="#34D399" stroke-width="15" stroke-linecap="round"/>
+    <path d="M194 653C312 560 441 813 612 640C758 492 816 590 878 486" stroke="#FBBF24" stroke-width="9" stroke-linecap="round" opacity=".75"/>
+  </g>
+  <defs>
+    <filter id="glow" x="80" y="80" width="864" height="864" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+</svg>

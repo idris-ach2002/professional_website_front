@@ -4,9 +4,11 @@ import ContactSection from "./components/ContactSection";
 import ExpertisePanel from "./components/ExpertisePanel";
 import ProfileHero from "./components/ProfileHero";
 import ProjectsShowcase from "./components/ProjectsShowcase";
+import OceanRecruitmentReef from "./components/OceanRecruitmentReef";
 import SEOHead from "./components/MetadataHead";
 import StatusBanner from "./components/StatusBanner";
 import TopNavigation from "./components/TopNavigation";
+import VisualIdentityBackground from "./components/VisualIdentityBackground";
 import { loadPortfolio } from "./services/portfolioApi";
 import { getOwnerFullName, sortByDisplayOrder } from "./utils/portfolio";
 import "./index.css";
@@ -55,8 +57,7 @@ export default function App() {
   return (
     <main id="top" className="app-shell">
       <SEOHead owner={owner} projects={projects} experiences={experiences} />
-      <div className="background-noise" />
-      <div className="background-aura" />
+      <VisualIdentityBackground owner={owner} />
       <TopNavigation owner={owner} source={state.source} />
       <Stack gap="xl" className="content-shell">
         <StatusBanner source={state.source} error={state.error} />
@@ -75,11 +76,12 @@ export default function App() {
           <PortfolioTimeline timeline={owner?.timeline} experiences={experiences} />
         </Suspense>
         <ProjectsShowcase projects={projects} />
+        <OceanRecruitmentReef projects={projects} experiences={experiences} />
         <ExpertisePanel projects={projects} experiences={experiences} />
         <ContactSection owner={owner} source={state.source} />
       </Stack>
       <footer className="footer-shell">
-        <Text>Portfolio professionnel généré depuis Spring · React · Mantine · Tailwind · MUI Timeline · SEO dynamique</Text>
+        <Text>Portfolio professionnel généré depuis Spring · React · Mantine · GSAP · SEO dynamique</Text>
       </footer>
     </main>
   );

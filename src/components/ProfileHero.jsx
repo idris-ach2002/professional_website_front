@@ -1,5 +1,6 @@
 import { Anchor, Badge, Button, Card, Divider, Group, Image, RingProgress, SimpleGrid, Stack, Text, Title } from "@mantine/core";
-import { motion } from "framer-motion";
+import { useMemo, useRef } from "react";
+import { useGsap } from "../animations/useGsap";
 import {
   CONTACT_LABELS,
   getContactHref,
@@ -11,15 +12,32 @@ import {
   normalizeUrl,
 } from "../utils/portfolio";
 
-const MotionDiv = motion.div;
-const MotionAside = motion.aside;
+function AnimatedTitle({ title, headline }) {
+  const words = String(headline ?? "").split(" · ").filter(Boolean);
+  return (
+    <Title className="hero-title">
+      <span className="hero-title-main">{title}</span>
+      <span className="hero-title-current">
+        {words.map((word, index) => (
+          <em key={word} className="hero-keyword" style={{ "--delay": index }}>
+            {word}
+          </em>
+        ))}
+      </span>
+    </Title>
+  );
+}
 
 function ProfilePortrait({ owner, profile }) {
   const fullName = getOwnerFullName(owner);
 
   return (
-    <Card className="portrait-card" radius="xl">
-      <div className="portrait-orbit" />
+    <Card className="portrait-card island-card" radius="xl">
+      <svg className="portrait-svg-orbits" viewBox="0 0 280 280" aria-hidden="true">
+        <ellipse className="portrait-orbit orbit-a" cx="140" cy="140" rx="118" ry="93" />
+        <ellipse className="portrait-orbit orbit-b" cx="140" cy="140" rx="98" ry="123" />
+        <path className="portrait-route" d="M43 153 C77 56 190 36 237 118 C277 189 180 260 92 218 C59 202 42 179 43 153Z" />
+      </svg>
       <div className="portrait-glow" />
       {profile?.profileImageUrl ? (
         <Image src={profile.profileImageUrl} alt={fullName} className="portrait-image" />
@@ -41,8 +59,8 @@ function ProfilePortrait({ owner, profile }) {
           <strong>React</strong>
         </div>
         <div>
-          <Text>Modèle</Text>
-          <strong>Generic</strong>
+          <Text>Motion</Text>
+          <strong>GSAP</strong>
         </div>
       </SimpleGrid>
     </Card>
@@ -60,29 +78,40 @@ function ContactPill({ contact }) {
 }
 
 export default function ProfileHero({ owner, profile, projects, experiences }) {
+  const rootRef = useRef(null);
   const fullName = getOwnerFullName(owner);
   const contacts = owner?.contacts ?? [];
-  const metrics = getProfessionalMetrics(projects, experiences).slice(0, 4);
-  const specialties = inferSpecialty(projects, experiences);
+  const metrics = useMemo(() => getProfessionalMetrics(projects, experiences).slice(0, 4), [projects, experiences]);
+  const specialties = useMemo(() => inferSpecialty(projects, experiences), [projects, experiences]);
   const email = getPrimaryContact(owner, "EMAIL");
   const linkedin = getPrimaryContact(owner, "LINKEDIN");
 
+  useGsap(rootRef, (gsap) => {
+    const timeline = gsap.timeline({ defaults: { ease: "power3.out" } });
+    timeline
+      .from(".hero-badge", { y: 16, autoAlpha: 0, duration: 0.45 })
+      .from(".hero-title-main", { y: 36, autoAlpha: 0, duration: 0.72 }, "-=0.12")
+      .from(".hero-keyword", { y: 22, autoAlpha: 0, rotateX: -48, transformOrigin: "50% 50% -40", stagger: 0.09, duration: 0.58 }, "-=0.35")
+      .from(".hero-lead, .hero-description", { y: 20, autoAlpha: 0, stagger: 0.08, duration: 0.55 }, "-=0.28")
+      .from(".hero-actions .mantine-Button-root", { y: 14, autoAlpha: 0, stagger: 0.06, duration: 0.45 }, "-=0.25")
+      .from(".hero-panel", { x: 36, y: 18, rotate: 1.8, autoAlpha: 0, duration: 0.78 }, "-=0.62")
+      .from(".metric-card", { y: 20, autoAlpha: 0, stagger: 0.055, duration: 0.48 }, "-=0.38")
+      .from(".specialty-chip", { y: 10, autoAlpha: 0, scale: 0.86, stagger: 0.05, duration: 0.34 }, "-=0.2");
+
+    gsap.to(".portrait-orbit.orbit-a", { rotate: 360, transformOrigin: "50% 50%", duration: 28, repeat: -1, ease: "none" });
+    gsap.to(".portrait-orbit.orbit-b", { rotate: -360, transformOrigin: "50% 50%", duration: 34, repeat: -1, ease: "none" });
+    gsap.to(".portrait-route", { strokeDashoffset: -420, duration: 9, repeat: -1, ease: "none" });
+    gsap.to(".hero-keyword", { y: -3, duration: 2.8, repeat: -1, yoyo: true, ease: "sine.inOut", stagger: 0.18 });
+  }, [fullName]);
+
   return (
-    <section id="profile" className="hero-grid">
-      <MotionDiv
-        initial={{ opacity: 0, y: 26 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: "easeOut" }}
-        className="hero-copy"
-      >
-        <div className="hero-radar" />
+    <section ref={rootRef} id="profile" className="hero-grid island-section profile-island">
+      <div className="hero-copy">
+        <div className="hero-map-line" />
         <Badge className="hero-badge" radius="xl">
-          Site vitrine professionnel · SEO · data-driven
+          Archipel du recrutement · Portfolio générique alimenté par Spring
         </Badge>
-        <Title className="hero-title">
-          {profile?.title ?? fullName}
-          <span>{profile?.headline ?? "Ingénierie logicielle full-stack"}</span>
-        </Title>
+        <AnimatedTitle title={profile?.title ?? fullName} headline={profile?.headline ?? "Ingénierie logicielle · Architecture backend · Interfaces produit"} />
         <Text className="hero-lead">{profile?.shortDescription ?? profile?.description}</Text>
         <Text className="hero-description">{profile?.description}</Text>
 
@@ -103,13 +132,13 @@ export default function ProfileHero({ owner, profile, projects, experiences }) {
             </Button>
           )}
           <Button component="a" href="#projects" radius="xl" variant="subtle" className="ghost-action">
-            Explorer les réalisations
+            Explorer les îles projets
           </Button>
         </Group>
 
         <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} spacing="sm" className="hero-metrics">
           {metrics.map((metric) => (
-            <Card key={metric.label} className="metric-card">
+            <Card key={metric.label} className="metric-card island-mini-card">
               <Text>{metric.label}</Text>
               <strong>{metric.value}</strong>
               <small>{metric.detail}</small>
@@ -126,16 +155,11 @@ export default function ProfileHero({ owner, profile, projects, experiences }) {
             ))}
           </Group>
         )}
-      </MotionDiv>
+      </div>
 
-      <MotionAside
-        initial={{ opacity: 0, scale: 0.96, y: 18 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.75, delay: 0.08, ease: "easeOut" }}
-        className="hero-panel"
-      >
+      <aside className="hero-panel">
         <ProfilePortrait owner={owner} profile={profile} />
-        <Card className="availability-card" radius="xl">
+        <Card className="availability-card island-card" radius="xl">
           <Group justify="space-between" align="center" wrap="nowrap">
             <Stack gap={0} className="availability-copy">
               <Text className="availability-label">Disponibilité</Text>
@@ -152,7 +176,7 @@ export default function ProfileHero({ owner, profile, projects, experiences }) {
           </Group>
         </Card>
         {contacts.length > 0 && (
-          <Card className="contact-card" radius="xl">
+          <Card className="contact-card island-card" radius="xl">
             <Text className="card-kicker">Coordonnées</Text>
             <Stack gap="xs">
               {contacts.slice(0, 6).map((contact) => (
@@ -161,7 +185,7 @@ export default function ProfileHero({ owner, profile, projects, experiences }) {
             </Stack>
           </Card>
         )}
-      </MotionAside>
+      </aside>
     </section>
   );
 }

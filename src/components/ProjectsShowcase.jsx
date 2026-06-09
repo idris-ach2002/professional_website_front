@@ -1,6 +1,6 @@
-import { Anchor, Badge, Button, Card, Group, Image, MultiSelect, SegmentedControl, SimpleGrid, Stack, Text, TextInput, Title } from "@mantine/core";
-import { useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { Anchor, Badge, Button, Card, Group, Image, MultiSelect, SegmentedControl, Stack, Text, TextInput, Title } from "@mantine/core";
+import { useMemo, useRef, useState } from "react";
+import { useGsap } from "../animations/useGsap";
 import SectionTitle from "./SectionTitle";
 import {
   LINK_LABELS,
@@ -13,8 +13,6 @@ import {
   normalizeUrl,
 } from "../utils/portfolio";
 
-const MotionArticle = motion.article;
-
 function ProjectVisual({ project, index }) {
   if (project.imageUrl) {
     return <Image src={project.imageUrl} alt={project.title} className="project-image" />;
@@ -22,7 +20,12 @@ function ProjectVisual({ project, index }) {
 
   return (
     <div className="project-visual">
-      <span>0{index + 1}</span>
+      <svg viewBox="0 0 180 130" aria-hidden="true">
+        <path d="M22 81 C34 21 117 6 153 49 C185 88 122 130 63 121 C33 116 16 103 22 81Z" />
+        <circle cx="61" cy="62" r="12" />
+        <path d="M72 81 C96 51 126 55 146 79" />
+      </svg>
+      <span>Île 0{index + 1}</span>
       <strong>{project.title?.slice(0, 2)?.toUpperCase()}</strong>
     </div>
   );
@@ -49,66 +52,41 @@ function ProjectLinks({ project }) {
   );
 }
 
-function ProjectCard({ project, index, compact }) {
-  if (!compact) {
-    return (
-      <Card className="featured-project" radius="xl">
-        <ProjectVisual project={project} index={index} />
-        <Stack gap="sm" className="project-content">
-          <Group justify="space-between" align="center">
-            <Badge className="project-status">{STATUS_LABELS[project.status] ?? project.status}</Badge>
-            <Text className="project-period">{formatPeriod(project.startDate, project.endDate, project.status === "IN_PROGRESS" || project.status === "MAINTAINED")}</Text>
-          </Group>
-          <Title order={3}>{project.title}</Title>
-          {project.subtitle && <Text className="project-subtitle">{project.subtitle}</Text>}
-          <Text className="project-description">{project.shortDescription ?? project.description}</Text>
-          {project.features?.length > 0 && (
-            <ul className="feature-list two-columns">
-              {project.features.slice(0, 6).map((feature) => (
-                <li key={feature}>{feature}</li>
-              ))}
-            </ul>
-          )}
-          {project.stacks?.length > 0 && (
-            <Group gap={7} className="stack-row">
-              {project.stacks.slice(0, 10).map((stack) => (
-                <Badge key={stack} variant="outline" className="stack-badge">{stack}</Badge>
-              ))}
-            </Group>
-          )}
-          <ProjectLinks project={project} />
-        </Stack>
-      </Card>
-    );
-  }
-
+function ProjectIsland({ project, index, featured }) {
   return (
-    <Card className="project-card" radius="xl">
-      <Group justify="space-between" align="flex-start">
-        <Badge className="project-mini-status">{STATUS_LABELS[project.status] ?? project.status}</Badge>
-        {project.featured && <Badge className="featured-badge">Featured</Badge>}
-      </Group>
-      <Title order={3}>{project.title}</Title>
-      <Text className="project-card-subtitle">{project.subtitle}</Text>
-      <Text className="project-card-desc">{project.shortDescription ?? project.description}</Text>
-      {project.features?.length > 0 && (
-        <ul className="feature-list">
-          {project.features.slice(0, 4).map((feature) => (
-            <li key={feature}>{feature}</li>
-          ))}
-        </ul>
-      )}
-      <Group gap={7} className="stack-row compact-stack">
-        {(project.stacks ?? []).slice(0, 7).map((stack) => (
-          <Badge key={stack} variant="outline" className="stack-badge">{stack}</Badge>
-        ))}
-      </Group>
-      <ProjectLinks project={project} />
-    </Card>
+    <article className={`project-island island-card ${featured ? "featured-project-island" : ""}`}>
+      <div className="project-island-topline">
+        <Badge className="project-status">{STATUS_LABELS[project.status] ?? project.status}</Badge>
+        {project.featured && <Badge className="featured-badge">Signal fort</Badge>}
+      </div>
+      <ProjectVisual project={project} index={index} />
+      <Stack gap="sm" className="project-content">
+        <Text className="project-period">{formatPeriod(project.startDate, project.endDate, project.status === "IN_PROGRESS" || project.status === "MAINTAINED")}</Text>
+        <Title order={3}>{project.title}</Title>
+        {project.subtitle && <Text className="project-subtitle">{project.subtitle}</Text>}
+        <Text className="project-description">{project.shortDescription ?? project.description}</Text>
+        {project.features?.length > 0 && (
+          <ul className="feature-list two-columns">
+            {project.features.slice(0, featured ? 6 : 4).map((feature) => (
+              <li key={feature}>{feature}</li>
+            ))}
+          </ul>
+        )}
+        {project.stacks?.length > 0 && (
+          <Group gap={7} className="stack-row">
+            {project.stacks.slice(0, featured ? 10 : 7).map((stack) => (
+              <Badge key={stack} variant="outline" className="stack-badge">{stack}</Badge>
+            ))}
+          </Group>
+        )}
+        <ProjectLinks project={project} />
+      </Stack>
+    </article>
   );
 }
 
 export default function ProjectsShowcase({ projects }) {
+  const rootRef = useRef(null);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("ALL");
   const [selectedStacks, setSelectedStacks] = useState([]);
@@ -143,23 +121,53 @@ export default function ProjectsShowcase({ projects }) {
     });
   }, [mode, publicProjects, query, selectedStacks, status]);
 
-  const featured = filteredProjects.filter((project) => project.featured);
-  const regular = filteredProjects.filter((project) => !project.featured || featured.length === 0);
+  useGsap(rootRef, (gsap, ScrollTrigger) => {
+    if (!ScrollTrigger) return;
+
+    gsap.from(".project-toolbar", {
+      autoAlpha: 0,
+      y: 22,
+      duration: 0.55,
+      ease: "power3.out",
+      scrollTrigger: { trigger: ".projects-section", start: "top 78%" },
+    });
+
+    gsap.from(".project-island", {
+      autoAlpha: 0,
+      y: 66,
+      scale: 0.9,
+      rotate: (index) => (index % 2 ? 3 : -3),
+      duration: 0.86,
+      stagger: { each: 0.1, from: "center" },
+      ease: "power3.out",
+      scrollTrigger: { trigger: ".project-archipelago", start: "top 75%" },
+    });
+
+    gsap.to(".project-island", {
+      y: (index) => (index % 2 ? -9 : 11),
+      rotate: (index) => (index % 2 ? -0.9 : 0.9),
+      duration: 6,
+      repeat: -1,
+      yoyo: true,
+      ease: "sine.inOut",
+      stagger: 0.18,
+    });
+  }, [filteredProjects.length]);
 
   const exportProjects = () => {
     downloadText("portfolio-projects.json", JSON.stringify(filteredProjects, null, 2), "application/json;charset=utf-8");
   };
 
   return (
-    <section id="projects" className="page-section projects-section">
+    <section ref={rootRef} id="projects" className="page-section projects-section island-section projects-archipelago-section">
       <SectionTitle
-        eyebrow="Réalisations filtrables"
-        title="Des preuves techniques consultables comme un produit"
-        description="Recherche, filtrage par statut, filtrage par stack et export JSON : la section exploite réellement les champs Project exposés par Spring."
+        eyebrow="Archipel des réalisations"
+        title="Chaque projet devient une île technique à explorer"
+        description="Recherche, filtres et export restent branchés au modèle Project, mais l’agencement abandonne la grille classique au profit d’un archipel organique."
         rightSlot={<Button onClick={exportProjects} radius="xl" variant="light">Exporter JSON</Button>}
       />
 
-      <div className="project-toolbar">
+      <div className="project-toolbar island-card">
         <TextInput
           value={query}
           onChange={(event) => setQuery(event.currentTarget.value)}
@@ -174,7 +182,7 @@ export default function ProjectsShowcase({ projects }) {
           radius="xl"
           data={[
             { label: "Tous", value: "all" },
-            { label: "Featured", value: "featured" },
+            { label: "Signal fort", value: "featured" },
           ]}
           className="project-mode"
         />
@@ -202,45 +210,25 @@ export default function ProjectsShowcase({ projects }) {
       </div>
 
       <Group gap="xs" className="result-line">
-        <Badge className="executive-badge">{filteredProjects.length} projet{filteredProjects.length > 1 ? "s" : ""}</Badge>
+        <Badge className="executive-badge">{filteredProjects.length} île{filteredProjects.length > 1 ? "s" : ""}</Badge>
         {selectedStacks.map((stack) => (
           <Badge key={stack} className="filter-chip">{stack}</Badge>
         ))}
       </Group>
 
-      {featured.length > 0 && (
-        <div className="featured-grid">
-          {featured.slice(0, 3).map((project, index) => (
-            <MotionArticle
-              key={project.id ?? project.title}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.25 }}
-              transition={{ duration: 0.55, delay: index * 0.08 }}
-            >
-              <ProjectCard project={project} index={index} />
-            </MotionArticle>
+      {filteredProjects.length > 0 ? (
+        <div className="project-archipelago">
+          <svg className="project-route-svg" viewBox="0 0 1200 620" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M68 424 C246 204 410 520 594 285 C733 109 900 330 1126 138" />
+            <path d="M120 506 C322 360 496 566 670 410 C842 256 978 464 1140 302" />
+          </svg>
+          {filteredProjects.map((project, index) => (
+            <ProjectIsland key={project.id ?? project.title} project={project} index={index} featured={project.featured || index === 0} />
           ))}
         </div>
-      )}
-
-      {regular.length > 0 ? (
-        <SimpleGrid cols={{ base: 1, sm: 2, xl: 4 }} spacing="md" className="project-grid">
-          {regular.map((project, index) => (
-            <MotionArticle
-              key={project.id ?? project.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.25 }}
-              transition={{ duration: 0.45, delay: Math.min(index * 0.04, 0.16) }}
-            >
-              <ProjectCard project={project} index={index} compact />
-            </MotionArticle>
-          ))}
-        </SimpleGrid>
       ) : (
-        <Card className="empty-card" radius="xl">
-          <Title order={3}>Aucun projet ne correspond aux filtres.</Title>
+        <Card className="empty-card island-card" radius="xl">
+          <Title order={3}>Aucune île ne correspond aux filtres.</Title>
           <Text>Réduis la recherche ou retire une stack pour retrouver les projets disponibles.</Text>
         </Card>
       )}
