@@ -16,10 +16,21 @@ export default function TopNavigation({ owner }) {
   const ownerName = getOwnerFullName(owner);
 
   useGsap(rootRef, (gsap, ScrollTrigger) => {
-    gsap.from(".top-nav", { y: -28, autoAlpha: 0, duration: 0.8, ease: "power3.out" });
-    gsap.from(".nav-link", { y: -10, autoAlpha: 0, duration: 0.55, stagger: 0.045, ease: "power3.out", delay: 0.15 });
+    const root = rootRef.current;
+    if (!root) return undefined;
 
-    const linkEls = gsap.utils.toArray(".nav-link");
+    const nav = root.querySelector(".top-nav");
+    const linkEls = gsap.utils.toArray(root.querySelectorAll(".nav-link"));
+    const scrollCurrent = root.querySelector(".scroll-current");
+
+    if (nav) {
+      gsap.from(nav, { y: -28, autoAlpha: 0, duration: 0.8, ease: "power3.out" });
+    }
+
+    if (linkEls.length > 0) {
+      gsap.from(linkEls, { y: -10, autoAlpha: 0, duration: 0.55, stagger: 0.045, ease: "power3.out", delay: 0.15 });
+    }
+
     const cleanups = [];
     linkEls.forEach((link) => {
       const enter = () => gsap.to(link, { y: -2, scale: 1.04, duration: 0.22, ease: "power2.out" });
@@ -32,13 +43,15 @@ export default function TopNavigation({ owner }) {
       });
     });
 
-    if (ScrollTrigger) {
+    if (ScrollTrigger && nav) {
       ScrollTrigger.create({
         start: 80,
         end: "bottom bottom",
         onUpdate: (self) => {
-          gsap.to(".scroll-current", { scaleX: self.progress, duration: 0.18, ease: "none" });
-          gsap.to(".top-nav", { boxShadow: self.progress > 0.02 ? "0 18px 50px rgba(14, 116, 144, .16)" : "0 8px 30px rgba(14, 116, 144, .08)", duration: 0.2 });
+          if (scrollCurrent) {
+            gsap.to(scrollCurrent, { scaleX: self.progress, duration: 0.18, ease: "none" });
+          }
+          gsap.to(nav, { boxShadow: self.progress > 0.02 ? "0 18px 50px rgba(14, 116, 144, .16)" : "0 8px 30px rgba(14, 116, 144, .08)", duration: 0.2 });
         },
       });
     }
@@ -46,11 +59,12 @@ export default function TopNavigation({ owner }) {
     return () => cleanups.forEach((cleanup) => cleanup());
   }, [ownerName]);
 
-  const navLinks = links.map((link) => (
-    <Anchor key={link.href} href={link.href} className="nav-link" onClick={close}>
-      {link.label}
-    </Anchor>
-  ));
+  const renderNavLinks = (suffix = "") =>
+    links.map((link) => (
+      <Anchor key={`${link.href}-${suffix}`} href={link.href} className="nav-link" onClick={close}>
+        {link.label}
+      </Anchor>
+    ));
 
   return (
     <header ref={rootRef} className="top-nav-shell">
@@ -63,7 +77,7 @@ export default function TopNavigation({ owner }) {
         </a>
 
         <Group gap="xs" className="desktop-nav">
-          {navLinks}
+          {renderNavLinks("desktop")}
         </Group>
 
         <Burger opened={opened} onClick={toggle} className="mobile-burger" aria-label="Menu" />
@@ -71,7 +85,7 @@ export default function TopNavigation({ owner }) {
       </div>
 
       <Drawer opened={opened} onClose={close} position="right" title="Navigation" padding="xl" classNames={{ content: "drawer-content", header: "drawer-header" }}>
-        <Stack gap="lg">{navLinks}</Stack>
+        <Stack gap="lg">{renderNavLinks("drawer")}</Stack>
       </Drawer>
     </header>
   );

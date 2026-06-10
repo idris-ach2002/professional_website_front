@@ -18,8 +18,12 @@ export default function ExpertisePanel({ projects, experiences }) {
   const publicProjects = getPublicProjects(projects);
   const stacks = collectStacks(publicProjects);
   useGsap(rootRef, (gsap, ScrollTrigger) => {
-    if (!ScrollTrigger) return;
-    gsap.from(".expertise-card, .architecture-card, .system-card", {
+    if (!ScrollTrigger || !rootRef.current) return undefined;
+
+    const cards = rootRef.current.querySelectorAll(".expertise-card, .architecture-card, .system-card");
+    if (cards.length === 0) return undefined;
+
+    gsap.from(cards, {
       autoAlpha: 0,
       y: 48,
       scale: 0.94,
@@ -29,6 +33,8 @@ export default function ExpertisePanel({ projects, experiences }) {
       ease: "power3.out",
       scrollTrigger: { trigger: rootRef.current, start: "top 76%" },
     });
+
+    return undefined;
   }, [stacks.length, experiences.length]);
 
   return (

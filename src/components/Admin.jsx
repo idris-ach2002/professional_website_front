@@ -153,8 +153,18 @@ function toArray(value) {
     .filter(Boolean);
 }
 
+function toCsv(value) {
+  if (!value) return "";
+  if (Array.isArray(value)) return value.join(", ");
+  return String(value);
+}
+
 function getEntityId(entity) {
   return entity?.ownerId ?? entity?.id ?? entity?.websiteVersionId;
+}
+
+function getProjectId(project) {
+  return project?.projectId ?? project?.id;
 }
 
 function getOwnerLabel(owner) {
@@ -166,7 +176,6 @@ function normalizeDate(value) {
   if (!value) return "";
   return String(value).slice(0, 10);
 }
-
 
 function nullIfBlank(value) {
   if (typeof value !== "string") return value ?? null;
@@ -268,7 +277,7 @@ async function uploadFile(file) {
 }
 
 function hydrateProfileForm(profile) {
-  if (!profile) return emptyProfileForm;
+  if (!profile) return { ...emptyProfileForm };
 
   return {
     title: profile.title ?? "",
@@ -310,18 +319,43 @@ function hydrateExperiences(timeline) {
   }));
 }
 
+function hydrateProjectForm(project) {
+  if (!project) return { ...emptyProjectForm };
+
+  return {
+    title: project.title ?? "",
+    subtitle: project.subtitle ?? "",
+    shortDescription: project.shortDescription ?? "",
+    description: project.description ?? "",
+    status: project.status ?? "IN_PROGRESS",
+    startDate: normalizeDate(project.startDate),
+    endDate: normalizeDate(project.endDate),
+    imageUrl: project.imageUrl ?? "",
+    demoUrl: project.demoUrl ?? "",
+    githubUrl: project.githubUrl ?? "",
+    documentationUrl: project.documentationUrl ?? "",
+    stacks: toCsv(project.stacks),
+    features: toCsv(project.features),
+    featured: Boolean(project.featured),
+    published: project.published !== false,
+    displayOrder: project.displayOrder ?? 1,
+  };
+}
+
 function FileLink({ label, url, mode = "modal" }) {
   if (!url) return null;
 
   return (
     <Group gap="xs" align="center" className="admin-file-current-line">
-      <Text size="xs" c="dimmed">{label}</Text>
+      <Text size="xs" c="dimmed">
+        {label}
+      </Text>
       <FilePreviewButton
         url={url}
         label="Voir"
         title={label}
         mode={mode}
-        size="compact-xs"
+        size="xs"
         variant="light"
         className="admin-file-preview-button"
       />
@@ -338,9 +372,13 @@ export default function Admin() {
 
   const [owners, setOwners] = useState([]);
   const [versions, setVersions] = useState([]);
+  const [projects, setProjects] = useState([]);
 
   const [selectedOwnerId, setSelectedOwnerId] = useState(null);
   const [selectedVersionId, setSelectedVersionId] = useState(null);
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const [projectMode, setProjectMode] = useState("create");
+  const [cloneSourceVersionId, setCloneSourceVersionId] = useState(null);
 
   const [ownerForm, setOwnerForm] = useState(emptyOwnerForm);
   const [versionForm, setVersionForm] = useState(emptyVersionForm);
@@ -362,32 +400,55 @@ export default function Admin() {
     [versions, selectedVersionId],
   );
 
+  const selectedProject = useMemo(
+    () =>
+      projects.find(
+        (project) => String(getProjectId(project)) === String(selectedProjectId),
+      ),
+    [projects, selectedProjectId],
+  );
+
   useGsap(rootRef, (gsap) => {
-    gsap.from(".admin-hero-card", {
-      y: 34,
-      autoAlpha: 0,
-      duration: 0.8,
-      ease: "power3.out",
-    });
+    const root = rootRef.current;
+    if (!root) return undefined;
 
-    gsap.from(".admin-context-card, .admin-tabs-card", {
-      y: 30,
-      autoAlpha: 0,
-      duration: 0.7,
-      ease: "power3.out",
-      stagger: 0.12,
-      delay: 0.12,
-    });
+    const heroCard = root.querySelector(".admin-hero-card");
+    const cards = root.querySelectorAll(".admin-context-card, .admin-tabs-card");
+    const orbs = root.querySelectorAll(".admin-orb");
 
-    gsap.to(".admin-orb", {
-      y: -16,
-      x: 12,
-      duration: 5.5,
-      repeat: -1,
-      yoyo: true,
-      ease: "sine.inOut",
-      stagger: 0.45,
-    });
+    if (heroCard) {
+      gsap.from(heroCard, {
+        y: 34,
+        autoAlpha: 0,
+        duration: 0.8,
+        ease: "power3.out",
+      });
+    }
+
+    if (cards.length > 0) {
+      gsap.from(cards, {
+        y: 30,
+        autoAlpha: 0,
+        duration: 0.7,
+        ease: "power3.out",
+        stagger: 0.12,
+        delay: 0.12,
+      });
+    }
+
+    if (orbs.length > 0) {
+      gsap.to(orbs, {
+        y: -16,
+        x: 12,
+        duration: 5.5,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+        stagger: 0.45,
+      });
+    }
+
+    return undefined;
   }, []);
 
   function updateOwnerForm(field, value) {
@@ -416,9 +477,12 @@ export default function Admin() {
 
   function hydrateVersionForms(version) {
     if (!version) {
-      setProfileForm(emptyProfileForm);
-      setTimelineForm(emptyTimelineForm);
+      setVersionForm({ ...emptyVersionForm });
+      setProfileForm({ ...emptyProfileForm });
+      setTimelineForm({ ...emptyTimelineForm });
       setExperiences([]);
+      setProjects([]);
+      resetProjectForm();
       return;
     }
 
@@ -433,6 +497,35 @@ export default function Admin() {
     setProfileForm(hydrateProfileForm(version.prof));
     setTimelineForm(hydrateTimelineForm(version.timeline));
     setExperiences(hydrateExperiences(version.timeline));
+    setProjects(version.projects ?? []);
+    setCloneSourceVersionId(String(getEntityId(version)));
+    resetProjectForm(version.projects ?? []);
+  }
+
+  function resetProjectForm(sourceProjects = projects) {
+    setProjectMode("create");
+    setSelectedProjectId(null);
+    setProjectForm({
+      ...emptyProjectForm,
+      displayOrder: (sourceProjects?.length ?? 0) + 1,
+    });
+    setProjectFiles(emptyProjectFiles);
+  }
+
+  function selectProject(projectId, sourceProjects = projects) {
+    const project = sourceProjects.find(
+      (item) => String(getProjectId(item)) === String(projectId),
+    );
+
+    if (!project) {
+      resetProjectForm();
+      return;
+    }
+
+    setProjectMode("edit");
+    setSelectedProjectId(String(getProjectId(project)));
+    setProjectForm(hydrateProjectForm(project));
+    setProjectFiles(emptyProjectFiles);
   }
 
   function selectVersion(versionId, sourceVersions = versions) {
@@ -452,6 +545,15 @@ export default function Admin() {
   async function fetchVersions(ownerId) {
     if (!ownerId) return [];
     const data = await apiRequest("GET", `/manager/${ownerId}/versions`);
+    return Array.isArray(data) ? data : [];
+  }
+
+  async function fetchProjects(ownerId, versionId) {
+    if (!ownerId || !versionId) return [];
+    const data = await apiRequest(
+      "GET",
+      `/manager/${ownerId}/versions/${versionId}/projects`,
+    );
     return Array.isArray(data) ? data : [];
   }
 
@@ -493,7 +595,7 @@ export default function Admin() {
     }, "Owners chargés.");
   }
 
-  async function refreshVersions(ownerId = selectedOwnerId) {
+  async function refreshVersions(ownerId = selectedOwnerId, preferredVersionId = null) {
     if (!ownerId) {
       setError("Sélectionne d’abord un owner.");
       return null;
@@ -502,17 +604,55 @@ export default function Admin() {
     return runAction(async () => {
       const versionList = await fetchVersions(ownerId);
       setVersions(versionList);
+      const preferredVersion = versionList.find(
+        (version) => String(getEntityId(version)) === String(preferredVersionId),
+      );
       const activeVersion = versionList.find((version) => version.active);
       const firstVersion = versionList[0];
-      selectVersion(String(getEntityId(activeVersion ?? firstVersion ?? {})), versionList);
+      selectVersion(
+        String(getEntityId(preferredVersion ?? activeVersion ?? firstVersion ?? {})),
+        versionList,
+      );
       return versionList;
     }, "Versions chargées.");
+  }
+
+  async function refreshProjects(preferredProjectId = null) {
+    if (!selectedOwnerId || !selectedVersionId) {
+      setError("Sélectionne un owner et une version.");
+      return null;
+    }
+
+    return runAction(async () => {
+      const projectList = await fetchProjects(selectedOwnerId, selectedVersionId);
+      setProjects(projectList);
+      setVersions((current) =>
+        current.map((version) =>
+          String(getEntityId(version)) === String(selectedVersionId)
+            ? { ...version, projects: projectList }
+            : version,
+        ),
+      );
+
+      if (preferredProjectId) {
+        const project = projectList.find(
+          (item) => String(getProjectId(item)) === String(preferredProjectId),
+        );
+        if (project) selectProject(String(getProjectId(project)), projectList);
+      } else {
+        resetProjectForm(projectList);
+      }
+
+      return projectList;
+    }, "Projets chargés.");
   }
 
   async function handleOwnerChange(ownerId) {
     setSelectedOwnerId(ownerId);
     setSelectedVersionId(null);
+    setSelectedProjectId(null);
     setVersions([]);
+    setProjects([]);
 
     if (!ownerId) return;
 
@@ -528,8 +668,9 @@ export default function Admin() {
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([fetchOwners()])
-      .then(async ([ownerList]) => {
+    async function loadInitialData() {
+      try {
+        const ownerList = await fetchOwners();
         if (cancelled) return;
 
         const firstOwner = ownerList[0];
@@ -554,12 +695,14 @@ export default function Admin() {
           setSelectedVersionId(String(getEntityId(versionToSelect)));
           hydrateVersionForms(versionToSelect);
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         if (!cancelled) {
           setError(err?.message ?? "Impossible de charger les données admin.");
         }
-      });
+      }
+    }
+
+    loadInitialData();
 
     return () => {
       cancelled = true;
@@ -604,12 +747,12 @@ export default function Admin() {
         ...timelineForm,
         experiences,
       },
-      projects: [],
+      projects,
     };
   }
 
-  async function buildVersionPayload() {
-    const profilePayload = await buildProfilePayload();
+  async function buildVersionPayload({ includeContent = true } = {}) {
+    const profilePayload = includeContent ? await buildProfilePayload() : null;
 
     return {
       versionTag: versionForm.versionTag,
@@ -617,12 +760,14 @@ export default function Admin() {
       description: versionForm.description,
       active: versionForm.active,
       published: versionForm.published,
-      prof: profilePayload,
-      timeline: {
-        ...timelineForm,
-        experiences,
-      },
-      projects: [],
+      prof: includeContent ? profilePayload : null,
+      timeline: includeContent
+        ? {
+            ...timelineForm,
+            experiences,
+          }
+        : null,
+      projects: includeContent ? projects : null,
     };
   }
 
@@ -695,10 +840,31 @@ export default function Admin() {
     }
 
     await runAction(async () => {
-      const payload = await buildVersionPayload();
-      await apiRequest("POST", `/manager/${selectedOwnerId}/versions`, payload);
-      await refreshVersions(selectedOwnerId);
-    }, "Version créée.");
+      const payload = await buildVersionPayload({ includeContent: true });
+      const createdVersion = await apiRequest(
+        "POST",
+        `/manager/${selectedOwnerId}/versions`,
+        payload,
+      );
+      await refreshVersions(selectedOwnerId, getEntityId(createdVersion));
+    }, "Version créée avec le contenu du formulaire.");
+  }
+
+  async function cloneVersion() {
+    if (!selectedOwnerId || !cloneSourceVersionId) {
+      setError("Sélectionne un owner et une version source à importer.");
+      return;
+    }
+
+    await runAction(async () => {
+      const payload = await buildVersionPayload({ includeContent: false });
+      const createdVersion = await apiRequest(
+        "POST",
+        `/manager/${selectedOwnerId}/versions/from/${cloneSourceVersionId}`,
+        payload,
+      );
+      await refreshVersions(selectedOwnerId, getEntityId(createdVersion));
+    }, "Nouvelle version créée en important le contenu de la version source.");
   }
 
   async function updateVersionMetadata() {
@@ -713,7 +879,7 @@ export default function Admin() {
         `/manager/${selectedOwnerId}/versions/${selectedVersionId}`,
         versionForm,
       );
-      await refreshVersions(selectedOwnerId);
+      await refreshVersions(selectedOwnerId, selectedVersionId);
     }, "Métadonnées de version mises à jour.");
   }
 
@@ -728,7 +894,7 @@ export default function Admin() {
         "PUT",
         `/manager/${selectedOwnerId}/versions/${versionId}/activate`,
       );
-      await refreshVersions(selectedOwnerId);
+      await refreshVersions(selectedOwnerId, versionId);
     }, "Version activée.");
   }
 
@@ -762,7 +928,7 @@ export default function Admin() {
       );
       setProfileForm(payload);
       setProfileFiles(emptyProfileFiles);
-      await refreshVersions(selectedOwnerId);
+      await refreshVersions(selectedOwnerId, selectedVersionId);
     }, "Profil enregistré avec les fichiers uploadés.");
   }
 
@@ -781,7 +947,7 @@ export default function Admin() {
           experiences,
         },
       );
-      await refreshVersions(selectedOwnerId);
+      await refreshVersions(selectedOwnerId, selectedVersionId);
     }, "Timeline enregistrée.");
   }
 
@@ -799,18 +965,44 @@ export default function Admin() {
         payload,
       );
       setProjectFiles(emptyProjectFiles);
-      setProjectForm((current) => ({
-        ...current,
-        title: "",
-        subtitle: "",
-        shortDescription: "",
-        description: "",
-        imageUrl: "",
-        documentationUrl: "",
-        displayOrder: Number(current.displayOrder) + 1,
-      }));
-      await refreshVersions(selectedOwnerId);
+      await refreshVersions(selectedOwnerId, selectedVersionId);
     }, "Projet ajouté à la version.");
+  }
+
+  async function updateProject() {
+    if (!selectedOwnerId || !selectedVersionId || !selectedProjectId) {
+      setError("Sélectionne un owner, une version et un projet à modifier.");
+      return;
+    }
+
+    await runAction(async () => {
+      const payload = await buildProjectPayload();
+      const updatedProject = await apiRequest(
+        "PUT",
+        `/manager/${selectedOwnerId}/versions/${selectedVersionId}/projects/${selectedProjectId}`,
+        payload,
+      );
+      setProjectFiles(emptyProjectFiles);
+      await refreshVersions(selectedOwnerId, selectedVersionId);
+      setSelectedProjectId(String(getProjectId(updatedProject)));
+      setProjectForm(hydrateProjectForm(updatedProject));
+      setProjectMode("edit");
+    }, "Projet mis à jour.");
+  }
+
+  async function deleteProject() {
+    if (!selectedOwnerId || !selectedVersionId || !selectedProjectId) {
+      setError("Sélectionne un projet à supprimer.");
+      return;
+    }
+
+    await runAction(async () => {
+      await apiRequest(
+        "DELETE",
+        `/manager/${selectedOwnerId}/versions/${selectedVersionId}/projects/${selectedProjectId}`,
+      );
+      await refreshVersions(selectedOwnerId, selectedVersionId);
+    }, "Projet supprimé de la version.");
   }
 
   async function addExperienceLocally() {
@@ -832,9 +1024,8 @@ export default function Admin() {
   }
 
   const activeVersionsCount = versions.filter((version) => version.active).length;
-  const selectedVersionProjectsCount = selectedVersion?.projects?.length ?? 0;
-  const selectedVersionExperiencesCount =
-    selectedVersion?.timeline?.experiences?.length ?? experiences.length;
+  const selectedVersionProjectsCount = projects.length;
+  const selectedVersionExperiencesCount = experiences.length;
 
   return (
     <main ref={rootRef} className="admin-page">
@@ -845,17 +1036,17 @@ export default function Admin() {
       <Stack gap="xl" className="admin-shell">
         <Paper withBorder radius="xl" p="xl" className="admin-hero-card">
           <Group justify="space-between" align="flex-start" gap="xl">
-            <Stack gap="xs" maw={820}>
+            <Stack gap="xs" maw={860}>
               <Badge variant="light" className="admin-kicker">
                 Administration portfolio
               </Badge>
               <Title order={1} className="admin-title">
-                Console de contenu & versions
+                Console de contenu, versions & projets
               </Title>
               <Text c="dimmed" size="lg">
-                Pilote les owners, les versions du site, les fichiers uploadés,
-                le profil, la timeline et les projets. Les assets passent par le
-                backend d’upload avant d’être injectés dans les DTO.
+                Gère le contenu complet du portfolio : versions clonables,
+                profils, fichiers uploadés, expériences et projets éditables un
+                par un. Les modifications passent par les routes admin du back.
               </Text>
             </Stack>
 
@@ -901,7 +1092,7 @@ export default function Admin() {
               <div>
                 <Text fw={800}>Contexte de modification</Text>
                 <Text size="sm" c="dimmed">
-                  Sélectionne un owner puis la version à administrer.
+                  Sélectionne un owner, une version, puis modifie ses blocs de contenu.
                 </Text>
               </div>
 
@@ -959,6 +1150,14 @@ export default function Admin() {
               </Button>
 
               <Button
+                variant="light"
+                onClick={() => refreshProjects()}
+                disabled={!selectedOwnerId || !selectedVersionId}
+              >
+                Recharger projets
+              </Button>
+
+              <Button
                 color="green"
                 onClick={() => activateVersion()}
                 disabled={!selectedOwnerId || !selectedVersionId || selectedVersion?.active}
@@ -979,7 +1178,7 @@ export default function Admin() {
         </Card>
 
         <Card shadow="sm" padding="xl" radius="xl" withBorder className="admin-tabs-card">
-          <Tabs defaultValue="profile" variant="outline" radius="md" className="admin-tabs">
+          <Tabs defaultValue="version" variant="outline" radius="md" className="admin-tabs">
             <Tabs.List>
               <Tabs.Tab value="owner">Owner</Tabs.Tab>
               <Tabs.Tab value="version">Versions</Tabs.Tab>
@@ -994,7 +1193,7 @@ export default function Admin() {
                   <div>
                     <Text fw={800}>Créer un owner avec version initiale</Text>
                     <Text size="sm" c="dimmed">
-                      La première version embarque le profil, la timeline et les fichiers déjà sélectionnés.
+                      La première version embarque le profil, la timeline et les projets actuellement renseignés.
                     </Text>
                   </div>
                   <Badge variant="light">POST /manager</Badge>
@@ -1031,11 +1230,11 @@ export default function Admin() {
 
             <Tabs.Panel value="version" pt="lg">
               <Stack gap="lg">
-                <Group justify="space-between">
+                <Group justify="space-between" align="flex-start">
                   <div>
-                    <Text fw={800}>Créer ou modifier une version</Text>
+                    <Text fw={800}>Créer, cloner ou modifier une version</Text>
                     <Text size="sm" c="dimmed">
-                      L’activation passe toujours par la route dédiée pour garder une seule version active.
+                      Pour éviter de retaper profil, timeline et projets, crée une version en important le contenu d’une version source.
                     </Text>
                   </div>
                   <Badge variant="light">WebsiteVersion</Badge>
@@ -1055,33 +1254,82 @@ export default function Admin() {
                   <Switch label="Published" checked={versionForm.published} onChange={(event) => updateVersionForm("published", event.currentTarget.checked)} />
                 </Group>
 
+                <Paper withBorder p="lg" radius="lg" className="admin-nested-panel">
+                  <Stack gap="md">
+                    <Group justify="space-between" align="flex-start">
+                      <div>
+                        <Text fw={800}>Créer une version depuis une version existante</Text>
+                        <Text size="sm" c="dimmed">
+                          Copie automatiquement le profil, le CV, les images, la timeline et tous les projets.
+                        </Text>
+                      </div>
+                      <Badge variant="light">POST /from/{"{sourceVersionId}"}</Badge>
+                    </Group>
+
+                    <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
+                      <Select
+                        label="Version source à importer"
+                        placeholder="Choisir une version source"
+                        data={versions.map((version) => ({
+                          value: String(getEntityId(version)),
+                          label: `${version.versionTag ?? "version"} — ${version.label ?? "Sans label"}`,
+                        }))}
+                        value={cloneSourceVersionId}
+                        onChange={setCloneSourceVersionId}
+                        searchable
+                      />
+
+                      <Button
+                        onClick={cloneVersion}
+                        disabled={!selectedOwnerId || !cloneSourceVersionId}
+                      >
+                        Créer en important la version source
+                      </Button>
+                    </SimpleGrid>
+                  </Stack>
+                </Paper>
+
                 <Group>
-                  <Button onClick={createVersion} disabled={!selectedOwnerId}>Créer version</Button>
-                  <Button variant="light" onClick={updateVersionMetadata} disabled={!selectedOwnerId || !selectedVersionId}>Modifier métadonnées</Button>
+                  <Button onClick={createVersion} disabled={!selectedOwnerId} variant="light">
+                    Créer depuis les formulaires actuels
+                  </Button>
+                  <Button variant="light" onClick={updateVersionMetadata} disabled={!selectedOwnerId || !selectedVersionId}>
+                    Modifier métadonnées
+                  </Button>
                 </Group>
 
                 <Divider />
 
-                <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+                <Stack gap="sm">
                   {versions.map((version) => (
                     <Card key={getEntityId(version)} withBorder padding="md" radius="lg" className="admin-version-card">
-                      <Stack gap="sm">
-                        <Group justify="space-between" align="flex-start">
-                          <div>
+                      <Group justify="space-between" align="flex-start">
+                        <div>
+                          <Group gap="xs">
                             <Text fw={800}>{version.versionTag} — {version.label}</Text>
-                            <Text size="sm" c="dimmed">{version.description || "Aucune description"}</Text>
-                          </div>
-                          {version.active ? <Badge color="green">Active</Badge> : <Badge color="gray">Inactive</Badge>}
-                        </Group>
+                            {version.active ? <Badge color="green">Active</Badge> : <Badge color="gray">Inactive</Badge>}
+                          </Group>
+                          <Text size="sm" c="dimmed">{version.description}</Text>
+                          <Text size="xs" c="dimmed">
+                            {(version.projects ?? []).length} projet(s) · {(version.timeline?.experiences ?? []).length} expérience(s)
+                          </Text>
+                        </div>
+
                         <Group>
-                          <Button size="xs" variant="light" onClick={() => selectVersion(String(getEntityId(version)))}>Sélectionner</Button>
-                          <Button size="xs" color="green" onClick={() => activateVersion(getEntityId(version))} disabled={version.active}>Activer</Button>
-                          <Button size="xs" color="red" variant="light" onClick={() => deleteVersion(getEntityId(version))} disabled={version.active}>Supprimer</Button>
+                          <Button size="xs" variant="light" onClick={() => selectVersion(String(getEntityId(version)))}>
+                            Sélectionner
+                          </Button>
+                          <Button size="xs" color="green" variant="light" disabled={version.active} onClick={() => activateVersion(getEntityId(version))}>
+                            Activer
+                          </Button>
+                          <Button size="xs" variant="subtle" onClick={() => setCloneSourceVersionId(String(getEntityId(version)))}>
+                            Source
+                          </Button>
                         </Group>
-                      </Stack>
+                      </Group>
                     </Card>
                   ))}
-                </SimpleGrid>
+                </Stack>
               </Stack>
             </Tabs.Panel>
 
@@ -1091,7 +1339,7 @@ export default function Admin() {
                   <div>
                     <Text fw={800}>Profil de la version sélectionnée</Text>
                     <Text size="sm" c="dimmed">
-                      Les images et le CV sont uploadés via le backend avant sauvegarde.
+                      Les fichiers sont uploadés avant l’envoi du DTO profile.
                     </Text>
                   </div>
                   <Badge variant="light">PUT /profile</Badge>
@@ -1100,61 +1348,30 @@ export default function Admin() {
                 <Divider />
 
                 <Paper withBorder p="lg" radius="lg" className="admin-file-panel">
-                  <Stack gap="md">
-                    <Group justify="space-between">
-                      <Text fw={800}>Fichiers du profil</Text>
-                      <Badge variant="light">Upload</Badge>
-                    </Group>
-
-                    <SimpleGrid cols={{ base: 1, md: 3 }} spacing="lg">
-                      <Stack gap="xs">
-                        <FileInput
-                          label="Photo de profil"
-                          placeholder="Uploader une image"
-                          accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                          value={profileFiles.profileImage}
-                          onChange={(file) => setProfileFiles((current) => ({ ...current, profileImage: file }))}
-                        />
-                        <FileLink label="Photo actuelle" url={profileForm.profileImageUrl} />
-                      </Stack>
-
-                      <Stack gap="xs">
-                        <FileInput
-                          label="Logo"
-                          placeholder="Uploader un logo"
-                          accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                          value={profileFiles.logo}
-                          onChange={(file) => setProfileFiles((current) => ({ ...current, logo: file }))}
-                        />
-                        <FileLink label="Logo actuel" url={profileForm.logoUrl} />
-                      </Stack>
-
-                      <Stack gap="xs">
-                        <FileInput
-                          label="CV PDF"
-                          placeholder="Uploader un PDF"
-                          accept="application/pdf"
-                          value={profileFiles.cv}
-                          onChange={(file) => setProfileFiles((current) => ({ ...current, cv: file }))}
-                        />
-                        <FileLink label="CV actuel" url={profileForm.cvUrl} mode="page" />
-                      </Stack>
-                    </SimpleGrid>
-                  </Stack>
+                  <SimpleGrid cols={{ base: 1, md: 3 }} spacing="lg">
+                    <Stack gap="xs">
+                      <FileInput label="Photo de profil" placeholder="Uploader une image" accept="image/png,image/jpeg,image/webp,image/svg+xml" value={profileFiles.profileImage} onChange={(file) => setProfileFiles((current) => ({ ...current, profileImage: file }))} />
+                      <FileLink label="Image actuelle" url={profileForm.profileImageUrl} />
+                    </Stack>
+                    <Stack gap="xs">
+                      <FileInput label="Logo" placeholder="Uploader un logo" accept="image/png,image/jpeg,image/webp,image/svg+xml" value={profileFiles.logo} onChange={(file) => setProfileFiles((current) => ({ ...current, logo: file }))} />
+                      <FileLink label="Logo actuel" url={profileForm.logoUrl} />
+                    </Stack>
+                    <Stack gap="xs">
+                      <FileInput label="CV PDF" placeholder="Uploader un PDF" accept="application/pdf" value={profileFiles.cv} onChange={(file) => setProfileFiles((current) => ({ ...current, cv: file }))} />
+                      <FileLink label="CV actuel" url={profileForm.cvUrl} mode="page" />
+                    </Stack>
+                  </SimpleGrid>
                 </Paper>
 
                 <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
-                  {[
-                    ["title", "Titre"],
-                    ["subtitle", "Sous-titre"],
-                    ["headline", "Headline"],
-                    ["shortDescription", "Description courte"],
-                    ["location", "Localisation"],
-                    ["availability", "Disponibilité"],
-                    ["portfolioUrl", "Portfolio URL"],
-                  ].map(([field, label]) => (
-                    <TextInput key={field} label={label} value={profileForm[field]} onChange={(event) => updateProfileForm(field, event.currentTarget.value)} />
-                  ))}
+                  <TextInput label="Titre" value={profileForm.title} onChange={(event) => updateProfileForm("title", event.currentTarget.value)} />
+                  <TextInput label="Sous-titre" value={profileForm.subtitle} onChange={(event) => updateProfileForm("subtitle", event.currentTarget.value)} />
+                  <TextInput label="Headline" value={profileForm.headline} onChange={(event) => updateProfileForm("headline", event.currentTarget.value)} />
+                  <TextInput label="Description courte" value={profileForm.shortDescription} onChange={(event) => updateProfileForm("shortDescription", event.currentTarget.value)} />
+                  <TextInput label="Localisation" value={profileForm.location} onChange={(event) => updateProfileForm("location", event.currentTarget.value)} />
+                  <TextInput label="Disponibilité" value={profileForm.availability} onChange={(event) => updateProfileForm("availability", event.currentTarget.value)} />
+                  <TextInput label="Portfolio URL" value={profileForm.portfolioUrl} onChange={(event) => updateProfileForm("portfolioUrl", event.currentTarget.value)} />
                 </SimpleGrid>
 
                 <Textarea label="Description complète" minRows={5} value={profileForm.description} onChange={(event) => updateProfileForm("description", event.currentTarget.value)} />
@@ -1198,13 +1415,7 @@ export default function Admin() {
                       <TextInput label="Localisation" value={experienceForm.location} onChange={(event) => updateExperienceForm("location", event.currentTarget.value)} />
                       <TextInput label="Date début" value={experienceForm.startDate} onChange={(event) => updateExperienceForm("startDate", event.currentTarget.value)} />
                       <TextInput label="Date fin" value={experienceForm.endDate} disabled={experienceForm.currentPosition} onChange={(event) => updateExperienceForm("endDate", event.currentTarget.value)} />
-                      <FileInput
-                        label="Image expérience"
-                        placeholder="Uploader une image"
-                        accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                        value={experienceFiles.image}
-                        onChange={(file) => setExperienceFiles({ image: file })}
-                      />
+                      <FileInput label="Image expérience" placeholder="Uploader une image" accept="image/png,image/jpeg,image/webp,image/svg+xml" value={experienceFiles.image} onChange={(file) => setExperienceFiles({ image: file })} />
                       <TextInput label="Site URL" value={experienceForm.websiteUrl} onChange={(event) => updateExperienceForm("websiteUrl", event.currentTarget.value)} />
                       <NumberInput label="Ordre d’affichage" value={experienceForm.displayOrder} onChange={(value) => updateExperienceForm("displayOrder", value ?? 1)} />
                       <TextInput label="Compétences séparées par des virgules" value={experienceForm.skills} onChange={(event) => updateExperienceForm("skills", event.currentTarget.value)} />
@@ -1246,67 +1457,163 @@ export default function Admin() {
 
             <Tabs.Panel value="project" pt="lg">
               <Stack gap="lg">
-                <Group justify="space-between">
+                <Group justify="space-between" align="flex-start">
                   <div>
-                    <Text fw={800}>Ajouter un projet</Text>
+                    <Text fw={800}>Projets de la version</Text>
                     <Text size="sm" c="dimmed">
-                      Ajoute un projet à la version sélectionnée. Image et documentation PDF passent par l’upload.
+                      Affiche, sélectionne, modifie ou supprime chaque projet de la version sélectionnée.
                     </Text>
                   </div>
-                  <Badge variant="light">POST /projects</Badge>
+                  <Badge variant="light">GET/POST/PUT/DELETE /projects</Badge>
                 </Group>
 
                 <Divider />
 
-                <Paper withBorder p="lg" radius="lg" className="admin-file-panel">
-                  <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
-                    <Stack gap="xs">
-                      <FileInput
-                        label="Image du projet"
-                        placeholder="Uploader une image"
-                        accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                        value={projectFiles.image}
-                        onChange={(file) => setProjectFiles((current) => ({ ...current, image: file }))}
-                      />
-                      <FileLink label="Image actuelle" url={projectForm.imageUrl} />
-                    </Stack>
-                    <Stack gap="xs">
-                      <FileInput
-                        label="Documentation PDF"
-                        placeholder="Uploader un PDF"
-                        accept="application/pdf"
-                        value={projectFiles.documentation}
-                        onChange={(file) => setProjectFiles((current) => ({ ...current, documentation: file }))}
-                      />
-                      <FileLink label="Documentation actuelle" url={projectForm.documentationUrl} />
-                    </Stack>
-                  </SimpleGrid>
-                </Paper>
+                <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg" className="admin-project-editor-grid">
+                  <Stack gap="sm">
+                    <Group justify="space-between">
+                      <Text fw={800}>Liste des projets</Text>
+                      <Group gap="xs">
+                        <Badge variant="light">{projects.length}</Badge>
+                        <Button size="xs" variant="light" onClick={() => resetProjectForm()}>
+                          Nouveau
+                        </Button>
+                      </Group>
+                    </Group>
 
-                <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
-                  <TextInput label="Titre" value={projectForm.title} onChange={(event) => updateProjectForm("title", event.currentTarget.value)} />
-                  <TextInput label="Sous-titre" value={projectForm.subtitle} onChange={(event) => updateProjectForm("subtitle", event.currentTarget.value)} />
-                  <Select label="Statut" data={projectStatuses} value={projectForm.status} onChange={(value) => updateProjectForm("status", value ?? "IN_PROGRESS")} />
-                  <NumberInput label="Ordre d’affichage" value={projectForm.displayOrder} onChange={(value) => updateProjectForm("displayOrder", value ?? 1)} />
-                  <TextInput label="Date début" value={projectForm.startDate} onChange={(event) => updateProjectForm("startDate", event.currentTarget.value)} />
-                  <TextInput label="Date fin" value={projectForm.endDate} onChange={(event) => updateProjectForm("endDate", event.currentTarget.value)} />
-                  <TextInput label="Demo URL" value={projectForm.demoUrl} onChange={(event) => updateProjectForm("demoUrl", event.currentTarget.value)} />
-                  <TextInput label="GitHub URL" value={projectForm.githubUrl} onChange={(event) => updateProjectForm("githubUrl", event.currentTarget.value)} />
-                  <TextInput label="Stacks séparées par des virgules" value={projectForm.stacks} onChange={(event) => updateProjectForm("stacks", event.currentTarget.value)} />
-                  <TextInput label="Features séparées par des virgules" value={projectForm.features} onChange={(event) => updateProjectForm("features", event.currentTarget.value)} />
+                    {projects.length === 0 && (
+                      <Alert variant="light">
+                        Aucun projet dans cette version pour le moment.
+                      </Alert>
+                    )}
+
+                    {projects.map((project) => {
+                      const projectId = getProjectId(project);
+                      const isSelected = String(projectId) === String(selectedProjectId);
+
+                      return (
+                        <Card
+                          key={projectId}
+                          withBorder
+                          padding="md"
+                          radius="lg"
+                          className={`admin-list-card admin-project-row ${isSelected ? "is-selected" : ""}`}
+                        >
+                          <Group justify="space-between" align="flex-start">
+                            <Stack gap={4}>
+                              <Group gap="xs">
+                                <Text fw={800}>{project.displayOrder ?? "—"}. {project.title}</Text>
+                                {project.featured && <Badge color="cyan" variant="light">Featured</Badge>}
+                                {!project.published && <Badge color="gray" variant="light">Draft</Badge>}
+                              </Group>
+                              <Text size="sm" c="dimmed">{project.subtitle}</Text>
+                              <Text size="xs" c="dimmed">
+                                {(project.stacks ?? []).slice(0, 5).join(" · ")}
+                              </Text>
+                              <Group gap="xs">
+                                {project.imageUrl && <FileLink label="Image" url={project.imageUrl} />}
+                                {project.documentationUrl && <FileLink label="Doc" url={project.documentationUrl} />}
+                              </Group>
+                            </Stack>
+
+                            <Stack gap="xs" align="flex-end">
+                              <Button size="xs" variant={isSelected ? "filled" : "light"} onClick={() => selectProject(String(projectId))}>
+                                Modifier
+                              </Button>
+                              <Button size="xs" variant="subtle" onClick={() => {
+                                const copiedProject = hydrateProjectForm(project);
+                                setProjectMode("create");
+                                setSelectedProjectId(null);
+                                setProjectForm({
+                                  ...copiedProject,
+                                  title: copiedProject.title
+                                    ? `${copiedProject.title} — copie`
+                                    : emptyProjectForm.title,
+                                  displayOrder: projects.length + 1,
+                                });
+                                setProjectFiles(emptyProjectFiles);
+                              }}>
+                                Copier
+                              </Button>
+                            </Stack>
+                          </Group>
+                        </Card>
+                      );
+                    })}
+                  </Stack>
+
+                  <Stack gap="lg">
+                    <Paper withBorder p="lg" radius="lg" className="admin-file-panel">
+                      <Group justify="space-between" align="flex-start">
+                        <div>
+                          <Text fw={800}>{projectMode === "edit" ? "Modifier le projet" : "Ajouter un projet"}</Text>
+                          <Text size="sm" c="dimmed">
+                            {projectMode === "edit"
+                              ? `Projet sélectionné : ${selectedProject?.title ?? selectedProjectId}`
+                              : "Le nouveau projet sera ajouté à la version courante."}
+                          </Text>
+                        </div>
+                        <Badge color={projectMode === "edit" ? "blue" : "green"} variant="light">
+                          {projectMode === "edit" ? "édition" : "création"}
+                        </Badge>
+                      </Group>
+
+                      <Divider my="md" />
+
+                      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
+                        <Stack gap="xs">
+                          <FileInput label="Image du projet" placeholder="Uploader une image" accept="image/png,image/jpeg,image/webp,image/svg+xml" value={projectFiles.image} onChange={(file) => setProjectFiles((current) => ({ ...current, image: file }))} />
+                          <FileLink label="Image actuelle" url={projectForm.imageUrl} />
+                        </Stack>
+                        <Stack gap="xs">
+                          <FileInput label="Documentation PDF" placeholder="Uploader un PDF" accept="application/pdf" value={projectFiles.documentation} onChange={(file) => setProjectFiles((current) => ({ ...current, documentation: file }))} />
+                          <FileLink label="Documentation actuelle" url={projectForm.documentationUrl} />
+                        </Stack>
+                      </SimpleGrid>
+                    </Paper>
+
+                    <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
+                      <TextInput label="Titre" value={projectForm.title} onChange={(event) => updateProjectForm("title", event.currentTarget.value)} />
+                      <TextInput label="Sous-titre" value={projectForm.subtitle} onChange={(event) => updateProjectForm("subtitle", event.currentTarget.value)} />
+                      <Select label="Statut" data={projectStatuses} value={projectForm.status} onChange={(value) => updateProjectForm("status", value ?? "IN_PROGRESS")} />
+                      <NumberInput label="Ordre d’affichage" value={projectForm.displayOrder} onChange={(value) => updateProjectForm("displayOrder", value ?? 1)} />
+                      <TextInput label="Date début" value={projectForm.startDate} onChange={(event) => updateProjectForm("startDate", event.currentTarget.value)} />
+                      <TextInput label="Date fin" value={projectForm.endDate} onChange={(event) => updateProjectForm("endDate", event.currentTarget.value)} />
+                      <TextInput label="Demo URL" value={projectForm.demoUrl} onChange={(event) => updateProjectForm("demoUrl", event.currentTarget.value)} />
+                      <TextInput label="GitHub URL" value={projectForm.githubUrl} onChange={(event) => updateProjectForm("githubUrl", event.currentTarget.value)} />
+                      <TextInput label="Stacks séparées par des virgules" value={projectForm.stacks} onChange={(event) => updateProjectForm("stacks", event.currentTarget.value)} />
+                      <TextInput label="Features séparées par des virgules" value={projectForm.features} onChange={(event) => updateProjectForm("features", event.currentTarget.value)} />
+                    </SimpleGrid>
+
+                    <Textarea label="Description courte" minRows={2} value={projectForm.shortDescription} onChange={(event) => updateProjectForm("shortDescription", event.currentTarget.value)} />
+                    <Textarea label="Description complète" minRows={5} value={projectForm.description} onChange={(event) => updateProjectForm("description", event.currentTarget.value)} />
+
+                    <Group>
+                      <Checkbox label="Featured" checked={projectForm.featured} onChange={(event) => updateProjectForm("featured", event.currentTarget.checked)} />
+                      <Checkbox label="Published" checked={projectForm.published} onChange={(event) => updateProjectForm("published", event.currentTarget.checked)} />
+                    </Group>
+
+                    <Group>
+                      {projectMode === "edit" ? (
+                        <>
+                          <Button onClick={updateProject} disabled={!selectedOwnerId || !selectedVersionId || !selectedProjectId}>
+                            Enregistrer les modifications
+                          </Button>
+                          <Button color="red" variant="light" onClick={deleteProject} disabled={!selectedProjectId}>
+                            Supprimer ce projet
+                          </Button>
+                          <Button variant="subtle" onClick={() => resetProjectForm()}>
+                            Repasser en création
+                          </Button>
+                        </>
+                      ) : (
+                        <Button onClick={addProject} disabled={!selectedOwnerId || !selectedVersionId}>
+                          Ajouter projet à la version
+                        </Button>
+                      )}
+                    </Group>
+                  </Stack>
                 </SimpleGrid>
-
-                <Textarea label="Description courte" minRows={2} value={projectForm.shortDescription} onChange={(event) => updateProjectForm("shortDescription", event.currentTarget.value)} />
-                <Textarea label="Description complète" minRows={5} value={projectForm.description} onChange={(event) => updateProjectForm("description", event.currentTarget.value)} />
-
-                <Group>
-                  <Checkbox label="Featured" checked={projectForm.featured} onChange={(event) => updateProjectForm("featured", event.currentTarget.checked)} />
-                  <Checkbox label="Published" checked={projectForm.published} onChange={(event) => updateProjectForm("published", event.currentTarget.checked)} />
-                </Group>
-
-                <Button onClick={addProject} disabled={!selectedOwnerId || !selectedVersionId}>
-                  Ajouter projet à la version
-                </Button>
               </Stack>
             </Tabs.Panel>
           </Tabs>
