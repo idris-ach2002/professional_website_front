@@ -41,22 +41,41 @@ function ProjectVisual({ project, index }) {
   );
 }
 
+function getProjectLinks(project) {
+  const rawLinks = [
+    project.githubUrl && { label: "GitHub", url: project.githubUrl, type: "GITHUB" },
+    project.demoUrl && { label: "Démo", url: project.demoUrl, type: "DEMO" },
+    project.documentationUrl && { label: "Docs", url: project.documentationUrl, type: "DOCUMENTATION" },
+    ...(project.links ?? []).map((link) => ({
+      label: link.label || LINK_LABELS[link.type] || "Lien",
+      url: link.url,
+      type: link.type || link.label || "CUSTOM",
+    })),
+  ].filter((link) => link?.url);
+
+  const seen = new Set();
+
+  return rawLinks.filter((link) => {
+    const key = `${link.type}|${link.label}|${normalizeUrl(link.url)}`.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function ProjectLinks({ project }) {
-  const links = [
-    project.githubUrl && { label: "GitHub", url: project.githubUrl },
-    project.demoUrl && { label: "Démo", url: project.demoUrl },
-    project.documentationUrl && { label: "Docs", url: project.documentationUrl },
-    ...(project.links ?? []).map((link) => ({ label: link.label || LINK_LABELS[link.type] || "Lien", url: link.url })),
-  ].filter(Boolean);
+  const links = getProjectLinks(project);
 
   if (links.length === 0) return null;
 
   return (
     <Group gap="xs" className="project-links">
-      {links.slice(0, 5).map((link) =>
-        isPreviewableFile(link.url) ? (
+      {links.slice(0, 5).map((link, index) => {
+        const key = `${project.id ?? project.title ?? "project"}-${link.type}-${index}-${normalizeUrl(link.url)}`;
+
+        return isPreviewableFile(link.url) ? (
           <FilePreviewButton
-            key={`${link.label}-${link.url}`}
+            key={key}
             url={link.url}
             label={link.label}
             title={`${link.label} — ${project.title}`}
@@ -67,15 +86,15 @@ function ProjectLinks({ project }) {
           />
         ) : (
           <Anchor
-            key={`${link.label}-${link.url}`}
+            key={key}
             href={normalizeUrl(link.url)}
             target="_blank"
             className="project-link"
           >
             {link.label}
           </Anchor>
-        ),
-      )}
+        );
+      })}
     </Group>
   );
 }
@@ -106,16 +125,16 @@ function ProjectIsland({ project, index, featured, total }) {
 
               {project.features?.length > 0 && (
                 <ul className="feature-list two-columns">
-                  {project.features.slice(0, featured ? 6 : 5).map((feature) => (
-                    <li key={feature}>{feature}</li>
+                  {project.features.slice(0, featured ? 6 : 5).map((feature, featureIndex) => (
+                    <li key={`${project.id ?? project.title}-feature-${featureIndex}-${feature}`}>{feature}</li>
                   ))}
                 </ul>
               )}
 
               {project.stacks?.length > 0 && (
                 <Group gap={7} className="stack-row project-stack-row">
-                  {project.stacks.slice(0, featured ? 10 : 8).map((stack) => (
-                    <Badge key={stack} variant="outline" className="stack-badge">
+                  {project.stacks.slice(0, featured ? 10 : 8).map((stack, stackIndex) => (
+                    <Badge key={`${project.id ?? project.title}-stack-${stackIndex}-${stack}`} variant="outline" className="stack-badge">
                       {stack}
                     </Badge>
                   ))}
@@ -357,15 +376,18 @@ function ProjectGallery({ projects }) {
   useGsap(galleryRef, (gsap) => {
     const root = galleryRef.current;
 
-    gsap.to(root.querySelectorAll(".project-wave-band path"), {
-      xPercent: (index) => (index % 2 ? 8 : -8),
-      yPercent: (index) => (index % 2 ? -4 : 4),
-      duration: (index) => 5.5 + index,
-      repeat: -1,
-      yoyo: true,
-      ease: "sine.inOut",
-      stagger: 0.2,
-    });
+    const wavePaths = root.querySelectorAll(".project-wave-band path");
+    if (wavePaths.length > 0) {
+      gsap.to(wavePaths, {
+        xPercent: (index) => (index % 2 ? 8 : -8),
+        yPercent: (index) => (index % 2 ? -4 : 4),
+        duration: (index) => 5.5 + index,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+        stagger: 0.2,
+      });
+    }
   }, [projects.length]);
 
   useEffect(() => {
@@ -545,13 +567,16 @@ export default function ProjectsShowcase({ projects }) {
     const root = rootRef.current;
     if (!ScrollTrigger || !root) return undefined;
 
-    gsap.from(root.querySelector(".project-toolbar"), {
-      autoAlpha: 0,
-      y: 28,
-      duration: 0.56,
-      ease: "power3.out",
-      scrollTrigger: { trigger: root, start: "top 72%", toggleActions: "play none none none" },
-    });
+    const toolbar = root.querySelector(".project-toolbar");
+    if (toolbar) {
+      gsap.from(toolbar, {
+        autoAlpha: 0,
+        y: 28,
+        duration: 0.56,
+        ease: "power3.out",
+        scrollTrigger: { trigger: root, start: "top 72%", toggleActions: "play none none none" },
+      });
+    }
 
     return undefined;
   }, []);

@@ -47,16 +47,19 @@ export default function OceanMorphBackground() {
 
     gsap.set(root, { autoAlpha: 1 });
     
-    gsap.to(root.querySelectorAll(".ocean-glow"), {
-      xPercent: (index) => (index % 2 === 0 ? 4 : -4),
-      yPercent: (index) => (index % 2 === 0 ? -3 : 3),
-      scale: 1.06,
-      duration: 7,
-      repeat: -1,
-      yoyo: true,
-      ease: "sine.inOut",
-      stagger: 0.9,
-    });
+    const glows = root.querySelectorAll(".ocean-glow");
+    if (glows.length > 0) {
+      gsap.to(glows, {
+        xPercent: (index) => (index % 2 === 0 ? 4 : -4),
+        yPercent: (index) => (index % 2 === 0 ? -3 : 3),
+        scale: 1.06,
+        duration: 7,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+        stagger: 0.9,
+      });
+    }
 
     if (ribbon && !reducedMotion) {
       gsap.to(ribbon, {
