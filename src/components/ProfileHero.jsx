@@ -1,13 +1,13 @@
-import { Anchor, Badge, Button, Card, Divider, Group, Image, RingProgress, SimpleGrid, Stack, Text, Title } from "@mantine/core";
+import { Anchor, Badge, Button, Card, Group, RingProgress, Stack, Text, Title } from "@mantine/core";
 import { useRef } from "react";
 import { useGsap } from "../animations/useGsap";
+import { PreviewableImage } from "./FilePreview";
 import {
   CONTACT_LABELS,
   getContactHref,
   getInitials,
   getOwnerFullName,
   getPrimaryContact,
-  normalizeUrl,
 } from "../utils/portfolio";
 
 function AnimatedTitle({ title, headline }) {
@@ -45,7 +45,13 @@ function ProfilePortrait({ owner, profile }) {
   return (
     <Card className="portrait-card island-card" radius="xl">
       {profile?.profileImageUrl ? (
-        <Image src={profile.profileImageUrl} alt={fullName} className="portrait-image" />
+        <PreviewableImage
+          src={profile.profileImageUrl}
+          alt={fullName}
+          className="portrait-preview-trigger"
+          imageClassName="portrait-image"
+          modalTitle={`Portrait — ${fullName}`}
+        />
       ) : (
         <div className="portrait-placeholder">{getInitials(owner)}</div>
       )}
@@ -116,7 +122,14 @@ export default function ProfileHero({ owner, profile }) {
 
         <Group className="hero-actions">
           {profile?.cvUrl && profile.cvUrl !== "#" && (
-            <Button component="a" href={normalizeUrl(profile.cvUrl)} target="_blank" radius="xl" className="primary-action">
+            <Button
+              component="a"
+              href="/cv"
+              target="_blank"
+              rel="noreferrer"
+              radius="xl"
+              className="primary-action"
+            >
               Voir le CV
             </Button>
           )}

@@ -1,7 +1,9 @@
-import { Anchor, Badge, Button, Card, Group, Image, MultiSelect, Stack, Text, TextInput, Title } from "@mantine/core";
+import { Anchor, Badge, Button, Card, Group, MultiSelect, Stack, Text, TextInput, Title } from "@mantine/core";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { gsapReady, useGsap } from "../animations/useGsap";
 import SectionTitle from "./SectionTitle";
+import { FilePreviewButton, PreviewableImage } from "./FilePreview";
+import { isPreviewableFile } from "../utils/filePreview";
 import {
   LINK_LABELS,
   STATUS_LABELS,
@@ -15,7 +17,15 @@ import {
 
 function ProjectVisual({ project, index }) {
   if (project.imageUrl) {
-    return <Image src={project.imageUrl} alt={project.title} className="project-image" />;
+    return (
+      <PreviewableImage
+        src={project.imageUrl}
+        alt={project.title}
+        className="project-visual project-image-preview-trigger"
+        imageClassName="project-image"
+        modalTitle={`Projet — ${project.title}`}
+      />
+    );
   }
 
   return (
@@ -43,11 +53,29 @@ function ProjectLinks({ project }) {
 
   return (
     <Group gap="xs" className="project-links">
-      {links.slice(0, 5).map((link) => (
-        <Anchor key={`${link.label}-${link.url}`} href={normalizeUrl(link.url)} target="_blank" className="project-link">
-          {link.label}
-        </Anchor>
-      ))}
+      {links.slice(0, 5).map((link) =>
+        isPreviewableFile(link.url) ? (
+          <FilePreviewButton
+            key={`${link.label}-${link.url}`}
+            url={link.url}
+            label={link.label}
+            title={`${link.label} — ${project.title}`}
+            mode={link.label?.toLowerCase().includes("cv") ? "page" : "modal"}
+            variant="subtle"
+            size="xs"
+            className="project-link project-link-button"
+          />
+        ) : (
+          <Anchor
+            key={`${link.label}-${link.url}`}
+            href={normalizeUrl(link.url)}
+            target="_blank"
+            className="project-link"
+          >
+            {link.label}
+          </Anchor>
+        ),
+      )}
     </Group>
   );
 }

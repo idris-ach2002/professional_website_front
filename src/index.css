@@ -1770,3 +1770,162 @@ body::before {
   .admin-hero-actions { width: 100%; }
   .admin-hero-actions .mantine-Button-root { width: 100%; }
 }
+
+/* File previews: images open in modal, PDFs open in modal or dedicated CV page. */
+.file-preview-image-trigger,
+.project-image-preview-trigger,
+.portrait-preview-trigger,
+.timeline-image-preview-trigger {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  background: transparent;
+  cursor: zoom-in;
+  appearance: none;
+}
+
+.file-preview-overlay {
+  position: absolute;
+  inset: auto 12px 12px auto;
+  z-index: 2;
+  padding: 7px 11px;
+  border: 1px solid rgba(255, 255, 255, .36);
+  border-radius: 999px;
+  color: #fff;
+  font-size: .74rem;
+  font-weight: 800;
+  letter-spacing: .02em;
+  background: rgba(15, 23, 42, .54);
+  backdrop-filter: blur(12px);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity .2s ease, transform .2s ease;
+}
+
+.file-preview-image-trigger:hover .file-preview-overlay,
+.project-image-preview-trigger:hover .file-preview-overlay,
+.portrait-preview-trigger:hover .file-preview-overlay,
+.timeline-image-preview-trigger:hover .file-preview-overlay {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.file-preview-modal {
+  border: 1px solid rgba(14, 116, 144, .16);
+  border-radius: 28px !important;
+  background: rgba(255, 255, 255, .92) !important;
+  backdrop-filter: blur(22px) saturate(1.08);
+  box-shadow: 0 38px 120px rgba(15, 23, 42, .24);
+}
+
+.file-preview-modal-body {
+  padding-top: 12px;
+}
+
+.file-preview-full-image {
+  max-height: 76vh;
+  width: 100%;
+  border-radius: 22px;
+  background: rgba(2, 6, 23, .04);
+  object-fit: contain;
+}
+
+.file-preview-pdf-modal {
+  max-width: min(1120px, 94vw);
+}
+
+.file-preview-pdf-frame-shell {
+  height: min(76vh, 860px);
+  overflow: hidden;
+  border: 1px solid rgba(14, 116, 144, .16);
+  border-radius: 22px;
+  background: #fff;
+}
+
+.file-preview-pdf-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+
+.project-link-button {
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  color: inherit !important;
+  background: transparent !important;
+  font: inherit !important;
+}
+
+.timeline-image-preview-trigger {
+  margin: 4px 0 8px;
+  border-radius: 22px;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, .12);
+}
+
+.timeline-image {
+  height: 190px;
+  width: 100%;
+  object-fit: cover;
+}
+
+.cv-page-shell {
+  min-height: 100vh;
+}
+
+.cv-page-content {
+  position: relative;
+  z-index: 1;
+  padding-top: 110px;
+  padding-bottom: 72px;
+}
+
+.cv-page-heading,
+.cv-preview-card {
+  padding: clamp(22px, 4vw, 42px);
+  border: 1px solid rgba(14, 116, 144, .14);
+  border-radius: 34px;
+  background: rgba(255, 255, 255, .78);
+  backdrop-filter: blur(20px) saturate(1.12);
+  box-shadow: 0 28px 90px rgba(14, 116, 144, .11);
+}
+
+.cv-page-heading h1 {
+  font-size: clamp(2.4rem, 6vw, 5.8rem);
+  line-height: .9;
+  letter-spacing: -.07em;
+}
+
+.cv-page-actions {
+  position: sticky;
+  top: 16px;
+  z-index: 4;
+  padding: 12px;
+  border: 1px solid rgba(14, 116, 144, .14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .72);
+  backdrop-filter: blur(18px);
+  width: fit-content;
+}
+
+.admin-file-current-line {
+  padding-top: 4px;
+}
+
+.admin-file-preview-button {
+  font-weight: 800;
+}
+
+@media (max-width: 768px) {
+  .cv-page-content { padding-top: 82px; }
+  .cv-page-actions { position: static; border-radius: 24px; width: 100%; }
+  .cv-page-actions .mantine-Button-root { flex: 1 1 100%; }
+  .file-preview-pdf-frame-shell { height: 68vh; }
+  .timeline-image { height: 150px; }
+}

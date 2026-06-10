@@ -2,6 +2,7 @@ import { Anchor, Badge, Card, Group, Stack, Text, Title } from "@mantine/core";
 import { useRef, useMemo } from "react";
 import { useGsap } from "../animations/useGsap";
 import SectionTitle from "./SectionTitle";
+import { PreviewableImage } from "./FilePreview";
 import { CATEGORY_LABELS, formatPeriod, normalizeUrl } from "../utils/portfolio";
 
 const categoryClasses = {
@@ -160,6 +161,15 @@ export default function PortfolioTimeline({ timeline, experiences }) {
                 <Text className="timeline-period">
                   {formatPeriod(experience.startDate, experience.endDate, experience.currentPosition)}
                 </Text>
+                {experience.imageUrl && (
+                  <PreviewableImage
+                    src={experience.imageUrl}
+                    alt={experience.title}
+                    className="timeline-image-preview-trigger"
+                    imageClassName="timeline-image"
+                    modalTitle={`Expérience — ${experience.title}`}
+                  />
+                )}
                 <Text className="timeline-summary">{experience.summary}</Text>
                 {experience.description && (
                   <Text className="timeline-description">{experience.description}</Text>

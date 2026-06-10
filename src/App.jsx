@@ -10,6 +10,7 @@ import StatusBanner from "./components/StatusBanner";
 import TopNavigation from "./components/TopNavigation";
 
 import Admin from "./components/Admin";
+import CvPage from "./components/CvPage";
 
 import { loadPortfolio } from "./services/portfolioApi";
 import { getOwnerFullName, sortByDisplayOrder } from "./utils/portfolio";
@@ -171,7 +172,9 @@ export default function App() {
       />
 
       <Route path="/admin" element={<Admin />} />
+      <Route path="/cv" element={<CvPage owner={owner} profile={profile} />} />
 
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

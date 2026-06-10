@@ -1,6 +1,5 @@
 import {
   Alert,
-  Anchor,
   Badge,
   Button,
   Card,
@@ -23,6 +22,7 @@ import {
 } from "@mantine/core";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useGsap } from "../animations/useGsap";
+import { FilePreviewButton } from "./FilePreview";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const UPLOAD_ENDPOINT = import.meta.env.VITE_UPLOAD_ENDPOINT ?? "/uploads/";
@@ -310,16 +310,22 @@ function hydrateExperiences(timeline) {
   }));
 }
 
-function FileLink({ label, url }) {
+function FileLink({ label, url, mode = "modal" }) {
   if (!url) return null;
 
   return (
-    <Text size="xs" c="dimmed">
-      {label} : {" "}
-      <Anchor href={url} target="_blank" rel="noreferrer">
-        ouvrir le fichier actuel
-      </Anchor>
-    </Text>
+    <Group gap="xs" align="center" className="admin-file-current-line">
+      <Text size="xs" c="dimmed">{label}</Text>
+      <FilePreviewButton
+        url={url}
+        label="Voir"
+        title={label}
+        mode={mode}
+        size="compact-xs"
+        variant="light"
+        className="admin-file-preview-button"
+      />
+    </Group>
   );
 }
 
@@ -1131,7 +1137,7 @@ export default function Admin() {
                           value={profileFiles.cv}
                           onChange={(file) => setProfileFiles((current) => ({ ...current, cv: file }))}
                         />
-                        <FileLink label="CV actuel" url={profileForm.cvUrl} />
+                        <FileLink label="CV actuel" url={profileForm.cvUrl} mode="page" />
                       </Stack>
                     </SimpleGrid>
                   </Stack>

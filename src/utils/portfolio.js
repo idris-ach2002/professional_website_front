@@ -67,15 +67,24 @@ export function sortByDisplayOrder(items = []) {
 
 export function normalizeUrl(value) {
   if (!value || value === "#") return value;
+
+  const url = String(value).trim();
+
   if (
-    value.startsWith("http://") ||
-    value.startsWith("https://") ||
-    value.startsWith("mailto:") ||
-    value.startsWith("tel:")
+    url.startsWith("http://") ||
+    url.startsWith("https://") ||
+    url.startsWith("mailto:") ||
+    url.startsWith("tel:") ||
+    url.startsWith("/") ||
+    url.startsWith("./") ||
+    url.startsWith("../") ||
+    url.startsWith("blob:") ||
+    url.startsWith("data:")
   ) {
-    return value;
+    return url;
   }
-  return `https://${value}`;
+
+  return `https://${url}`;
 }
 
 export function getContactHref(contact) {
