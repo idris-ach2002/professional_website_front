@@ -23,20 +23,20 @@ async function requestJson(path) {
   }
 }
 
-export async function fetchOwners() {
-  const owners = await requestJson("/manager");
-  if (!Array.isArray(owners) || owners.length === 0) {
-    throw new Error("Aucun owner retourné par /manager");
+export async function fetchWebsite() {
+  const owner = await requestJson("/website/default");
+  if (!owner) {
+    throw new Error("Aucun owner retourné trouvé dans l'API");
   }
-  return owners;
+  return owner;
 }
 
 export async function loadPortfolio() {
   try {
-    const owners = await fetchOwners();
+    const owner = await fetchWebsite();
     return {
-      owners,
-      owner: owners[0],
+      owners: [owner],
+      owner: owner,
       source: "api",
       error: null,
     };

@@ -9,8 +9,9 @@ export default defineConfig(({ mode }) => {
     plugins: [react(), tailwindcss()],
     server: {
       proxy: {
-        '/api': env.VITE_API_PROXY_TARGET || 'http://localhost:8080',
+        '/website': env.VITE_API_PROXY_TARGET || 'http://localhost:8080',
         '/manager': env.VITE_API_PROXY_TARGET || 'http://localhost:8080',
+        '/uploads': env.VITE_API_PROXY_TARGET || 'http://localhost:8080',
       },
     },
     build: {
