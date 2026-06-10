@@ -22,7 +22,7 @@ import { gsapReady } from "../../animations/useGsap";
 
 const MODEL_PATH = "/models/ABSTRACT_SHAPES.glb";
 
-const SHAPE_COUNT = 32;
+const SHAPE_COUNT = 40;
 const SPAWN_SPREAD_X = 34;
 const SPAWN_SPREAD_Y = 19;
 const SPAWN_SPREAD_Z = 16;
@@ -33,12 +33,63 @@ const CENTER_PULL_Z = 48;
 const CLICK_IMPULSE = 12;
 
 const COLOR_SCHEMES = [
-  ["#4080ff", "#40d0ff", "#40ffe0", "#7efcff"],
-  ["#ff6b6b", "#ff9e7a", "#ffc078", "#ffd6a5"],
-  ["#8040ff", "#c040ff", "#ff40d0", "#f0abfc"],
-  ["#00b894", "#00cec9", "#55efc4", "#81ecec"],
-  ["#f72585", "#b5179e", "#7209b7", "#560bad"],
-  ["#ffffff", "#dbeafe", "#bfdbfe", "#93c5fd"],
+  // Clear water
+  ["#ffffff", "#e0f7ff", "#bae6fd", "#38bdf8"],
+  // Ice drop
+  ["#f8fafc", "#e0f2fe", "#7dd3fc", "#0284c7"],
+  // Aqua pearl
+  ["#ffffff", "#ccfbf1", "#99f6e4", "#14b8a6"],
+  // Blue crystal
+  ["#eff6ff", "#dbeafe", "#93c5fd", "#2563eb"],
+  // Opal glass
+  ["#ffffff", "#f0fdfa", "#a7f3d0", "#22d3ee"],
+  // Glacier blue
+  ["#e0f7ff", "#bae6fd", "#7dd3fc", "#38bdf8"],
+  // Pearl ocean
+  ["#f8fafc", "#dbeafe", "#bfdbfe", "#60a5fa"],
+  // Aqua glass
+  ["#ecfeff", "#cffafe", "#67e8f9", "#22d3ee"],
+  // Mint water
+  ["#f0fdfa", "#ccfbf1", "#99f6e4", "#2dd4bf"],
+  // Ice violet
+  ["#f5f3ff", "#ddd6fe", "#c4b5fd", "#8b5cf6"],
+  // Soft cyan / blue
+  ["#f0f9ff", "#e0f2fe", "#7dd3fc", "#0ea5e9"],
+  // White glass / blue edge
+  ["#ffffff", "#eff6ff", "#bfdbfe", "#3b82f6"],
+  // Opal
+  ["#f8fafc", "#e0f2fe", "#bae6fd", "#5eead4"],
+
+    // Ocean luxury
+  ["#001219", "#005f73", "#0a9396", "#94d2bd"],
+  ["#03045e", "#023e8a", "#0077b6", "#48cae4"],
+  ["#001f2d", "#003f5c", "#2f4b7c", "#00b4d8"],
+  ["#06283d", "#1363df", "#47b5ff", "#dff6ff"],
+
+  // Deep tech
+  ["#020617", "#0f172a", "#1e3a8a", "#38bdf8"],
+  ["#111827", "#1f2937", "#334155", "#06b6d4"],
+  ["#0b1120", "#172554", "#1d4ed8", "#60a5fa"],
+  
+  // Abyss / bioluminescent
+  ["#00111c", "#003049", "#006466", "#22d3ee"],
+  ["#010b13", "#012a36", "#014f5f", "#2dd4bf"],
+  ["#020617", "#083344", "#155e75", "#67e8f9"],
+  ["#001524", "#15616d", "#00b4d8", "#9bf6ff"],
+
+  // Glassmorphism bleu/violet
+  ["#0f172a", "#1e1b4b", "#3730a3", "#7dd3fc"],
+  ["#111827", "#312e81", "#4f46e5", "#a5b4fc"],
+  ["#020617", "#3b0764", "#6d28d9", "#c084fc"],
+  ["#0b1026", "#1d267d", "#5c469c", "#d4adfc"],
+
+  // Emerald ocean
+  ["#022c22", "#064e3b", "#047857", "#5eead4"],
+  ["#042f2e", "#115e59", "#0f766e", "#99f6e4"],
+  ["#062e2e", "#134e4a", "#14b8a6", "#ccfbf1"],
+  ["#001c1a", "#005f56", "#00897b", "#80cbc4"],
+
+  // 
 ];
 
 const MATERIAL_TYPES = [
