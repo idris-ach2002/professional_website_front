@@ -102,17 +102,15 @@ function getProjectPreview(project, limit = 260) {
   return `${source.slice(0, limit).trim()}…`;
 }
 
-function shouldShowProjectDetails(project, featured) {
-  const featureLimit = featured ? 4 : 3;
-  const stackLimit = featured ? 8 : 6;
+function shouldShowProjectDetails(project) {
   const preview = getProjectPreview(project);
   const fullDescription = project.description || project.shortDescription || "";
 
   return (
     fullDescription.length > preview.length ||
     Boolean(project.shortDescription && project.description && project.description !== project.shortDescription) ||
-    (project.features?.length ?? 0) > featureLimit ||
-    (project.stacks?.length ?? 0) > stackLimit ||
+    (project.features?.length ?? 0) > 0 ||
+    (project.stacks?.length ?? 0) > 0 ||
     getProjectLinks(project).length > 5
   );
 }
@@ -274,10 +272,8 @@ function ProjectDetailsModal({ project, opened, onClose }) {
 
 
 function ProjectIsland({ project, index, featured, total, active, onOpenDetails }) {
-  const featureLimit = featured ? 4 : 3;
-  const stackLimit = featured ? 8 : 6;
   const { cardRef, contentRef, hasOverflow } = useCardOverflowSignal(project, active);
-  const showDetails = shouldShowProjectDetails(project, featured) || hasOverflow;
+  const showDetails = shouldShowProjectDetails(project) || hasOverflow;
 
   return (
     <article className={`project-carousel-panel ${showDetails ? "has-project-details" : ""}`}>
@@ -302,37 +298,40 @@ function ProjectIsland({ project, index, featured, total, active, onOpenDetails 
               {project.subtitle && <Text className="project-subtitle">{project.subtitle}</Text>}
               <Text className="project-description">{getProjectPreview(project)}</Text>
 
-              {project.features?.length > 0 && (
-                <ul className="feature-list two-columns">
-                  {project.features.slice(0, featureLimit).map((feature, featureIndex) => (
-                    <li key={`${project.id ?? project.title}-feature-${featureIndex}-${feature}`}>{feature}</li>
-                  ))}
-                </ul>
-              )}
-
-              {project.stacks?.length > 0 && (
-                <Group gap={7} className="stack-row project-stack-row">
-                  {project.stacks.slice(0, stackLimit).map((stack, stackIndex) => (
-                    <Badge key={`${project.id ?? project.title}-stack-${stackIndex}-${stack}`} variant="outline" className="stack-badge">
-                      {stack}
-                    </Badge>
-                  ))}
-                </Group>
-              )}
-
               <Group gap="xs" className="project-card-actions">
                 <ProjectLinks project={project} />
                 {showDetails && (
-                  <Button
+                  <button
                     type="button"
-                    radius="xl"
-                    size="xs"
-                    variant="light"
-                    className="project-read-more"
-                    onClick={() => onOpenDetails(project)}
+                    className="project-read-more project-details-button"
+                    onPointerDown={(event) => {
+                      if (event.pointerType === "mouse" && event.button !== 0) return;
+                      event.stopPropagation();
+                      event.currentTarget.setPointerCapture?.(event.pointerId);
+                    }}
+                    onPointerUp={(event) => {
+                      if (event.pointerType === "mouse" && event.button !== 0) return;
+                      event.preventDefault();
+                      event.stopPropagation();
+                      event.currentTarget.releasePointerCapture?.(event.pointerId);
+                      onOpenDetails(project);
+                    }}
+                    onPointerCancel={(event) => {
+                      event.currentTarget.releasePointerCapture?.(event.pointerId);
+                    }}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== "Enter" && event.key !== " ") return;
+                      event.preventDefault();
+                      event.stopPropagation();
+                      onOpenDetails(project);
+                    }}
                   >
-                    Détails
-                  </Button>
+                    <span>Détails</span>
+                  </button>
                 )}
               </Group>
             </Stack>

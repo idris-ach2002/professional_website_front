@@ -703,22 +703,6 @@ button {
   z-index: 1;
 }
 
-.feature-list {
-  display: grid;
-  gap: 8px;
-  margin: 8px 0;
-  padding-left: 20px;
-  color: var(--muted);
-}
-
-.feature-list.two-columns {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.feature-list li::marker {
-  color: var(--reef);
-}
-
 .project-links {
   margin-top: 8px;
 }
@@ -830,9 +814,6 @@ button {
     grid-column: auto;
     margin-top: 0 !important;
     transform: none !important;
-  }
-  .feature-list.two-columns {
-    grid-template-columns: 1fr;
   }
   .ocean-ribbon {
     display: none;
@@ -1005,9 +986,6 @@ button {
   object-fit: cover;
 }
 
-.project-stack-row {
-  max-width: 720px;
-}
 
 .featured-project-island {
   min-height: min(690px, calc(100vh - 170px));
@@ -2810,8 +2788,9 @@ html {
 }
 
 .gallery-panel.is-active {
-  transform: translate3d(0, 0, 110px) rotateY(0deg) scale(1) !important;
+  transform: translate3d(0, 0, 0) rotateY(0deg) scale(1) !important;
   transform-origin: center center !important;
+  transform-style: flat !important;
   z-index: 20 !important;
 }
 
@@ -3227,19 +3206,6 @@ main,
   overflow-wrap: anywhere;
 }
 
-.gallery-panel.is-active .feature-list.two-columns,
-.feature-list.two-columns {
-  flex: 0 1 auto;
-  max-height: 5.4rem !important;
-  overflow: hidden !important;
-}
-
-.project-stack-row {
-  flex: 0 1 auto;
-  max-height: 4.35rem !important;
-  overflow: hidden !important;
-}
-
 .project-card-actions {
   flex: 0 0 auto;
   align-items: center;
@@ -3272,17 +3238,41 @@ main,
 }
 
 .project-read-more {
+  position: relative;
+  z-index: 8;
   flex: 0 0 auto;
-  min-height: 32px;
-  min-width: 78px;
-  background: rgba(3, 105, 161, .10) !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 84px;
+  min-height: 34px;
+  margin: 0;
+  padding: 0 14px !important;
   color: var(--deep-ocean) !important;
-  border: 1px solid rgba(3, 105, 161, .18) !important;
+  font: inherit;
   font-weight: 900 !important;
+  line-height: 1;
+  appearance: none;
+  border: 1px solid rgba(3, 105, 161, .18) !important;
+  border-radius: 999px;
+  background: rgba(3, 105, 161, .10) !important;
+  box-shadow: 0 8px 20px rgba(3, 105, 161, .08);
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  touch-action: manipulation;
+}
+
+.project-read-more > span {
+  pointer-events: none;
 }
 
 .project-read-more:hover {
   background: rgba(6, 182, 212, .15) !important;
+}
+
+.project-read-more:focus-visible {
+  outline: 3px solid rgba(3, 105, 161, .30);
+  outline-offset: 2px;
 }
 
 .project-detail-modal-overlay {
@@ -3570,19 +3560,6 @@ main,
     font-size: .92rem !important;
     line-height: 1.48 !important;
   }
-  .gallery-panel.is-active .feature-list.two-columns,
-  .feature-list.two-columns {
-    grid-template-columns: 1fr !important;
-    max-height: 3.1rem !important;
-    margin: 2px 0 !important;
-    font-size: .88rem !important;
-    line-height: 1.38 !important;
-  }
-  .project-stack-row {
-    max-height: 2.6rem !important;
-    margin-top: 0 !important;
-    overflow: hidden !important;
-  }
   .project-card-actions {
     min-height: 38px;
     padding-top: 6px;
@@ -3670,17 +3647,11 @@ main,
   .project-slide-card h3 {
     font-size: clamp(1.48rem, 8.2vw, 2.2rem) !important;
   }
-  .project-carousel-panel.has-project-details .feature-list.two-columns {
-    display: none !important;
-  }
-  .project-carousel-panel.has-project-details .project-stack-row {
-    max-height: 2.15rem !important;
-  }
   .project-card-actions .project-links {
     max-width: calc(100% - 84px);
   }
   .project-read-more {
-    min-width: 76px;
+    min-width: 92px;
   }
   .project-detail-modal-inner {
     padding: 8px !important;
@@ -3723,10 +3694,7 @@ main,
   }
 }
 
-/* Correctifs carrousel mobile : la card garde son bouton visible et ne coupe plus les skills. */
-.project-carousel-panel.has-project-details .project-stack-row {
-  display: none !important;
-}
+/* Bouton Détails : la zone cliquable est le bouton visible, sans wrapper décalé. */
 
 .project-carousel-panel.has-project-details .project-card-actions .project-links {
   display: none !important;
@@ -3734,30 +3702,18 @@ main,
 
 .project-card-actions {
   position: relative;
-  z-index: 5;
+  z-index: 8;
   overflow: visible !important;
 }
 
 .project-read-more {
-  min-width: 84px !important;
   white-space: nowrap !important;
 }
 
 @media (max-width: 820px) {
-  .project-carousel-panel.has-project-details .feature-list.two-columns,
-  .project-carousel-panel.has-project-details .project-stack-row,
-  .project-stack-row {
-    display: none !important;
-  }
-
   .project-card-actions {
-    min-height: 42px !important;
+    min-height: 38px !important;
     padding-top: 4px !important;
-  }
-
-  .project-read-more {
-    min-height: 34px !important;
-    min-width: 88px !important;
   }
 }
 
