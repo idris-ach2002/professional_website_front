@@ -31,8 +31,26 @@ export default function SectionTitle({ eyebrow, title, description, rightSlot, r
     if (action) gsap.set(action, { y: 16, autoAlpha: 0 });
 
     if (reveal === "fish" && fish && ScrollTrigger) {
+      const getFishMetrics = () => {
+        const viewportWidth = window.innerWidth || root.clientWidth || 1024;
+        const fishWidth = fish.getBoundingClientRect().width || Math.min(320, Math.max(150, viewportWidth * 0.23));
+        const exitMargin = Math.max(24, Math.min(82, viewportWidth * 0.1));
+        const distance = Math.ceil(viewportWidth / 2 + fishWidth / 2 + exitMargin);
+        const compactRatio = Math.min(1, Math.max(0, (viewportWidth - 340) / 900));
+
+        return {
+          startX: -distance,
+          endX: distance,
+          crossEnd: 0.5 + compactRatio * 0.38,
+          revealStart: 0.18 + compactRatio * 0.12,
+          scrollEnd: viewportWidth < 520 ? "bottom 58%" : viewportWidth < 760 ? "bottom 46%" : "bottom 26%",
+        };
+      };
+
+      const metrics = getFishMetrics();
+
       gsap.set(fish, {
-        x: "-72vw",
+        x: metrics.startX,
         yPercent: -50,
         autoAlpha: 0,
         rotate: -8,
@@ -44,26 +62,29 @@ export default function SectionTitle({ eyebrow, title, description, rightSlot, r
         scrollTrigger: {
           trigger: root,
           start: "top 88%",
-          end: "bottom 26%",
-          scrub: 0.82,
+          end: () => getFishMetrics().scrollEnd,
+          scrub: window.innerWidth < 760 ? 0.48 : 0.82,
           invalidateOnRefresh: true,
         },
       });
 
       fishTimeline
-        .to(fish, { autoAlpha: 1, duration: 0.08 }, 0)
-        .to(fish, { x: "72vw", duration: 1 }, 0)
-        .to(fish, { yPercent: -76, rotate: 7, scale: 1.08, duration: 0.46, ease: "sine.inOut" }, 0.08)
-        .to(fish, { yPercent: -38, rotate: -5, scale: 0.98, duration: 0.46, ease: "sine.inOut" }, 0.52)
-        .to(copy, { autoAlpha: 1, y: 0, clipPath: "inset(0 0 0% 0)", duration: 0.48, ease: "power2.out" }, 0.32);
+        .to(fish, { autoAlpha: 1, duration: 0.06 }, 0)
+        .to(fish, { x: () => getFishMetrics().endX, duration: metrics.crossEnd }, 0)
+        .to(fish, { yPercent: -76, rotate: 7, scale: 1.08, duration: metrics.crossEnd * 0.46, ease: "sine.inOut" }, 0.06)
+        .to(fish, { yPercent: -38, rotate: -5, scale: 0.98, duration: metrics.crossEnd * 0.44, ease: "sine.inOut" }, metrics.crossEnd * 0.52)
+        .to(copy, { autoAlpha: 1, y: 0, clipPath: "inset(0 0 0% 0)", duration: 0.48, ease: "power2.out" }, metrics.revealStart);
 
-      animateIfPresent(fishTimeline, eyebrowNode, { y: 0, autoAlpha: 1, duration: 0.28, ease: "power2.out" }, 0.32);
-      fishTimeline.to(heading, { y: 0, letterSpacing: "-0.07em", duration: 0.44, ease: "power2.out" }, 0.38);
-      animateIfPresent(fishTimeline, descriptionNode, { y: 0, autoAlpha: 1, duration: 0.34, ease: "power2.out" }, 0.52);
-      animateIfPresent(fishTimeline, action, { y: 0, autoAlpha: 1, duration: 0.32, ease: "power2.out" }, 0.6);
-      fishTimeline.to(fish, { autoAlpha: 0, duration: 0.08 }, 0.98);
+      animateIfPresent(fishTimeline, eyebrowNode, { y: 0, autoAlpha: 1, duration: 0.28, ease: "power2.out" }, metrics.revealStart);
+      fishTimeline.to(heading, { y: 0, letterSpacing: "-0.07em", duration: 0.44, ease: "power2.out" }, metrics.revealStart + 0.06);
+      animateIfPresent(fishTimeline, descriptionNode, { y: 0, autoAlpha: 1, duration: 0.34, ease: "power2.out" }, metrics.revealStart + 0.18);
+      animateIfPresent(fishTimeline, action, { y: 0, autoAlpha: 1, duration: 0.32, ease: "power2.out" }, metrics.revealStart + 0.26);
+      fishTimeline.to(fish, { autoAlpha: 0, duration: 0.08 }, Math.max(0.38, metrics.crossEnd - 0.08));
 
-      return undefined;
+      const refreshOnResize = () => ScrollTrigger.refresh();
+      window.addEventListener("resize", refreshOnResize, { passive: true });
+
+      return () => window.removeEventListener("resize", refreshOnResize);
     }
 
     const timeline = gsap.timeline({

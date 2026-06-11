@@ -1,5 +1,6 @@
-import { Anchor, Badge, Button, Card, Group, Modal, MultiSelect, Stack, Text, TextInput, Title } from "@mantine/core";
+import { Anchor, Badge, Button, Card, Group, MultiSelect, Stack, Text, TextInput, Title } from "@mantine/core";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { gsapReady, useGsap } from "../animations/useGsap";
 import SectionTitle from "./SectionTitle";
 import { FilePreviewButton, PreviewableImage } from "./FilePreview";
@@ -93,9 +94,8 @@ function ProjectLinks({ project }) {
     </Group>
   );
 }
-function getProjectPreview(project) {
+function getProjectPreview(project, limit = 260) {
   const source = project.shortDescription || project.description || "";
-  const limit = 260;
 
   if (source.length <= limit) return source;
 
@@ -117,99 +117,172 @@ function shouldShowProjectDetails(project, featured) {
   );
 }
 
+function useCardOverflowSignal(project, active) {
+  const cardRef = useRef(null);
+  const contentRef = useRef(null);
+  const [hasOverflow, setHasOverflow] = useState(false);
+
+  useEffect(() => {
+    const card = cardRef.current;
+    const content = contentRef.current;
+
+    if (!card || !content) {
+      setHasOverflow(false);
+      return undefined;
+    }
+
+    let frame = 0;
+
+    const measure = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const safetyGap = window.innerWidth <= 820 ? 72 : 34;
+        const cardOverflow = card.scrollHeight > card.clientHeight - safetyGap;
+        const contentOverflow = content.scrollHeight > content.clientHeight - safetyGap;
+        const actions = card.querySelector(".project-card-actions");
+        const actionIsTooLow = actions
+          ? actions.getBoundingClientRect().bottom > card.getBoundingClientRect().bottom - safetyGap
+          : false;
+        const nextValue = cardOverflow || contentOverflow || actionIsTooLow;
+
+        setHasOverflow((currentValue) => (currentValue === nextValue ? currentValue : nextValue));
+      });
+    };
+
+    measure();
+
+    const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    resizeObserver?.observe(card);
+    resizeObserver?.observe(content);
+
+    window.addEventListener("resize", measure, { passive: true });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [active, project?.id, project?.title, project?.shortDescription, project?.description, project?.features?.length, project?.stacks?.length]);
+
+  return { cardRef, contentRef, hasOverflow };
+}
+
 function ProjectDetailsModal({ project, opened, onClose }) {
-  if (!project) return null;
+  const links = getProjectLinks(project ?? {});
 
-  const links = getProjectLinks(project);
+  useEffect(() => {
+    if (!opened) return undefined;
 
-  return (
-    <Modal
-      opened={opened}
-      onClose={onClose}
-      centered
-      size="xl"
-      radius="xl"
-      padding={0}
-      title={`Projet — ${project.title}`}
-      classNames={{
-        content: "project-detail-modal",
-        header: "project-detail-modal-header",
-        title: "project-detail-modal-title",
-        body: "project-detail-modal-body",
-        close: "project-detail-modal-close",
-      }}
-    >
-      <div className="project-detail-scroll">
-        <div className="project-detail-hero">
-          <div>
-            <Badge className="project-status">{STATUS_LABELS[project.status] ?? project.status}</Badge>
-            <Title order={2}>{project.title}</Title>
-            {project.subtitle && <Text className="project-detail-subtitle">{project.subtitle}</Text>}
+    const previousOverflow = document.body.style.overflow;
+    const previousTouchAction = document.body.style.touchAction;
+
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.body.style.touchAction = previousTouchAction;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [opened, onClose]);
+
+  if (!project || !opened || typeof document === "undefined") return null;
+
+  return createPortal(
+    <div className="project-detail-modal-root" role="dialog" aria-modal="true" aria-labelledby="project-detail-modal-title" onMouseDown={onClose}>
+      <div className="project-detail-modal-overlay" aria-hidden="true" />
+      <div className="project-detail-modal-inner">
+        <div className="project-detail-modal" onMouseDown={(event) => event.stopPropagation()}>
+          <header className="project-detail-modal-header">
+            <h2 id="project-detail-modal-title" className="project-detail-modal-title">Projet — {project.title}</h2>
+            <button type="button" className="project-detail-modal-close" aria-label="Fermer les détails du projet" onClick={onClose}>
+              ×
+            </button>
+          </header>
+
+          <div className="project-detail-modal-body">
+            <div className="project-detail-scroll">
+              <div className="project-detail-hero">
+                <div>
+                  <Badge className="project-status">{STATUS_LABELS[project.status] ?? project.status}</Badge>
+                  <Title order={2}>{project.title}</Title>
+                  {project.subtitle && <Text className="project-detail-subtitle">{project.subtitle}</Text>}
+                </div>
+                <Text className="project-detail-period">
+                  {formatPeriod(project.startDate, project.endDate, project.status === "IN_PROGRESS" || project.status === "MAINTAINED")}
+                </Text>
+              </div>
+
+              {project.imageUrl && (
+                <img src={project.imageUrl} alt="" className="project-detail-image" loading="lazy" />
+              )}
+
+              {(project.shortDescription || project.description) && (
+                <section className="project-detail-section">
+                  <h3>Présentation</h3>
+                  {project.shortDescription && <Text className="project-detail-lead">{project.shortDescription}</Text>}
+                  {project.description && project.description !== project.shortDescription && (
+                    <Text className="project-detail-text">{project.description}</Text>
+                  )}
+                </section>
+              )}
+
+              {project.features?.length > 0 && (
+                <section className="project-detail-section">
+                  <h3>Fonctionnalités</h3>
+                  <ul className="project-detail-list">
+                    {project.features.map((feature, featureIndex) => (
+                      <li key={`${project.id ?? project.title}-detail-feature-${featureIndex}-${feature}`}>{feature}</li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {project.stacks?.length > 0 && (
+                <section className="project-detail-section">
+                  <h3>Stack technique</h3>
+                  <Group gap={8} className="project-detail-stack">
+                    {project.stacks.map((stack, stackIndex) => (
+                      <Badge key={`${project.id ?? project.title}-detail-stack-${stackIndex}-${stack}`} variant="outline" className="stack-badge">
+                        {stack}
+                      </Badge>
+                    ))}
+                  </Group>
+                </section>
+              )}
+
+              {links.length > 0 && (
+                <section className="project-detail-section project-detail-links-section">
+                  <h3>Liens</h3>
+                  <ProjectLinks project={project} />
+                </section>
+              )}
+            </div>
           </div>
-          <Text className="project-detail-period">
-            {formatPeriod(project.startDate, project.endDate, project.status === "IN_PROGRESS" || project.status === "MAINTAINED")}
-          </Text>
         </div>
-
-        {project.imageUrl && (
-          <img src={project.imageUrl} alt="" className="project-detail-image" loading="lazy" />
-        )}
-
-        {(project.shortDescription || project.description) && (
-          <section className="project-detail-section">
-            <h3>Présentation</h3>
-            {project.shortDescription && <Text className="project-detail-lead">{project.shortDescription}</Text>}
-            {project.description && project.description !== project.shortDescription && (
-              <Text className="project-detail-text">{project.description}</Text>
-            )}
-          </section>
-        )}
-
-        {project.features?.length > 0 && (
-          <section className="project-detail-section">
-            <h3>Fonctionnalités</h3>
-            <ul className="project-detail-list">
-              {project.features.map((feature, featureIndex) => (
-                <li key={`${project.id ?? project.title}-detail-feature-${featureIndex}-${feature}`}>{feature}</li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {project.stacks?.length > 0 && (
-          <section className="project-detail-section">
-            <h3>Stack technique</h3>
-            <Group gap={8} className="project-detail-stack">
-              {project.stacks.map((stack, stackIndex) => (
-                <Badge key={`${project.id ?? project.title}-detail-stack-${stackIndex}-${stack}`} variant="outline" className="stack-badge">
-                  {stack}
-                </Badge>
-              ))}
-            </Group>
-          </section>
-        )}
-
-        {links.length > 0 && (
-          <section className="project-detail-section project-detail-links-section">
-            <h3>Liens</h3>
-            <ProjectLinks project={project} />
-          </section>
-        )}
       </div>
-    </Modal>
+    </div>,
+    document.body,
   );
 }
 
 
-function ProjectIsland({ project, index, featured, total, onOpenDetails }) {
+function ProjectIsland({ project, index, featured, total, active, onOpenDetails }) {
   const featureLimit = featured ? 4 : 3;
   const stackLimit = featured ? 8 : 6;
-  const showDetails = shouldShowProjectDetails(project, featured);
+  const { cardRef, contentRef, hasOverflow } = useCardOverflowSignal(project, active);
+  const showDetails = shouldShowProjectDetails(project, featured) || hasOverflow;
 
   return (
-    <article className="project-carousel-panel">
+    <article className={`project-carousel-panel ${showDetails ? "has-project-details" : ""}`}>
       <div className="project-panel-inner">
-        <div className={`project-slide-card island-card ${featured ? "featured-project-island" : ""}`}>
+        <div ref={cardRef} className={`project-slide-card island-card ${featured ? "featured-project-island" : ""}`}>
           <div className="project-slide-index">
             {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
           </div>
@@ -221,7 +294,7 @@ function ProjectIsland({ project, index, featured, total, onOpenDetails }) {
           <div className="project-slide-grid">
             <ProjectVisual project={project} index={index} />
 
-            <Stack gap="sm" className="project-content">
+            <Stack ref={contentRef} gap="sm" className="project-content">
               <Text className="project-period">
                 {formatPeriod(project.startDate, project.endDate, project.status === "IN_PROGRESS" || project.status === "MAINTAINED")}
               </Text>
@@ -258,7 +331,7 @@ function ProjectIsland({ project, index, featured, total, onOpenDetails }) {
                     className="project-read-more"
                     onClick={() => onOpenDetails(project)}
                   >
-                    Suite
+                    Détails
                   </Button>
                 )}
               </Group>
@@ -580,7 +653,7 @@ function ProjectGallery({ projects }) {
                 aria-current={isActive ? "true" : undefined}
                 aria-hidden={!isActive}
               >
-                <ProjectIsland project={project} index={index} total={projects.length} featured={Boolean(project.featured)} onOpenDetails={setDetailsProject} />
+                <ProjectIsland project={project} index={index} total={projects.length} featured={Boolean(project.featured)} active={isActive} onOpenDetails={setDetailsProject} />
               </div>
             );
           })}
