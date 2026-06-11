@@ -7,9 +7,9 @@ import App from "./App";
 import "./index.css";
 
 const theme = createTheme({
-  fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+  fontFamily: "Inter, Arial, Helvetica, sans-serif",
   headings: {
-    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+    fontFamily: "Inter, Arial, Helvetica, sans-serif",
     fontWeight: "800",
   },
   primaryColor: "cyan",

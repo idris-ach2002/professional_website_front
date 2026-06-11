@@ -6,8 +6,13 @@ import { getInitials, getOwnerFullName } from "../utils/portfolio";
 
 const links = [
   { href: "#profile", label: "Profil" },
-  { href: "#timeline", label: "Timeline" },
+  { href: "#timeline", label: "Expériences" },
   { href: "#projects", label: "Projets" },
+];
+
+const quickLinks = [
+  { href: "#top", label: "Haut" },
+  ...links,
 ];
 
 export default function TopNavigation({ owner }) {

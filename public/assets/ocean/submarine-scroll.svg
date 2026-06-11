@@ -1,0 +1,29 @@
+<svg width="220" height="120" viewBox="0 0 220 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sous-marin stylisé">
+  <defs>
+    <linearGradient id="subBody" x1="30" y1="42" x2="175" y2="83" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E0F2FE"/>
+      <stop offset="0.45" stop-color="#38BDF8"/>
+      <stop offset="1" stop-color="#0369A1"/>
+    </linearGradient>
+    <linearGradient id="subTower" x1="82" y1="23" x2="124" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FAFC"/>
+      <stop offset="1" stop-color="#0EA5E9"/>
+    </linearGradient>
+    <filter id="subShadow" x="0" y="0" width="220" height="120" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="10" stdDeviation="9" flood-color="#082F49" flood-opacity="0.24"/>
+    </filter>
+  </defs>
+  <g filter="url(#subShadow)">
+    <path d="M166 61L204 40V82L166 61Z" fill="#075985"/>
+    <path d="M28 62C45 38 102 31 160 46C178 51 180 74 160 80C102 96 45 88 28 62Z" fill="url(#subBody)"/>
+    <path d="M84 43V29C84 23 89 18 95 18H112C119 18 124 23 124 30V46" fill="url(#subTower)"/>
+    <path d="M99 18V8H127" stroke="#075985" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="65" cy="61" r="10" fill="#E0FBFF" stroke="#075985" stroke-width="4"/>
+    <circle cx="101" cy="61" r="10" fill="#E0FBFF" stroke="#075985" stroke-width="4"/>
+    <circle cx="137" cy="61" r="10" fill="#E0FBFF" stroke="#075985" stroke-width="4"/>
+    <path d="M44 43C70 35 114 35 152 45" stroke="white" stroke-width="5" stroke-linecap="round" stroke-opacity="0.7"/>
+    <path d="M24 62H8" stroke="#38BDF8" stroke-width="7" stroke-linecap="round"/>
+    <path d="M16 51L5 43" stroke="#38BDF8" stroke-width="5" stroke-linecap="round"/>
+    <path d="M16 73L5 81" stroke="#38BDF8" stroke-width="5" stroke-linecap="round"/>
+  </g>
+</svg>

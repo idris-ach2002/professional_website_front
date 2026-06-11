@@ -1,0 +1,30 @@
+<svg width="240" height="120" viewBox="0 0 240 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Poisson stylisé">
+  <defs>
+    <linearGradient id="fishBody" x1="42" y1="22" x2="184" y2="94" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E0FBFF"/>
+      <stop offset="0.36" stop-color="#67E8F9"/>
+      <stop offset="0.72" stop-color="#0891B2"/>
+      <stop offset="1" stop-color="#0F766E"/>
+    </linearGradient>
+    <radialGradient id="fishGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(95 44) rotate(33) scale(83 36)">
+      <stop stop-color="white" stop-opacity="0.95"/>
+      <stop offset="0.38" stop-color="#BAE6FD" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#0284C7" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softShadow" x="0" y="0" width="240" height="120" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#0369A1" flood-opacity="0.26"/>
+    </filter>
+  </defs>
+  <g filter="url(#softShadow)">
+    <path d="M177 60C194 44 210 35 228 33C220 48 218 72 228 88C209 85 193 77 177 60Z" fill="#06B6D4" opacity="0.9"/>
+    <path d="M178 60C194 47 209 40 222 38C216 50 215 70 222 82C207 79 192 73 178 60Z" fill="#E0FBFF" opacity="0.28"/>
+    <path d="M25 60C52 25 119 12 178 60C119 108 52 95 25 60Z" fill="url(#fishBody)"/>
+    <path d="M25 60C52 25 119 12 178 60C119 108 52 95 25 60Z" fill="url(#fishGlow)"/>
+    <path d="M89 28C98 19 118 18 132 27C119 31 105 38 94 49C91 41 89 34 89 28Z" fill="#7DD3FC" opacity="0.82"/>
+    <path d="M91 92C100 101 119 103 134 94C119 89 106 82 95 71C92 79 90 86 91 92Z" fill="#0E7490" opacity="0.55"/>
+    <circle cx="55" cy="54" r="5.8" fill="#082F49"/>
+    <circle cx="53" cy="52" r="1.8" fill="white"/>
+    <path d="M75 36C96 46 116 47 139 38" stroke="white" stroke-opacity="0.54" stroke-width="5" stroke-linecap="round"/>
+    <path d="M72 72C96 83 122 83 151 70" stroke="#BAE6FD" stroke-opacity="0.42" stroke-width="4" stroke-linecap="round"/>
+  </g>
+</svg>
