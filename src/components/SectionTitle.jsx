@@ -1,14 +1,163 @@
-import { Badge, Group, Text, Title } from "@mantine/core";
+import { Group, Text, Title } from "@mantine/core";
+import { useRef } from "react";
+import { useGsap } from "../animations/useGsap";
 
-export default function SectionTitle({ eyebrow, title, description, rightSlot }) {
+function animateIfPresent(timeline, target, vars, position) {
+  if (!target) return timeline;
+  return timeline.to(target, vars, position);
+}
+
+export default function SectionTitle({ eyebrow, title, description, rightSlot, reveal = "soft" }) {
+  const rootRef = useRef(null);
+
+  useGsap(rootRef, (gsap, ScrollTrigger) => {
+    const root = rootRef.current;
+    if (!root) return undefined;
+
+    const copy = root.querySelector(".section-title-copy");
+    const eyebrowNode = root.querySelector(".section-eyebrow");
+    const heading = root.querySelector(".section-heading");
+    const descriptionNode = root.querySelector(".section-description");
+    const fish = root.querySelector(".section-reveal-fish");
+    const bubbles = gsap.utils.toArray(root.querySelectorAll(".section-reveal-bubble"));
+    const action = root.querySelector(".section-action");
+
+    if (!copy || !heading) return undefined;
+
+    gsap.set(copy, { autoAlpha: 0, y: 34, clipPath: "inset(0 0 100% 0)" });
+    if (eyebrowNode) gsap.set(eyebrowNode, { y: 12, autoAlpha: 0 });
+    gsap.set(heading, { y: 22, letterSpacing: "-0.085em" });
+    if (descriptionNode) gsap.set(descriptionNode, { y: 18, autoAlpha: 0 });
+    if (action) gsap.set(action, { y: 16, autoAlpha: 0 });
+
+    if (reveal === "fish" && fish && ScrollTrigger) {
+      const getFishMetrics = () => {
+        const viewportWidth = window.innerWidth || root.clientWidth || 1024;
+        const fishWidth = fish.getBoundingClientRect().width || Math.min(320, Math.max(150, viewportWidth * 0.23));
+        const exitMargin = Math.max(24, Math.min(82, viewportWidth * 0.1));
+        const distance = Math.ceil(viewportWidth / 2 + fishWidth / 2 + exitMargin);
+        const compactRatio = Math.min(1, Math.max(0, (viewportWidth - 340) / 900));
+
+        return {
+          startX: -distance,
+          endX: distance,
+          crossEnd: 0.5 + compactRatio * 0.38,
+          revealStart: 0.18 + compactRatio * 0.12,
+          scrollEnd: viewportWidth < 520 ? "bottom 58%" : viewportWidth < 760 ? "bottom 46%" : "bottom 26%",
+        };
+      };
+
+      const metrics = getFishMetrics();
+
+      gsap.set(fish, {
+        x: metrics.startX,
+        yPercent: -50,
+        autoAlpha: 0,
+        rotate: -8,
+        scale: 0.9,
+      });
+
+      const fishTimeline = gsap.timeline({
+        defaults: { ease: "none" },
+        scrollTrigger: {
+          trigger: root,
+          start: "top 88%",
+          end: () => getFishMetrics().scrollEnd,
+          scrub: window.innerWidth < 760 ? 0.48 : 0.82,
+          invalidateOnRefresh: true,
+        },
+      });
+
+      fishTimeline
+        .to(fish, { autoAlpha: 1, duration: 0.06 }, 0)
+        .to(fish, { x: () => getFishMetrics().endX, duration: metrics.crossEnd }, 0)
+        .to(fish, { yPercent: -76, rotate: 7, scale: 1.08, duration: metrics.crossEnd * 0.46, ease: "sine.inOut" }, 0.06)
+        .to(fish, { yPercent: -38, rotate: -5, scale: 0.98, duration: metrics.crossEnd * 0.44, ease: "sine.inOut" }, metrics.crossEnd * 0.52)
+        .to(copy, { autoAlpha: 1, y: 0, clipPath: "inset(0 0 0% 0)", duration: 0.48, ease: "power2.out" }, metrics.revealStart);
+
+      animateIfPresent(fishTimeline, eyebrowNode, { y: 0, autoAlpha: 1, duration: 0.28, ease: "power2.out" }, metrics.revealStart);
+      fishTimeline.to(heading, { y: 0, letterSpacing: "-0.07em", duration: 0.44, ease: "power2.out" }, metrics.revealStart + 0.06);
+      animateIfPresent(fishTimeline, descriptionNode, { y: 0, autoAlpha: 1, duration: 0.34, ease: "power2.out" }, metrics.revealStart + 0.18);
+      animateIfPresent(fishTimeline, action, { y: 0, autoAlpha: 1, duration: 0.32, ease: "power2.out" }, metrics.revealStart + 0.26);
+      fishTimeline.to(fish, { autoAlpha: 0, duration: 0.08 }, Math.max(0.38, metrics.crossEnd - 0.08));
+
+      const refreshOnResize = () => ScrollTrigger.refresh();
+      window.addEventListener("resize", refreshOnResize, { passive: true });
+
+      return () => window.removeEventListener("resize", refreshOnResize);
+    }
+
+    const timeline = gsap.timeline({
+      defaults: { ease: "expo.out" },
+      scrollTrigger: ScrollTrigger
+        ? {
+            trigger: root,
+            start: reveal === "bubbles" ? "top 82%" : "top 76%",
+            end: reveal === "bubbles" ? "bottom 52%" : undefined,
+            scrub: reveal === "bubbles" ? 0.75 : false,
+            once: reveal !== "bubbles",
+          }
+        : undefined,
+    });
+
+    if (reveal === "bubbles" && bubbles.length > 0) {
+      gsap.set(bubbles, {
+        autoAlpha: 0,
+        y: 150,
+        z: -120,
+        scale: 0.34,
+        transformPerspective: 900,
+      });
+      timeline
+        .to(bubbles, {
+          autoAlpha: 1,
+          y: (index) => -105 - index * 13,
+          x: (index) => (index % 2 === 0 ? 28 : -28),
+          z: (index) => index * 30,
+          scale: (index) => 0.9 + index * 0.095,
+          duration: 0.72,
+          stagger: 0.035,
+          ease: "power2.out",
+        }, 0)
+        .to(copy, { autoAlpha: 1, y: 0, clipPath: "inset(0 0 0% 0)", duration: 0.45, ease: "power2.out" }, 0.5);
+      animateIfPresent(timeline, eyebrowNode, { y: 0, autoAlpha: 1, duration: 0.25, ease: "power2.out" }, 0.5);
+      timeline.to(heading, { y: 0, letterSpacing: "-0.07em", duration: 0.44, ease: "power2.out" }, 0.55);
+      animateIfPresent(timeline, descriptionNode, { y: 0, autoAlpha: 1, duration: 0.36, ease: "power2.out" }, 0.68);
+      timeline.to(bubbles, { autoAlpha: 0, y: -220, scale: 1.28, duration: 0.32, stagger: 0.025, ease: "power2.in" }, 0.82);
+    } else {
+      timeline.to(copy, { autoAlpha: 1, y: 0, clipPath: "inset(0 0 0% 0)", duration: 0.9 }, 0);
+      animateIfPresent(timeline, eyebrowNode, { y: 0, autoAlpha: 1, duration: 0.54 }, 0.04);
+      timeline.to(heading, { y: 0, letterSpacing: "-0.07em", duration: 0.86 }, 0.08);
+      animateIfPresent(timeline, descriptionNode, { y: 0, autoAlpha: 1, duration: 0.68 }, 0.22);
+    }
+
+    animateIfPresent(timeline, action, { y: 0, autoAlpha: 1, duration: 0.62 }, reveal === "bubbles" ? 0.78 : 0.72);
+
+    return undefined;
+  }, [title, description, reveal]);
+
   return (
-    <div className="section-title">
+    <div ref={rootRef} className={`section-title section-title-${reveal}`}>
+      {reveal === "fish" && (
+        <img
+          src="/assets/ocean/fish-reveal.svg"
+          alt=""
+          aria-hidden="true"
+          className="section-reveal-fish"
+          loading="lazy"
+        />
+      )}
+
+      {reveal === "bubbles" && (
+        <div className="section-reveal-bubbles" aria-hidden="true">
+          {Array.from({ length: 18 }, (_, index) => (
+            <span key={index} className="section-reveal-bubble" />
+          ))}
+        </div>
+      )}
+
       <div className="section-title-copy">
-        {eyebrow && (
-          <Badge variant="light" radius="xl" className="section-eyebrow">
-            {eyebrow}
-          </Badge>
-        )}
+        {eyebrow && <span className="section-eyebrow">{eyebrow}</span>}
         <Title order={2} className="section-heading">
           {title}
         </Title>

@@ -1,5 +1,6 @@
 import { Anchor, Badge, Button, Card, Group, MultiSelect, Stack, Text, TextInput, Title } from "@mantine/core";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { gsapReady, useGsap } from "../animations/useGsap";
 import SectionTitle from "./SectionTitle";
 import { FilePreviewButton, PreviewableImage } from "./FilePreview";
@@ -29,13 +30,8 @@ function ProjectVisual({ project, index }) {
   }
 
   return (
-    <div className="project-visual project-visual-wave" aria-hidden="true">
+    <div className="project-visual project-visual-static" aria-hidden="true">
       <span>Projet {String(index + 1).padStart(2, "0")}</span>
-      <svg viewBox="0 0 560 220" preserveAspectRatio="none" className="project-wave-band">
-        <path d="M0 130 C70 98 132 96 206 126 C282 158 348 154 424 120 C486 92 530 98 560 115 V220 H0 Z" />
-        <path d="M0 158 C82 126 152 122 226 152 C300 184 376 180 452 146 C504 124 540 128 560 138 V220 H0 Z" />
-        <path d="M0 96 C68 70 140 72 214 98 C286 124 360 132 430 98 C494 66 534 72 560 84" />
-      </svg>
       <strong>{project.title?.slice(0, 2)?.toUpperCase()}</strong>
     </div>
   );
@@ -98,12 +94,191 @@ function ProjectLinks({ project }) {
     </Group>
   );
 }
+function getProjectPreview(project, limit = 260) {
+  const source = project.shortDescription || project.description || "";
 
-function ProjectIsland({ project, index, featured, total }) {
+  if (source.length <= limit) return source;
+
+  return `${source.slice(0, limit).trim()}…`;
+}
+
+function shouldShowProjectDetails(project) {
+  const preview = getProjectPreview(project);
+  const fullDescription = project.description || project.shortDescription || "";
+
   return (
-    <article className="project-carousel-panel">
+    fullDescription.length > preview.length ||
+    Boolean(project.shortDescription && project.description && project.description !== project.shortDescription) ||
+    (project.features?.length ?? 0) > 0 ||
+    (project.stacks?.length ?? 0) > 0 ||
+    getProjectLinks(project).length > 5
+  );
+}
+
+function useCardOverflowSignal(project, active) {
+  const cardRef = useRef(null);
+  const contentRef = useRef(null);
+  const [hasOverflow, setHasOverflow] = useState(false);
+
+  useEffect(() => {
+    const card = cardRef.current;
+    const content = contentRef.current;
+
+    if (!card || !content) {
+      setHasOverflow(false);
+      return undefined;
+    }
+
+    let frame = 0;
+
+    const measure = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const safetyGap = window.innerWidth <= 820 ? 72 : 34;
+        const cardOverflow = card.scrollHeight > card.clientHeight - safetyGap;
+        const contentOverflow = content.scrollHeight > content.clientHeight - safetyGap;
+        const actions = card.querySelector(".project-card-actions");
+        const actionIsTooLow = actions
+          ? actions.getBoundingClientRect().bottom > card.getBoundingClientRect().bottom - safetyGap
+          : false;
+        const nextValue = cardOverflow || contentOverflow || actionIsTooLow;
+
+        setHasOverflow((currentValue) => (currentValue === nextValue ? currentValue : nextValue));
+      });
+    };
+
+    measure();
+
+    const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    resizeObserver?.observe(card);
+    resizeObserver?.observe(content);
+
+    window.addEventListener("resize", measure, { passive: true });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [active, project?.id, project?.title, project?.shortDescription, project?.description, project?.features?.length, project?.stacks?.length]);
+
+  return { cardRef, contentRef, hasOverflow };
+}
+
+function ProjectDetailsModal({ project, opened, onClose }) {
+  const links = getProjectLinks(project ?? {});
+
+  useEffect(() => {
+    if (!opened) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    const previousTouchAction = document.body.style.touchAction;
+
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.body.style.touchAction = previousTouchAction;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [opened, onClose]);
+
+  if (!project || !opened || typeof document === "undefined") return null;
+
+  return createPortal(
+    <div className="project-detail-modal-root" role="dialog" aria-modal="true" aria-labelledby="project-detail-modal-title" onMouseDown={onClose}>
+      <div className="project-detail-modal-overlay" aria-hidden="true" />
+      <div className="project-detail-modal-inner">
+        <div className="project-detail-modal" onMouseDown={(event) => event.stopPropagation()}>
+          <header className="project-detail-modal-header">
+            <h2 id="project-detail-modal-title" className="project-detail-modal-title">Projet — {project.title}</h2>
+            <button type="button" className="project-detail-modal-close" aria-label="Fermer les détails du projet" onClick={onClose}>
+              ×
+            </button>
+          </header>
+
+          <div className="project-detail-modal-body">
+            <div className="project-detail-scroll">
+              <div className="project-detail-hero">
+                <div>
+                  <Badge className="project-status">{STATUS_LABELS[project.status] ?? project.status}</Badge>
+                  <Title order={2}>{project.title}</Title>
+                  {project.subtitle && <Text className="project-detail-subtitle">{project.subtitle}</Text>}
+                </div>
+                <Text className="project-detail-period">
+                  {formatPeriod(project.startDate, project.endDate, project.status === "IN_PROGRESS" || project.status === "MAINTAINED")}
+                </Text>
+              </div>
+
+              {project.imageUrl && (
+                <img src={project.imageUrl} alt="" className="project-detail-image" loading="lazy" />
+              )}
+
+              {(project.shortDescription || project.description) && (
+                <section className="project-detail-section">
+                  <h3>Présentation</h3>
+                  {project.shortDescription && <Text className="project-detail-lead">{project.shortDescription}</Text>}
+                  {project.description && project.description !== project.shortDescription && (
+                    <Text className="project-detail-text">{project.description}</Text>
+                  )}
+                </section>
+              )}
+
+              {project.features?.length > 0 && (
+                <section className="project-detail-section">
+                  <h3>Fonctionnalités</h3>
+                  <ul className="project-detail-list">
+                    {project.features.map((feature, featureIndex) => (
+                      <li key={`${project.id ?? project.title}-detail-feature-${featureIndex}-${feature}`}>{feature}</li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {project.stacks?.length > 0 && (
+                <section className="project-detail-section">
+                  <h3>Stack technique</h3>
+                  <Group gap={8} className="project-detail-stack">
+                    {project.stacks.map((stack, stackIndex) => (
+                      <Badge key={`${project.id ?? project.title}-detail-stack-${stackIndex}-${stack}`} variant="outline" className="stack-badge">
+                        {stack}
+                      </Badge>
+                    ))}
+                  </Group>
+                </section>
+              )}
+
+              {links.length > 0 && (
+                <section className="project-detail-section project-detail-links-section">
+                  <h3>Liens</h3>
+                  <ProjectLinks project={project} />
+                </section>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+
+function ProjectIsland({ project, index, featured, total, active, onOpenDetails }) {
+  const { cardRef, contentRef, hasOverflow } = useCardOverflowSignal(project, active);
+  const showDetails = shouldShowProjectDetails(project) || hasOverflow;
+
+  return (
+    <article className={`project-carousel-panel ${showDetails ? "has-project-details" : ""}`}>
       <div className="project-panel-inner">
-        <div className={`project-slide-card island-card ${featured ? "featured-project-island" : ""}`}>
+        <div ref={cardRef} className={`project-slide-card island-card ${featured ? "featured-project-island" : ""}`}>
           <div className="project-slide-index">
             {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
           </div>
@@ -115,33 +290,50 @@ function ProjectIsland({ project, index, featured, total }) {
           <div className="project-slide-grid">
             <ProjectVisual project={project} index={index} />
 
-            <Stack gap="sm" className="project-content">
+            <Stack ref={contentRef} gap="sm" className="project-content">
               <Text className="project-period">
                 {formatPeriod(project.startDate, project.endDate, project.status === "IN_PROGRESS" || project.status === "MAINTAINED")}
               </Text>
               <Title order={3}>{project.title}</Title>
               {project.subtitle && <Text className="project-subtitle">{project.subtitle}</Text>}
-              <Text className="project-description">{project.shortDescription ?? project.description}</Text>
+              <Text className="project-description">{getProjectPreview(project)}</Text>
 
-              {project.features?.length > 0 && (
-                <ul className="feature-list two-columns">
-                  {project.features.slice(0, featured ? 6 : 5).map((feature, featureIndex) => (
-                    <li key={`${project.id ?? project.title}-feature-${featureIndex}-${feature}`}>{feature}</li>
-                  ))}
-                </ul>
-              )}
-
-              {project.stacks?.length > 0 && (
-                <Group gap={7} className="stack-row project-stack-row">
-                  {project.stacks.slice(0, featured ? 10 : 8).map((stack, stackIndex) => (
-                    <Badge key={`${project.id ?? project.title}-stack-${stackIndex}-${stack}`} variant="outline" className="stack-badge">
-                      {stack}
-                    </Badge>
-                  ))}
-                </Group>
-              )}
-
-              <ProjectLinks project={project} />
+              <Group gap="xs" className="project-card-actions">
+                <ProjectLinks project={project} />
+                {showDetails && (
+                  <button
+                    type="button"
+                    className="project-read-more project-details-button"
+                    onPointerDown={(event) => {
+                      if (event.pointerType === "mouse" && event.button !== 0) return;
+                      event.stopPropagation();
+                      event.currentTarget.setPointerCapture?.(event.pointerId);
+                    }}
+                    onPointerUp={(event) => {
+                      if (event.pointerType === "mouse" && event.button !== 0) return;
+                      event.preventDefault();
+                      event.stopPropagation();
+                      event.currentTarget.releasePointerCapture?.(event.pointerId);
+                      onOpenDetails(project);
+                    }}
+                    onPointerCancel={(event) => {
+                      event.currentTarget.releasePointerCapture?.(event.pointerId);
+                    }}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== "Enter" && event.key !== " ") return;
+                      event.preventDefault();
+                      event.stopPropagation();
+                      onOpenDetails(project);
+                    }}
+                  >
+                    <span>Détails</span>
+                  </button>
+                )}
+              </Group>
             </Stack>
           </div>
         </div>
@@ -232,10 +424,10 @@ function GalleryNavButton({ direction, label, onNavigate }) {
   // Animation au survol (agrandissement avec rebond)
   const handlePointerEnter = useCallback(() => {
     gsapReady().then(({ gsap }) => {
+      if (!visualRef.current) return;
       gsap.to(visualRef.current, {
         scale: 1.12,
         backgroundColor: "rgba(255, 255, 255, 0.95)",
-        boxShadow: "0 24px 54px rgba(3, 105, 161, 0.24)",
         duration: 0.35,
         ease: "back.out(1.6)", // L'effet élastique magique de GSAP
         overwrite: "auto", // Écrase les animations précédentes pour éviter les conflits
@@ -246,10 +438,10 @@ function GalleryNavButton({ direction, label, onNavigate }) {
   // Animation de sortie de survol (retour à la normale)
   const handlePointerLeave = useCallback(() => {
     gsapReady().then(({ gsap }) => {
+      if (!visualRef.current) return;
       gsap.to(visualRef.current, {
         scale: 1,
         backgroundColor: "rgba(255, 255, 255, 0.74)",
-        boxShadow: "0 18px 44px rgba(3, 105, 161, 0.16)",
         duration: 0.3,
         ease: "power2.out",
         overwrite: "auto",
@@ -265,9 +457,9 @@ function GalleryNavButton({ direction, label, onNavigate }) {
       event.stopPropagation();
 
       gsapReady().then(({ gsap }) => {
+        if (!visualRef.current) return;
         gsap.to(visualRef.current, {
           scale: 0.9,
-          boxShadow: "0 8px 20px rgba(3, 105, 161, 0.12)",
           duration: 0.1,
           ease: "power1.inOut",
           overwrite: "auto",
@@ -293,6 +485,7 @@ function GalleryNavButton({ direction, label, onNavigate }) {
       
       // Petit feedback visuel rapide au clavier
       gsapReady().then(({ gsap }) => {
+        if (!visualRef.current) return;
         gsap.fromTo(
           visualRef.current,
           { scale: 0.9 },
@@ -329,13 +522,12 @@ function GalleryNavButton({ direction, label, onNavigate }) {
 function ProjectGallery({ projects }) {
   const galleryRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [direction, setDirection] = useState(1);
+  const [detailsProject, setDetailsProject] = useState(null);
   const safeActiveIndex = projects.length === 0 ? 0 : Math.min(activeIndex, projects.length - 1);
 
   const goTo = useCallback(
-    (nextIndex, nextDirection) => {
+    (nextIndex) => {
       if (projects.length <= 1) return;
-      setDirection(nextDirection);
       setActiveIndex((nextIndex + projects.length) % projects.length);
     },
     [projects.length]
@@ -348,6 +540,58 @@ function ProjectGallery({ projects }) {
   const handleNext = useCallback(() => {
     goTo(safeActiveIndex + 1, 1);
   }, [goTo, safeActiveIndex]);
+
+  const dragStateRef = useRef(null);
+
+  const handleDragStart = useCallback((event) => {
+    if (projects.length <= 1 || event.button !== 0) return;
+    if (event.target?.closest?.('a, button, input, textarea, select, [contenteditable="true"], [role="combobox"], [role="listbox"]')) return;
+
+    dragStateRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      lastX: event.clientX,
+      lastY: event.clientY,
+    };
+
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  }, [projects.length]);
+
+  const handleDragMove = useCallback((event) => {
+    const state = dragStateRef.current;
+    if (!state || state.pointerId !== event.pointerId) return;
+
+    state.lastX = event.clientX;
+    state.lastY = event.clientY;
+  }, []);
+
+  const finishDrag = useCallback((event) => {
+    const state = dragStateRef.current;
+    if (!state || state.pointerId !== event.pointerId) return;
+
+    dragStateRef.current = null;
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+
+    const dx = state.lastX - state.startX;
+    const dy = state.lastY - state.startY;
+    const absX = Math.abs(dx);
+    const absY = Math.abs(dy);
+
+    if (absX < 64 || absX < absY * 1.25) return;
+
+    event.preventDefault();
+    if (dx < 0) handleNext();
+    else handlePrev();
+  }, [handleNext, handlePrev]);
+
+  const cancelDrag = useCallback((event) => {
+    const state = dragStateRef.current;
+    if (!state || state.pointerId !== event.pointerId) return;
+    dragStateRef.current = null;
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+  }, []);
+
 
   useEffect(() => {
     const onKeyDown = (event) => {
@@ -373,107 +617,25 @@ function ProjectGallery({ projects }) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [handleNext, handlePrev, projects.length]);
 
-  useGsap(galleryRef, (gsap) => {
-    const root = galleryRef.current;
-
-    const wavePaths = root.querySelectorAll(".project-wave-band path");
-    if (wavePaths.length > 0) {
-      gsap.to(wavePaths, {
-        xPercent: (index) => (index % 2 ? 8 : -8),
-        yPercent: (index) => (index % 2 ? -4 : 4),
-        duration: (index) => 5.5 + index,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-        stagger: 0.2,
-      });
-    }
-  }, [projects.length]);
-
-  useEffect(() => {
-    let killed = false;
-
-    gsapReady().then((runtime) => {
-      if (killed || !runtime?.gsap || !galleryRef.current) return;
-      const { gsap } = runtime;
-      const root = galleryRef.current;
-      const activeCard = root.querySelector(".gallery-panel.is-active .project-slide-card");
-      const distortionPlane = root.querySelector(".gallery-distortion-plane");
-      const camera = root.querySelector(".project-gallery-camera");
-
-      gsap.killTweensOf([activeCard, distortionPlane, camera]);
-
-      gsap.fromTo(
-        camera,
-        {
-          rotateY: direction * -7,
-          rotateX: 1.8,
-          filter: "blur(5px) contrast(1.18) saturate(1.22)",
-        },
-        {
-          rotateY: 0,
-          rotateX: 0,
-          filter: "blur(0px) contrast(1) saturate(1)",
-          duration: 0.72,
-          ease: "expo.out",
-        }
-      );
-
-      gsap.fromTo(
-        activeCard,
-        {
-          clipPath: direction > 0 ? "inset(0 18% 0 0 round 64px)" : "inset(0 0 0 18% round 64px)",
-          filter: "blur(10px) contrast(1.18) saturate(1.32)",
-          skewX: direction * 6,
-          scale: 0.965,
-        },
-        {
-          clipPath: "inset(0 0% 0 0% round 64px)",
-          filter: "blur(0px) contrast(1) saturate(1)",
-          skewX: 0,
-          scale: 1,
-          duration: 0.74,
-          ease: "expo.out",
-          clearProps: "clipPath,filter,skewX,scale",
-        }
-      );
-
-      gsap.fromTo(
-        distortionPlane,
-        {
-          autoAlpha: 0.72,
-          xPercent: direction > 0 ? -42 : 42,
-          skewX: direction * -18,
-          scaleX: 0.68,
-        },
-        {
-          autoAlpha: 0,
-          xPercent: direction > 0 ? 42 : -42,
-          skewX: 0,
-          scaleX: 1.28,
-          duration: 0.58,
-          ease: "power3.out",
-        }
-      );
-    });
-
-    return () => {
-      killed = true;
-    };
-  }, [activeIndex, direction]);
 
   if (projects.length === 0) return null;
 
   const activeProject = projects[safeActiveIndex];
+  const detailsOpened = Boolean(detailsProject);
 
   return (
+    <>
     <div ref={galleryRef} className="project-gallery-shell" aria-roledescription="carousel" aria-label="Galerie 3D des projets">
-      <div className="project-gallery-help">← / → clavier · flèches latérales · clic sur les panneaux</div>
-
       {projects.length > 1 && <GalleryNavButton direction="prev" label="Projet précédent" onNavigate={handlePrev} />}
 
-      <div className="project-gallery-viewport">
-        <div className="gallery-distortion-plane" aria-hidden="true" />
+      <div
+        className="project-gallery-viewport"
+        onPointerDown={handleDragStart}
+        onPointerMove={handleDragMove}
+        onPointerUp={finishDrag}
+        onPointerCancel={cancelDrag}
+        onPointerLeave={cancelDrag}
+      >
         <div className="project-gallery-camera">
           {projects.map((project, index) => {
             const offset = getRelativeIndex(index, safeActiveIndex, projects.length);
@@ -484,23 +646,13 @@ function ProjectGallery({ projects }) {
             return (
               <div
                 key={key}
-                role="button"
                 className={`gallery-panel ${isActive ? "is-active" : ""} ${isVisible ? "is-visible" : "is-hidden"}`}
                 style={getPanelStyle(offset)}
-                onClick={() => {
-                  if (!isActive) goTo(index, offset > 0 ? 1 : -1);
-                }}
-                onKeyDown={(event) => {
-                  if (!isActive && (event.key === "Enter" || event.key === " ")) {
-                    event.preventDefault();
-                    goTo(index, offset > 0 ? 1 : -1);
-                  }
-                }}
-                aria-label={isActive ? `Projet actif : ${project.title}` : `Afficher le projet ${project.title}`}
+                aria-label={isActive ? `Projet actif : ${project.title}` : `Projet en arrière-plan : ${project.title}`}
                 aria-current={isActive ? "true" : undefined}
-                tabIndex={isActive || isVisible ? 0 : -1}
+                aria-hidden={!isActive}
               >
-                <ProjectIsland project={project} index={index} total={projects.length} featured={project.featured || index === 0} />
+                <ProjectIsland project={project} index={index} total={projects.length} featured={Boolean(project.featured)} active={isActive} onOpenDetails={setDetailsProject} />
               </div>
             );
           })}
@@ -526,6 +678,8 @@ function ProjectGallery({ projects }) {
         {String(safeActiveIndex + 1).padStart(2, "0")} — {activeProject.title}
       </Text>
     </div>
+    <ProjectDetailsModal project={detailsProject} opened={detailsOpened} onClose={() => setDetailsProject(null)} />
+    </>
   );
 }
 
@@ -588,8 +742,9 @@ export default function ProjectsShowcase({ projects }) {
   return (
     <section ref={rootRef} id="projects" className="page-section projects-section">
       <SectionTitle
+        reveal="soft"
         title="Mes projets"
-        description="Une galerie 3D contrôlable au clavier, découplée de la barre de recherche et des filtres."
+        description="La galerie 3D révèle chaque projet sans rafraîchir la recherche ni les filtres."
         rightSlot={
           <Button onClick={exportProjects} radius="xl" variant="light">
             Exporter JSON
