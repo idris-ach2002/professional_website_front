@@ -744,7 +744,6 @@ export default function ProjectsShowcase({ projects }) {
       <SectionTitle
         reveal="soft"
         title="Mes projets"
-        description="La galerie 3D révèle chaque projet sans rafraîchir la recherche ni les filtres."
         rightSlot={
           <Button onClick={exportProjects} radius="xl" variant="light">
             Exporter JSON

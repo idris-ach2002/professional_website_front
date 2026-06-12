@@ -76,12 +76,12 @@ function Home({
 
         <Suspense
           fallback={
-            <div className="section-skeleton">
+            <div className="section-skeleton ocean-bubble-fallback">
               Chargement de la vague de bulles 3D…
             </div>
           }
         >
-          <OceanBubbleField />
+          <OceanBubbleField fullBleed />
         </Suspense>
 
         <ProjectsShowcase projects={projects} />
