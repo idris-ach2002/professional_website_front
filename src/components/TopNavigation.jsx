@@ -20,7 +20,7 @@ export default function TopNavigation({ owner }) {
   const [opened, { toggle, close }] = useDisclosure(false);
   const ownerName = getOwnerFullName(owner);
 
-  useGsap(rootRef, (gsap, ScrollTrigger) => {
+  useGsap(rootRef, (gsap) => {
     const root = rootRef.current;
     if (!root) return undefined;
 
@@ -48,18 +48,52 @@ export default function TopNavigation({ owner }) {
       });
     });
 
-    if (ScrollTrigger && nav) {
-      ScrollTrigger.create({
-        start: 80,
-        end: "bottom bottom",
-        onUpdate: (self) => {
-          if (scrollCurrent) {
-            gsap.to(scrollCurrent, { scaleX: self.progress, duration: 0.18, ease: "none" });
-          }
-          gsap.to(nav, { boxShadow: self.progress > 0.02 ? "0 18px 50px rgba(14, 116, 144, .16)" : "0 8px 30px rgba(14, 116, 144, .08)", duration: 0.2 });
-        },
+    let progressFrame = 0;
+
+    const getScrollProgress = () => {
+      const scrollingElement = document.scrollingElement || document.documentElement;
+      const scrollTop = scrollingElement.scrollTop || window.scrollY || 0;
+      const maxScroll = Math.max(
+        1,
+        scrollingElement.scrollHeight - window.innerHeight,
+        document.body.scrollHeight - window.innerHeight,
+      );
+
+      return Math.min(1, Math.max(0, scrollTop / maxScroll));
+    };
+
+    const updateScrollProgress = () => {
+      window.cancelAnimationFrame(progressFrame);
+      progressFrame = window.requestAnimationFrame(() => {
+        const progress = getScrollProgress();
+
+        if (scrollCurrent) {
+          gsap.set(scrollCurrent, { scaleX: progress });
+        }
+
+        if (nav) {
+          gsap.to(nav, {
+            boxShadow: progress > 0.02
+              ? "0 18px 50px rgba(14, 116, 144, .16)"
+              : "0 8px 30px rgba(14, 116, 144, .08)",
+            duration: 0.2,
+            overwrite: "auto",
+          });
+        }
       });
-    }
+    };
+
+    updateScrollProgress();
+    window.addEventListener("scroll", updateScrollProgress, { passive: true });
+    window.addEventListener("resize", updateScrollProgress, { passive: true });
+    window.addEventListener("load", updateScrollProgress, { once: true });
+
+    cleanups.push(() => {
+      window.cancelAnimationFrame(progressFrame);
+      window.removeEventListener("scroll", updateScrollProgress);
+      window.removeEventListener("resize", updateScrollProgress);
+      window.removeEventListener("load", updateScrollProgress);
+    });
 
     return () => cleanups.forEach((cleanup) => cleanup());
   }, [ownerName]);
