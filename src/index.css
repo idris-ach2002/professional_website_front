@@ -1989,7 +1989,9 @@ html {
 .gallery-panel .project-slide-card,
 .gallery-panel {
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
 }
 
 .gallery-panel.is-active .project-visual::after {
@@ -2214,8 +2216,8 @@ html {
   color: inherit;
   font: inherit;
   text-align: left;
-  opacity: var(--gallery-opacity);
-  z-index: calc(10 - var(--gallery-depth));
+  opacity: var(--gallery-opacity, 0);
+  z-index: var(--gallery-z-index, 1) !important;
   inset: 0 !important;
   display: grid !important;
   place-items: center !important;
@@ -2223,23 +2225,29 @@ html {
   height: 100% !important;
   background: transparent !important;
   border-radius: 48px !important;
-  transform: translate3d(var(--gallery-x), 0, var(--gallery-z))
-    rotateY(var(--gallery-rotate-y))
-    scale(var(--gallery-scale)) !important;
-  transform-origin: var(--gallery-origin) !important;
+  transform: translate3d(var(--gallery-x, 0%), 0, var(--gallery-z, -760px))
+    rotateY(var(--gallery-rotate-y, 0deg))
+    scale(var(--gallery-scale, .46)) !important;
+  transform-origin: var(--gallery-origin, center center) !important;
+  transform-style: preserve-3d !important;
+  -webkit-transform-style: preserve-3d !important;
+  backface-visibility: hidden !important;
+  -webkit-backface-visibility: hidden !important;
   transition: transform 1.02s cubic-bezier(.19, 1, .22, 1),
     opacity .62s cubic-bezier(.19, 1, .22, 1) !important;
   filter: none !important;
-  contain: layout paint;
+  contain: layout paint style;
   pointer-events: none !important;
 }
 
 .gallery-panel.is-active {
   cursor: default;
-  transform: translate3d(0, 0, 0) rotateY(0deg) scale(1) !important;
+  opacity: 1 !important;
+  transform: translate3d(0, 0, .1px) rotateY(0deg) scale(1) !important;
   transform-origin: center center !important;
-  transform-style: flat !important;
-  z-index: 20 !important;
+  transform-style: preserve-3d !important;
+  -webkit-transform-style: preserve-3d !important;
+  z-index: var(--gallery-z-index, 30) !important;
   pointer-events: auto !important;
 }
 
@@ -2337,6 +2345,8 @@ main,
   box-shadow: none !important;
   perspective: 1700px !important;
   perspective-origin: 50% 50% !important;
+  transform-style: preserve-3d !important;
+  -webkit-transform-style: preserve-3d !important;
   min-height: auto !important;
   padding-bottom: clamp(26px, 4vw, 48px) !important;
 }
@@ -2346,6 +2356,9 @@ main,
   z-index: 2;
   width: 100%;
   transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  perspective: 1700px !important;
+  perspective-origin: 50% 50% !important;
   display: grid !important;
   place-items: center !important;
   overflow: visible !important;
@@ -2364,7 +2377,9 @@ main,
   place-items: center !important;
   transform: translate3d(0, 0, 0) !important;
   transform-style: preserve-3d !important;
+  -webkit-transform-style: preserve-3d !important;
   height: clamp(560px, 54vw, 680px) !important;
+  isolation: isolate;
 }
 
 .project-carousel-panel,
