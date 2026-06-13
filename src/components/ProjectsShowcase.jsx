@@ -398,11 +398,15 @@ function getRelativeIndex(index, activeIndex, total) {
 function getPanelStyle(offset) {
   const abs = Math.abs(offset);
   const side = Math.sign(offset);
-  const visibleDepth = Math.min(abs, 3);
-  const x = side * (abs === 1 ? 43 : abs === 2 ? 72 : 92);
-  const z = abs === 0 ? 110 : abs === 1 ? -120 : abs === 2 ? -300 : -520;
+
+  const depth = abs;
+
+  const extraPush = Math.max(0, abs - 2);
+
+  const x = side * (abs === 0 ? 0 : abs === 1 ? 43 : abs === 2 ? 72 : 92 + extraPush * 5);
+  const z = abs === 0 ? 110 : abs === 1 ? -120 : abs === 2 ? -300 : -520 - extraPush * 100;
   const rotateY = side * (abs === 0 ? 0 : abs === 1 ? -42 : -58);
-  const scale = abs === 0 ? 1 : abs === 1 ? 0.8 : abs === 2 ? 0.64 : 0.52;
+  const scale = abs === 0 ? 1 : abs === 1 ? 0.8 : abs === 2 ? 0.64 : Math.max(0.1, 0.52 - extraPush * 0.05);
   const opacity = abs <= 2 ? 1 : 0;
 
   return {
@@ -411,17 +415,13 @@ function getPanelStyle(offset) {
     "--gallery-rotate-y": `${rotateY}deg`,
     "--gallery-scale": scale,
     "--gallery-opacity": opacity,
-    "--gallery-depth": visibleDepth,
+    "--gallery-depth": depth,
     "--gallery-origin": side < 0 ? "right center" : side > 0 ? "left center" : "center center",
   };
 }
-
-
 function GalleryNavButton({ direction, label, onNavigate }) {
-  // On crée une référence pour cibler spécifiquement le cercle visuel avec GSAP
   const visualRef = useRef(null);
 
-  // Animation au survol (agrandissement avec rebond)
   const handlePointerEnter = useCallback(() => {
     gsapReady().then(({ gsap }) => {
       if (!visualRef.current) return;
@@ -429,13 +429,12 @@ function GalleryNavButton({ direction, label, onNavigate }) {
         scale: 1.12,
         backgroundColor: "rgba(255, 255, 255, 0.95)",
         duration: 0.35,
-        ease: "back.out(1.6)", // L'effet élastique magique de GSAP
+        ease: "back.out(1.6)",
         overwrite: "auto", // Écrase les animations précédentes pour éviter les conflits
       });
     });
   }, []);
 
-  // Animation de sortie de survol (retour à la normale)
   const handlePointerLeave = useCallback(() => {
     gsapReady().then(({ gsap }) => {
       if (!visualRef.current) return;
