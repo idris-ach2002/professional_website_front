@@ -307,21 +307,11 @@ function ProjectIsland({ project, index, featured, total, active, onOpenDetails 
                     onPointerDown={(event) => {
                       if (event.pointerType === "mouse" && event.button !== 0) return;
                       event.stopPropagation();
-                      event.currentTarget.setPointerCapture?.(event.pointerId);
-                    }}
-                    onPointerUp={(event) => {
-                      if (event.pointerType === "mouse" && event.button !== 0) return;
-                      event.preventDefault();
-                      event.stopPropagation();
-                      event.currentTarget.releasePointerCapture?.(event.pointerId);
-                      onOpenDetails(project);
-                    }}
-                    onPointerCancel={(event) => {
-                      event.currentTarget.releasePointerCapture?.(event.pointerId);
                     }}
                     onClick={(event) => {
                       event.preventDefault();
                       event.stopPropagation();
+                      onOpenDetails(project);
                     }}
                     onKeyDown={(event) => {
                       if (event.key !== "Enter" && event.key !== " ") return;

@@ -2236,17 +2236,17 @@ html {
   transition: transform 1.02s cubic-bezier(.19, 1, .22, 1),
     opacity .62s cubic-bezier(.19, 1, .22, 1) !important;
   filter: none !important;
-  contain: layout paint style;
+  contain: none;
   pointer-events: none !important;
 }
 
 .gallery-panel.is-active {
   cursor: default;
   opacity: 1 !important;
-  transform: translate3d(0, 0, .1px) rotateY(0deg) scale(1) !important;
+  transform: none !important;
   transform-origin: center center !important;
-  transform-style: preserve-3d !important;
-  -webkit-transform-style: preserve-3d !important;
+  transform-style: flat !important;
+  -webkit-transform-style: flat !important;
   z-index: var(--gallery-z-index, 30) !important;
   pointer-events: auto !important;
 }
