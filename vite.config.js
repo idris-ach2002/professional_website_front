@@ -4,14 +4,40 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '')
+  const backendTarget = env.VITE_API_PROXY_TARGET || 'http://localhost:8080'
+
+  const backendProxy = {
+    target: backendTarget,
+    changeOrigin: false,
+    secure: false,
+    configure(proxy) {
+      proxy.on('proxyRes', (proxyRes) => {
+        const location = proxyRes.headers.location
+        if (!location) return
+
+        try {
+          const targetOrigin = new URL(backendTarget).origin
+          if (location.startsWith(targetOrigin)) {
+            proxyRes.headers.location = location.slice(targetOrigin.length) || '/'
+          }
+        } catch {
+          // Keep the original Location header when the target is not a valid URL.
+        }
+      })
+    },
+  }
 
   return {
     plugins: [react(), tailwindcss()],
     server: {
       proxy: {
-        '/website': env.VITE_API_PROXY_TARGET || 'http://localhost:8080',
-        '/manager': env.VITE_API_PROXY_TARGET || 'http://localhost:8080',
-        '/uploads': env.VITE_API_PROXY_TARGET || 'http://localhost:8080',
+        '/website': backendProxy,
+        '/manager': backendProxy,
+        '/api': backendProxy,
+        '/uploads': backendProxy,
+        '/csrf': backendProxy,
+        '/login': backendProxy,
+        '/logout': backendProxy,
       },
     },
     build: {
