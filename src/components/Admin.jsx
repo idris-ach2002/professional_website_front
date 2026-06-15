@@ -23,6 +23,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useGsap } from "../animations/useGsap";
 import { FilePreviewButton } from "./FilePreview";
+import { normalizeAdminPortfolioJson } from "../utils/adminJsonImport";
 import {
   apiRequest,
   isAuthRequiredError,
@@ -122,6 +123,7 @@ const emptyProjectForm = {
   demoUrl: "https://portfolio.example.com",
   githubUrl: "https://github.com/idris-ach2002/portfolio",
   documentationUrl: "",
+  architectureUrl: "",
   stacks: "Java, Spring Boot, React, PostgreSQL, Docker",
   features: "Versioning, Version active unique, Admin panel, API REST",
   featured: true,
@@ -319,6 +321,30 @@ function hydrateExperiences(timeline) {
   }));
 }
 
+
+function getProjectArchitectureUrl(project) {
+  const directArchitectureUrl = project?.architectureUrl;
+  if (directArchitectureUrl) return directArchitectureUrl;
+
+  const architectureLink = (project?.links ?? []).find((link) => {
+    const signature = `${link?.type ?? ""} ${link?.label ?? ""}`.toLowerCase();
+    return [
+      "architecture",
+      "diagramme",
+      "diagram",
+      "dataflow",
+      "data flow",
+      "infrastructure",
+      "infra",
+      "kubernetes",
+      "schéma",
+      "schema",
+    ].some((keyword) => signature.includes(keyword));
+  });
+
+  return architectureLink?.url ?? "";
+}
+
 function hydrateProjectForm(project) {
   if (!project) return { ...emptyProjectForm };
 
@@ -334,6 +360,7 @@ function hydrateProjectForm(project) {
     demoUrl: project.demoUrl ?? "",
     githubUrl: project.githubUrl ?? "",
     documentationUrl: project.documentationUrl ?? "",
+    architectureUrl: getProjectArchitectureUrl(project),
     stacks: toCsv(project.stacks),
     features: toCsv(project.features),
     featured: Boolean(project.featured),
@@ -441,6 +468,10 @@ export default function Admin() {
   const [profileFiles, setProfileFiles] = useState(emptyProfileFiles);
   const [experienceFiles, setExperienceFiles] = useState(emptyExperienceFiles);
   const [projectFiles, setProjectFiles] = useState(emptyProjectFiles);
+
+  const [jsonImportFile, setJsonImportFile] = useState(null);
+  const [jsonImportText, setJsonImportText] = useState("");
+  const [jsonImportSummary, setJsonImportSummary] = useState(null);
 
   const selectedVersion = useMemo(
     () =>
@@ -809,6 +840,83 @@ export default function Admin() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+
+  function applyImportedPortfolioData(rawPayload) {
+    const normalized = normalizeAdminPortfolioJson(rawPayload);
+    const normalizedExperiences = normalized.experiences;
+    const normalizedProjects = normalized.projects;
+
+    setOwnerForm((current) => ({
+      ...current,
+      ...normalized.ownerForm,
+      contacts: normalized.ownerForm.contacts.length > 0
+        ? normalized.ownerForm.contacts
+        : [createEmptyContact()],
+    }));
+    setVersionForm((current) => ({ ...current, ...normalized.versionForm }));
+    setProfileForm((current) => ({ ...current, ...normalized.profileForm }));
+    setTimelineForm((current) => ({ ...current, ...normalized.timelineForm }));
+    setExperiences(normalizedExperiences);
+    setProjects(normalizedProjects);
+    setExperienceForm({
+      ...emptyExperienceForm,
+      displayOrder: normalizedExperiences.length + 1,
+    });
+    setExperienceFiles(emptyExperienceFiles);
+    setProjectMode("create");
+    setSelectedProjectId(null);
+    setProjectForm({
+      ...emptyProjectForm,
+      displayOrder: normalizedProjects.length + 1,
+    });
+    setProjectFiles(emptyProjectFiles);
+    setProfileFiles(emptyProfileFiles);
+    setJsonImportSummary(normalized.summary);
+    setMessage(
+      `JSON importé dans le formulaire : ${normalized.summary.experiences} expérience(s), ${normalized.summary.projects} projet(s), ${normalized.summary.contacts} contact(s).`,
+    );
+    setError(null);
+  }
+
+  async function importJsonFromFile() {
+    if (!jsonImportFile) {
+      setError("Sélectionne d’abord un fichier JSON.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const content = await jsonImportFile.text();
+      const parsedPayload = JSON.parse(content);
+      applyImportedPortfolioData(parsedPayload);
+      setJsonImportFile(null);
+    } catch (err) {
+      setError(err?.message ?? "Import JSON impossible.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function importJsonFromText() {
+    if (!jsonImportText.trim()) {
+      setError("Colle un JSON ou sélectionne un fichier JSON.");
+      return;
+    }
+
+    setError(null);
+    setMessage(null);
+
+    try {
+      const parsedPayload = JSON.parse(jsonImportText);
+      applyImportedPortfolioData(parsedPayload);
+    } catch (err) {
+      setError(err?.message ?? "Le JSON collé est invalide.");
+    }
+  }
+
   async function buildProfilePayload() {
     const uploadedProfileImageUrl = await uploadFile(profileFiles.profileImage);
     const uploadedLogoUrl = await uploadFile(profileFiles.logo);
@@ -911,6 +1019,7 @@ export default function Admin() {
     const documentationUrl = nullIfBlank(
       uploadedDocumentationUrl ?? projectForm.documentationUrl,
     );
+    const architectureUrl = nullIfBlank(projectForm.architectureUrl);
 
     return {
       title: projectForm.title,
@@ -927,8 +1036,8 @@ export default function Admin() {
       stacks: toArray(projectForm.stacks),
       features: toArray(projectForm.features),
       links: [
-        { type: "GITHUB", label: "Code source", url: nullIfBlank(projectForm.githubUrl) },
-        { type: "DEMO", label: "Démo", url: nullIfBlank(projectForm.demoUrl) },
+        { type: "GITHUB", label: "GitHub", url: nullIfBlank(projectForm.githubUrl) },
+        { type: "ARCHITECTURE", label: "Architecture", url: architectureUrl },
         { type: "DOCUMENTATION", label: "Documentation", url: documentationUrl },
       ].filter((link) => link.url),
       featured: projectForm.featured,
@@ -1354,12 +1463,95 @@ export default function Admin() {
         <Card shadow="sm" padding="xl" radius="xl" withBorder className="admin-tabs-card">
           <Tabs defaultValue="version" variant="outline" radius="md" className="admin-tabs">
             <Tabs.List>
+              <Tabs.Tab value="import">Import JSON</Tabs.Tab>
               <Tabs.Tab value="owner">Profil principal</Tabs.Tab>
               <Tabs.Tab value="version">Versions</Tabs.Tab>
               <Tabs.Tab value="profile">Profil & fichiers</Tabs.Tab>
               <Tabs.Tab value="timeline">Timeline</Tabs.Tab>
               <Tabs.Tab value="project">Projets</Tabs.Tab>
             </Tabs.List>
+
+
+            <Tabs.Panel value="import" pt="lg">
+              <Stack gap="lg">
+                <Group justify="space-between" align="flex-start">
+                  <div>
+                    <Text fw={800}>Import automatique depuis un JSON</Text>
+                    <Text size="sm" c="dimmed">
+                      Le JSON préremplit les formulaires owner, version, profil, timeline et projets. Les images et PDF restent remplaçables avec les champs d’upload existants.
+                    </Text>
+                  </div>
+                  <Badge variant="light">Préremplissage</Badge>
+                </Group>
+
+                <Divider />
+
+                <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
+                  <Paper withBorder p="lg" radius="lg" className="admin-nested-panel">
+                    <Stack gap="md">
+                      <Text fw={800}>Importer un fichier</Text>
+                      <Text size="sm" c="dimmed">
+                        Utilise un fichier JSON complet pour automatiser la saisie, puis ajuste les champs avant de créer ou sauvegarder la version.
+                      </Text>
+                      <FileInput
+                        label="Fichier JSON"
+                        placeholder="portfolio-import.json"
+                        accept="application/json,.json"
+                        value={jsonImportFile}
+                        onChange={setJsonImportFile}
+                      />
+                      <Group>
+                        <Button onClick={importJsonFromFile} loading={loading} disabled={!jsonImportFile}>
+                          Importer dans le formulaire
+                        </Button>
+                        <Button
+                          component="a"
+                          href="/examples/portfolio-import-idris-complet.json"
+                          download
+                          variant="light"
+                        >
+                          Télécharger un exemple complet
+                        </Button>
+                      </Group>
+                    </Stack>
+                  </Paper>
+
+                  <Paper withBorder p="lg" radius="lg" className="admin-nested-panel">
+                    <Stack gap="md">
+                      <Text fw={800}>Ou coller un JSON</Text>
+                      <Text size="sm" c="dimmed">
+                        Pratique pour tester rapidement un contenu généré avant de l’enregistrer côté backend.
+                      </Text>
+                      <Textarea
+                        label="JSON brut"
+                        placeholder='{"name":"ACHABOU","firstName":"Idris","projects":[]}'
+                        minRows={9}
+                        value={jsonImportText}
+                        onChange={(event) => setJsonImportText(event.currentTarget.value)}
+                      />
+                      <Group>
+                        <Button variant="light" onClick={importJsonFromText}>
+                          Importer le JSON collé
+                        </Button>
+                        <Button variant="subtle" onClick={() => setJsonImportText("")}>
+                          Vider
+                        </Button>
+                      </Group>
+                    </Stack>
+                  </Paper>
+                </SimpleGrid>
+
+                {jsonImportSummary && (
+                  <Alert color="green" variant="light" className="admin-alert">
+                    Import chargé : version {jsonImportSummary.versionTag} — {jsonImportSummary.versionLabel}. {jsonImportSummary.contacts} contact(s), {jsonImportSummary.experiences} expérience(s), {jsonImportSummary.projects} projet(s), dont {jsonImportSummary.featuredProjects} featured et {jsonImportSummary.publishedProjects} publié(s).
+                  </Alert>
+                )}
+
+                <Alert variant="light" className="admin-alert">
+                  Après import, va dans les onglets Profil & fichiers, Timeline et Projets pour contrôler les champs. Ensuite tu peux créer un owner, créer une nouvelle version, ou activer la version selon ton workflow habituel.
+                </Alert>
+              </Stack>
+            </Tabs.Panel>
 
             <Tabs.Panel value="owner" pt="lg">
               <Stack gap="lg">
@@ -1801,6 +1993,7 @@ export default function Admin() {
                       <TextInput label="Date fin" value={projectForm.endDate} onChange={(event) => updateProjectForm("endDate", event.currentTarget.value)} />
                       <TextInput label="Demo URL" value={projectForm.demoUrl} onChange={(event) => updateProjectForm("demoUrl", event.currentTarget.value)} />
                       <TextInput label="GitHub URL" value={projectForm.githubUrl} onChange={(event) => updateProjectForm("githubUrl", event.currentTarget.value)} />
+                      <TextInput label="Architecture URL" value={projectForm.architectureUrl} onChange={(event) => updateProjectForm("architectureUrl", event.currentTarget.value)} />
                       <TextInput label="Stacks séparées par des virgules" value={projectForm.stacks} onChange={(event) => updateProjectForm("stacks", event.currentTarget.value)} />
                       <TextInput label="Features séparées par des virgules" value={projectForm.features} onChange={(event) => updateProjectForm("features", event.currentTarget.value)} />
                     </SimpleGrid>

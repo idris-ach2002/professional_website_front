@@ -1,0 +1,370 @@
+{
+  "name": "ACHABOU",
+  "firstName": "Idris",
+  "age": 23,
+  "active": true,
+  "address": "Paris, Île-de-France",
+  "contacts": [
+    {
+      "type": "EMAIL",
+      "value": "idris.achabou@example.com"
+    },
+    {
+      "type": "GITHUB",
+      "value": "https://github.com/idris-ach2002"
+    },
+    {
+      "type": "LINKEDIN",
+      "value": "https://www.linkedin.com/in/idris-achabou"
+    },
+    {
+      "type": "PORTFOLIO",
+      "value": "https://portfolio.example.com"
+    },
+    {
+      "type": "WEBSITE",
+      "value": "https://achabou.dev"
+    }
+  ],
+  "versionTag": "v-import-2026",
+  "versionLabel": "Version importée complète",
+  "versionDescription": "Version complète générée depuis un fichier JSON pour préremplir l'administration du portfolio.",
+  "versionPublished": true,
+  "versionActive": false,
+  "prof": {
+    "title": "Alternance ingénierie logicielle",
+    "subtitle": "Java · Spring Boot · React · PostgreSQL",
+    "headline": "Développement logiciel, architecture backend et interfaces produit.",
+    "shortDescription": "Portfolio professionnel orienté ingénierie logicielle, applications web robustes et automatisation de contenu.",
+    "description": "Je conçois des applications web complètes avec une architecture claire, un backend Spring Boot, une API REST documentée, une base PostgreSQL et un frontend React moderne. Je cherche une alternance de 12 mois à partir de septembre 2026 pour contribuer à des produits logiciels exigeants.",
+    "location": "Paris, Île-de-France",
+    "availability": "Disponible pour une alternance à partir de septembre 2026",
+    "profileImageUrl": "/assets/mock/profiles/idris-achabou-profile.png",
+    "logoUrl": "/assets/mock/logos/idris-achabou-logo.png",
+    "cvUrl": "/assets/mock/documents/cv-idris-achabou-demo.pdf",
+    "portfolioUrl": "https://portfolio.example.com"
+  },
+  "timeline": {
+    "title": "Parcours",
+    "description": "Formation, expériences professionnelles et projets structurants en développement logiciel.",
+    "experiences": [
+      {
+        "category": "SCHOOL",
+        "title": "Master Informatique STL",
+        "organization": "Sorbonne Université",
+        "location": "Paris",
+        "summary": "Formation en science et technologie du logiciel.",
+        "description": "Approfondissement en architecture logicielle, conception orientée objet, systèmes concurrents, qualité logicielle et développement avancé.",
+        "startDate": "2025-09-01",
+        "endDate": "2027-09-01",
+        "currentPosition": true,
+        "imageUrl": "/assets/mock/timeline/sorbonne-master.png",
+        "websiteUrl": "https://www.sorbonne-universite.fr",
+        "skills": [
+          "Java",
+          "Architecture logicielle",
+          "Systèmes concurrents",
+          "Qualité logicielle"
+        ],
+        "displayOrder": 1
+      },
+      {
+        "category": "INTERNSHIP",
+        "title": "Stage développement logiciel / data",
+        "organization": "LITIS — Université Le Havre Normandie",
+        "location": "Le Havre",
+        "summary": "Chaîne de collecte, stockage et exploitation de données AIS.",
+        "description": "Conception d'un connecteur TCP robuste, ingestion CSV.gz vers PostgreSQL, supervision systemd, pagination, filtrage spatio-temporel et export CSV pour l'exploitation de données maritimes.",
+        "startDate": "2025-04-01",
+        "endDate": "2025-06-30",
+        "currentPosition": false,
+        "imageUrl": "/assets/mock/timeline/litis-stage.png",
+        "websiteUrl": "https://www.litislab.fr",
+        "skills": [
+          "Java 21",
+          "PostgreSQL",
+          "Python",
+          "Symfony",
+          "systemd"
+        ],
+        "displayOrder": 2
+      },
+      {
+        "category": "SCHOOL",
+        "title": "Licence Informatique",
+        "organization": "Université Le Havre Normandie",
+        "location": "Le Havre",
+        "summary": "Licence informatique obtenue avec mention Très Bien.",
+        "description": "Socle solide en algorithmique, programmation, bases de données, systèmes, réseau, conception logicielle et développement web.",
+        "startDate": "2022-09-01",
+        "endDate": "2025-06-30",
+        "currentPosition": false,
+        "imageUrl": "/assets/mock/timeline/ulhn-licence.png",
+        "websiteUrl": "https://www.univ-lehavre.fr",
+        "skills": [
+          "Algorithmique",
+          "SQL",
+          "Java",
+          "Web",
+          "Linux"
+        ],
+        "displayOrder": 3
+      },
+      {
+        "category": "CDD",
+        "title": "Assistant logistique — CDI étudiant",
+        "organization": "La Belle Vie / Deleev",
+        "location": "Paris",
+        "summary": "Expérience terrain en organisation, rigueur opérationnelle et coordination.",
+        "description": "Gestion de flux, préparation, contrôle, priorisation des tâches et travail en équipe dans un environnement logistique exigeant.",
+        "startDate": "2025-11-01",
+        "endDate": null,
+        "currentPosition": true,
+        "imageUrl": "/assets/mock/timeline/labellevie-job.png",
+        "websiteUrl": "https://www.labellevie.com",
+        "skills": [
+          "Organisation",
+          "Rigueur",
+          "Coordination",
+          "Priorisation"
+        ],
+        "displayOrder": 4
+      }
+    ]
+  },
+  "projects": [
+    {
+      "title": "Portfolio professionnel dynamique",
+      "subtitle": "Spring Boot · React · PostgreSQL · Cloudflare",
+      "shortDescription": "Portfolio administrable avec versions, projet actif unique, uploads protégés et fallback mock.",
+      "description": "Application fullstack permettant de gérer un profil public, une timeline, des projets, des fichiers protégés, un système de versions clonables et une version active unique. Le front React consomme l'API Spring Boot et bascule sur un mock riche lorsque le backend est indisponible.",
+      "status": "IN_PROGRESS",
+      "startDate": "2026-01-01",
+      "endDate": null,
+      "imageUrl": "/assets/mock/projects/portfolio-admin-preview.png",
+      "demoUrl": "https://portfolio.example.com",
+      "githubUrl": "https://github.com/idris-ach2002/professional-website",
+      "architectureUrl": "/assets/mock/diagrams/mock-architecture-diagram.png",
+      "documentationUrl": "/assets/mock/documents/portfolio-admin-documentation.pdf",
+      "stacks": [
+        "Java 21",
+        "Spring Boot",
+        "React",
+        "Mantine",
+        "PostgreSQL",
+        "Docker"
+      ],
+      "features": [
+        "Administration complète du contenu",
+        "Historique de versions",
+        "Version active unique",
+        "Upload fichiers protégés",
+        "Fallback mock riche"
+      ],
+      "links": [
+        {
+          "type": "GITHUB",
+          "label": "GitHub",
+          "url": "https://github.com/idris-ach2002/professional-website"
+        },
+        {
+          "type": "ARCHITECTURE",
+          "label": "Architecture",
+          "url": "/assets/mock/diagrams/mock-architecture-diagram.png"
+        },
+        {
+          "type": "DOCUMENTATION",
+          "label": "Documentation",
+          "url": "/assets/mock/documents/portfolio-admin-documentation.pdf"
+        }
+      ],
+      "featured": true,
+      "published": true,
+      "displayOrder": 1,
+      "websiteVersionId": null
+    },
+    {
+      "title": "Pipeline AIS maritime",
+      "subtitle": "Java · PostgreSQL · Python · Geo",
+      "shortDescription": "Pipeline de collecte et d'exploitation de données AIS pour des trajectoires maritimes.",
+      "description": "Chaîne de traitement complète : connexion TCP, ingestion massive de fichiers compressés, stockage PostgreSQL, filtrage spatio-temporel, pagination et export CSV. L'objectif est de fournir une base technique fiable pour l'analyse de trajectoires navales.",
+      "status": "COMPLETED",
+      "startDate": "2025-04-01",
+      "endDate": "2025-06-30",
+      "imageUrl": "/assets/mock/projects/ais-platform-preview.png",
+      "demoUrl": "",
+      "githubUrl": "https://github.com/idris-ach2002/ais-pipeline",
+      "architectureUrl": "/assets/mock/diagrams/mock-dataflow-diagram.png",
+      "documentationUrl": "/assets/mock/documents/ais-platform-documentation.pdf",
+      "stacks": [
+        "Java 21",
+        "PostgreSQL",
+        "Python",
+        "Symfony",
+        "Tailwind",
+        "Linux"
+      ],
+      "features": [
+        "Connecteur TCP robuste",
+        "Ingestion CSV.gz",
+        "Filtrage spatio-temporel",
+        "Export CSV",
+        "Supervision systemd"
+      ],
+      "links": [
+        {
+          "type": "GITHUB",
+          "label": "GitHub",
+          "url": "https://github.com/idris-ach2002/ais-pipeline"
+        },
+        {
+          "type": "ARCHITECTURE",
+          "label": "Architecture",
+          "url": "/assets/mock/diagrams/mock-dataflow-diagram.png"
+        },
+        {
+          "type": "DOCUMENTATION",
+          "label": "Documentation",
+          "url": "/assets/mock/documents/ais-platform-documentation.pdf"
+        }
+      ],
+      "featured": true,
+      "published": true,
+      "displayOrder": 2,
+      "websiteVersionId": null
+    },
+    {
+      "title": "Laboratoire Kubernetes local",
+      "subtitle": "Docker · Kubernetes · MinIO · Redis",
+      "shortDescription": "Scénario DevOps local valorisable autour du portfolio Spring Boot.",
+      "description": "Mise en place d'un environnement Kubernetes local avec backend Spring Boot, PostgreSQL StatefulSet, Redis, MinIO, Ingress, ConfigMap, Secret et HPA. L'objectif est de valoriser les compétences d'industrialisation sans dépendre d'un hébergement cloud payant.",
+      "status": "MAINTAINED",
+      "startDate": "2026-03-01",
+      "endDate": null,
+      "imageUrl": "/assets/mock/projects/devops-lab-preview.png",
+      "demoUrl": "",
+      "githubUrl": "https://github.com/idris-ach2002/portfolio-k8s-lab",
+      "architectureUrl": "/assets/mock/diagrams/mock-architecture-diagram.png",
+      "documentationUrl": "/assets/mock/documents/kubernetes-devops-documentation.pdf",
+      "stacks": [
+        "Docker",
+        "Kubernetes",
+        "Spring Boot",
+        "PostgreSQL",
+        "Redis",
+        "MinIO"
+      ],
+      "features": [
+        "Déploiements Kubernetes",
+        "Secrets et ConfigMaps",
+        "Autoscaling HPA",
+        "Stockage objet local",
+        "Exposition via tunnel"
+      ],
+      "links": [
+        {
+          "type": "GITHUB",
+          "label": "GitHub",
+          "url": "https://github.com/idris-ach2002/portfolio-k8s-lab"
+        },
+        {
+          "type": "ARCHITECTURE",
+          "label": "Architecture",
+          "url": "/assets/mock/diagrams/mock-architecture-diagram.png"
+        },
+        {
+          "type": "DOCUMENTATION",
+          "label": "Documentation",
+          "url": "/assets/mock/documents/kubernetes-devops-documentation.pdf"
+        }
+      ],
+      "featured": true,
+      "published": true,
+      "displayOrder": 3,
+      "websiteVersionId": null
+    },
+    {
+      "title": "Moteur de visualisation de graphes",
+      "subtitle": "Java · C · OpenGL · JNI",
+      "shortDescription": "Moteur expérimental de visualisation de graphes avec rendu natif.",
+      "description": "Prototype technique orienté performance combinant Java et une bibliothèque native. Le projet explore le rendu OpenGL, l'architecture modulaire et les interactions visuelles sur des graphes complexes.",
+      "status": "ARCHIVED",
+      "startDate": "2024-11-01",
+      "endDate": "2025-02-15",
+      "imageUrl": "/assets/mock/projects/graph-engine-preview.png",
+      "demoUrl": "",
+      "githubUrl": "https://github.com/idris-ach2002/graph-engine",
+      "architectureUrl": "/assets/mock/diagrams/mock-architecture-diagram.png",
+      "documentationUrl": "/assets/mock/documents/graph-engine-documentation.pdf",
+      "stacks": [
+        "Java",
+        "C",
+        "OpenGL",
+        "JNI",
+        "CMake"
+      ],
+      "features": [
+        "Rendu natif",
+        "Pont JNI",
+        "Architecture modulaire",
+        "Interactions caméra"
+      ],
+      "links": [
+        {
+          "type": "GITHUB",
+          "label": "GitHub",
+          "url": "https://github.com/idris-ach2002/graph-engine"
+        },
+        {
+          "type": "ARCHITECTURE",
+          "label": "Architecture",
+          "url": "/assets/mock/diagrams/mock-architecture-diagram.png"
+        },
+        {
+          "type": "DOCUMENTATION",
+          "label": "Documentation",
+          "url": "/assets/mock/documents/graph-engine-documentation.pdf"
+        }
+      ],
+      "featured": false,
+      "published": true,
+      "displayOrder": 4,
+      "websiteVersionId": null
+    },
+    {
+      "title": "Projet brouillon non publié",
+      "subtitle": "Prototype expérimental",
+      "shortDescription": "Projet volontairement non publié pour tester le filtrage public.",
+      "description": "Ce projet sert à vérifier que les éléments draft restent modifiables dans l'administration mais ne polluent pas l'affichage public.",
+      "status": "PLANNED",
+      "startDate": "2026-06-01",
+      "endDate": null,
+      "imageUrl": "/assets/mock/projects/animation-system-preview.png",
+      "demoUrl": "",
+      "githubUrl": "https://github.com/idris-ach2002/private-prototype",
+      "architectureUrl": "",
+      "documentationUrl": "",
+      "stacks": [
+        "React",
+        "Three.js",
+        "GSAP"
+      ],
+      "features": [
+        "Test draft",
+        "Validation publication",
+        "Préparation roadmap"
+      ],
+      "links": [
+        {
+          "type": "GITHUB",
+          "label": "GitHub",
+          "url": "https://github.com/idris-ach2002/private-prototype"
+        }
+      ],
+      "featured": false,
+      "published": false,
+      "displayOrder": 5,
+      "websiteVersionId": null
+    }
+  ]
+}
