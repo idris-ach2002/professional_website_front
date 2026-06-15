@@ -394,7 +394,9 @@ function AdminChecking() {
 
 function AdminLoginRedirect() {
   useEffect(() => {
-    window.location.replace(buildBackendUrl("/login"));
+    const redirectTarget = `${window.location.origin}/admin`;
+    const loginUrl = buildBackendUrl(`/login?redirect=${encodeURIComponent(redirectTarget)}`);
+    window.location.replace(loginUrl);
   }, []);
 
   return (
