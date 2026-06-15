@@ -19,7 +19,7 @@ import { getOwnerFullName, sortByDisplayOrder } from "./utils/portfolio";
 import "./index.css";
 
 const PortfolioTimeline = lazy(() => import("./components/PortfolioTimeline"));
-const OceanBubbleField = lazy(() => import("./components/three/OceanBubbleField"));
+const BeachBallField = lazy(() => import("./components/three/BeachBallField"));
 
 function Home({
   owner,
@@ -77,12 +77,12 @@ function Home({
 
         <Suspense
           fallback={
-            <div className="section-skeleton ocean-bubble-fallback">
-              Chargement de la vague de bulles 3D…
+            <div className="section-skeleton">
+              Chargement de l’animation 3D…
             </div>
           }
         >
-          <OceanBubbleField fullBleed />
+          <BeachBallField />
         </Suspense>
 
         <ProjectsShowcase projects={projects} />

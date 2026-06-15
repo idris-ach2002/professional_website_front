@@ -22,7 +22,7 @@ import { gsapReady } from "../../animations/useGsap";
 
 const MODEL_PATH = "/models/ABSTRACT_SHAPES.glb";
 
-const SHAPE_COUNT = 18;
+const SHAPE_COUNT = 40;
 const SPAWN_SPREAD_X = 34;
 const SPAWN_SPREAD_Y = 19;
 const SPAWN_SPREAD_Z = 16;

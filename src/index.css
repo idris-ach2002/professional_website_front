@@ -1629,6 +1629,85 @@ body {
     linear-gradient(135deg, rgba(255,255,255,.84), rgba(224,251,255,.68) 52%, rgba(186,230,253,.50)) !important;
 }
 
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Full-width Rapier 3D kinetic field — transparent over existing ocean theme
+────────────────────────────────────────────────────────────────────────── */
+.beach-3d-section {
+  position: relative;
+  width: 100vw;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  min-height: clamp(500px, 70vh, 780px);
+  margin-top: clamp(20px, 5vw, 70px);
+  margin-bottom: clamp(20px, 5vw, 70px);
+  padding: 0;
+  overflow: hidden;
+  isolation: isolate;
+  background: transparent !important;
+}
+
+.beach-3d-section::before,
+.beach-3d-section::after {
+  display: none !important;
+  content: none !important;
+}
+
+.beach-3d-stage {
+  position: relative;
+  width: 100%;
+  min-height: clamp(500px, 70vh, 780px);
+  overflow: hidden;
+  z-index: 1;
+  border: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.beach-3d-stage:focus-visible {
+  outline: 3px solid rgba(125, 211, 252, 0.88);
+  outline-offset: -12px;
+}
+
+.beach-3d-grid,
+.beach-3d-halo,
+.beach-3d-orbit {
+  display: none !important;
+}
+
+.beach-3d-canvas {
+  position: absolute !important;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 2;
+}
+
+@media (max-width: 980px) {
+  .beach-3d-section {
+    min-height: 520px;
+    padding-block: 0;
+  }
+
+  .beach-3d-stage {
+    min-height: 520px;
+  }
+}
+
+@media (max-width: 640px) {
+  .beach-3d-section {
+    min-height: 430px;
+  }
+
+  .beach-3d-stage {
+    min-height: 430px;
+  }
+}
+
 .ocean-bubble-field {
   position: relative;
   width: 100vw;
