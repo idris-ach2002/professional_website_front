@@ -249,6 +249,7 @@ function normalizeUrlFromUpload(data) {
   }
 
   return (
+    data.directUrl ??
     data.url ??
     data.fileUrl ??
     data.path ??
