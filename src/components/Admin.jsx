@@ -28,6 +28,7 @@ import {
   isAuthRequiredError,
   logoutAdmin,
   uploadProtectedFile,
+  buildBackendUrl
 } from "../services/authApi";
 
 const contactTypeOptions = [
@@ -393,7 +394,7 @@ function AdminChecking() {
 
 function AdminLoginRedirect() {
   useEffect(() => {
-    window.location.replace("/login");
+    window.location.replace(buildBackendUrl("/login"));
   }, []);
 
   return (
@@ -1175,7 +1176,7 @@ export default function Admin() {
     try {
       await logoutAdmin();
       resetAdminState();
-      window.location.replace("/login?logout");
+      window.location.replace(buildBackendUrl("/login?logout"));
     } catch (err) {
       setError(err?.message ?? "Déconnexion impossible.");
     } finally {

@@ -21,6 +21,10 @@ function buildApiUrl(path) {
   return `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
+export function buildBackendUrl(path) {
+  return buildApiUrl(path);
+}
+
 function invalidateCsrfToken() {
   csrfTokenCache = null;
 }
