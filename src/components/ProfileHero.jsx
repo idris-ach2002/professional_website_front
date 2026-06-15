@@ -116,7 +116,7 @@ export default function ProfileHero({ owner, profile }) {
     <section ref={rootRef} id="profile" className="hero-grid island-section profile-island">
       <div className="hero-copy">
         <div className="hero-map-line" />
-        <AnimatedTitle title={profile?.title ?? fullName} headline={profile?.headline ?? "Ingénierie logicielle · Architecture backend · Interfaces produit"} />
+        <AnimatedTitle title={profile?.title ?? fullName} headline={profile?.headline ?? profile?.subtitle ?? ""} />
         <Text className="hero-lead">{profile?.shortDescription ?? profile?.description}</Text>
         <Text className="hero-description">{profile?.description}</Text>
 
@@ -171,7 +171,7 @@ export default function ProfileHero({ owner, profile }) {
           <Card className="contact-card island-card" radius="xl">
             <Text className="card-kicker">Coordonnées</Text>
             <Stack gap="xs">
-              {contacts.slice(0, 6).map((contact) => (
+              {contacts.map((contact) => (
                 <ContactPill key={`${contact.type}-${contact.value}`} contact={contact} />
               ))}
             </Stack>

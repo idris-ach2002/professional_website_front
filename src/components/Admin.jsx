@@ -23,9 +23,32 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useGsap } from "../animations/useGsap";
 import { FilePreviewButton } from "./FilePreview";
+import {
+  apiRequest,
+  isAuthRequiredError,
+  logoutAdmin,
+  uploadProtectedFile,
+} from "../services/authApi";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
-const UPLOAD_ENDPOINT = import.meta.env.VITE_UPLOAD_ENDPOINT ?? "/uploads/";
+const contactTypeOptions = [
+  { value: "EMAIL", label: "Email" },
+  { value: "PHONE_NUMBER", label: "Téléphone" },
+  { value: "WHATSAPP", label: "WhatsApp" },
+  { value: "LINKEDIN", label: "LinkedIn" },
+  { value: "GITHUB", label: "GitHub" },
+  { value: "PORTFOLIO", label: "Portfolio" },
+  { value: "WEBSITE", label: "Site web" },
+  { value: "TWITTER", label: "Twitter / X" },
+  { value: "FACEBOOK", label: "Facebook" },
+  { value: "INSTAGRAM", label: "Instagram" },
+];
+
+const defaultOwnerContacts = [
+  { type: "EMAIL", value: "idris.achabou@example.com" },
+  { type: "GITHUB", value: "https://github.com/idris-ach2002" },
+  { type: "LINKEDIN", value: "https://www.linkedin.com/in/idris-achabou" },
+  { type: "PORTFOLIO", value: "https://portfolio.example.com" },
+];
 
 const emptyOwnerForm = {
   name: "ACHABOU",
@@ -33,10 +56,7 @@ const emptyOwnerForm = {
   age: 23,
   active: true,
   address: "Paris, France",
-  email: "idris.achabou@example.com",
-  github: "https://github.com/idris-ach2002",
-  linkedin: "https://www.linkedin.com/in/idris-achabou",
-  portfolio: "https://portfolio.example.com",
+  contacts: defaultOwnerContacts,
   versionTag: "v1",
   versionLabel: "Version initiale",
   versionDescription: "Première version du portfolio.",
@@ -52,9 +72,9 @@ const emptyVersionForm = {
 };
 
 const emptyProfileForm = {
-  title: "Développeur Full Stack",
+  title: "Alternance ingénierie logicielle",
   subtitle: "Java / Spring Boot / React",
-  headline: "Étudiant en informatique spécialisé en ingénierie logicielle.",
+  headline: "Développement logiciel · Architecture backend · Interfaces produit",
   shortDescription: "Portfolio professionnel orienté développement logiciel.",
   description:
     "Je conçois des applications web robustes avec une architecture claire, un backend Spring Boot et un frontend React moderne.",
@@ -183,6 +203,42 @@ function nullIfBlank(value) {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+function createEmptyContact() {
+  return { type: "EMAIL", value: "" };
+}
+
+function cloneContactRows(contacts) {
+  return (contacts ?? [])
+    .map((contact) => ({
+      type: contact?.type ?? "EMAIL",
+      value: contact?.value ?? "",
+    }))
+    .filter((contact) => contact.type);
+}
+
+function sanitizeContactRows(contacts) {
+  return cloneContactRows(contacts)
+    .map((contact) => ({
+      type: contact.type,
+      value: String(contact.value ?? "").trim(),
+    }))
+    .filter((contact) => contact.value.length > 0);
+}
+
+function hydrateOwnerForm(owner) {
+  const contacts = cloneContactRows(owner?.contacts ?? emptyOwnerForm.contacts);
+
+  return {
+    ...emptyOwnerForm,
+    name: owner?.name ?? emptyOwnerForm.name,
+    firstName: owner?.firstName ?? emptyOwnerForm.firstName,
+    age: owner?.age ?? emptyOwnerForm.age,
+    active: owner?.active ?? emptyOwnerForm.active,
+    address: owner?.address ?? emptyOwnerForm.address,
+    contacts: contacts.length > 0 ? contacts : [createEmptyContact()],
+  };
+}
+
 function normalizeUrlFromUpload(data) {
   if (!data) return null;
 
@@ -203,68 +259,10 @@ function normalizeUrlFromUpload(data) {
   );
 }
 
-async function apiRequest(method, path, body) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-
-  const text = await response.text();
-  let data = null;
-
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    data = text;
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      typeof data === "string"
-        ? data
-        : (data?.message ??
-            `Erreur HTTP ${response.status} sur ${method} ${path}`),
-    );
-  }
-
-  return data;
-}
-
 async function uploadFile(file) {
   if (!file) return null;
 
-  const formData = new FormData();
-  formData.append("file", file);
-
-  const response = await fetch(`${API_BASE_URL}${UPLOAD_ENDPOINT}`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-    },
-    body: formData,
-  });
-
-  const text = await response.text();
-  let data = null;
-
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    data = text;
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      typeof data === "string"
-        ? data
-        : (data?.message ?? `Erreur upload fichier HTTP ${response.status}`),
-    );
-  }
-
+  const data = await uploadProtectedFile(file);
   const uploadedUrl = normalizeUrlFromUpload(data);
 
   if (!uploadedUrl || String(uploadedUrl).startsWith("redirect:")) {
@@ -363,12 +361,60 @@ function FileLink({ label, url, mode = "modal" }) {
   );
 }
 
+function AdminAuthShell({ children }) {
+  return (
+    <main className="admin-page admin-auth-page">
+      <div className="admin-orb admin-orb-one" />
+      <div className="admin-orb admin-orb-two" />
+      <div className="admin-orb admin-orb-three" />
+      <Stack gap="xl" className="admin-shell admin-auth-shell">
+        {children}
+      </Stack>
+    </main>
+  );
+}
+
+function AdminChecking() {
+  return (
+    <AdminAuthShell>
+      <Paper withBorder radius="xl" p="xl" className="admin-hero-card admin-auth-card">
+        <Stack gap="md" align="center">
+          <Loader size="md" />
+          <Text fw={800}>Chargement du panel…</Text>
+          <Text size="sm" c="dimmed" ta="center">
+            Vérification de l’accès en cours.
+          </Text>
+        </Stack>
+      </Paper>
+    </AdminAuthShell>
+  );
+}
+
+function AdminLoginRedirect() {
+  useEffect(() => {
+    window.location.replace("/login");
+  }, []);
+
+  return (
+    <AdminAuthShell>
+      <Paper withBorder radius="xl" p="xl" className="admin-hero-card admin-auth-card">
+        <Stack gap="md" align="center">
+          <Loader size="md" />
+          <Text fw={800}>Redirection vers la connexion…</Text>
+        </Stack>
+      </Paper>
+    </AdminAuthShell>
+  );
+}
+
 export default function Admin() {
   const rootRef = useRef(null);
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
+
+  const [authStatus, setAuthStatus] = useState("checking");
 
   const [owners, setOwners] = useState([]);
   const [versions, setVersions] = useState([]);
@@ -453,6 +499,32 @@ export default function Admin() {
 
   function updateOwnerForm(field, value) {
     setOwnerForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function updateOwnerContact(index, field, value) {
+    setOwnerForm((current) => ({
+      ...current,
+      contacts: current.contacts.map((contact, contactIndex) =>
+        contactIndex === index ? { ...contact, [field]: value } : contact,
+      ),
+    }));
+  }
+
+  function addOwnerContact() {
+    setOwnerForm((current) => ({
+      ...current,
+      contacts: [...current.contacts, createEmptyContact()],
+    }));
+  }
+
+  function removeOwnerContact(index) {
+    setOwnerForm((current) => {
+      const contacts = current.contacts.filter((_, contactIndex) => contactIndex !== index);
+      return {
+        ...current,
+        contacts: contacts.length > 0 ? contacts : [createEmptyContact()],
+      };
+    });
   }
 
   function updateVersionForm(field, value) {
@@ -567,6 +639,11 @@ export default function Admin() {
       if (successMessage) setMessage(successMessage);
       return result;
     } catch (err) {
+      if (isAuthRequiredError(err)) {
+        setAuthStatus("login");
+        return null;
+      }
+
       setError(err?.message ?? "Une erreur est survenue.");
       return null;
     } finally {
@@ -581,6 +658,8 @@ export default function Admin() {
 
       const targetOwner = selectLast ? ownerList.at(-1) : ownerList[0];
       const targetOwnerId = getEntityId(targetOwner);
+
+      setOwnerForm(hydrateOwnerForm(targetOwner));
 
       if (targetOwnerId) {
         setSelectedOwnerId(String(targetOwnerId));
@@ -597,7 +676,7 @@ export default function Admin() {
 
   async function refreshVersions(ownerId = selectedOwnerId, preferredVersionId = null) {
     if (!ownerId) {
-      setError("Sélectionne d’abord un owner.");
+      setError("Sélectionne d’abord un profil.");
       return null;
     }
 
@@ -648,7 +727,10 @@ export default function Admin() {
   }
 
   async function handleOwnerChange(ownerId) {
+    const selectedOwner = owners.find((owner) => String(getEntityId(owner)) === String(ownerId));
+
     setSelectedOwnerId(ownerId);
+    setOwnerForm(hydrateOwnerForm(selectedOwner));
     setSelectedVersionId(null);
     setSelectedProjectId(null);
     setVersions([]);
@@ -669,6 +751,9 @@ export default function Admin() {
     let cancelled = false;
 
     async function loadInitialData() {
+      setAuthStatus("checking");
+      setError(null);
+
       try {
         const ownerList = await fetchOwners();
         if (cancelled) return;
@@ -684,6 +769,7 @@ export default function Admin() {
         if (cancelled) return;
 
         setOwners(ownerList);
+        setOwnerForm(hydrateOwnerForm(firstOwner));
         setSelectedOwnerId(firstOwnerId ? String(firstOwnerId) : null);
         setVersions(versionList);
 
@@ -695,10 +781,18 @@ export default function Admin() {
           setSelectedVersionId(String(getEntityId(versionToSelect)));
           hydrateVersionForms(versionToSelect);
         }
+
+        setAuthStatus("authenticated");
       } catch (err) {
-        if (!cancelled) {
-          setError(err?.message ?? "Impossible de charger les données admin.");
+        if (cancelled) return;
+
+        if (isAuthRequiredError(err)) {
+          setAuthStatus("login");
+          return;
         }
+
+        setAuthStatus("authenticated");
+        setError(err?.message ?? "Impossible de charger les données admin.");
       }
     }
 
@@ -707,6 +801,8 @@ export default function Admin() {
     return () => {
       cancelled = true;
     };
+    // hydrateVersionForms must use the first payload from the initial admin bootstrap only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function buildProfilePayload() {
@@ -732,12 +828,7 @@ export default function Admin() {
       age: Number(ownerForm.age),
       active: ownerForm.active,
       address: ownerForm.address,
-      contacts: [
-        { type: "EMAIL", value: ownerForm.email },
-        { type: "GITHUB", value: ownerForm.github },
-        { type: "LINKEDIN", value: ownerForm.linkedin },
-        { type: "PORTFOLIO", value: ownerForm.portfolio },
-      ].filter((contact) => contact.value),
+      contacts: sanitizeContactRows(ownerForm.contacts),
       versionTag: ownerForm.versionTag,
       versionLabel: ownerForm.versionLabel,
       versionDescription: ownerForm.versionDescription,
@@ -748,6 +839,24 @@ export default function Admin() {
         experiences,
       },
       projects,
+    };
+  }
+
+  function buildOwnerIdentityPayload() {
+    return {
+      name: ownerForm.name,
+      firstName: ownerForm.firstName,
+      age: Number(ownerForm.age),
+      active: ownerForm.active,
+      address: ownerForm.address,
+      contacts: sanitizeContactRows(ownerForm.contacts),
+      versionTag: null,
+      versionLabel: null,
+      versionDescription: null,
+      versionPublished: null,
+      prof: null,
+      timeline: null,
+      projects: null,
     };
   }
 
@@ -833,9 +942,29 @@ export default function Admin() {
     }, "Owner créé avec sa première version.");
   }
 
+  async function updateOwner() {
+    if (!selectedOwnerId) {
+      setError("Sélectionne d’abord un profil.");
+      return;
+    }
+
+    await runAction(async () => {
+      const payload = buildOwnerIdentityPayload();
+      await apiRequest("PUT", `/manager/${selectedOwnerId}`, payload);
+
+      const ownerList = await fetchOwners();
+      const updatedOwner = ownerList.find(
+        (owner) => String(getEntityId(owner)) === String(selectedOwnerId),
+      );
+
+      setOwners(ownerList);
+      setOwnerForm(hydrateOwnerForm(updatedOwner));
+    }, "Identité et contacts enregistrés.");
+  }
+
   async function createVersion() {
     if (!selectedOwnerId) {
-      setError("Sélectionne d’abord un owner.");
+      setError("Sélectionne d’abord un profil.");
       return;
     }
 
@@ -1023,9 +1152,47 @@ export default function Admin() {
     );
   }
 
+  function resetAdminState() {
+    setOwners([]);
+    setVersions([]);
+    setProjects([]);
+    setSelectedOwnerId(null);
+    setSelectedVersionId(null);
+    setSelectedProjectId(null);
+    setCloneSourceVersionId(null);
+    setOwnerForm(hydrateOwnerForm(null));
+    setExperiences([]);
+    resetProjectForm([]);
+  }
+
+
+  async function handleLogout() {
+    setLoading(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      await logoutAdmin();
+      resetAdminState();
+      window.location.replace("/login?logout");
+    } catch (err) {
+      setError(err?.message ?? "Déconnexion impossible.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const activeVersionsCount = versions.filter((version) => version.active).length;
   const selectedVersionProjectsCount = projects.length;
   const selectedVersionExperiencesCount = experiences.length;
+
+  if (authStatus === "checking") {
+    return <AdminChecking />;
+  }
+
+  if (authStatus === "login") {
+    return <AdminLoginRedirect />;
+  }
 
   return (
     <main ref={rootRef} className="admin-page">
@@ -1046,7 +1213,7 @@ export default function Admin() {
               <Text c="dimmed" size="lg">
                 Gère le contenu complet du portfolio : versions clonables,
                 profils, fichiers uploadés, expériences et projets éditables un
-                par un. Les modifications passent par les routes admin du back.
+                par un.
               </Text>
             </Stack>
 
@@ -1056,6 +1223,9 @@ export default function Admin() {
               </Button>
               <Button component="a" href="/" variant="subtle">
                 Voir le site public
+              </Button>
+              <Button onClick={handleLogout} loading={loading} variant="outline">
+                Se déconnecter
               </Button>
             </Stack>
           </Group>
@@ -1092,7 +1262,7 @@ export default function Admin() {
               <div>
                 <Text fw={800}>Contexte de modification</Text>
                 <Text size="sm" c="dimmed">
-                  Sélectionne un owner, une version, puis modifie ses blocs de contenu.
+                  Sélectionne un profil, une version, puis modifie ses blocs de contenu.
                 </Text>
               </div>
 
@@ -1114,8 +1284,8 @@ export default function Admin() {
 
             <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
               <Select
-                label="Owner"
-                placeholder="Choisir un owner"
+                label="Profil"
+                placeholder="Choisir un profil"
                 data={owners.map((owner) => ({
                   value: String(getEntityId(owner)),
                   label: getOwnerLabel(owner),
@@ -1180,7 +1350,7 @@ export default function Admin() {
         <Card shadow="sm" padding="xl" radius="xl" withBorder className="admin-tabs-card">
           <Tabs defaultValue="version" variant="outline" radius="md" className="admin-tabs">
             <Tabs.List>
-              <Tabs.Tab value="owner">Owner</Tabs.Tab>
+              <Tabs.Tab value="owner">Profil principal</Tabs.Tab>
               <Tabs.Tab value="version">Versions</Tabs.Tab>
               <Tabs.Tab value="profile">Profil & fichiers</Tabs.Tab>
               <Tabs.Tab value="timeline">Timeline</Tabs.Tab>
@@ -1191,12 +1361,12 @@ export default function Admin() {
               <Stack gap="lg">
                 <Group justify="space-between">
                   <div>
-                    <Text fw={800}>Créer un owner avec version initiale</Text>
+                    <Text fw={800}>Identité, contacts et création du profil principal</Text>
                     <Text size="sm" c="dimmed">
-                      La première version embarque le profil, la timeline et les projets actuellement renseignés.
+                      Modifie les coordonnées du profil sélectionné ou crée une nouvelle fiche avec une première version.
                     </Text>
                   </div>
-                  <Badge variant="light">POST /manager</Badge>
+                  <Badge variant="light">Création</Badge>
                 </Group>
 
                 <Divider />
@@ -1206,24 +1376,70 @@ export default function Admin() {
                   <TextInput label="Prénom" value={ownerForm.firstName} onChange={(event) => updateOwnerForm("firstName", event.currentTarget.value)} />
                   <NumberInput label="Âge" value={ownerForm.age} onChange={(value) => updateOwnerForm("age", value ?? 0)} />
                   <TextInput label="Adresse" value={ownerForm.address} onChange={(event) => updateOwnerForm("address", event.currentTarget.value)} />
-                  <TextInput label="Email" value={ownerForm.email} onChange={(event) => updateOwnerForm("email", event.currentTarget.value)} />
-                  <TextInput label="GitHub" value={ownerForm.github} onChange={(event) => updateOwnerForm("github", event.currentTarget.value)} />
-                  <TextInput label="LinkedIn" value={ownerForm.linkedin} onChange={(event) => updateOwnerForm("linkedin", event.currentTarget.value)} />
-                  <TextInput label="Portfolio" value={ownerForm.portfolio} onChange={(event) => updateOwnerForm("portfolio", event.currentTarget.value)} />
                 </SimpleGrid>
 
-                <SimpleGrid cols={{ base: 1, md: 3 }} spacing="lg">
+                <Paper withBorder p="lg" radius="lg" className="admin-nested-panel">
+                  <Stack gap="md">
+                    <Group justify="space-between" align="flex-start">
+                      <div>
+                        <Text fw={800}>Contacts publics</Text>
+                        <Text size="sm" c="dimmed">
+                          Ces contacts alimentent les boutons, les liens publics et la carte de coordonnées du portfolio.
+                        </Text>
+                      </div>
+                      <Button size="xs" variant="light" onClick={addOwnerContact}>
+                        Ajouter contact
+                      </Button>
+                    </Group>
+
+                    <Stack gap="sm">
+                      {ownerForm.contacts.map((contact, index) => (
+                        <SimpleGrid key={`${contact.type}-${index}`} cols={{ base: 1, md: 3 }} spacing="sm" className="admin-contact-row">
+                          <Select
+                            label="Type"
+                            data={contactTypeOptions}
+                            value={contact.type}
+                            onChange={(value) => updateOwnerContact(index, "type", value ?? "EMAIL")}
+                          />
+                          <TextInput
+                            label="Valeur"
+                            placeholder="Email, téléphone ou URL"
+                            value={contact.value}
+                            onChange={(event) => updateOwnerContact(index, "value", event.currentTarget.value)}
+                          />
+                          <Button
+                            color="red"
+                            variant="light"
+                            onClick={() => removeOwnerContact(index)}
+                          >
+                            Retirer
+                          </Button>
+                        </SimpleGrid>
+                      ))}
+                    </Stack>
+                  </Stack>
+                </Paper>
+
+                <Group>
+                  <Switch label="Owner actif" checked={ownerForm.active} onChange={(event) => updateOwnerForm("active", event.currentTarget.checked)} />
+                  <Button onClick={updateOwner} loading={loading} disabled={!selectedOwnerId}>
+                    Enregistrer identité et contacts
+                  </Button>
+                </Group>
+
+                <Divider label="Création d’une nouvelle fiche" labelPosition="center" />
+
+                <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
                   <TextInput label="Tag première version" value={ownerForm.versionTag} onChange={(event) => updateOwnerForm("versionTag", event.currentTarget.value)} />
                   <TextInput label="Label première version" value={ownerForm.versionLabel} onChange={(event) => updateOwnerForm("versionLabel", event.currentTarget.value)} />
-                  <Switch label="Owner actif" checked={ownerForm.active} onChange={(event) => updateOwnerForm("active", event.currentTarget.checked)} />
                 </SimpleGrid>
 
                 <Textarea label="Description première version" minRows={3} value={ownerForm.versionDescription} onChange={(event) => updateOwnerForm("versionDescription", event.currentTarget.value)} />
 
                 <Checkbox label="Publier la première version" checked={ownerForm.versionPublished} onChange={(event) => updateOwnerForm("versionPublished", event.currentTarget.checked)} />
 
-                <Button onClick={createOwner} loading={loading} size="md">
-                  Créer owner + version initiale
+                <Button onClick={createOwner} loading={loading} size="md" variant="light">
+                  Créer profil + version initiale
                 </Button>
               </Stack>
             </Tabs.Panel>
@@ -1237,7 +1453,7 @@ export default function Admin() {
                       Pour éviter de retaper profil, timeline et projets, crée une version en important le contenu d’une version source.
                     </Text>
                   </div>
-                  <Badge variant="light">WebsiteVersion</Badge>
+                  <Badge variant="light">Version</Badge>
                 </Group>
 
                 <Divider />
@@ -1263,7 +1479,7 @@ export default function Admin() {
                           Copie automatiquement le profil, le CV, les images, la timeline et tous les projets.
                         </Text>
                       </div>
-                      <Badge variant="light">POST /from/{"{sourceVersionId}"}</Badge>
+                      <Badge variant="light">Import</Badge>
                     </Group>
 
                     <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
@@ -1342,7 +1558,7 @@ export default function Admin() {
                       Les fichiers sont uploadés avant l’envoi du DTO profile.
                     </Text>
                   </div>
-                  <Badge variant="light">PUT /profile</Badge>
+                  <Badge variant="light">Profil</Badge>
                 </Group>
 
                 <Divider />
@@ -1365,9 +1581,9 @@ export default function Admin() {
                 </Paper>
 
                 <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
-                  <TextInput label="Titre" value={profileForm.title} onChange={(event) => updateProfileForm("title", event.currentTarget.value)} />
+                  <TextInput label="Job recherché / titre affiché" value={profileForm.title} onChange={(event) => updateProfileForm("title", event.currentTarget.value)} />
                   <TextInput label="Sous-titre" value={profileForm.subtitle} onChange={(event) => updateProfileForm("subtitle", event.currentTarget.value)} />
-                  <TextInput label="Headline" value={profileForm.headline} onChange={(event) => updateProfileForm("headline", event.currentTarget.value)} />
+                  <TextInput label="Mots-clés affichés sous le titre" value={profileForm.headline} onChange={(event) => updateProfileForm("headline", event.currentTarget.value)} />
                   <TextInput label="Description courte" value={profileForm.shortDescription} onChange={(event) => updateProfileForm("shortDescription", event.currentTarget.value)} />
                   <TextInput label="Localisation" value={profileForm.location} onChange={(event) => updateProfileForm("location", event.currentTarget.value)} />
                   <TextInput label="Disponibilité" value={profileForm.availability} onChange={(event) => updateProfileForm("availability", event.currentTarget.value)} />
@@ -1391,7 +1607,7 @@ export default function Admin() {
                       Ajoute les expériences localement, puis sauvegarde la timeline complète.
                     </Text>
                   </div>
-                  <Badge variant="light">PUT /timeline</Badge>
+                  <Badge variant="light">Timeline</Badge>
                 </Group>
 
                 <Divider />
@@ -1464,7 +1680,7 @@ export default function Admin() {
                       Affiche, sélectionne, modifie ou supprime chaque projet de la version sélectionnée.
                     </Text>
                   </div>
-                  <Badge variant="light">GET/POST/PUT/DELETE /projects</Badge>
+                  <Badge variant="light">Projets</Badge>
                 </Group>
 
                 <Divider />

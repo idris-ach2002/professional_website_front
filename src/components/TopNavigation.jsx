@@ -10,11 +10,6 @@ const links = [
   { href: "#projects", label: "Projets" },
 ];
 
-const quickLinks = [
-  { href: "#top", label: "Haut" },
-  ...links,
-];
-
 export default function TopNavigation({ owner }) {
   const rootRef = useRef(null);
   const [opened, { toggle, close }] = useDisclosure(false);

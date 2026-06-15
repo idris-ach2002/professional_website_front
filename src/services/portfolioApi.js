@@ -1,6 +1,9 @@
 import { demoOwner } from "../data/demoPortfolio";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
+const RAW_API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+const SHOULD_USE_DIRECT_BACKEND =
+  !import.meta.env.DEV || import.meta.env.VITE_USE_DIRECT_BACKEND === "true";
+const API_BASE_URL = SHOULD_USE_DIRECT_BACKEND ? RAW_API_BASE_URL : "";
 const REQUEST_TIMEOUT = 4500;
 
 async function requestJson(path) {

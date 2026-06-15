@@ -38,7 +38,6 @@ export default function OceanMorphBackground() {
     const paths = gsap.utils.toArray(root.querySelectorAll(".ocean-morph-path"));
     const surfaceWaves = gsap.utils.toArray(root.querySelectorAll(".ocean-surface-wave"));
     const particles = gsap.utils.toArray(root.querySelectorAll(".ocean-depth-particle"));
-    const ribbon = root.querySelector(".ocean-ribbon-track");
 
     if (paths.length === 0) return undefined;
 
@@ -85,15 +84,6 @@ export default function OceanMorphBackground() {
         repeat: -1,
         yoyo: true,
         stagger: 0.09,
-      });
-    }
-
-    if (ribbon && !reducedMotion) {
-      gsap.to(ribbon, {
-        xPercent: -50,
-        duration: 24,
-        ease: "none",
-        repeat: -1,
       });
     }
 
@@ -191,24 +181,6 @@ export default function OceanMorphBackground() {
         ))}
       </svg>
       <div className="ocean-abyss-floor" />
-      <div className="ocean-ribbon">
-        <div className="ocean-ribbon-track">
-          <span>surface</span>
-          <span>immersion</span>
-          <span>architecture logicielle</span>
-          <span>data pipelines</span>
-          <span>React / Spring</span>
-          <span>abysses</span>
-          <span>graphes haute performance</span>
-          <span>surface</span>
-          <span>immersion</span>
-          <span>architecture logicielle</span>
-          <span>data pipelines</span>
-          <span>React / Spring</span>
-          <span>abysses</span>
-          <span>graphes haute performance</span>
-        </div>
-      </div>
     </div>
   );
 }
