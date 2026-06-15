@@ -547,11 +547,27 @@ button {
 }
 
 .project-link {
+  position: relative;
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
   padding: 7px 11px;
   border-radius: 999px;
   background: rgba(34,211,238,.12);
   border: 1px solid rgba(6,182,212,.2);
+  box-shadow: 0 8px 18px rgba(3, 105, 161, .06);
+  transform: translate3d(0, 0, 0);
+  transition: transform .22s ease, background .22s ease, border-color .22s ease, box-shadow .22s ease;
+}
+
+.project-link:hover,
+.project-link:focus-visible {
+  color: var(--deep-ocean);
+  background: rgba(34,211,238,.2);
+  border-color: rgba(6,182,212,.34);
+  box-shadow: 0 12px 24px rgba(3, 105, 161, .12);
+  transform: translate3d(0, -2px, 0);
 }
 
 .empty-card {
@@ -934,7 +950,9 @@ button {
 }
 
 .portrait-preview-trigger,
-.file-preview-image-trigger {
+.file-preview-image-trigger,
+.project-image-preview-trigger,
+.project-detail-image-preview-trigger {
   position: relative;
   display: block;
   width: 100%;
@@ -945,18 +963,97 @@ button {
   background: transparent;
   cursor: zoom-in;
   appearance: none;
+  outline: none;
 }
 
-.project-image-preview-trigger {
-  position: relative;
-  display: block;
-  width: 100%;
-  padding: 0;
-  border: 0;
+.file-preview-image-trigger::before,
+.project-image-preview-trigger::before,
+.project-detail-image-preview-trigger::before,
+.portrait-preview-trigger::before,
+.timeline-image-preview-trigger::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   border-radius: inherit;
-  overflow: hidden;
-  background: transparent;
-  appearance: none;
+  background: radial-gradient(circle at 50% 44%, rgba(255, 255, 255, .18), transparent 42%),
+    linear-gradient(135deg, rgba(6, 182, 212, .16), rgba(8, 47, 73, .06));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .28s ease;
+}
+
+.file-preview-image-trigger:hover::before,
+.file-preview-image-trigger:focus-visible::before,
+.project-image-preview-trigger:hover::before,
+.project-image-preview-trigger:focus-visible::before,
+.project-detail-image-preview-trigger:hover::before,
+.project-detail-image-preview-trigger:focus-visible::before,
+.portrait-preview-trigger:hover::before,
+.portrait-preview-trigger:focus-visible::before,
+.timeline-image-preview-trigger:hover::before,
+.timeline-image-preview-trigger:focus-visible::before {
+  opacity: 1;
+}
+
+.file-preview-image-trigger:focus-visible,
+.project-image-preview-trigger:focus-visible,
+.project-detail-image-preview-trigger:focus-visible,
+.portrait-preview-trigger:focus-visible,
+.timeline-image-preview-trigger:focus-visible {
+  box-shadow: 0 0 0 4px rgba(34, 211, 238, .22);
+}
+
+.file-preview-image-trigger img,
+.project-image-preview-trigger img,
+.project-detail-image-preview-trigger img,
+.portrait-preview-trigger img,
+.timeline-image-preview-trigger img,
+.file-preview-image-trigger .mantine-Image-img,
+.project-image-preview-trigger .mantine-Image-img,
+.project-detail-image-preview-trigger .mantine-Image-img,
+.portrait-preview-trigger .mantine-Image-img,
+.timeline-image-preview-trigger .mantine-Image-img,
+.portrait-image,
+.timeline-image,
+.project-image,
+.project-detail-image {
+  transform: scale(1);
+  transform-origin: center center;
+  transition: transform .42s cubic-bezier(.19, 1, .22, 1), filter .42s ease;
+  will-change: transform, filter;
+}
+
+.file-preview-image-trigger:hover img,
+.file-preview-image-trigger:focus-visible img,
+.project-image-preview-trigger:hover img,
+.project-image-preview-trigger:focus-visible img,
+.project-detail-image-preview-trigger:hover img,
+.project-detail-image-preview-trigger:focus-visible img,
+.portrait-preview-trigger:hover img,
+.portrait-preview-trigger:focus-visible img,
+.timeline-image-preview-trigger:hover img,
+.timeline-image-preview-trigger:focus-visible img,
+.file-preview-image-trigger:hover .mantine-Image-img,
+.file-preview-image-trigger:focus-visible .mantine-Image-img,
+.project-image-preview-trigger:hover .mantine-Image-img,
+.project-image-preview-trigger:focus-visible .mantine-Image-img,
+.project-detail-image-preview-trigger:hover .mantine-Image-img,
+.project-detail-image-preview-trigger:focus-visible .mantine-Image-img,
+.portrait-preview-trigger:hover .mantine-Image-img,
+.portrait-preview-trigger:focus-visible .mantine-Image-img,
+.timeline-image-preview-trigger:hover .mantine-Image-img,
+.timeline-image-preview-trigger:focus-visible .mantine-Image-img,
+.portrait-preview-trigger:hover .portrait-image,
+.portrait-preview-trigger:focus-visible .portrait-image,
+.timeline-image-preview-trigger:hover .timeline-image,
+.timeline-image-preview-trigger:focus-visible .timeline-image,
+.project-image-preview-trigger:hover .project-image,
+.project-image-preview-trigger:focus-visible .project-image,
+.project-detail-image-preview-trigger:hover .project-detail-image,
+.project-detail-image-preview-trigger:focus-visible .project-detail-image {
+  filter: contrast(1.04) saturate(1.08);
+  transform: scale(1.055);
 }
 
 .file-preview-overlay {
@@ -979,7 +1076,6 @@ button {
 
 .timeline-image-preview-trigger:hover .file-preview-overlay,
 .portrait-preview-trigger:hover .file-preview-overlay,
-.project-image-preview-trigger:hover .file-preview-overlay,
 .file-preview-image-trigger:hover .file-preview-overlay {
   opacity: 1;
   transform: translateY(0);
@@ -1026,12 +1122,24 @@ button {
 
 .project-link-button {
   height: auto !important;
-  min-height: 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
-  color: inherit !important;
-  background: transparent !important;
+  min-height: 34px !important;
+  padding: 7px 11px !important;
+  color: var(--deep-ocean) !important;
+  border: 1px solid rgba(6,182,212,.2) !important;
+  border-radius: 999px !important;
+  background: rgba(34,211,238,.12) !important;
   font: inherit !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+}
+
+.project-link-button .mantine-Button-inner {
+  height: auto;
+  min-height: 0;
+}
+
+.project-link-button .mantine-Button-label {
+  line-height: 1.1;
 }
 
 .timeline-image-preview-trigger {
@@ -2056,8 +2164,24 @@ html {
   box-shadow: none !important;
   filter: none !important;
   animation: none !important;
-  transform: none !important;
   background: #eefbff !important;
+}
+
+.file-preview-image-trigger.project-visual,
+.project-visual {
+  transform: none !important;
+}
+
+.project-image {
+  transform: scale(1) !important;
+  transform-origin: center center;
+  transition: transform .42s cubic-bezier(.19, 1, .22, 1), filter .42s ease !important;
+}
+
+.gallery-panel.is-active .project-image-preview-trigger:hover .project-image,
+.gallery-panel.is-active .project-image-preview-trigger:focus-visible .project-image {
+  filter: contrast(1.04) saturate(1.08) !important;
+  transform: scale(1.055) !important;
 }
 
 .projects-section {
@@ -2528,11 +2652,16 @@ main,
   overflow-wrap: anywhere;
 }
 
+.project-detail-image-preview-trigger {
+  margin-top: 18px;
+  border-radius: 34px 22px 40px 26px;
+}
+
 .project-detail-image {
   display: block;
   width: 100%;
   max-height: 380px;
-  margin-top: 18px;
+  margin-top: 0;
   object-fit: cover;
   border: 1px solid rgba(3, 105, 161, .12);
   border-radius: 34px 22px 40px 26px;

@@ -25,6 +25,7 @@ function ProjectVisual({ project, index }) {
         className="project-visual project-image-preview-trigger"
         imageClassName="project-image"
         modalTitle={`Projet — ${project.title}`}
+        showOverlay={false}
       />
     );
   }
@@ -37,11 +38,10 @@ function ProjectVisual({ project, index }) {
   );
 }
 
-function getProjectLinks(project) {
-  const rawLinks = [
+function findProjectLink(project, predicate) {
+  const directLinks = [
     project.githubUrl && { label: "GitHub", url: project.githubUrl, type: "GITHUB" },
-    project.demoUrl && { label: "Démo", url: project.demoUrl, type: "DEMO" },
-    project.documentationUrl && { label: "Docs", url: project.documentationUrl, type: "DOCUMENTATION" },
+    project.documentationUrl && { label: "Documentation", url: project.documentationUrl, type: "DOCUMENTATION" },
     ...(project.links ?? []).map((link) => ({
       label: link.label || LINK_LABELS[link.type] || "Lien",
       url: link.url,
@@ -49,10 +49,44 @@ function getProjectLinks(project) {
     })),
   ].filter((link) => link?.url);
 
+  return directLinks.find(predicate) ?? null;
+}
+
+function isArchitectureLink(link) {
+  const signature = `${link.type ?? ""} ${link.label ?? ""}`.toLowerCase();
+
+  return [
+    "architecture",
+    "diagramme",
+    "diagram",
+    "dataflow",
+    "data flow",
+    "infrastructure",
+    "infra",
+    "kubernetes",
+    "schéma",
+    "schema",
+  ].some((keyword) => signature.includes(keyword));
+}
+
+function getProjectLinks(project) {
+  const githubLink = findProjectLink(project, (link) => String(link.type).toUpperCase() === "GITHUB" || String(link.label).toLowerCase() === "github");
+  const architectureLink = findProjectLink(project, isArchitectureLink);
+  const documentationLink = findProjectLink(
+    project,
+    (link) => String(link.type).toUpperCase() === "DOCUMENTATION" || String(link.label).toLowerCase().includes("documentation"),
+  );
+
+  const rawLinks = [
+    githubLink && { ...githubLink, label: "GitHub", type: "GITHUB" },
+    architectureLink && { ...architectureLink, label: "Architecture", type: "ARCHITECTURE" },
+    documentationLink && { ...documentationLink, label: "Documentation", type: "DOCUMENTATION" },
+  ].filter(Boolean);
+
   const seen = new Set();
 
   return rawLinks.filter((link) => {
-    const key = `${link.type}|${link.label}|${normalizeUrl(link.url)}`.toLowerCase();
+    const key = normalizeUrl(link.url).toLowerCase();
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -66,7 +100,7 @@ function ProjectLinks({ project }) {
 
   return (
     <Group gap="xs" className="project-links">
-      {links.slice(0, 5).map((link, index) => {
+      {links.map((link, index) => {
         const key = `${project.id ?? project.title ?? "project"}-${link.type}-${index}-${normalizeUrl(link.url)}`;
 
         return isPreviewableFile(link.url) ? (
@@ -178,7 +212,12 @@ function ProjectDetailsModal({ project, opened, onClose }) {
     document.body.style.touchAction = "none";
 
     const handleKeyDown = (event) => {
-      if (event.key === "Escape") onClose();
+      if (event.key !== "Escape") return;
+
+      const previewModalIsOpen = Boolean(document.querySelector(".file-preview-modal"));
+      if (previewModalIsOpen) return;
+
+      onClose();
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -218,7 +257,14 @@ function ProjectDetailsModal({ project, opened, onClose }) {
               </div>
 
               {project.imageUrl && (
-                <img src={project.imageUrl} alt="" className="project-detail-image" loading="lazy" />
+                <PreviewableImage
+                  src={project.imageUrl}
+                  alt={project.title}
+                  className="project-detail-image-preview-trigger"
+                  imageClassName="project-detail-image"
+                  modalTitle={`Projet — ${project.title}`}
+                  showOverlay={false}
+                />
               )}
 
               {(project.shortDescription || project.description) && (

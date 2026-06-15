@@ -1,4 +1,4 @@
-import { demoOwner } from "../data/demoPortfolio";
+import { demoOwner, demoOwners } from "../data/demoPortfolio";
 
 const RAW_API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
 const SHOULD_USE_DIRECT_BACKEND =
@@ -45,7 +45,7 @@ export async function loadPortfolio() {
     };
   } catch (error) {
     return {
-      owners: [demoOwner],
+      owners: demoOwners,
       owner: demoOwner,
       source: "demo",
       error: error instanceof Error ? error.message : "API indisponible",

@@ -16,6 +16,8 @@ export function PreviewableImage({
   imageClassName,
   modalTitle,
   radius,
+  showOverlay = false,
+  modalZIndex = 12050,
 }) {
   const [opened, setOpened] = useState(false);
   const fileUrl = normalizeFileUrl(src);
@@ -37,7 +39,7 @@ export function PreviewableImage({
           className={imageClassName}
           fit="cover"
         />
-        <span className="file-preview-overlay">Voir l’image</span>
+        {showOverlay && <span className="file-preview-overlay">Voir l’image</span>}
       </button>
 
       <Modal
@@ -46,6 +48,7 @@ export function PreviewableImage({
         title={modalTitle ?? alt}
         size="xl"
         centered
+        zIndex={modalZIndex}
         classNames={{ content: "file-preview-modal", body: "file-preview-modal-body" }}
       >
         <Image src={fileUrl} alt={alt} fit="contain" className="file-preview-full-image" />
@@ -94,6 +97,7 @@ export function FilePreviewButton({
   variant = "outline",
   size = "xs",
   className,
+  modalZIndex = 12050,
 }) {
   const [opened, setOpened] = useState(false);
   const fileUrl = normalizeFileUrl(url);
@@ -119,6 +123,7 @@ export function FilePreviewButton({
           title={title ?? getFileName(fileUrl)}
           size="xl"
           centered
+          zIndex={modalZIndex}
           classNames={{ content: "file-preview-modal", body: "file-preview-modal-body" }}
         >
           <Image
@@ -167,6 +172,7 @@ export function FilePreviewButton({
           title={title ?? getFileName(fileUrl)}
           size="90vw"
           centered
+          zIndex={modalZIndex}
           classNames={{ content: "file-preview-modal file-preview-pdf-modal", body: "file-preview-modal-body" }}
         >
           <PdfPreviewPanel url={fileUrl} title={title ?? getFileName(fileUrl)} />
