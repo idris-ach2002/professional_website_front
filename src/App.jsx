@@ -6,6 +6,7 @@ import OceanMorphBackground from "./components/OceanMorphBackground";
 import ProfileHero from "./components/ProfileHero";
 import ProjectsShowcase from "./components/ProjectsShowcase";
 import SEOHead from "./components/MetadataHead";
+import SiteFooter from "./components/SiteFooter"
 import StatusBanner from "./components/StatusBanner";
 import TopNavigation from "./components/TopNavigation";
 
@@ -85,11 +86,8 @@ function Home({
         </Suspense>
 
         <ProjectsShowcase projects={projects} />
+        <SiteFooter owner={owner} />
       </Stack>
-
-      <footer className="footer-shell">
-        <Text>Spring · React · Mantine · GSAP</Text>
-      </footer>
     </main>
   );
 }
