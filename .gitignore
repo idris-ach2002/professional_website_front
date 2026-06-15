@@ -25,7 +25,7 @@ out
 
 .env
 .env.local
-.env.development.loca
+.env.development.local
 .env.test.local
 .env.production.local
 *.local

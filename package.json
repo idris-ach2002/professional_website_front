@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "clean": "rm -rf .cache .tmp lib build node_modules"
+    "clean": "rm -rf .cache .tmp lib build node_modules",
+    "cf:deploy": "npx --yes wrangler@latest deploy"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -39,5 +40,6 @@
     "postcss": "^8.5.15",
     "tailwindcss": "^4.3.0",
     "vite": "^8.0.0"
-  }
+  },
+  "packageManager": "pnpm@10.11.1"
 }
