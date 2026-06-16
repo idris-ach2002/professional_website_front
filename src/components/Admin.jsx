@@ -635,6 +635,22 @@ export default function Admin() {
   const [jsonEditorText, setJsonEditorText] = useState("");
   const [jsonEditorError, setJsonEditorError] = useState(null);
 
+  const [cvBuilderForm, setCvBuilderForm] = useState({
+    templateId: "software-engineer-latex",
+    language: "fr",
+    primaryColor: "#6E877E",
+    density: "compact",
+    showPhoto: false,
+    headline: "",
+    projectLimit: 5,
+    experienceLimit: 4,
+  });
+  const [cvLatexSource, setCvLatexSource] = useState("");
+  const [cvPreviewUrl, setCvPreviewUrl] = useState("");
+  const [cvCompileLogs, setCvCompileLogs] = useState("");
+  const [cvCompileWarnings, setCvCompileWarnings] = useState([]);
+  const [cvCompileSuccess, setCvCompileSuccess] = useState(null);
+
   const jsonEditorAnalysis = useMemo(
     () => buildJsonEditorAnalysis(jsonEditorText),
     [jsonEditorText],
@@ -1414,6 +1430,108 @@ export default function Admin() {
     }, "Version mise à jour depuis l’éditeur JSON.");
   }
 
+  function updateCvBuilderForm(field, value) {
+    setCvBuilderForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function buildCvGenerationPayload({ includeLatexOverride = true } = {}) {
+    return {
+      templateId: cvBuilderForm.templateId,
+      language: cvBuilderForm.language,
+      theme: {
+        primaryColor: cvBuilderForm.primaryColor,
+        density: cvBuilderForm.density,
+        showPhoto: cvBuilderForm.showPhoto,
+        headline: nullIfBlank(cvBuilderForm.headline),
+      },
+      sections: {
+        profile: true,
+        skills: true,
+        experiences: true,
+        education: true,
+        projects: true,
+        qualities: true,
+        languages: true,
+      },
+      projectLimit: Number(cvBuilderForm.projectLimit || 5),
+      experienceLimit: Number(cvBuilderForm.experienceLimit || 4),
+      latexSourceOverride: includeLatexOverride ? nullIfBlank(cvLatexSource) : null,
+    };
+  }
+
+  async function generateCvLatexSource() {
+    if (!selectedOwnerId || !selectedVersionId) {
+      setError("Sélectionne d’abord un owner et une version.");
+      return;
+    }
+
+    await runAction(async () => {
+      const data = await apiRequest(
+        "POST",
+        `/manager/${selectedOwnerId}/versions/${selectedVersionId}/cv/source`,
+        buildCvGenerationPayload({ includeLatexOverride: false }),
+      );
+
+      setCvLatexSource(data?.latexSource ?? "");
+      setCvCompileLogs("");
+      setCvCompileWarnings([]);
+      setCvCompileSuccess(null);
+      setCvPreviewUrl("");
+    }, "Source LaTeX générée depuis la version courante.");
+  }
+
+  async function previewGeneratedCv() {
+    if (!selectedOwnerId || !selectedVersionId) {
+      setError("Sélectionne d’abord un owner et une version.");
+      return;
+    }
+
+    await runAction(async () => {
+      const data = await apiRequest(
+        "POST",
+        `/manager/${selectedOwnerId}/versions/${selectedVersionId}/cv/preview`,
+        buildCvGenerationPayload({ includeLatexOverride: true }),
+      );
+
+      setCvLatexSource(data?.latexSource ?? cvLatexSource);
+      setCvPreviewUrl(data?.pdfUrl ?? "");
+      setCvCompileLogs(data?.logs ?? "");
+      setCvCompileWarnings(data?.warnings ?? []);
+      setCvCompileSuccess(Boolean(data?.success));
+
+      if (!data?.success) {
+        throw new Error("Compilation LaTeX échouée. Consulte les logs dans l’onglet CV Builder.");
+      }
+    }, "Preview PDF générée.");
+  }
+
+  async function saveGeneratedCvToVersion() {
+    if (!selectedOwnerId || !selectedVersionId) {
+      setError("Sélectionne d’abord un owner et une version.");
+      return;
+    }
+
+    await runAction(async () => {
+      const data = await apiRequest(
+        "POST",
+        `/manager/${selectedOwnerId}/versions/${selectedVersionId}/cv/save`,
+        buildCvGenerationPayload({ includeLatexOverride: true }),
+      );
+
+      setCvLatexSource(data?.latexSource ?? cvLatexSource);
+      setCvPreviewUrl(data?.pdfUrl ?? "");
+      setCvCompileLogs(data?.logs ?? "");
+      setCvCompileWarnings(data?.warnings ?? []);
+      setCvCompileSuccess(Boolean(data?.success));
+
+      if (!data?.success) {
+        throw new Error("Sauvegarde impossible : la compilation LaTeX a échoué.");
+      }
+
+      await refreshVersions(selectedOwnerId, selectedVersionId);
+    }, "CV généré et enregistré dans la version actuelle.");
+  }
+
   async function buildProfilePayload() {
     const uploadedProfileImageUrl = await uploadFile(profileFiles.profileImage);
     const uploadedLogoUrl = await uploadFile(profileFiles.logo);
@@ -1803,6 +1921,9 @@ export default function Admin() {
   const jsonEditorDiagnosticMessage = jsonEditorError ?? jsonEditorAnalysis.message;
   const jsonEditorStatusColor = jsonEditorAnalysis.valid ? "green" : "red";
   const jsonEditorCanUpdate = jsonEditorAnalysis.valid && !loading;
+  const cvCurrentPdfUrl = cvPreviewUrl || profileForm.cvUrl || "";
+  const cvCompileStatusColor = cvCompileSuccess === null ? "gray" : cvCompileSuccess ? "green" : "red";
+  const cvCompileStatusLabel = cvCompileSuccess === null ? "Non compilé" : cvCompileSuccess ? "Compilation OK" : "Compilation KO";
 
   if (authStatus === "checking") {
     return <AdminChecking />;
@@ -1988,6 +2109,7 @@ export default function Admin() {
               <Tabs.Tab value="owner">Profil principal</Tabs.Tab>
               <Tabs.Tab value="version">Versions</Tabs.Tab>
               <Tabs.Tab value="profile">Profil & fichiers</Tabs.Tab>
+              <Tabs.Tab value="cv">CV Builder</Tabs.Tab>
               <Tabs.Tab value="timeline">Timeline</Tabs.Tab>
               <Tabs.Tab value="project">Projets</Tabs.Tab>
             </Tabs.List>
@@ -2263,6 +2385,192 @@ export default function Admin() {
                     </Card>
                   ))}
                 </Stack>
+              </Stack>
+            </Tabs.Panel>
+
+            <Tabs.Panel value="cv" pt="lg">
+              <Stack gap="lg">
+                <Group justify="space-between" align="flex-start">
+                  <div>
+                    <Text fw={800}>CV Builder LaTeX</Text>
+                    <Text size="sm" c="dimmed">
+                      Génère un CV PDF depuis la version courante, édite le LaTeX si besoin, puis sauvegarde le PDF dans le champ CV de cette version.
+                    </Text>
+                  </div>
+                  <Badge color={cvCompileStatusColor} variant="light">
+                    {cvCompileStatusLabel}
+                  </Badge>
+                </Group>
+
+                <Divider />
+
+                <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
+                  <Stack gap="lg">
+                    <Paper withBorder p="lg" radius="lg" className="cv-builder-panel">
+                      <Stack gap="md">
+                        <Group justify="space-between" align="flex-start">
+                          <div>
+                            <Text fw={800}>Paramètres du rendu</Text>
+                            <Text size="sm" c="dimmed">
+                              Ces options régénèrent une source LaTeX contrôlée avant compilation.
+                            </Text>
+                          </div>
+                          <Badge variant="light">.tex → .pdf</Badge>
+                        </Group>
+
+                        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+                          <Select
+                            label="Template"
+                            data={[{ value: "software-engineer-latex", label: "Software engineer — modèle actuel" }]}
+                            value={cvBuilderForm.templateId}
+                            onChange={(value) => updateCvBuilderForm("templateId", value ?? "software-engineer-latex")}
+                          />
+                          <Select
+                            label="Densité"
+                            data={[
+                              { value: "compact", label: "Compact" },
+                              { value: "detailed", label: "Détaillé" },
+                            ]}
+                            value={cvBuilderForm.density}
+                            onChange={(value) => updateCvBuilderForm("density", value ?? "compact")}
+                          />
+                          <TextInput
+                            label="Couleur principale"
+                            value={cvBuilderForm.primaryColor}
+                            onChange={(event) => updateCvBuilderForm("primaryColor", event.currentTarget.value)}
+                          />
+                          <Select
+                            label="Langue"
+                            data={[{ value: "fr", label: "Français" }, { value: "en", label: "Anglais" }]}
+                            value={cvBuilderForm.language}
+                            onChange={(value) => updateCvBuilderForm("language", value ?? "fr")}
+                          />
+                          <NumberInput
+                            label="Nombre de projets"
+                            min={1}
+                            max={12}
+                            value={cvBuilderForm.projectLimit}
+                            onChange={(value) => updateCvBuilderForm("projectLimit", value ?? 5)}
+                          />
+                          <NumberInput
+                            label="Nombre d’expériences"
+                            min={1}
+                            max={10}
+                            value={cvBuilderForm.experienceLimit}
+                            onChange={(value) => updateCvBuilderForm("experienceLimit", value ?? 4)}
+                          />
+                        </SimpleGrid>
+
+                        <Textarea
+                          label="Phrase d’accroche spécifique au CV"
+                          placeholder="Laisse vide pour utiliser la description courte du profil."
+                          minRows={3}
+                          value={cvBuilderForm.headline}
+                          onChange={(event) => updateCvBuilderForm("headline", event.currentTarget.value)}
+                        />
+
+                        <Switch
+                          label="Préparer l’option photo"
+                          description="La compilation garde un placeholder sécurisé pour l’instant. Les assets distants seront gérés dans une étape dédiée."
+                          checked={cvBuilderForm.showPhoto}
+                          onChange={(event) => updateCvBuilderForm("showPhoto", event.currentTarget.checked)}
+                        />
+
+                        <Group>
+                          <Button variant="light" onClick={generateCvLatexSource} disabled={!selectedOwnerId || !selectedVersionId}>
+                            Générer le LaTeX
+                          </Button>
+                          <Button onClick={previewGeneratedCv} disabled={!selectedOwnerId || !selectedVersionId}>
+                            Compiler preview
+                          </Button>
+                          <Button color="green" onClick={saveGeneratedCvToVersion} disabled={!selectedOwnerId || !selectedVersionId}>
+                            Sauvegarder comme CV
+                          </Button>
+                        </Group>
+                      </Stack>
+                    </Paper>
+
+                    <Paper withBorder p="lg" radius="lg" className="cv-builder-panel">
+                      <Stack gap="sm">
+                        <Group justify="space-between">
+                          <Text fw={800}>Source LaTeX éditable</Text>
+                          <Badge variant="light">{Math.max(cvLatexSource.split("\n").length, 1)} lignes</Badge>
+                        </Group>
+                        <Textarea
+                          className="cv-latex-editor"
+                          minRows={18}
+                          autosize={false}
+                          placeholder="Clique sur Générer le LaTeX pour créer la source depuis cette version."
+                          value={cvLatexSource}
+                          onChange={(event) => setCvLatexSource(event.currentTarget.value)}
+                        />
+                      </Stack>
+                    </Paper>
+                  </Stack>
+
+                  <Stack gap="lg">
+                    <Paper withBorder p="lg" radius="lg" className="cv-preview-panel">
+                      <Group justify="space-between" align="center" mb="md">
+                        <div>
+                          <Text fw={800}>Aperçu PDF</Text>
+                          <Text size="sm" c="dimmed">
+                            Le rendu courant s’affiche ici après compilation.
+                          </Text>
+                        </div>
+                        {cvCurrentPdfUrl && (
+                          <Group gap="xs">
+                            <FilePreviewButton
+                              url={cvCurrentPdfUrl}
+                              label="Ouvrir"
+                              title="CV généré"
+                              mode="page"
+                              size="xs"
+                              variant="light"
+                            />
+                            <Button component="a" href={cvCurrentPdfUrl} target="_blank" rel="noreferrer" size="xs" variant="subtle">
+                              Télécharger
+                            </Button>
+                          </Group>
+                        )}
+                      </Group>
+
+                      {cvCurrentPdfUrl ? (
+                        <iframe className="cv-preview-frame" src={cvCurrentPdfUrl} title="Aperçu du CV PDF" />
+                      ) : (
+                        <div className="cv-preview-empty">
+                          <Text fw={800}>Aucune preview compilée</Text>
+                          <Text size="sm" c="dimmed" ta="center">
+                            Génère la source, compile le PDF, puis vérifie le rendu avant sauvegarde.
+                          </Text>
+                        </div>
+                      )}
+                    </Paper>
+
+                    <Paper withBorder p="lg" radius="lg" className="cv-builder-panel">
+                      <Stack gap="sm">
+                        <Group justify="space-between">
+                          <Text fw={800}>Logs de compilation</Text>
+                          <Badge color={cvCompileStatusColor} variant="light">{cvCompileStatusLabel}</Badge>
+                        </Group>
+
+                        {cvCompileWarnings.length > 0 && (
+                          <Alert color="yellow" variant="light">
+                            {cvCompileWarnings.join(" — ")}
+                          </Alert>
+                        )}
+
+                        <Textarea
+                          className="cv-logs-editor"
+                          minRows={10}
+                          autosize={false}
+                          readOnly
+                          value={cvCompileLogs}
+                          placeholder="Les logs latexmk / pdflatex apparaîtront ici."
+                        />
+                      </Stack>
+                    </Paper>
+                  </Stack>
+                </SimpleGrid>
               </Stack>
             </Tabs.Panel>
 
