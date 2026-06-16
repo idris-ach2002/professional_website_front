@@ -4262,3 +4262,49 @@ main,
   padding: 2px 6px;
   font-size: 0.78rem;
 }
+
+.cv-asset-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(240, 248, 246, 0.92));
+  border-color: rgba(110, 135, 126, 0.22) !important;
+}
+
+.cv-asset-preview {
+  display: block;
+  max-width: 120px;
+  max-height: 120px;
+  margin-top: 0.75rem;
+  object-fit: cover;
+  border-radius: 18px;
+  border: 1px solid rgba(110, 135, 126, 0.28);
+  box-shadow: 0 14px 30px rgba(17, 24, 39, 0.12);
+}
+
+.cv-asset-logo-preview {
+  max-width: 96px;
+  max-height: 72px;
+  object-fit: contain;
+  padding: 0.45rem;
+  background: white;
+}
+
+.cv-command-panel .mantine-Tabs-list {
+  overflow-x: auto;
+  flex-wrap: nowrap;
+}
+
+.cv-command-panel .mantine-Tabs-tab {
+  white-space: nowrap;
+}
+
+.cv-builder-photoshop-shell textarea:not(.cv-latex-editor):not(.cv-logs-editor) {
+  min-height: 7.5rem;
+  resize: vertical;
+  transition: min-height 180ms ease, transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.cv-builder-photoshop-shell textarea:not(.cv-latex-editor):not(.cv-logs-editor):focus {
+  min-height: 10rem;
+  transform: scale(1.006);
+  box-shadow: 0 16px 38px rgba(15, 23, 42, 0.12);
+  border-color: rgba(110, 135, 126, 0.55);
+}

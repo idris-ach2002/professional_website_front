@@ -1016,6 +1016,120 @@ function moveCvItem(items, itemId, direction) {
   return list.map((entry, order) => ({ ...entry, displayOrder: order + 1 }));
 }
 
+
+function cvTextSignature(item) {
+  return [
+    item?.title,
+    item?.subtitle,
+    item?.organization,
+    item?.summary,
+    item?.description,
+    item?.shortDescription,
+    toCsv(item?.skills),
+    toCsv(item?.stacks),
+    toCsv(item?.features),
+  ].filter(Boolean).join(" ").toLowerCase();
+}
+
+function scoreCvItemForKeywords(item, keywords = []) {
+  const signature = cvTextSignature(item);
+  return keywords.reduce((score, keyword, index) => {
+    const cleanKeyword = String(keyword ?? "").toLowerCase().trim();
+    return score + (cleanKeyword && signature.includes(cleanKeyword) ? 100 - index * 4 : 0);
+  }, item?.featured ? 80 : 0);
+}
+
+function buildLocalCvQualityReport(document, latexSource = "") {
+  const normalized = normalizeCvDocument(document);
+  const blockers = [];
+  const warnings = [];
+  const suggestions = [];
+  const enabledProjects = enabledItems(normalized.projects, Infinity);
+  const enabledExperiences = enabledItems(normalized.experiences, Infinity);
+  const enabledEducation = enabledItems(normalized.education, Infinity);
+  const assets = buildCvAssetsPayload(normalized);
+
+  if (!normalizeCvString(normalized.profile?.fullName)) blockers.push("Nom/prénom manquant dans le header CV.");
+  if (!normalizeCvString(normalized.profile?.headline)) warnings.push("Phrase d’accroche vide ou trop faible.");
+  if (normalized.settings?.showPhoto && !normalizeCvString(normalized.profile?.photoDataUrl)) warnings.push("Photo CV absente : le modèle affichera un placeholder.");
+  if (enabledEducation.length > 0 && enabledEducation.some((item) => !normalizeCvString(item.logoDataUrl))) warnings.push("Au moins un logo de formation est absent.");
+  if (Number(normalized.settings?.projectLimit ?? 4) > 4) suggestions.push("Limiter les projets à 4 pour rester proche du modèle une page.");
+  if (Number(normalized.settings?.experienceLimit ?? 2) > 2) suggestions.push("Limiter les expériences à 2 par défaut comme dans le CV de référence.");
+  if (enabledProjects.length === 0) blockers.push("Aucun projet visible.");
+  if (enabledExperiences.length === 0) warnings.push("Aucune expérience professionnelle visible.");
+  if (latexSource && !latexSource.includes("\\schoollogo")) warnings.push("La source LaTeX ne contient pas la macro schoollogo du modèle fait main.");
+  if (latexSource && !latexSource.includes("\\begin{tcolorbox}")) warnings.push("Le rendu risque de s’éloigner du template CV car tcolorbox est absent.");
+  if (assets.length < 2) suggestions.push("Ajoute la photo et les logos école dans l’Asset Manager pour un export reproductible complet.");
+
+  const pressure = (latexSource?.length ?? 0) / 24000 + Math.max(0, Number(normalized.settings?.projectLimit ?? 4) - 4) / 2 + Math.max(0, Number(normalized.settings?.experienceLimit ?? 2) - 2);
+  const estimatedPages = Math.max(1, Math.ceil(pressure));
+  if (estimatedPages > 1) warnings.push("Le CV est estimé à plus d’une page. Active la compaction intelligente.");
+
+  const score = Math.max(0, 100 - blockers.length * 35 - warnings.length * 8 - suggestions.length * 3);
+  return { score, estimatedPages, blockers, warnings, suggestions };
+}
+
+function extractOfferKeywords(text) {
+  const normalized = String(text ?? "").toLowerCase();
+  const dictionary = [
+    "java", "spring", "spring boot", "postgresql", "sql", "api rest", "react", "javascript", "typescript",
+    "docker", "kubernetes", "linux", "ci/cd", "git", "maven", "junit", "tests", "architecture",
+    "symfony", "python", "data", "devops", "cloud", "render", "neon", "tailwind", "mantine"
+  ];
+  return dictionary.filter((keyword) => normalized.includes(keyword));
+}
+
+function buildOfferAnalysis(document, offerText) {
+  const normalized = normalizeCvDocument(document);
+  const offerKeywords = extractOfferKeywords(offerText);
+  const visibleText = [
+    normalized.profile?.title,
+    normalized.profile?.headline,
+    ...enabledItems(normalized.skills, normalized.settings?.skillsLimit).map((item) => item.label),
+    ...enabledItems(normalized.experiences, normalized.settings?.experienceLimit).map(cvTextSignature),
+    ...enabledItems(normalized.projects, normalized.settings?.projectLimit).map(cvTextSignature),
+  ].join(" ").toLowerCase();
+  const matched = offerKeywords.filter((keyword) => visibleText.includes(keyword));
+  const missing = offerKeywords.filter((keyword) => !visibleText.includes(keyword));
+  const score = offerKeywords.length ? Math.round((matched.length / offerKeywords.length) * 100) : 0;
+
+  return {
+    score,
+    matched,
+    missing,
+    keywords: offerKeywords,
+    recommendations: [
+      missing.length > 0 ? `Ajouter ou remonter les mots-clés : ${missing.slice(0, 6).join(", ")}.` : "Les mots-clés majeurs de l’offre sont déjà visibles.",
+      "Réordonner les projets et compétences par pertinence avec l’offre.",
+      "Limiter le CV à 2 expériences et 4 projets pour rester dense et lisible.",
+    ],
+  };
+}
+
+function diffCvDocuments(leftDocument, rightDocument) {
+  const left = normalizeCvDocument(leftDocument);
+  const right = normalizeCvDocument(rightDocument);
+  const changes = [];
+  const push = (type, label, before, after) => {
+    if (JSON.stringify(before) !== JSON.stringify(after)) changes.push({ type, label, before, after });
+  };
+
+  push("profile", "Titre CV", left.profile.title, right.profile.title);
+  push("profile", "Accroche", left.profile.headline, right.profile.headline);
+  push("settings", "Limite projets", left.settings.projectLimit, right.settings.projectLimit);
+  push("settings", "Limite expériences", left.settings.experienceLimit, right.settings.experienceLimit);
+  push("settings", "Densité", left.settings.density, right.settings.density);
+
+  ["experiences", "education", "projects", "skills", "languages", "qualities"].forEach((section) => {
+    const leftIds = (left[section] ?? []).map((item) => item.id ?? item.title ?? item.label);
+    const rightIds = (right[section] ?? []).map((item) => item.id ?? item.title ?? item.label);
+    push("order", `Ordre ${section}`, leftIds, rightIds);
+    push("visibility", `Visibilité ${section}`, (left[section] ?? []).map((item) => item.enabled !== false), (right[section] ?? []).map((item) => item.enabled !== false));
+  });
+
+  return changes;
+}
+
 function toArray(value) {
   if (!value) return [];
 
@@ -1093,6 +1207,13 @@ function hydrateOwnerForm(owner) {
     address: owner?.address ?? emptyOwnerForm.address,
     contacts: contacts.length > 0 ? contacts : [createEmptyContact()],
   };
+}
+
+function normalizeGeneratedFileUrl(url) {
+  const value = normalizeCvString(url);
+  if (!value) return "";
+  if (value.startsWith("http://") || value.startsWith("https://") || value.startsWith("data:")) return value;
+  return buildBackendUrl(value.startsWith("/") ? value : `/${value}`);
 }
 
 function normalizeUrlFromUpload(data) {
@@ -1502,6 +1623,19 @@ export default function Admin() {
   const [cvCompileLogs, setCvCompileLogs] = useState("");
   const [cvCompileWarnings, setCvCompileWarnings] = useState([]);
   const [cvCompileSuccess, setCvCompileSuccess] = useState(null);
+  const [cvTemplateLocked, setCvTemplateLocked] = useState(true);
+  const [cvQualityReport, setCvQualityReport] = useState(null);
+  const [cvVariants, setCvVariants] = useState([]);
+  const [selectedCvVariantId, setSelectedCvVariantId] = useState(null);
+  const [cvVariantName, setCvVariantName] = useState("CV ciblé");
+  const [cvDiffReport, setCvDiffReport] = useState(null);
+  const [cvOfferText, setCvOfferText] = useState("");
+  const [cvOfferAnalysis, setCvOfferAnalysis] = useState(null);
+  const [cvPresetName, setCvPresetName] = useState("Preset personnalisé");
+  const [cvCommandPresets, setCvCommandPresets] = useState([]);
+  const [cvExportZipUrl, setCvExportZipUrl] = useState("");
+  const [cvAsyncJob, setCvAsyncJob] = useState(null);
+  const [cvRegressionReport, setCvRegressionReport] = useState(null);
 
   const jsonEditorAnalysis = useMemo(
     () => buildJsonEditorAnalysis(jsonEditorText),
@@ -1519,6 +1653,12 @@ export default function Admin() {
 
     return [];
   }, [cvDocument, cvSelectedSection]);
+
+
+  const cvQualitySummary = useMemo(
+    () => cvQualityReport ?? buildLocalCvQualityReport(cvDocument, cvLatexSource),
+    [cvDocument, cvLatexSource, cvQualityReport],
+  );
 
   const selectedVersion = useMemo(
     () =>
@@ -1578,6 +1718,36 @@ export default function Admin() {
 
     return undefined;
   }, []);
+
+  useEffect(() => {
+    const variants = readCvLocalList("variants");
+    const presets = readCvLocalList("presets");
+    setCvVariants(variants);
+    setCvCommandPresets(presets);
+    setSelectedCvVariantId(variants[0]?.id ?? null);
+    setCvDiffReport(null);
+    setCvQualityReport(null);
+    setCvExportZipUrl("");
+    setCvAsyncJob(null);
+  }, [selectedOwnerId, selectedVersionId]);
+
+  function cvLocalStorageKey(kind) {
+    return `portfolio-cv-${kind}-${selectedOwnerId ?? "owner"}-${selectedVersionId ?? "version"}`;
+  }
+
+  function readCvLocalList(kind) {
+    try {
+      const raw = localStorage.getItem(cvLocalStorageKey(kind));
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function writeCvLocalList(kind, list) {
+    localStorage.setItem(cvLocalStorageKey(kind), JSON.stringify(list));
+  }
 
   function updateOwnerForm(field, value) {
     setOwnerForm((current) => ({ ...current, [field]: value }));
@@ -2111,6 +2281,240 @@ export default function Admin() {
     setCvPreviewUrl("");
     setMessage("Source LaTeX générée depuis l’éditeur visuel.");
     setError(null);
+  }
+
+  function createCvVariantSnapshot(name = cvVariantName) {
+    const source = cvLatexSource || buildCvLatexFromDocument(cvDocument);
+    const variant = {
+      id: createCvId("variant"),
+      name: normalizeCvString(name) || `Variante ${cvVariants.length + 1}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      document: cloneDeep(cvDocument),
+      latexSource: source,
+      pdfUrl: cvPreviewUrl,
+      qualityScore: buildLocalCvQualityReport(cvDocument, source).score,
+    };
+    const next = [variant, ...cvVariants].slice(0, 25);
+    setCvVariants(next);
+    setSelectedCvVariantId(variant.id);
+    writeCvLocalList("variants", next);
+    setMessage("Variante CV sauvegardée localement.");
+  }
+
+  function saveCurrentCvVariant() {
+    if (!selectedCvVariantId) {
+      createCvVariantSnapshot(cvVariantName);
+      return;
+    }
+    const source = cvLatexSource || buildCvLatexFromDocument(cvDocument);
+    const next = cvVariants.map((variant) => variant.id === selectedCvVariantId
+      ? { ...variant, name: normalizeCvString(cvVariantName) || variant.name, updatedAt: new Date().toISOString(), document: cloneDeep(cvDocument), latexSource: source, pdfUrl: cvPreviewUrl, qualityScore: buildLocalCvQualityReport(cvDocument, source).score }
+      : variant);
+    setCvVariants(next);
+    writeCvLocalList("variants", next);
+    setMessage("Variante CV mise à jour.");
+  }
+
+  function loadCvVariant(variantId = selectedCvVariantId) {
+    const variant = cvVariants.find((item) => item.id === variantId);
+    if (!variant) return;
+    const nextDocument = normalizeCvDocument(variant.document);
+    setCvEditorState((current) => ({
+      past: [...current.past.slice(-39), current.present],
+      present: nextDocument,
+      future: [],
+      commandLog: [{ id: createCvId("cmd"), label: `Charger variante : ${variant.name}`, timestamp: new Date().toLocaleTimeString("fr-FR") }, ...current.commandLog].slice(0, 24),
+    }));
+    setCvVariantName(variant.name);
+    setCvLatexSource(variant.latexSource || buildCvLatexFromDocument(nextDocument));
+    setCvPreviewUrl(variant.pdfUrl || "");
+    setCvManualLatexDirty(Boolean(variant.latexSource));
+    setCvCompileSuccess(null);
+    setMessage(`Variante chargée : ${variant.name}.`);
+  }
+
+  function deleteCvVariant(variantId = selectedCvVariantId) {
+    const next = cvVariants.filter((variant) => variant.id !== variantId);
+    setCvVariants(next);
+    setSelectedCvVariantId(next[0]?.id ?? null);
+    writeCvLocalList("variants", next);
+    setMessage("Variante supprimée.");
+  }
+
+  function compareCvVariant(variantId = selectedCvVariantId) {
+    const variant = cvVariants.find((item) => item.id === variantId);
+    if (!variant) return;
+    setCvDiffReport({ name: variant.name, changes: diffCvDocuments(variant.document, cvDocument) });
+  }
+
+  function saveCvCommandPreset() {
+    const preset = {
+      id: createCvId("preset"),
+      name: normalizeCvString(cvPresetName) || `Preset ${cvCommandPresets.length + 1}`,
+      createdAt: new Date().toISOString(),
+      settings: cloneDeep(cvDocument.settings),
+      sections: cloneDeep(cvDocument.sections),
+    };
+    const next = [preset, ...cvCommandPresets].slice(0, 20);
+    setCvCommandPresets(next);
+    writeCvLocalList("presets", next);
+    setMessage("Preset de commandes sauvegardé.");
+  }
+
+  function applyCvCommandPreset(preset) {
+    if (!preset) return;
+    applyCvCommand(`Appliquer preset : ${preset.name}`, (draft) => ({
+      ...draft,
+      settings: { ...draft.settings, ...(preset.settings ?? {}) },
+      sections: { ...draft.sections, ...(preset.sections ?? {}) },
+    }));
+  }
+
+  function runCvQualityCheck() {
+    const localReport = buildLocalCvQualityReport(cvDocument, cvLatexSource || buildCvLatexFromDocument(cvDocument));
+    setCvQualityReport(localReport);
+    setMessage(`Contrôle qualité terminé : score ${localReport.score}/100.`);
+  }
+
+  async function runBackendCvQualityCheck() {
+    if (!selectedOwnerId || !selectedVersionId) {
+      setError("Sélectionne d’abord un owner et une version.");
+      return;
+    }
+    await runAction(async () => {
+      const data = await apiRequest(
+        "POST",
+        `/manager/${selectedOwnerId}/versions/${selectedVersionId}/cv/quality`,
+        buildCvGenerationPayload({ includeLatexOverride: true }),
+      );
+      setCvQualityReport(data);
+    }, "Contrôle qualité backend terminé.");
+  }
+
+  function analyzeCvOffer() {
+    const analysis = buildOfferAnalysis(cvDocument, cvOfferText);
+    setCvOfferAnalysis(analysis);
+    setMessage(`Analyse d’offre terminée : pertinence ${analysis.score}%.`);
+  }
+
+  function applyOfferRecommendations() {
+    const analysis = cvOfferAnalysis ?? buildOfferAnalysis(cvDocument, cvOfferText);
+    const keywords = analysis.keywords ?? [];
+    applyCvCommand("Adapter automatiquement à l’offre", (draft) => {
+      const title = keywords.includes("spring boot") || keywords.includes("java")
+        ? "Alternance Développeur Java Spring Boot"
+        : keywords.includes("devops") || keywords.includes("docker")
+          ? "Alternance Développeur Java / DevOps"
+          : draft.profile.title;
+      const orderedProjects = [...(draft.projects ?? [])].sort((left, right) => scoreCvItemForKeywords(right, keywords) - scoreCvItemForKeywords(left, keywords));
+      const orderedExperiences = [...(draft.experiences ?? [])].sort((left, right) => scoreCvItemForKeywords(right, keywords) - scoreCvItemForKeywords(left, keywords));
+      const orderedSkills = [...(draft.skills ?? [])].sort((left, right) => scoreCvItemForKeywords(right, keywords) - scoreCvItemForKeywords(left, keywords));
+      return {
+        ...draft,
+        profile: {
+          ...draft.profile,
+          title,
+          headline: keywords.length > 0
+            ? `Recherche une alternance ciblée ${keywords.slice(0, 5).join(" · ")}, avec une approche orientée qualité, architecture et impact utilisateur.`
+            : draft.profile.headline,
+        },
+        settings: { ...draft.settings, projectLimit: 4, experienceLimit: 2, featuresLimit: 3, reduceDescriptions: true },
+        projects: orderedProjects.map((item, index) => ({ ...item, displayOrder: index + 1 })),
+        experiences: orderedExperiences.map((item, index) => ({ ...item, displayOrder: index + 1 })),
+        skills: orderedSkills,
+      };
+    });
+  }
+
+  async function exportCvReproducibleZip() {
+    if (!selectedOwnerId || !selectedVersionId) {
+      setError("Sélectionne d’abord un owner et une version.");
+      return;
+    }
+    await runAction(async () => {
+      const data = await apiRequest(
+        "POST",
+        `/manager/${selectedOwnerId}/versions/${selectedVersionId}/cv/export-zip`,
+        buildCvGenerationPayload({ includeLatexOverride: true }),
+      );
+      setCvExportZipUrl(normalizeGeneratedFileUrl(data?.zipUrl));
+      setCvPreviewUrl(normalizeGeneratedFileUrl(data?.pdfUrl) || cvPreviewUrl);
+      setCvCompileLogs(data?.logs ?? "");
+      setCvCompileWarnings(data?.warnings ?? []);
+      setCvCompileSuccess(Boolean(data?.success));
+      if (!data?.zipUrl) throw new Error("Export ZIP non généré.");
+    }, "Export ZIP reproductible généré.");
+  }
+
+  async function startAsyncCvPreview() {
+    if (!selectedOwnerId || !selectedVersionId) {
+      setError("Sélectionne d’abord un owner et une version.");
+      return;
+    }
+    await runAction(async () => {
+      const job = await apiRequest(
+        "POST",
+        `/manager/${selectedOwnerId}/versions/${selectedVersionId}/cv/compile-jobs`,
+        buildCvGenerationPayload({ includeLatexOverride: true }),
+      );
+      setCvAsyncJob(job);
+      setCvCompileLogs(`${job?.status ?? "QUEUED"} — ${job?.message ?? "Compilation asynchrone lancée."}`);
+      pollAsyncCvJob(job?.jobId);
+    }, "Compilation asynchrone lancée.");
+  }
+
+  function pollAsyncCvJob(jobId) {
+    if (!jobId || !selectedOwnerId || !selectedVersionId) return;
+    let attempts = 0;
+    const timer = window.setInterval(async () => {
+      attempts += 1;
+      try {
+        const status = await apiRequest("GET", `/manager/${selectedOwnerId}/versions/${selectedVersionId}/cv/compile-jobs/${jobId}`);
+        setCvAsyncJob(status);
+        setCvCompileLogs([status?.step, status?.logs].filter(Boolean).join("\n\n"));
+        setCvCompileWarnings(status?.warnings ?? []);
+        if (status?.latexSource) setCvLatexSource(status.latexSource);
+        if (status?.pdfUrl) setCvPreviewUrl(normalizeGeneratedFileUrl(status.pdfUrl));
+        if (["SUCCESS", "FAILED", "NOT_FOUND"].includes(status?.status) || attempts > 60) {
+          setCvCompileSuccess(status?.status === "SUCCESS");
+          window.clearInterval(timer);
+        }
+      } catch (err) {
+        window.clearInterval(timer);
+        setError(err?.message ?? "Suivi du job de compilation impossible.");
+      }
+    }, 1200);
+  }
+
+  async function smartCompactAndPreview() {
+    applyCvCommand("Auto-compaction intelligente", (draft) => ({
+      ...draft,
+      settings: {
+        ...draft.settings,
+        density: "compact",
+        fontScale: Math.min(Number(draft.settings?.fontScale ?? 1), 0.94),
+        contentScale: Math.min(Number(draft.settings?.contentScale ?? 0.74), 0.72),
+        spacingScale: 0.7,
+        sectionSpacing: 0.12,
+        blockSpacing: 0,
+        itemSpacing: 1,
+        reduceDescriptions: true,
+        projectLimit: 4,
+        experienceLimit: 2,
+        skillsLimit: 12,
+        featuresLimit: 2,
+      },
+    }));
+    setCvRegressionReport({ status: "READY", message: "Compaction appliquée. Lancer une preview asynchrone pour vérifier le rendu PDF final." });
+  }
+
+  function updateTemplateLock(checked) {
+    setCvTemplateLocked(checked);
+    if (checked) {
+      setCvLatexSource(buildCvLatexFromDocument(cvDocument));
+      setCvManualLatexDirty(false);
+    }
   }
 
   async function fetchOwners() {
@@ -2777,7 +3181,7 @@ export default function Admin() {
       );
 
       setCvLatexSource(data?.latexSource ?? cvLatexSource);
-      setCvPreviewUrl(data?.pdfUrl ?? "");
+      setCvPreviewUrl(normalizeGeneratedFileUrl(data?.pdfUrl));
       setCvCompileLogs(data?.logs ?? "");
       setCvCompileWarnings(data?.warnings ?? []);
       setCvCompileSuccess(Boolean(data?.success));
@@ -2802,7 +3206,7 @@ export default function Admin() {
       );
 
       setCvLatexSource(data?.latexSource ?? cvLatexSource);
-      setCvPreviewUrl(data?.pdfUrl ?? "");
+      setCvPreviewUrl(normalizeGeneratedFileUrl(data?.pdfUrl));
       setCvCompileLogs(data?.logs ?? "");
       setCvCompileWarnings(data?.warnings ?? []);
       setCvCompileSuccess(Boolean(data?.success));
@@ -3962,6 +4366,11 @@ export default function Admin() {
                             <Tabs.Tab value="style">Style</Tabs.Tab>
                             <Tabs.Tab value="typography">Typo</Tabs.Tab>
                             <Tabs.Tab value="layout">Layout</Tabs.Tab>
+                            <Tabs.Tab value="assets">Assets</Tabs.Tab>
+                            <Tabs.Tab value="quality">Qualité</Tabs.Tab>
+                            <Tabs.Tab value="variants">Variantes</Tabs.Tab>
+                            <Tabs.Tab value="offer">Offre</Tabs.Tab>
+                            <Tabs.Tab value="advanced">Avancé</Tabs.Tab>
                             <Tabs.Tab value="latex">LaTeX</Tabs.Tab>
                             <Tabs.Tab value="history">Historique</Tabs.Tab>
                           </Tabs.List>
@@ -4134,6 +4543,161 @@ export default function Admin() {
                             </Stack>
                           </Tabs.Panel>
 
+                          <Tabs.Panel value="assets" pt="md">
+                            <Stack gap="md">
+                              <Group justify="space-between">
+                                <div>
+                                  <Text fw={800}>Asset Manager CV</Text>
+                                  <Text size="sm" c="dimmed">Photo, logos de formation et assets envoyés au backend pour une compilation LaTeX reproductible.</Text>
+                                </div>
+                                <Badge variant="light">{buildCvAssetsPayload(cvDocument).length} asset(s)</Badge>
+                              </Group>
+                              <Paper withBorder radius="lg" p="md" className="cv-asset-card">
+                                <Group justify="space-between" align="flex-start">
+                                  <div>
+                                    <Text fw={800}>Photo du header</Text>
+                                    <Text size="xs" c="dimmed">Fichier LaTeX : {cvDocument.profile.photoFilename || "idris.jpg"}</Text>
+                                  </div>
+                                  {cvDocument.profile.photoDataUrl ? <Badge color="green" variant="light">chargée</Badge> : <Badge color="yellow" variant="light">placeholder</Badge>}
+                                </Group>
+                                {cvDocument.profile.photoDataUrl && <img className="cv-asset-preview" src={cvDocument.profile.photoDataUrl} alt="Photo CV" />}
+                                <FileInput mt="sm" label="Remplacer la photo" accept="image/png,image/jpeg,image/webp" onChange={importCvProfilePhoto} />
+                              </Paper>
+                              <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+                                {cvDocument.education.map((item, index) => (
+                                  <Paper key={item.id} withBorder radius="lg" p="md" className="cv-asset-card">
+                                    <Group justify="space-between" align="flex-start">
+                                      <div>
+                                        <Text fw={800}>{item.title}</Text>
+                                        <Text size="xs" c="dimmed">{safeCvAssetFilename(item.logoFilename, inferSchoolDefaults(item, index).logoFilename)}</Text>
+                                      </div>
+                                      {item.logoDataUrl ? <Badge color="green" variant="light">logo chargé</Badge> : <Badge color="yellow" variant="light">placeholder</Badge>}
+                                    </Group>
+                                    {item.logoDataUrl && <img className="cv-asset-preview cv-asset-logo-preview" src={item.logoDataUrl} alt={item.organization || item.title} />}
+                                    <FileInput mt="sm" label="Importer / remplacer le logo" accept="image/png,image/jpeg,image/webp" onChange={(file) => importCvEducationLogo(item, file)} />
+                                  </Paper>
+                                ))}
+                              </SimpleGrid>
+                              <Alert color="blue" variant="light">Le ZIP reproductible inclura main.tex, cv.pdf, compile.log, metadata.json et ces assets.</Alert>
+                            </Stack>
+                          </Tabs.Panel>
+
+                          <Tabs.Panel value="quality" pt="md">
+                            <Stack gap="md">
+                              <Group justify="space-between">
+                                <div>
+                                  <Text fw={800}>Contrôle qualité CV</Text>
+                                  <Text size="sm" c="dimmed">Détection des risques de rendu, de contenu, d’assets manquants et de dépassement d’une page.</Text>
+                                </div>
+                                <Badge color={cvQualitySummary.score >= 80 ? "green" : cvQualitySummary.score >= 60 ? "yellow" : "red"} variant="light">Score {cvQualitySummary.score}/100</Badge>
+                              </Group>
+                              <Group>
+                                <Button variant="light" onClick={runCvQualityCheck}>Analyser localement</Button>
+                                <Button variant="subtle" onClick={runBackendCvQualityCheck} disabled={!selectedOwnerId || !selectedVersionId}>Analyse backend</Button>
+                                <Button variant="light" onClick={smartCompactAndPreview}>Auto-compaction intelligente</Button>
+                              </Group>
+                              <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
+                                <Card withBorder radius="lg"><Text size="xs" c="dimmed">Pages estimées</Text><Text fw={900}>{cvQualitySummary.estimatedPages}</Text></Card>
+                                <Card withBorder radius="lg"><Text size="xs" c="dimmed">Bloquants</Text><Text fw={900}>{cvQualitySummary.blockers?.length ?? 0}</Text></Card>
+                                <Card withBorder radius="lg"><Text size="xs" c="dimmed">Alertes</Text><Text fw={900}>{cvQualitySummary.warnings?.length ?? 0}</Text></Card>
+                              </SimpleGrid>
+                              {[...(cvQualitySummary.blockers ?? []).map((text) => ["red", text]), ...(cvQualitySummary.warnings ?? []).map((text) => ["yellow", text]), ...(cvQualitySummary.suggestions ?? []).map((text) => ["blue", text])].map(([color, text], index) => (
+                                <Alert key={`${color}-${index}`} color={color} variant="light">{text}</Alert>
+                              ))}
+                            </Stack>
+                          </Tabs.Panel>
+
+                          <Tabs.Panel value="variants" pt="md">
+                            <Stack gap="md">
+                              <Group justify="space-between">
+                                <div>
+                                  <Text fw={800}>Variantes et historique applicatif</Text>
+                                  <Text size="sm" c="dimmed">Sauvegarde locale de CV ciblés : Java Backend, offre spécifique, version compacte, etc.</Text>
+                                </div>
+                                <Badge variant="light">{cvVariants.length} variante(s)</Badge>
+                              </Group>
+                              <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+                                <TextInput label="Nom de variante" value={cvVariantName} onChange={(event) => setCvVariantName(event.currentTarget.value)} />
+                                <Select label="Variante existante" data={cvVariants.map((variant) => ({ value: variant.id, label: `${variant.name} · score ${variant.qualityScore ?? "?"}` }))} value={selectedCvVariantId} onChange={setSelectedCvVariantId} />
+                              </SimpleGrid>
+                              <Group>
+                                <Button variant="light" onClick={() => createCvVariantSnapshot()}>Nouvelle variante</Button>
+                                <Button variant="light" onClick={saveCurrentCvVariant}>Mettre à jour</Button>
+                                <Button variant="subtle" onClick={() => loadCvVariant()} disabled={!selectedCvVariantId}>Charger</Button>
+                                <Button variant="subtle" onClick={() => compareCvVariant()} disabled={!selectedCvVariantId}>Diff avec courant</Button>
+                                <Button color="red" variant="light" onClick={() => deleteCvVariant()} disabled={!selectedCvVariantId}>Supprimer</Button>
+                              </Group>
+                              {cvDiffReport && (
+                                <Paper withBorder radius="lg" p="md">
+                                  <Text fw={800}>Diff avec {cvDiffReport.name}</Text>
+                                  {cvDiffReport.changes.length > 0 ? cvDiffReport.changes.map((change, index) => (
+                                    <Card key={`${change.label}-${index}`} withBorder radius="md" p="sm" mt="xs">
+                                      <Text size="sm" fw={800}>{change.label}</Text>
+                                      <Text size="xs" c="dimmed">{change.type}</Text>
+                                    </Card>
+                                  )) : <Alert color="green" variant="light" mt="sm">Aucune différence structurée détectée.</Alert>}
+                                </Paper>
+                              )}
+                              <Divider />
+                              <Text fw={800}>Presets de commandes</Text>
+                              <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+                                <TextInput label="Nom du preset" value={cvPresetName} onChange={(event) => setCvPresetName(event.currentTarget.value)} />
+                                <Button mt="xl" variant="light" onClick={saveCvCommandPreset}>Sauvegarder preset actuel</Button>
+                              </SimpleGrid>
+                              {cvCommandPresets.map((preset) => (
+                                <Card key={preset.id} withBorder radius="md" p="sm">
+                                  <Group justify="space-between">
+                                    <Text fw={800}>{preset.name}</Text>
+                                    <Button size="xs" variant="light" onClick={() => applyCvCommandPreset(preset)}>Appliquer</Button>
+                                  </Group>
+                                </Card>
+                              ))}
+                            </Stack>
+                          </Tabs.Panel>
+
+                          <Tabs.Panel value="offer" pt="md">
+                            <Stack gap="md">
+                              <div>
+                                <Text fw={800}>Analyse d’offre et adaptation par commandes</Text>
+                                <Text size="sm" c="dimmed">Colle une offre : le Studio calcule un score, détecte les mots-clés manquants et applique des commandes structurées.</Text>
+                              </div>
+                              <Textarea minRows={8} label="Offre d’alternance" value={cvOfferText} onChange={(event) => setCvOfferText(event.currentTarget.value)} placeholder="Colle ici l'offre Java / Spring Boot / React / DevOps..." />
+                              <Group>
+                                <Button variant="light" onClick={analyzeCvOffer}>Analyser l’offre</Button>
+                                <Button onClick={applyOfferRecommendations} disabled={!cvOfferText.trim()}>Appliquer les recommandations</Button>
+                              </Group>
+                              {cvOfferAnalysis && (
+                                <Paper withBorder radius="lg" p="md">
+                                  <Group justify="space-between"><Text fw={800}>Pertinence offre</Text><Badge color={cvOfferAnalysis.score >= 75 ? "green" : cvOfferAnalysis.score >= 45 ? "yellow" : "red"}>{cvOfferAnalysis.score}%</Badge></Group>
+                                  <Text size="sm" mt="sm"><strong>Mots-clés trouvés :</strong> {cvOfferAnalysis.matched.join(", ") || "aucun"}</Text>
+                                  <Text size="sm"><strong>Mots-clés manquants :</strong> {cvOfferAnalysis.missing.join(", ") || "aucun"}</Text>
+                                  <Stack gap="xs" mt="sm">{cvOfferAnalysis.recommendations.map((item) => <Alert key={item} color="blue" variant="light">{item}</Alert>)}</Stack>
+                                </Paper>
+                              )}
+                            </Stack>
+                          </Tabs.Panel>
+
+                          <Tabs.Panel value="advanced" pt="md">
+                            <Stack gap="md">
+                              <Group justify="space-between">
+                                <div>
+                                  <Text fw={800}>Architecture avancée</Text>
+                                  <Text size="sm" c="dimmed">Compilation asynchrone, cache backend, export ZIP reproductible et rapport de non-régression léger.</Text>
+                                </div>
+                                {cvAsyncJob && <Badge variant="light">{cvAsyncJob.status} · {cvAsyncJob.progress ?? 0}%</Badge>}
+                              </Group>
+                              <Group>
+                                <Button variant="light" onClick={startAsyncCvPreview} disabled={!selectedOwnerId || !selectedVersionId}>Compiler en job asynchrone</Button>
+                                <Button variant="light" onClick={exportCvReproducibleZip} disabled={!selectedOwnerId || !selectedVersionId}>Exporter ZIP reproductible</Button>
+                                <Button variant="subtle" onClick={() => setCvRegressionReport({ status: "BASELINE", message: "Baseline locale enregistrée : compare les prochains rendus via les variantes et le score qualité." })}>Créer baseline visuelle</Button>
+                              </Group>
+                              {cvExportZipUrl && <Button component="a" href={cvExportZipUrl} target="_blank" rel="noreferrer" variant="filled">Télécharger le ZIP</Button>}
+                              {cvAsyncJob && <Alert color={cvAsyncJob.status === "FAILED" ? "red" : cvAsyncJob.status === "SUCCESS" ? "green" : "blue"} variant="light">{cvAsyncJob.step || cvAsyncJob.message}</Alert>}
+                              {cvRegressionReport && <Alert color="violet" variant="light">{cvRegressionReport.message}</Alert>}
+                              <Alert color="gray" variant="light">Le backend garde un cache SHA-256 par source LaTeX + assets. Si on recompile le même CV, le PDF est réutilisé.</Alert>
+                            </Stack>
+                          </Tabs.Panel>
+
                           <Tabs.Panel value="latex" pt="md">
                             <Stack gap="sm">
                               <Group justify="space-between">
@@ -4147,12 +4711,19 @@ export default function Admin() {
                                   <Button size="xs" variant="light" onClick={generateLatexFromCvDocument}>Recalculer</Button>
                                 </Group>
                               </Group>
+                              <Switch
+                                label="Template verrouillé : édition LaTeX directe désactivée"
+                                checked={cvTemplateLocked}
+                                onChange={(event) => updateTemplateLock(event.currentTarget.checked)}
+                              />
                               <Textarea
                                 className="cv-latex-editor"
                                 minRows={22}
                                 autosize={false}
+                                readOnly={cvTemplateLocked}
                                 value={cvLatexSource}
                                 onChange={(event) => {
+                                  if (cvTemplateLocked) return;
                                   setCvLatexSource(event.currentTarget.value);
                                   setCvManualLatexDirty(true);
                                 }}
