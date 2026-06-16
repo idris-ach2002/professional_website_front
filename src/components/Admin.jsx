@@ -1637,6 +1637,13 @@ export default function Admin() {
   const [cvAsyncJob, setCvAsyncJob] = useState(null);
   const [cvRegressionReport, setCvRegressionReport] = useState(null);
 
+  const [portfolioHealthReport, setPortfolioHealthReport] = useState(null);
+  const [publishValidationReport, setPublishValidationReport] = useState(null);
+  const [portfolioBackupUrl, setPortfolioBackupUrl] = useState("");
+  const [portfolioBackupJson, setPortfolioBackupJson] = useState("");
+  const [portfolioRestoreText, setPortfolioRestoreText] = useState("");
+  const [portfolioRestoreLabel, setPortfolioRestoreLabel] = useState("Version restaurée depuis backup");
+
   const jsonEditorAnalysis = useMemo(
     () => buildJsonEditorAnalysis(jsonEditorText),
     [jsonEditorText],
@@ -1729,6 +1736,10 @@ export default function Admin() {
     setCvQualityReport(null);
     setCvExportZipUrl("");
     setCvAsyncJob(null);
+    setPortfolioHealthReport(null);
+    setPublishValidationReport(null);
+    setPortfolioBackupUrl("");
+    setPortfolioBackupJson("");
   }, [selectedOwnerId, selectedVersionId]);
 
   function cvLocalStorageKey(kind) {
@@ -2506,7 +2517,7 @@ export default function Admin() {
         featuresLimit: 2,
       },
     }));
-    setCvRegressionReport({ status: "READY", message: "Compaction appliquée. Lancer une preview asynchrone pour vérifier le rendu PDF final." });
+    setCvRegressionReport({ status: "READY", message: "Compaction appliquée. Lance une preview asynchrone pour vérifier le rendu PDF final." });
   }
 
   function updateTemplateLock(checked) {
@@ -2963,6 +2974,140 @@ export default function Admin() {
     downloadJsonPayload(buildCurrentVersionJsonPayload());
     setMessage("Version courante téléchargée en JSON.");
     setError(null);
+  }
+
+  async function runPortfolioHealthCheck() {
+    if (!selectedOwnerId || !selectedVersionId) {
+      setError("Sélectionne d’abord un owner et une version.");
+      return;
+    }
+
+    const report = await runAction(
+      () => apiRequest("GET", `/manager/${selectedOwnerId}/versions/${selectedVersionId}/health`),
+      "Contrôle santé exécuté.",
+    );
+    if (report) setPortfolioHealthReport(report);
+  }
+
+  async function validatePortfolioBeforePublish() {
+    if (!selectedOwnerId || !selectedVersionId) {
+      setError("Sélectionne d’abord un owner et une version.");
+      return null;
+    }
+
+    const report = await runAction(
+      () => apiRequest("GET", `/manager/${selectedOwnerId}/versions/${selectedVersionId}/publish-validation`),
+      "Validation avant publication exécutée.",
+    );
+    if (report) setPublishValidationReport(report);
+    return report;
+  }
+
+  async function activateVersionWithValidation(versionId = selectedVersionId) {
+    if (!selectedOwnerId || !versionId) {
+      setError("Sélectionne un owner et une version.");
+      return;
+    }
+
+    const report = await runAction(
+      () => apiRequest("GET", `/manager/${selectedOwnerId}/versions/${versionId}/publish-validation`),
+    );
+    if (!report) return;
+
+    setPublishValidationReport(report);
+    if (!report.publishable) {
+      setError("Publication bloquée : corrige les erreurs critiques avant activation.");
+      return;
+    }
+
+    await runAction(async () => {
+      await apiRequest("PUT", `/manager/${selectedOwnerId}/versions/${versionId}/activate-validated`);
+      await refreshVersions(selectedOwnerId, versionId);
+    }, "Version validée puis activée.");
+  }
+
+  async function exportPortfolioBackupZip() {
+    if (!selectedOwnerId || !selectedVersionId) {
+      setError("Sélectionne d’abord un owner et une version.");
+      return;
+    }
+
+    const backup = await runAction(
+      () => apiRequest("POST", `/manager/${selectedOwnerId}/versions/${selectedVersionId}/backup/export`),
+      "Backup portfolio généré.",
+    );
+    if (!backup) return;
+
+    setPortfolioBackupUrl(backup.url ?? "");
+    setPortfolioBackupJson(backup.json ?? "");
+    if (backup.json) {
+      downloadTextFile("portfolio-backup.json", `${backup.json}\n`, "application/json;charset=utf-8");
+    }
+  }
+
+  async function restorePortfolioBackup() {
+    if (!selectedOwnerId) {
+      setError("Sélectionne d’abord un owner.");
+      return;
+    }
+    if (!portfolioRestoreText.trim()) {
+      setError("Colle le contenu portfolio.json du backup avant restauration.");
+      return;
+    }
+
+    const restored = await runAction(async () => {
+      const response = await apiRequest("POST", `/manager/${selectedOwnerId}/versions/backup/restore`, {
+        backupJson: portfolioRestoreText,
+        restoreLabel: portfolioRestoreLabel,
+        active: false,
+      });
+      await refreshVersions(selectedOwnerId, String(getEntityId(response)));
+      return response;
+    }, "Backup restauré dans une nouvelle version inactive.");
+
+    if (restored) {
+      setPortfolioRestoreText("");
+    }
+  }
+
+  function renderPortfolioHealthReport(report) {
+    if (!report) {
+      return <Alert color="gray" variant="light">Aucun rapport lancé pour cette version.</Alert>;
+    }
+
+    const scoreColor = report.score >= 85 ? "green" : report.score >= 65 ? "yellow" : "red";
+    return (
+      <Stack gap="sm">
+        <Group justify="space-between" align="center">
+          <Group gap="xs">
+            <Badge color={scoreColor} size="lg">Score {report.score}/100</Badge>
+            <Badge color={report.publishable ? "green" : "red"} variant="light">
+              {report.publishable ? "publiable" : "bloqué"}
+            </Badge>
+          </Group>
+          <Text size="xs" c="dimmed">
+            {report.blockersCount ?? 0} bloquant(s) · {report.warningsCount ?? 0} alerte(s) · {report.suggestionsCount ?? 0} suggestion(s)
+          </Text>
+        </Group>
+        <Stack gap="xs">
+          {(report.checks ?? []).map((check) => {
+            const failed = check.status === "FAIL";
+            const color = !failed ? "green" : check.severity === "BLOCKER" ? "red" : check.severity === "WARNING" ? "yellow" : "blue";
+            return (
+              <Alert key={check.id} color={color} variant="light" className="admin-health-check">
+                <Group justify="space-between" align="flex-start" gap="sm">
+                  <div>
+                    <Text fw={800}>{check.label}</Text>
+                    <Text size="sm">{check.message}</Text>
+                  </div>
+                  <Badge color={color} variant="filled">{failed ? check.severity : "OK"}</Badge>
+                </Group>
+              </Alert>
+            );
+          })}
+        </Stack>
+      </Stack>
+    );
   }
 
   function handleJsonEditorTextChange(value) {
@@ -4026,10 +4171,10 @@ export default function Admin() {
 
               <Button
                 color="green"
-                onClick={() => activateVersion()}
+                onClick={() => activateVersionWithValidation()}
                 disabled={!selectedOwnerId || !selectedVersionId || selectedVersion?.active}
               >
-                Activer cette version
+                Valider & activer
               </Button>
 
               <Button
@@ -4050,6 +4195,7 @@ export default function Admin() {
               <Tabs.Tab value="import">Import JSON</Tabs.Tab>
               <Tabs.Tab value="owner">Profil principal</Tabs.Tab>
               <Tabs.Tab value="version">Versions</Tabs.Tab>
+              <Tabs.Tab value="safety">Santé & backup</Tabs.Tab>
               <Tabs.Tab value="profile">Profil & fichiers</Tabs.Tab>
               <Tabs.Tab value="cv">CV Builder</Tabs.Tab>
               <Tabs.Tab value="timeline">Timeline</Tabs.Tab>
@@ -4316,8 +4462,8 @@ export default function Admin() {
                           <Button size="xs" variant="light" onClick={() => selectVersion(String(getEntityId(version)))}>
                             Sélectionner
                           </Button>
-                          <Button size="xs" color="green" variant="light" disabled={version.active} onClick={() => activateVersion(getEntityId(version))}>
-                            Activer
+                          <Button size="xs" color="green" variant="light" disabled={version.active} onClick={() => activateVersionWithValidation(getEntityId(version))}>
+                            Valider & activer
                           </Button>
                           <Button size="xs" variant="subtle" onClick={() => setCloneSourceVersionId(String(getEntityId(version)))}>
                             Source
@@ -4327,6 +4473,81 @@ export default function Admin() {
                     </Card>
                   ))}
                 </Stack>
+              </Stack>
+            </Tabs.Panel>
+
+            <Tabs.Panel value="safety" pt="lg">
+              <Stack gap="lg">
+                <Group justify="space-between" align="flex-start">
+                  <div>
+                    <Text fw={900}>Santé, sauvegarde et publication contrôlée</Text>
+                    <Text size="sm" c="dimmed">
+                      Contrôle la qualité d’une version avant activation, exporte un backup reproductible et restaure une version sans écraser l’existant.
+                    </Text>
+                  </div>
+                  <Badge variant="light">Qualité admin</Badge>
+                </Group>
+
+                <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
+                  <Paper withBorder p="lg" radius="lg" className="admin-nested-panel admin-safety-panel">
+                    <Stack gap="md">
+                      <Group justify="space-between" align="flex-start">
+                        <div>
+                          <Text fw={800}>Contrôle santé portfolio</Text>
+                          <Text size="sm" c="dimmed">Vérifie profil, contacts, timeline, projets publiés, images, liens et cohérence de publication.</Text>
+                        </div>
+                        {portfolioHealthReport && <Badge color={portfolioHealthReport.publishable ? "green" : "red"}>{portfolioHealthReport.score}/100</Badge>}
+                      </Group>
+                      <Group>
+                        <Button variant="light" onClick={runPortfolioHealthCheck} disabled={!selectedOwnerId || !selectedVersionId}>Lancer le contrôle</Button>
+                        <Button variant="light" onClick={validatePortfolioBeforePublish} disabled={!selectedOwnerId || !selectedVersionId}>Validation publication</Button>
+                        <Button color="green" onClick={() => activateVersionWithValidation()} disabled={!selectedOwnerId || !selectedVersionId || selectedVersion?.active}>Valider & activer</Button>
+                      </Group>
+                      {renderPortfolioHealthReport(portfolioHealthReport ?? publishValidationReport)}
+                    </Stack>
+                  </Paper>
+
+                  <Paper withBorder p="lg" radius="lg" className="admin-nested-panel admin-safety-panel">
+                    <Stack gap="md">
+                      <Group justify="space-between" align="flex-start">
+                        <div>
+                          <Text fw={800}>Backup complet version</Text>
+                          <Text size="sm" c="dimmed">Génère un ZIP backend contenant portfolio.json, metadata.json et un snapshot restaurable.</Text>
+                        </div>
+                        {portfolioBackupUrl && <Badge color="green" variant="light">backup prêt</Badge>}
+                      </Group>
+                      <Group>
+                        <Button variant="light" onClick={exportPortfolioBackupZip} disabled={!selectedOwnerId || !selectedVersionId}>Exporter backup ZIP</Button>
+                        {portfolioBackupUrl && <Button component="a" href={portfolioBackupUrl} target="_blank" rel="noreferrer">Télécharger ZIP</Button>}
+                        {portfolioBackupJson && <Button variant="subtle" onClick={() => downloadTextFile("portfolio-backup.json", `${portfolioBackupJson}\n`, "application/json;charset=utf-8")}>Télécharger JSON</Button>}
+                      </Group>
+                      <Alert color="blue" variant="light">Le JSON est aussi téléchargé séparément pour une restauration rapide ou une revue Git.</Alert>
+                    </Stack>
+                  </Paper>
+                </SimpleGrid>
+
+                <Paper withBorder p="lg" radius="lg" className="admin-nested-panel admin-safety-panel">
+                  <Stack gap="md">
+                    <Group justify="space-between" align="flex-start">
+                      <div>
+                        <Text fw={800}>Restore backup vers une nouvelle version</Text>
+                        <Text size="sm" c="dimmed">Colle le contenu de portfolio.json depuis un backup. La restauration crée une nouvelle version inactive pour éviter d’écraser la production.</Text>
+                      </div>
+                      <Badge variant="light">Restore sûr</Badge>
+                    </Group>
+                    <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
+                      <TextInput label="Label de la version restaurée" value={portfolioRestoreLabel} onChange={(event) => setPortfolioRestoreLabel(event.currentTarget.value)} />
+                      <Button mt="xl" onClick={restorePortfolioBackup} disabled={!selectedOwnerId || !portfolioRestoreText.trim()}>Restaurer en version inactive</Button>
+                    </SimpleGrid>
+                    <Textarea
+                      label="portfolio.json du backup"
+                      minRows={10}
+                      value={portfolioRestoreText}
+                      onChange={(event) => setPortfolioRestoreText(event.currentTarget.value)}
+                      placeholder="Colle ici le fichier portfolio.json contenu dans le ZIP de backup..."
+                    />
+                  </Stack>
+                </Paper>
               </Stack>
             </Tabs.Panel>
 
@@ -4694,7 +4915,7 @@ export default function Admin() {
                               {cvExportZipUrl && <Button component="a" href={cvExportZipUrl} target="_blank" rel="noreferrer" variant="filled">Télécharger le ZIP</Button>}
                               {cvAsyncJob && <Alert color={cvAsyncJob.status === "FAILED" ? "red" : cvAsyncJob.status === "SUCCESS" ? "green" : "blue"} variant="light">{cvAsyncJob.step || cvAsyncJob.message}</Alert>}
                               {cvRegressionReport && <Alert color="violet" variant="light">{cvRegressionReport.message}</Alert>}
-                              <Alert color="gray" variant="light">Le backend garde un cache SHA-256 par source LaTeX + assets. Si on recompile le même CV, le PDF est réutilisé.</Alert>
+                              <Alert color="gray" variant="light">Le backend garde un cache SHA-256 par source LaTeX + assets. Si tu recompiles le même CV, le PDF est réutilisé.</Alert>
                             </Stack>
                           </Tabs.Panel>
 
