@@ -4135,3 +4135,130 @@ main,
     font-size: 11.5px;
   }
 }
+
+.cv-builder-photoshop-shell {
+  border-color: rgba(15, 118, 110, 0.2) !important;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(45, 212, 191, 0.16), transparent 30%),
+    radial-gradient(circle at 88% 14%, rgba(59, 130, 246, 0.12), transparent 28%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(241, 249, 248, 0.94));
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.12);
+}
+
+.cv-command-panel,
+.cv-live-preview-panel,
+.cv-mini-inspector {
+  border-color: rgba(15, 118, 110, 0.18) !important;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+}
+
+.cv-command-panel .mantine-Tabs-list {
+  padding: 0.35rem;
+  border: 1px solid rgba(15, 118, 110, 0.14);
+  border-radius: 18px;
+  background: rgba(240, 253, 250, 0.72);
+}
+
+.cv-command-panel .mantine-Tabs-tab {
+  border-radius: 13px;
+  font-weight: 800;
+}
+
+.cv-section-selector {
+  min-width: min(100%, 320px);
+}
+
+.cv-editor-muted-item {
+  opacity: 0.58;
+  background: rgba(241, 245, 249, 0.72) !important;
+}
+
+.cv-live-preview-panel {
+  position: sticky;
+  top: 96px;
+}
+
+.cv-preview-empty-advanced {
+  min-height: 760px;
+  background:
+    linear-gradient(135deg, rgba(15, 23, 42, 0.04) 25%, transparent 25%) -16px 0/32px 32px,
+    linear-gradient(225deg, rgba(15, 23, 42, 0.04) 25%, transparent 25%) -16px 0/32px 32px,
+    radial-gradient(circle at center, rgba(45, 212, 191, 0.14), transparent 36%),
+    rgba(248, 250, 252, 0.92);
+}
+
+.cv-mini-inspector .mantine-Card-root {
+  background: linear-gradient(145deg, rgba(240, 253, 250, 0.86), rgba(255, 255, 255, 0.95));
+}
+
+@media (max-width: 1200px) {
+  .cv-live-preview-panel {
+    position: static;
+  }
+}
+
+/* Admin textareas: readable, resizable and visibly focused. */
+.admin-page .mantine-Textarea-input {
+  min-height: 112px;
+  resize: vertical;
+  transition:
+    min-height 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease,
+    background 180ms ease;
+  transform-origin: center top;
+}
+
+.admin-page .mantine-Textarea-input:focus,
+.admin-page .mantine-Textarea-input:focus-within {
+  min-height: 148px;
+  transform: scale(1.006);
+  z-index: 2;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15), 0 18px 38px rgba(15, 23, 42, 0.12);
+}
+
+.admin-page .cv-latex-editor textarea,
+.admin-page .cv-logs-editor textarea,
+.admin-page .json-editor-textarea {
+  resize: vertical !important;
+}
+
+.cv-typography-group {
+  background: linear-gradient(145deg, rgba(248, 250, 252, 0.96), rgba(240, 253, 250, 0.88));
+  border-color: rgba(15, 118, 110, 0.16) !important;
+}
+
+.cv-command-panel .mantine-Card-root[draggable="true"] {
+  cursor: grab;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.cv-command-panel .mantine-Card-root[draggable="true"]:hover {
+  transform: translateY(-2px);
+  border-color: rgba(15, 118, 110, 0.34) !important;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.10);
+}
+
+.cv-command-panel .mantine-Card-root[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.admin-page .mantine-Textarea-input {
+  resize: vertical !important;
+}
+
+.cv-asset-import-card {
+  background: rgba(248, 250, 252, 0.92);
+  border-color: rgba(110, 135, 126, 0.24);
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.06);
+}
+
+.cv-asset-import-card code {
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.07);
+  padding: 2px 6px;
+  font-size: 0.78rem;
+}
