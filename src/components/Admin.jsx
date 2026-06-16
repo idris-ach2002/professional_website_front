@@ -8,6 +8,7 @@ import {
   FileInput,
   Group,
   Loader,
+  Modal,
   NumberInput,
   Paper,
   Select,
@@ -369,6 +370,161 @@ function hydrateProjectForm(project) {
   };
 }
 
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function highlightJson(value) {
+  const escaped = escapeHtml(value);
+
+  return escaped.replace(
+    /(&quot;(?:\\.|[^&])*?&quot;)(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g,
+    (match, stringToken, colon, literal) => {
+      if (stringToken) {
+        const className = colon ? "json-token-key" : "json-token-string";
+        return `<span class="${className}">${stringToken}</span>${colon ?? ""}`;
+      }
+
+      if (literal) {
+        return `<span class="json-token-literal">${literal}</span>`;
+      }
+
+      return `<span class="json-token-number">${match}</span>`;
+    },
+  );
+}
+
+function getLineColumnFromPosition(value, position) {
+  const safePosition = Math.max(0, Math.min(Number(position) || 0, value.length));
+  const beforeError = value.slice(0, safePosition);
+  const lines = beforeError.split("\n");
+
+  return {
+    line: lines.length,
+    column: lines.at(-1).length + 1,
+  };
+}
+
+function getJsonSyntaxLocation(error, value) {
+  const message = error?.message ?? "JSON invalide.";
+  const lineColumnMatch = message.match(/line\s+(\d+)\s+column\s+(\d+)/i);
+
+  if (lineColumnMatch) {
+    return {
+      line: Number(lineColumnMatch[1]),
+      column: Number(lineColumnMatch[2]),
+    };
+  }
+
+  const positionMatch = message.match(/position\s+(\d+)/i);
+  if (positionMatch) {
+    return getLineColumnFromPosition(value, Number(positionMatch[1]));
+  }
+
+  return { line: null, column: null };
+}
+
+function buildJsonEditorAnalysis(value) {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return {
+      valid: false,
+      label: "JSON vide",
+      message: "Colle ou génère un JSON avant de sauvegarder.",
+      line: 1,
+      column: 1,
+      summary: null,
+    };
+  }
+
+  try {
+    const parsedPayload = JSON.parse(value);
+    const normalized = normalizeAdminPortfolioJson(parsedPayload);
+
+    return {
+      valid: true,
+      label: "JSON valide",
+      message: `Structure reconnue : ${normalized.summary.experiences} expérience(s), ${normalized.summary.projects} projet(s), ${normalized.summary.contacts} contact(s).`,
+      line: null,
+      column: null,
+      summary: normalized.summary,
+    };
+  } catch (err) {
+    const location = getJsonSyntaxLocation(err, value);
+    const hasLocation = location.line && location.column;
+
+    return {
+      valid: false,
+      label: "JSON invalide",
+      message: hasLocation
+        ? `Erreur ligne ${location.line}, colonne ${location.column} : ${err?.message ?? "syntaxe invalide"}`
+        : err?.message ?? "Syntaxe JSON invalide.",
+      line: location.line,
+      column: location.column,
+      summary: null,
+    };
+  }
+}
+
+function JsonCodeEditor({ value, onChange, highlightRef, lineNumbersRef, analysis }) {
+  const highlightedValue = useMemo(() => highlightJson(value), [value]);
+  const lineCount = Math.max(value.split("\n").length, 1);
+
+  function syncScroll(event) {
+    const { scrollTop, scrollLeft } = event.currentTarget;
+    if (highlightRef.current) {
+      highlightRef.current.scrollTop = scrollTop;
+      highlightRef.current.scrollLeft = scrollLeft;
+    }
+    if (lineNumbersRef.current) {
+      lineNumbersRef.current.scrollTop = scrollTop;
+    }
+  }
+
+  return (
+    <div className="json-editor-codearea">
+      <div ref={lineNumbersRef} className="json-editor-line-numbers" aria-hidden="true">
+        {Array.from({ length: lineCount }, (_, index) => (
+          <span
+            key={index}
+            className={analysis?.line === index + 1 ? "json-line-error" : undefined}
+          >
+            {index + 1}
+          </span>
+        ))}
+      </div>
+      <div className="json-editor-input-layer">
+        <pre
+          ref={highlightRef}
+          className="json-editor-highlight"
+          aria-hidden="true"
+          dangerouslySetInnerHTML={{ __html: highlightedValue }}
+        />
+        <textarea
+          className="json-editor-textarea"
+          aria-label="Éditeur JSON de la version courante"
+          aria-invalid={analysis?.valid === false}
+          spellCheck="false"
+          value={value}
+          onChange={(event) => onChange(event.currentTarget.value)}
+          onScroll={syncScroll}
+        />
+        {analysis?.valid === false && analysis.line && analysis.column && (
+          <div className="json-editor-inline-diagnostic" aria-hidden="true">
+            Ligne {analysis.line}, colonne {analysis.column}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function FileLink({ label, url, mode = "modal" }) {
   if (!url) return null;
 
@@ -440,6 +596,8 @@ function AdminLoginRedirect() {
 
 export default function Admin() {
   const rootRef = useRef(null);
+  const jsonHighlightRef = useRef(null);
+  const jsonLineNumbersRef = useRef(null);
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
@@ -472,6 +630,15 @@ export default function Admin() {
   const [jsonImportFile, setJsonImportFile] = useState(null);
   const [jsonImportText, setJsonImportText] = useState("");
   const [jsonImportSummary, setJsonImportSummary] = useState(null);
+
+  const [jsonEditorOpened, setJsonEditorOpened] = useState(false);
+  const [jsonEditorText, setJsonEditorText] = useState("");
+  const [jsonEditorError, setJsonEditorError] = useState(null);
+
+  const jsonEditorAnalysis = useMemo(
+    () => buildJsonEditorAnalysis(jsonEditorText),
+    [jsonEditorText],
+  );
 
   const selectedVersion = useMemo(
     () =>
@@ -841,8 +1008,7 @@ export default function Admin() {
   }, []);
 
 
-  function applyImportedPortfolioData(rawPayload) {
-    const normalized = normalizeAdminPortfolioJson(rawPayload);
+  function applyNormalizedPortfolioData(normalized, { notify = true } = {}) {
     const normalizedExperiences = normalized.experiences;
     const normalizedProjects = normalized.projects;
 
@@ -872,10 +1038,19 @@ export default function Admin() {
     setProjectFiles(emptyProjectFiles);
     setProfileFiles(emptyProfileFiles);
     setJsonImportSummary(normalized.summary);
-    setMessage(
-      `JSON importé dans le formulaire : ${normalized.summary.experiences} expérience(s), ${normalized.summary.projects} projet(s), ${normalized.summary.contacts} contact(s).`,
-    );
+
+    if (notify) {
+      setMessage(
+        `JSON importé dans le formulaire : ${normalized.summary.experiences} expérience(s), ${normalized.summary.projects} projet(s), ${normalized.summary.contacts} contact(s).`,
+      );
+    }
+
     setError(null);
+  }
+
+  function applyImportedPortfolioData(rawPayload) {
+    const normalized = normalizeAdminPortfolioJson(rawPayload);
+    applyNormalizedPortfolioData(normalized);
   }
 
   async function importJsonFromFile() {
@@ -915,6 +1090,328 @@ export default function Admin() {
     } catch (err) {
       setError(err?.message ?? "Le JSON collé est invalide.");
     }
+  }
+
+  function buildOwnerIdentityPayloadFromData(form) {
+    return {
+      name: form.name,
+      firstName: form.firstName,
+      age: Number(form.age),
+      active: form.active,
+      address: form.address,
+      contacts: sanitizeContactRows(form.contacts),
+      versionTag: null,
+      versionLabel: null,
+      versionDescription: null,
+      versionPublished: null,
+      prof: null,
+      timeline: null,
+      projects: null,
+    };
+  }
+
+  function buildProfilePayloadFromData(form) {
+    return {
+      title: form.title,
+      subtitle: form.subtitle,
+      headline: form.headline,
+      shortDescription: form.shortDescription,
+      description: form.description,
+      location: form.location,
+      availability: form.availability,
+      profileImageUrl: nullIfBlank(form.profileImageUrl),
+      logoUrl: nullIfBlank(form.logoUrl),
+      cvUrl: nullIfBlank(form.cvUrl),
+      portfolioUrl: nullIfBlank(form.portfolioUrl),
+    };
+  }
+
+  function normalizeCurrentExperienceForExport(experience, index) {
+    const currentPosition = Boolean(experience.currentPosition);
+
+    return {
+      category: experience.category ?? "SCHOOL",
+      title: experience.title ?? "",
+      organization: experience.organization ?? "",
+      location: experience.location ?? "",
+      summary: experience.summary ?? "",
+      description: experience.description ?? "",
+      startDate: normalizeDate(experience.startDate),
+      endDate: currentPosition ? null : normalizeDate(experience.endDate) || null,
+      currentPosition,
+      imageUrl: experience.imageUrl ?? "",
+      websiteUrl: experience.websiteUrl ?? "",
+      skills: toArray(experience.skills),
+      displayOrder: Number(experience.displayOrder ?? index + 1),
+    };
+  }
+
+  function normalizeCurrentProjectForExport(project, index) {
+    const githubUrl = project.githubUrl ?? "";
+    const architectureUrl = getProjectArchitectureUrl(project);
+    const documentationUrl = project.documentationUrl ?? "";
+
+    return {
+      title: project.title ?? "",
+      subtitle: project.subtitle ?? "",
+      shortDescription: project.shortDescription ?? "",
+      description: project.description ?? "",
+      status: project.status ?? "IN_PROGRESS",
+      startDate: normalizeDate(project.startDate),
+      endDate: normalizeDate(project.endDate) || null,
+      imageUrl: project.imageUrl ?? "",
+      demoUrl: project.demoUrl ?? "",
+      githubUrl,
+      architectureUrl,
+      documentationUrl,
+      stacks: toArray(project.stacks),
+      features: toArray(project.features),
+      links: [
+        { type: "GITHUB", label: "GitHub", url: githubUrl },
+        { type: "ARCHITECTURE", label: "Architecture", url: architectureUrl },
+        { type: "DOCUMENTATION", label: "Documentation", url: documentationUrl },
+      ].filter((link) => nullIfBlank(link.url)),
+      featured: Boolean(project.featured),
+      published: project.published !== false,
+      displayOrder: Number(project.displayOrder ?? index + 1),
+      websiteVersionId: null,
+    };
+  }
+
+  function buildCurrentVersionJsonPayload() {
+    return {
+      name: ownerForm.name,
+      firstName: ownerForm.firstName,
+      age: Number(ownerForm.age),
+      active: ownerForm.active,
+      address: ownerForm.address,
+      contacts: sanitizeContactRows(ownerForm.contacts),
+      versionTag: versionForm.versionTag,
+      versionLabel: versionForm.label,
+      versionDescription: versionForm.description,
+      versionPublished: versionForm.published,
+      versionActive: versionForm.active,
+      prof: {
+        ...profileForm,
+        profileImageUrl: profileForm.profileImageUrl ?? "",
+        logoUrl: profileForm.logoUrl ?? "",
+        cvUrl: profileForm.cvUrl ?? "",
+      },
+      timeline: {
+        ...timelineForm,
+        experiences: experiences.map(normalizeCurrentExperienceForExport),
+      },
+      projects: projects.map(normalizeCurrentProjectForExport),
+    };
+  }
+
+  function formatJsonPayload(payload) {
+    return JSON.stringify(payload, null, 2);
+  }
+
+  function createJsonFilename(payload) {
+    const ownerSlug = [payload.firstName, payload.name]
+      .filter(Boolean)
+      .join("-")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "") || "portfolio";
+    const versionSlug = String(payload.versionTag ?? "version")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "") || "version";
+
+    return `${ownerSlug}-${versionSlug}.json`;
+  }
+
+  function downloadJsonPayload(payload) {
+    const blob = new Blob([`${formatJsonPayload(payload)}\n`], {
+      type: "application/json;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = createJsonFilename(payload);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function downloadCurrentVersionJson() {
+    if (!selectedOwnerId || !selectedVersionId) {
+      setError("Sélectionne d’abord un owner et une version.");
+      return;
+    }
+
+    downloadJsonPayload(buildCurrentVersionJsonPayload());
+    setMessage("Version courante téléchargée en JSON.");
+    setError(null);
+  }
+
+  function handleJsonEditorTextChange(value) {
+    setJsonEditorText(value);
+    setJsonEditorError(null);
+  }
+
+  function openCurrentVersionJsonEditor() {
+    if (!selectedOwnerId || !selectedVersionId) {
+      setError("Sélectionne d’abord un owner et une version.");
+      return;
+    }
+
+    setJsonEditorText(formatJsonPayload(buildCurrentVersionJsonPayload()));
+    setJsonEditorError(null);
+    setJsonEditorOpened(true);
+  }
+
+  function formatJsonEditorText() {
+    try {
+      const parsedPayload = JSON.parse(jsonEditorText);
+      setJsonEditorText(formatJsonPayload(parsedPayload));
+      setJsonEditorError(null);
+    } catch (err) {
+      const location = getJsonSyntaxLocation(err, jsonEditorText);
+      setJsonEditorError(
+        location.line && location.column
+          ? `Formatage impossible : erreur ligne ${location.line}, colonne ${location.column}.`
+          : err?.message ?? "JSON invalide.",
+      );
+    }
+  }
+
+  function downloadJsonEditorText() {
+    try {
+      const parsedPayload = JSON.parse(jsonEditorText);
+      downloadJsonPayload(parsedPayload);
+      setJsonEditorError(null);
+    } catch (err) {
+      const location = getJsonSyntaxLocation(err, jsonEditorText);
+      setJsonEditorError(
+        location.line && location.column
+          ? `Téléchargement impossible : erreur ligne ${location.line}, colonne ${location.column}.`
+          : err?.message ?? "JSON invalide.",
+      );
+    }
+  }
+
+  function buildProjectPayloadFromJsonProject(project) {
+    const architectureUrl = nullIfBlank(project.architectureUrl ?? getProjectArchitectureUrl(project));
+    const documentationUrl = nullIfBlank(project.documentationUrl);
+    const githubUrl = nullIfBlank(project.githubUrl);
+
+    return {
+      title: project.title,
+      subtitle: project.subtitle,
+      shortDescription: project.shortDescription,
+      description: project.description,
+      status: project.status,
+      startDate: project.startDate,
+      endDate: project.endDate || null,
+      imageUrl: nullIfBlank(project.imageUrl),
+      demoUrl: nullIfBlank(project.demoUrl),
+      githubUrl,
+      documentationUrl,
+      architectureUrl,
+      stacks: toArray(project.stacks),
+      features: toArray(project.features),
+      links: [
+        { type: "GITHUB", label: "GitHub", url: githubUrl },
+        { type: "ARCHITECTURE", label: "Architecture", url: architectureUrl },
+        { type: "DOCUMENTATION", label: "Documentation", url: documentationUrl },
+      ].filter((link) => link.url),
+      featured: project.featured,
+      published: project.published,
+      displayOrder: Number(project.displayOrder),
+      websiteVersionId: selectedVersionId ? Number(selectedVersionId) : null,
+    };
+  }
+
+  async function saveJsonEditorToCurrentVersion() {
+    if (!selectedOwnerId || !selectedVersionId) {
+      setJsonEditorError("Sélectionne d’abord un owner et une version.");
+      return;
+    }
+
+    let parsedPayload;
+    let normalized;
+
+    try {
+      parsedPayload = JSON.parse(jsonEditorText);
+      normalized = normalizeAdminPortfolioJson(parsedPayload);
+    } catch (err) {
+      const location = getJsonSyntaxLocation(err, jsonEditorText);
+      setJsonEditorError(
+        location.line && location.column
+          ? `Mise à jour impossible : erreur ligne ${location.line}, colonne ${location.column}.`
+          : err?.message ?? "JSON invalide.",
+      );
+      return;
+    }
+
+    setJsonEditorError(null);
+
+    await runAction(async () => {
+      await apiRequest(
+        "PUT",
+        `/manager/${selectedOwnerId}`,
+        buildOwnerIdentityPayloadFromData(normalized.ownerForm),
+      );
+
+      await apiRequest(
+        "PUT",
+        `/manager/${selectedOwnerId}/versions/${selectedVersionId}`,
+        normalized.versionForm,
+      );
+
+      await apiRequest(
+        "PUT",
+        `/manager/${selectedOwnerId}/versions/${selectedVersionId}/profile`,
+        buildProfilePayloadFromData(normalized.profileForm),
+      );
+
+      await apiRequest(
+        "PUT",
+        `/manager/${selectedOwnerId}/versions/${selectedVersionId}/timeline`,
+        {
+          ...normalized.timelineForm,
+          experiences: normalized.experiences,
+        },
+      );
+
+      const projectIdsToDelete = projects
+        .map(getProjectId)
+        .filter((projectId) => projectId !== null && projectId !== undefined);
+
+      for (const projectId of projectIdsToDelete) {
+        await apiRequest(
+          "DELETE",
+          `/manager/${selectedOwnerId}/versions/${selectedVersionId}/projects/${projectId}`,
+        );
+      }
+
+      for (const project of normalized.projects) {
+        await apiRequest(
+          "POST",
+          `/manager/${selectedOwnerId}/versions/${selectedVersionId}/projects`,
+          buildProjectPayloadFromJsonProject(project),
+        );
+      }
+
+      applyNormalizedPortfolioData(normalized, { notify: false });
+      setJsonEditorText(formatJsonPayload(parsedPayload));
+      setJsonEditorOpened(false);
+
+      const ownerList = await fetchOwners();
+      const versionList = await fetchVersions(selectedOwnerId);
+
+      setOwners(ownerList);
+      setVersions(versionList);
+      selectVersion(selectedVersionId, versionList);
+    }, "Version mise à jour depuis l’éditeur JSON.");
   }
 
   async function buildProfilePayload() {
@@ -1298,6 +1795,14 @@ export default function Admin() {
   const activeVersionsCount = versions.filter((version) => version.active).length;
   const selectedVersionProjectsCount = projects.length;
   const selectedVersionExperiencesCount = experiences.length;
+  const jsonEditorLineCount = Math.max(jsonEditorText.split("\n").length, 1);
+  const jsonEditorSizeKb = Math.max(
+    1,
+    Math.ceil(new Blob([jsonEditorText]).size / 1024),
+  );
+  const jsonEditorDiagnosticMessage = jsonEditorError ?? jsonEditorAnalysis.message;
+  const jsonEditorStatusColor = jsonEditorAnalysis.valid ? "green" : "red";
+  const jsonEditorCanUpdate = jsonEditorAnalysis.valid && !loading;
 
   if (authStatus === "checking") {
     return <AdminChecking />;
@@ -1438,6 +1943,22 @@ export default function Admin() {
                 disabled={!selectedOwnerId || !selectedVersionId}
               >
                 Recharger projets
+              </Button>
+
+              <Button
+                variant="light"
+                onClick={downloadCurrentVersionJson}
+                disabled={!selectedOwnerId || !selectedVersionId}
+              >
+                Télécharger JSON
+              </Button>
+
+              <Button
+                variant="filled"
+                onClick={openCurrentVersionJsonEditor}
+                disabled={!selectedOwnerId || !selectedVersionId}
+              >
+                Éditer JSON
               </Button>
 
               <Button
@@ -2032,6 +2553,99 @@ export default function Admin() {
           </Tabs>
         </Card>
       </Stack>
+
+      <Modal
+        opened={jsonEditorOpened}
+        onClose={() => setJsonEditorOpened(false)}
+        size="95vw"
+        centered
+        radius="xl"
+        zIndex={13000}
+        overlayProps={{ opacity: 0.6, blur: 12 }}
+        className="json-editor-modal"
+        title={
+          <Group gap="sm">
+            <Badge variant="light" className="json-editor-file-badge">.json</Badge>
+            <Text fw={900}>Éditeur JSON de la version courante</Text>
+          </Group>
+        }
+      >
+        <Stack gap="md" className="json-editor-shell">
+          <Group justify="space-between" align="flex-start" gap="md" className="json-editor-toolbar">
+            <div>
+              <Text fw={800}>Export, correction et sauvegarde directe</Text>
+              <Text size="sm" c="dimmed">
+                Modifie le même format que l’import JSON. L’enregistrement remplace le contenu de la version sélectionnée : métadonnées, profil, timeline et projets.
+              </Text>
+            </div>
+            <Group gap="xs">
+              <Badge color={jsonEditorStatusColor} variant="light">
+                {jsonEditorAnalysis.label}
+              </Badge>
+              <Badge variant="light">{jsonEditorLineCount} lignes</Badge>
+              <Badge variant="light">{jsonEditorSizeKb} Ko</Badge>
+              {selectedVersion?.active && <Badge color="green" variant="light">Active</Badge>}
+            </Group>
+          </Group>
+
+          <Group justify="space-between" align="center" gap="sm" className="json-editor-actionbar">
+            <Group gap="xs">
+              <Badge color={jsonEditorStatusColor} variant="filled">
+                Analyse live
+              </Badge>
+              <Text size="sm" fw={700} className="json-editor-diagnostic-text">
+                {jsonEditorDiagnosticMessage}
+              </Text>
+            </Group>
+
+            <Group gap="xs" className="json-editor-action-buttons">
+              <Button
+                variant="subtle"
+                onClick={() => handleJsonEditorTextChange(formatJsonPayload(buildCurrentVersionJsonPayload()))}
+              >
+                Recharger depuis formulaire
+              </Button>
+              <Button variant="light" onClick={formatJsonEditorText}>
+                Indenter / formater JSON
+              </Button>
+              <Button variant="light" onClick={downloadJsonEditorText} disabled={!jsonEditorAnalysis.valid}>
+                Télécharger ce JSON
+              </Button>
+              <Button
+                color="green"
+                onClick={saveJsonEditorToCurrentVersion}
+                loading={loading}
+                disabled={!jsonEditorCanUpdate}
+              >
+                Mettre à jour la version actuelle
+              </Button>
+            </Group>
+          </Group>
+
+          {jsonEditorError && (
+            <Alert color="red" variant="light" className="admin-alert">
+              {jsonEditorError}
+            </Alert>
+          )}
+
+          <JsonCodeEditor
+            value={jsonEditorText}
+            onChange={handleJsonEditorTextChange}
+            highlightRef={jsonHighlightRef}
+            lineNumbersRef={jsonLineNumbersRef}
+            analysis={jsonEditorAnalysis}
+          />
+
+          <Group justify="space-between" align="center" className="json-editor-footer">
+            <Text size="xs" c="dimmed">
+              Les fichiers restent des URL dans le JSON. Pour remplacer physiquement une image ou un PDF, garde les champs d’upload existants.
+            </Text>
+            <Text size="xs" fw={800} c={jsonEditorAnalysis.valid ? "green" : "red"}>
+              {jsonEditorAnalysis.valid ? "Prêt à sauvegarder" : "Sauvegarde bloquée tant que le JSON est invalide"}
+            </Text>
+          </Group>
+        </Stack>
+      </Modal>
     </main>
   );
 }

@@ -120,17 +120,20 @@ function normalizeLink(link) {
 }
 
 function normalizeProjectLinks(project) {
+  const architectureUrl = project.architectureUrl ?? project.architectureLinkUrl ?? project.diagramUrl;
+  const documentationUrl = project.documentationUrl ?? project.docUrl ?? project.docsUrl;
+
   const directLinks = [
     project.githubUrl && { type: "GITHUB", label: "GitHub", url: project.githubUrl },
-    project.architectureUrl && {
+    architectureUrl && {
       type: "ARCHITECTURE",
       label: "Architecture",
-      url: project.architectureUrl,
+      url: architectureUrl,
     },
-    project.documentationUrl && {
+    documentationUrl && {
       type: "DOCUMENTATION",
       label: "Documentation",
-      url: project.documentationUrl,
+      url: documentationUrl,
     },
   ].filter(Boolean);
 
@@ -184,6 +187,7 @@ function normalizeProject(project, index) {
     demoUrl: asString(project?.demoUrl ?? project?.liveUrl).trim(),
     githubUrl: asString(project?.githubUrl ?? project?.repositoryUrl).trim(),
     documentationUrl: asString(project?.documentationUrl ?? project?.docUrl ?? project?.docsUrl).trim(),
+    architectureUrl: asString(project?.architectureUrl ?? project?.architectureLinkUrl ?? project?.diagramUrl).trim(),
     stacks: asArray(project?.stacks ?? project?.stack ?? project?.technologies),
     features: asArray(project?.features ?? project?.functionalities),
     links,
