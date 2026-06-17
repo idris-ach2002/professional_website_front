@@ -4330,3 +4330,36 @@ main,
   transform: translateY(-1px);
   box-shadow: 0 14px 34px rgba(12, 23, 30, 0.08);
 }
+
+/* Application tracker / candidature workflow */
+.application-list-panel,
+.application-editor-panel,
+.application-analysis-panel,
+.application-letter-panel {
+  position: relative;
+  overflow: hidden;
+}
+
+.application-card {
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.application-card:hover,
+.application-card:focus-within {
+  transform: translateY(-2px) scale(1.01);
+  border-color: rgba(65, 91, 86, 0.35);
+  box-shadow: 0 18px 38px rgba(17, 24, 39, 0.12);
+}
+
+.application-card.is-selected {
+  border-color: rgba(46, 125, 104, 0.72);
+  background: linear-gradient(135deg, rgba(239, 253, 247, 0.98), rgba(255, 255, 255, 0.92));
+  box-shadow: 0 20px 45px rgba(21, 94, 74, 0.16);
+}
+
+.application-analysis-panel .mantine-Badge-root,
+.application-letter-panel .mantine-Badge-root {
+  text-transform: none;
+}

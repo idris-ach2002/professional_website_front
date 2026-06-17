@@ -46,6 +46,50 @@ const contactTypeOptions = [
   { value: "INSTAGRAM", label: "Instagram" },
 ];
 
+
+const applicationStatusOptions = [
+  { value: "DRAFT", label: "À préparer" },
+  { value: "TO_SEND", label: "Prête à envoyer" },
+  { value: "SENT", label: "Envoyée" },
+  { value: "FOLLOW_UP", label: "Relance à faire" },
+  { value: "INTERVIEW", label: "Entretien" },
+  { value: "REJECTED", label: "Refus" },
+  { value: "ACCEPTED", label: "Acceptée" },
+  { value: "ARCHIVED", label: "Archivée" },
+];
+
+const applicationStatusLabels = Object.fromEntries(applicationStatusOptions.map((item) => [item.value, item.label]));
+
+const applicationStatusColors = {
+  DRAFT: "gray",
+  TO_SEND: "blue",
+  SENT: "cyan",
+  FOLLOW_UP: "orange",
+  INTERVIEW: "violet",
+  REJECTED: "red",
+  ACCEPTED: "green",
+  ARCHIVED: "dark",
+};
+
+const emptyApplicationForm = {
+  versionId: "",
+  companyName: "",
+  roleTitle: "",
+  location: "",
+  offerUrl: "",
+  offerText: "",
+  status: "DRAFT",
+  targetProfile: "",
+  cvVariantName: "",
+  cvUrl: "",
+  coverLetterUrl: "",
+  mailDraft: "",
+  coverLetterSource: "",
+  notes: "",
+  appliedAt: "",
+  followUpAt: "",
+};
+
 const defaultOwnerContacts = [
   { type: "EMAIL", value: "idris.achabou@example.com" },
   { type: "GITHUB", value: "https://github.com/idris-ach2002" },
@@ -1343,6 +1387,18 @@ function hydrateProjectForm(project) {
   };
 }
 
+function downloadTextFile(filename, content, type = "text/plain;charset=utf-8") {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -1644,6 +1700,16 @@ export default function Admin() {
   const [portfolioRestoreText, setPortfolioRestoreText] = useState("");
   const [portfolioRestoreLabel, setPortfolioRestoreLabel] = useState("Version restaurée depuis backup");
 
+  const [applications, setApplications] = useState([]);
+  const [applicationsDashboard, setApplicationsDashboard] = useState(null);
+  const [selectedApplicationId, setSelectedApplicationId] = useState(null);
+  const [applicationForm, setApplicationForm] = useState(emptyApplicationForm);
+  const [offerAnalysis, setOfferAnalysis] = useState(null);
+  const [coverLetterPreviewUrl, setCoverLetterPreviewUrl] = useState("");
+  const [coverLetterLogs, setCoverLetterLogs] = useState("");
+  const [coverLetterWarnings, setCoverLetterWarnings] = useState([]);
+  const [applicationZipUrl, setApplicationZipUrl] = useState("");
+
   const jsonEditorAnalysis = useMemo(
     () => buildJsonEditorAnalysis(jsonEditorText),
     [jsonEditorText],
@@ -1681,6 +1747,11 @@ export default function Admin() {
         (project) => String(getProjectId(project)) === String(selectedProjectId),
       ),
     [projects, selectedProjectId],
+  );
+
+  const selectedApplication = useMemo(
+    () => applications.find((application) => String(application.id) === String(selectedApplicationId)),
+    [applications, selectedApplicationId],
   );
 
   useGsap(rootRef, (gsap) => {
@@ -1741,6 +1812,17 @@ export default function Admin() {
     setPortfolioBackupUrl("");
     setPortfolioBackupJson("");
   }, [selectedOwnerId, selectedVersionId]);
+
+  useEffect(() => {
+    if (!selectedOwnerId || authStatus !== "authenticated") {
+      setApplications([]);
+      setApplicationsDashboard(null);
+      resetApplicationForm();
+      return;
+    }
+    loadApplications(selectedOwnerId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedOwnerId, authStatus]);
 
   function cvLocalStorageKey(kind) {
     return `portfolio-cv-${kind}-${selectedOwnerId ?? "owner"}-${selectedVersionId ?? "version"}`;
@@ -3070,6 +3152,279 @@ export default function Admin() {
     }
   }
 
+  function hydrateApplicationForm(application) {
+    if (!application) {
+      return {
+        ...emptyApplicationForm,
+        versionId: selectedVersionId ?? "",
+        cvUrl: profileForm.cvUrl ?? "",
+        cvVariantName: cvVariantName ?? "",
+      };
+    }
+
+    return {
+      versionId: application.versionId ? String(application.versionId) : selectedVersionId ?? "",
+      companyName: application.companyName ?? "",
+      roleTitle: application.roleTitle ?? "",
+      location: application.location ?? "",
+      offerUrl: application.offerUrl ?? "",
+      offerText: application.offerText ?? "",
+      status: application.status ?? "DRAFT",
+      targetProfile: application.targetProfile ?? "",
+      cvVariantName: application.cvVariantName ?? "",
+      cvUrl: application.cvUrl ?? "",
+      coverLetterUrl: application.coverLetterUrl ?? "",
+      mailDraft: application.mailDraft ?? "",
+      coverLetterSource: application.coverLetterSource ?? "",
+      notes: application.notes ?? "",
+      appliedAt: application.appliedAt ?? "",
+      followUpAt: application.followUpAt ?? "",
+    };
+  }
+
+  function resetApplicationForm() {
+    setSelectedApplicationId(null);
+    setApplicationForm(hydrateApplicationForm(null));
+    setOfferAnalysis(null);
+    setCoverLetterPreviewUrl("");
+    setCoverLetterLogs("");
+    setCoverLetterWarnings([]);
+    setApplicationZipUrl("");
+  }
+
+  function selectApplication(application) {
+    setSelectedApplicationId(application?.id ? String(application.id) : null);
+    setApplicationForm(hydrateApplicationForm(application));
+    setOfferAnalysis(application ? {
+      score: application.relevanceScore ?? 0,
+      targetProfile: application.targetProfile ?? "",
+      matchedKeywords: application.matchedKeywords ?? [],
+      missingKeywords: application.missingKeywords ?? [],
+      recommendations: application.recommendations ?? [],
+      commands: [],
+      summary: `${application.companyName ?? "Entreprise"} — ${application.roleTitle ?? "Poste"}`,
+    } : null);
+    setCoverLetterPreviewUrl(application?.coverLetterUrl ?? "");
+    setCoverLetterLogs("");
+    setCoverLetterWarnings([]);
+    setApplicationZipUrl(application?.applicationZipUrl ?? "");
+  }
+
+  function updateApplicationForm(field, value) {
+    setApplicationForm((current) => ({ ...current, [field]: value }));
+  }
+
+  async function loadApplications(ownerId = selectedOwnerId) {
+    if (!ownerId) return;
+    const payload = await runAction(async () => {
+      const [items, dashboard] = await Promise.all([
+        apiRequest("GET", `/manager/${ownerId}/applications`),
+        apiRequest("GET", `/manager/${ownerId}/applications/dashboard`),
+      ]);
+      return { items, dashboard };
+    }, "Candidatures chargées.");
+    if (!payload) return;
+    setApplications(payload.items ?? []);
+    setApplicationsDashboard(payload.dashboard ?? null);
+    if (payload.items?.length && !selectedApplicationId) {
+      selectApplication(payload.items[0]);
+    }
+  }
+
+  function buildApplicationPayload() {
+    return {
+      ...applicationForm,
+      versionId: applicationForm.versionId ? Number(applicationForm.versionId) : selectedVersionId ? Number(selectedVersionId) : null,
+      status: applicationForm.status || "DRAFT",
+      cvUrl: applicationForm.cvUrl || profileForm.cvUrl || "",
+      cvVariantName: applicationForm.cvVariantName || cvVariantName || "CV courant",
+      appliedAt: applicationForm.appliedAt || null,
+      followUpAt: applicationForm.followUpAt || null,
+    };
+  }
+
+  async function analyzeCurrentOffer() {
+    if (!selectedOwnerId) {
+      setError("Sélectionne d’abord un owner.");
+      return null;
+    }
+    if (!applicationForm.offerText.trim()) {
+      setError("Colle une offre avant analyse.");
+      return null;
+    }
+
+    const analysis = await runAction(
+      () => apiRequest("POST", `/manager/${selectedOwnerId}/applications/analyze-offer`, {
+        offerText: applicationForm.offerText,
+        roleTitle: applicationForm.roleTitle,
+        companyName: applicationForm.companyName,
+        portfolioSkills: (cvDocument.skills ?? []).map((skill) => skill.label).filter(Boolean),
+        projectTitles: (cvDocument.projects ?? []).map((project) => project.title).filter(Boolean),
+      }),
+      "Offre analysée.",
+    );
+    if (analysis) {
+      setOfferAnalysis(analysis);
+      if (!applicationForm.targetProfile && analysis.targetProfile) {
+        updateApplicationForm("targetProfile", analysis.targetProfile);
+      }
+    }
+    return analysis;
+  }
+
+  async function saveApplication() {
+    if (!selectedOwnerId) {
+      setError("Sélectionne d’abord un owner.");
+      return;
+    }
+    if (!applicationForm.companyName.trim() || !applicationForm.roleTitle.trim()) {
+      setError("Entreprise et poste sont obligatoires pour enregistrer la candidature.");
+      return;
+    }
+
+    const saved = await runAction(async () => {
+      const payload = buildApplicationPayload();
+      if (selectedApplicationId) {
+        return apiRequest("PUT", `/manager/${selectedOwnerId}/applications/${selectedApplicationId}`, payload);
+      }
+      return apiRequest("POST", `/manager/${selectedOwnerId}/applications`, payload);
+    }, selectedApplicationId ? "Candidature mise à jour." : "Candidature créée.");
+
+    if (saved) {
+      await loadApplications(selectedOwnerId);
+      selectApplication(saved);
+    }
+  }
+
+  async function deleteApplication() {
+    if (!selectedOwnerId || !selectedApplicationId) return;
+    await runAction(async () => {
+      await apiRequest("DELETE", `/manager/${selectedOwnerId}/applications/${selectedApplicationId}`);
+      return null;
+    }, "Candidature supprimée.");
+    resetApplicationForm();
+    await loadApplications(selectedOwnerId);
+  }
+
+  async function markApplicationStatus(status) {
+    if (!selectedOwnerId || !selectedApplicationId) return;
+    const updated = await runAction(
+      () => apiRequest("POST", `/manager/${selectedOwnerId}/applications/${selectedApplicationId}/status/${status}`),
+      "Statut candidature mis à jour.",
+    );
+    if (updated) {
+      await loadApplications(selectedOwnerId);
+      selectApplication(updated);
+    }
+  }
+
+  function buildCoverLetterPayload() {
+    return {
+      versionId: applicationForm.versionId ? Number(applicationForm.versionId) : selectedVersionId ? Number(selectedVersionId) : null,
+      latexSourceOverride: applicationForm.coverLetterSource || null,
+      motivationTextOverride: "",
+      templateId: "cover-letter-clean",
+      assets: [],
+    };
+  }
+
+  async function previewCoverLetter() {
+    if (!selectedOwnerId || !selectedApplicationId) {
+      setError("Enregistre d’abord la candidature avant de générer la lettre.");
+      return;
+    }
+    const response = await runAction(
+      () => apiRequest("POST", `/manager/${selectedOwnerId}/applications/${selectedApplicationId}/cover-letter/preview`, buildCoverLetterPayload()),
+      "Lettre de motivation prévisualisée.",
+    );
+    if (response) {
+      setCoverLetterPreviewUrl(response.pdfUrl ?? "");
+      setCoverLetterLogs(response.logs ?? "");
+      setCoverLetterWarnings(response.warnings ?? []);
+      if (response.latexSource) updateApplicationForm("coverLetterSource", response.latexSource);
+    }
+  }
+
+  async function saveCoverLetter() {
+    if (!selectedOwnerId || !selectedApplicationId) {
+      setError("Enregistre d’abord la candidature avant de sauvegarder la lettre.");
+      return;
+    }
+    const response = await runAction(
+      () => apiRequest("POST", `/manager/${selectedOwnerId}/applications/${selectedApplicationId}/cover-letter/save`, buildCoverLetterPayload()),
+      "Lettre PDF sauvegardée.",
+    );
+    if (response) {
+      setCoverLetterPreviewUrl(response.pdfUrl ?? "");
+      setCoverLetterLogs(response.logs ?? "");
+      setCoverLetterWarnings(response.warnings ?? []);
+      await loadApplications(selectedOwnerId);
+    }
+  }
+
+  async function exportApplicationPackage() {
+    if (!selectedOwnerId || !selectedApplicationId) {
+      setError("Enregistre d’abord la candidature avant d’exporter le ZIP.");
+      return;
+    }
+    const response = await runAction(
+      () => apiRequest("POST", `/manager/${selectedOwnerId}/applications/${selectedApplicationId}/export-zip`, buildCoverLetterPayload()),
+      "Package candidature exporté.",
+    );
+    if (response) {
+      setApplicationZipUrl(response.zipUrl ?? "");
+      setCoverLetterPreviewUrl(response.pdfUrl ?? coverLetterPreviewUrl);
+      setCoverLetterLogs(response.logs ?? "");
+      setCoverLetterWarnings(response.warnings ?? []);
+      await loadApplications(selectedOwnerId);
+    }
+  }
+
+  function applyOfferCommandsToCv() {
+    if (!offerAnalysis?.commands?.length) return;
+    applyCvCommand("Adapter le CV à l’offre analysée", (draft) => {
+      const next = cloneDeep(draft);
+      for (const command of offerAnalysis.commands) {
+        if (command.type === "SET_TITLE") next.profile.title = command.value;
+        if (command.type === "LIMIT_EXPERIENCES") next.settings.experienceLimit = Number(command.value) || 2;
+        if (command.type === "LIMIT_PROJECTS") next.settings.projectLimit = Number(command.value) || 4;
+        if (command.type === "SET_DENSITY") next.settings.density = command.value || "compact";
+      }
+      return next;
+    });
+  }
+
+  function renderApplicationsDashboard() {
+    if (!applicationsDashboard) {
+      return <Alert color="gray" variant="light">Aucune donnée de suivi chargée.</Alert>;
+    }
+    return (
+      <SimpleGrid cols={{ base: 2, md: 4 }} spacing="sm">
+        <Paper withBorder p="md" radius="lg"><Text size="xs" c="dimmed">Total</Text><Text fw={900} size="xl">{applicationsDashboard.total}</Text></Paper>
+        <Paper withBorder p="md" radius="lg"><Text size="xs" c="dimmed">À préparer</Text><Text fw={900} size="xl">{applicationsDashboard.toPrepare}</Text></Paper>
+        <Paper withBorder p="md" radius="lg"><Text size="xs" c="dimmed">Relances</Text><Text fw={900} size="xl">{applicationsDashboard.followUp}</Text></Paper>
+        <Paper withBorder p="md" radius="lg"><Text size="xs" c="dimmed">Score moyen</Text><Text fw={900} size="xl">{applicationsDashboard.averageScore ?? 0}/100</Text></Paper>
+      </SimpleGrid>
+    );
+  }
+
+  function renderOfferAnalysis() {
+    if (!offerAnalysis) {
+      return <Alert color="gray" variant="light">Analyse une offre pour obtenir le score, les mots-clés et les commandes CV proposées.</Alert>;
+    }
+    const scoreColor = offerAnalysis.score >= 75 ? "green" : offerAnalysis.score >= 50 ? "yellow" : "red";
+    return (
+      <Stack gap="sm">
+        <Group justify="space-between"><Badge color={scoreColor} size="lg">Score {offerAnalysis.score}/100</Badge><Badge variant="light">{offerAnalysis.targetProfile}</Badge></Group>
+        <Text size="sm" c="dimmed">{offerAnalysis.summary}</Text>
+        <Group gap="xs">{(offerAnalysis.matchedKeywords ?? []).map((keyword) => <Badge key={keyword} color="green" variant="light">{keyword}</Badge>)}</Group>
+        {(offerAnalysis.missingKeywords ?? []).length > 0 && <Group gap="xs">{offerAnalysis.missingKeywords.map((keyword) => <Badge key={keyword} color="orange" variant="light">manque : {keyword}</Badge>)}</Group>}
+        <Stack gap={4}>{(offerAnalysis.recommendations ?? []).map((item) => <Text key={item} size="sm">— {item}</Text>)}</Stack>
+        <Button variant="light" onClick={applyOfferCommandsToCv}>Appliquer les commandes au CV Studio</Button>
+      </Stack>
+    );
+  }
+
   function renderPortfolioHealthReport(report) {
     if (!report) {
       return <Alert color="gray" variant="light">Aucun rapport lancé pour cette version.</Alert>;
@@ -4196,6 +4551,7 @@ export default function Admin() {
               <Tabs.Tab value="owner">Profil principal</Tabs.Tab>
               <Tabs.Tab value="version">Versions</Tabs.Tab>
               <Tabs.Tab value="safety">Santé & backup</Tabs.Tab>
+              <Tabs.Tab value="applications">Candidatures</Tabs.Tab>
               <Tabs.Tab value="profile">Profil & fichiers</Tabs.Tab>
               <Tabs.Tab value="cv">CV Builder</Tabs.Tab>
               <Tabs.Tab value="timeline">Timeline</Tabs.Tab>
@@ -4473,6 +4829,148 @@ export default function Admin() {
                     </Card>
                   ))}
                 </Stack>
+              </Stack>
+            </Tabs.Panel>
+
+            <Tabs.Panel value="applications" pt="lg">
+              <Stack gap="lg">
+                <Group justify="space-between" align="flex-start">
+                  <div>
+                    <Text fw={900}>Assistant candidature</Text>
+                    <Text size="sm" c="dimmed">
+                      Analyse une offre, crée une candidature suivie, génère une lettre de motivation LaTeX/PDF et exporte un package complet.
+                    </Text>
+                  </div>
+                  <Group>
+                    <Button variant="light" onClick={() => loadApplications(selectedOwnerId)} disabled={!selectedOwnerId}>Rafraîchir</Button>
+                    <Button onClick={resetApplicationForm} disabled={!selectedOwnerId}>Nouvelle candidature</Button>
+                  </Group>
+                </Group>
+
+                {renderApplicationsDashboard()}
+
+                <SimpleGrid cols={{ base: 1, xl: 3 }} spacing="lg">
+                  <Paper withBorder p="lg" radius="lg" className="admin-nested-panel application-list-panel">
+                    <Stack gap="md">
+                      <Group justify="space-between">
+                        <Text fw={900}>Pipeline candidatures</Text>
+                        <Badge variant="light">{applications.length} item(s)</Badge>
+                      </Group>
+                      {applications.length === 0 ? (
+                        <Alert color="gray" variant="light">Aucune candidature enregistrée pour ce owner.</Alert>
+                      ) : (
+                        <Stack gap="sm">
+                          {applications.map((application) => (
+                            <Paper
+                              key={application.id}
+                              withBorder
+                              radius="lg"
+                              p="md"
+                              className={String(application.id) === String(selectedApplicationId) ? "application-card is-selected" : "application-card"}
+                              onClick={() => selectApplication(application)}
+                            >
+                              <Group justify="space-between" align="flex-start">
+                                <div>
+                                  <Text fw={900}>{application.companyName}</Text>
+                                  <Text size="sm" c="dimmed">{application.roleTitle}</Text>
+                                </div>
+                                <Badge color={applicationStatusColors[application.status] ?? "gray"} variant="light">
+                                  {applicationStatusLabels[application.status] ?? application.status}
+                                </Badge>
+                              </Group>
+                              <Group gap="xs" mt="xs">
+                                <Badge color={(application.relevanceScore ?? 0) >= 75 ? "green" : "yellow"} variant="light">{application.relevanceScore ?? 0}/100</Badge>
+                                {application.followUpAt && <Badge color="orange" variant="light">relance {application.followUpAt}</Badge>}
+                              </Group>
+                            </Paper>
+                          ))}
+                        </Stack>
+                      )}
+                    </Stack>
+                  </Paper>
+
+                  <Paper withBorder p="lg" radius="lg" className="admin-nested-panel application-editor-panel">
+                    <Stack gap="md">
+                      <Group justify="space-between" align="center">
+                        <Text fw={900}>{selectedApplicationId ? "Éditer la candidature" : "Créer une candidature"}</Text>
+                        {selectedApplicationId && <Badge variant="light">#{selectedApplicationId}</Badge>}
+                      </Group>
+
+                      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+                        <TextInput label="Entreprise" value={applicationForm.companyName} onChange={(event) => updateApplicationForm("companyName", event.currentTarget.value)} />
+                        <TextInput label="Poste" value={applicationForm.roleTitle} onChange={(event) => updateApplicationForm("roleTitle", event.currentTarget.value)} />
+                        <TextInput label="Lieu" value={applicationForm.location} onChange={(event) => updateApplicationForm("location", event.currentTarget.value)} />
+                        <Select label="Statut" data={applicationStatusOptions} value={applicationForm.status} onChange={(value) => updateApplicationForm("status", value ?? "DRAFT")} />
+                        <Select
+                          label="Version portfolio associée"
+                          data={versions.map((version) => ({ value: String(getEntityId(version)), label: `${version.label ?? version.versionTag} ${version.active ? "· active" : ""}` }))}
+                          value={applicationForm.versionId ? String(applicationForm.versionId) : selectedVersionId}
+                          onChange={(value) => updateApplicationForm("versionId", value ?? "")}
+                        />
+                        <TextInput label="Variante CV" value={applicationForm.cvVariantName} onChange={(event) => updateApplicationForm("cvVariantName", event.currentTarget.value)} />
+                        <TextInput label="URL offre" value={applicationForm.offerUrl} onChange={(event) => updateApplicationForm("offerUrl", event.currentTarget.value)} />
+                        <TextInput label="Profil ciblé" value={applicationForm.targetProfile} onChange={(event) => updateApplicationForm("targetProfile", event.currentTarget.value)} />
+                        <TextInput label="Date envoi" placeholder="YYYY-MM-DD" value={applicationForm.appliedAt} onChange={(event) => updateApplicationForm("appliedAt", event.currentTarget.value)} />
+                        <TextInput label="Date relance" placeholder="YYYY-MM-DD" value={applicationForm.followUpAt} onChange={(event) => updateApplicationForm("followUpAt", event.currentTarget.value)} />
+                      </SimpleGrid>
+
+                      <Textarea minRows={8} label="Offre collée" value={applicationForm.offerText} onChange={(event) => updateApplicationForm("offerText", event.currentTarget.value)} />
+                      <Textarea minRows={5} label="Notes internes" value={applicationForm.notes} onChange={(event) => updateApplicationForm("notes", event.currentTarget.value)} />
+                      <Textarea minRows={5} label="Mail de candidature" value={applicationForm.mailDraft} onChange={(event) => updateApplicationForm("mailDraft", event.currentTarget.value)} />
+
+                      <Group>
+                        <Button variant="light" onClick={analyzeCurrentOffer}>Analyser l’offre</Button>
+                        <Button onClick={saveApplication}>{selectedApplicationId ? "Mettre à jour" : "Créer"}</Button>
+                        {selectedApplicationId && <Button color="red" variant="subtle" onClick={deleteApplication}>Supprimer</Button>}
+                      </Group>
+
+                      {selectedApplicationId && (
+                        <Group gap="xs">
+                          <Button size="xs" variant="light" onClick={() => markApplicationStatus("SENT")}>Marquer envoyée</Button>
+                          <Button size="xs" variant="light" onClick={() => markApplicationStatus("FOLLOW_UP")}>Relance</Button>
+                          <Button size="xs" variant="light" onClick={() => markApplicationStatus("INTERVIEW")}>Entretien</Button>
+                          <Button size="xs" variant="light" color="green" onClick={() => markApplicationStatus("ACCEPTED")}>Acceptée</Button>
+                        </Group>
+                      )}
+                    </Stack>
+                  </Paper>
+
+                  <Stack gap="lg">
+                    <Paper withBorder p="lg" radius="lg" className="admin-nested-panel application-analysis-panel">
+                      <Stack gap="md">
+                        <Text fw={900}>Analyse et adaptation CV</Text>
+                        {renderOfferAnalysis()}
+                      </Stack>
+                    </Paper>
+
+                    <Paper withBorder p="lg" radius="lg" className="admin-nested-panel application-letter-panel">
+                      <Stack gap="md">
+                        <Group justify="space-between" align="center">
+                          <Text fw={900}>Lettre de motivation LaTeX</Text>
+                          {coverLetterPreviewUrl && <Badge color="green" variant="light">PDF prêt</Badge>}
+                        </Group>
+                        <Textarea
+                          minRows={10}
+                          label="Source LaTeX de la lettre"
+                          value={applicationForm.coverLetterSource}
+                          onChange={(event) => updateApplicationForm("coverLetterSource", event.currentTarget.value)}
+                          placeholder="Laisse vide pour générer automatiquement depuis l’offre et la version portfolio."
+                        />
+                        <Group>
+                          <Button variant="light" onClick={previewCoverLetter} disabled={!selectedApplicationId}>Prévisualiser PDF</Button>
+                          <Button onClick={saveCoverLetter} disabled={!selectedApplicationId}>Sauvegarder lettre</Button>
+                          <Button variant="light" onClick={exportApplicationPackage} disabled={!selectedApplicationId}>Exporter ZIP candidature</Button>
+                        </Group>
+                        <Group>
+                          {coverLetterPreviewUrl && <Button component="a" href={coverLetterPreviewUrl} target="_blank" rel="noreferrer">Ouvrir PDF</Button>}
+                          {applicationZipUrl && <Button component="a" href={applicationZipUrl} target="_blank" rel="noreferrer" variant="light">Télécharger ZIP</Button>}
+                        </Group>
+                        {coverLetterWarnings.length > 0 && <Alert color="orange" variant="light">{coverLetterWarnings.join(" · ")}</Alert>}
+                        {coverLetterLogs && <Textarea minRows={7} label="Logs LaTeX" value={coverLetterLogs} readOnly />}
+                      </Stack>
+                    </Paper>
+                  </Stack>
+                </SimpleGrid>
               </Stack>
             </Tabs.Panel>
 
