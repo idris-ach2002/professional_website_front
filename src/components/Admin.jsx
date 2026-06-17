@@ -1709,6 +1709,17 @@ export default function Admin() {
   const [coverLetterLogs, setCoverLetterLogs] = useState("");
   const [coverLetterWarnings, setCoverLetterWarnings] = useState([]);
   const [applicationZipUrl, setApplicationZipUrl] = useState("");
+  const [smartAnalysis, setSmartAnalysis] = useState(null);
+  const [letterTemplates, setLetterTemplates] = useState([]);
+  const [selectedLetterVariantId, setSelectedLetterVariantId] = useState("");
+  const [selectedCvProposalId, setSelectedCvProposalId] = useState("");
+  const [smartPackUrl, setSmartPackUrl] = useState("");
+  const [adminActiveTab, setAdminActiveTab] = useState("version");
+  const [selectedSmartCommandKeys, setSelectedSmartCommandKeys] = useState({});
+  const [commandTraceOpened, setCommandTraceOpened] = useState(false);
+  const [commandTraceStatus, setCommandTraceStatus] = useState("idle");
+  const [commandTraceTitle, setCommandTraceTitle] = useState("Trace d’application CV");
+  const [commandTraceEntries, setCommandTraceEntries] = useState([]);
 
   const jsonEditorAnalysis = useMemo(
     () => buildJsonEditorAnalysis(jsonEditorText),
@@ -1732,6 +1743,16 @@ export default function Admin() {
     () => cvQualityReport ?? buildLocalCvQualityReport(cvDocument, cvLatexSource),
     [cvDocument, cvLatexSource, cvQualityReport],
   );
+
+  const selectedSmartCvProposal = useMemo(
+    () => smartAnalysis?.cvVariants?.find((variant) => variant.id === selectedCvProposalId) ?? smartAnalysis?.cvVariants?.[0] ?? null,
+    [smartAnalysis, selectedCvProposalId],
+  );
+
+  const selectedSmartCvCommands = useMemo(() => {
+    if (!selectedSmartCvProposal?.commands?.length) return [];
+    return selectedSmartCvProposal.commands.filter((command, index) => selectedSmartCommandKeys[getSmartCommandKey(selectedSmartCvProposal.id, index)] !== false);
+  }, [selectedSmartCvProposal, selectedSmartCommandKeys]);
 
   const selectedVersion = useMemo(
     () =>
@@ -3190,6 +3211,10 @@ export default function Admin() {
     setCoverLetterLogs("");
     setCoverLetterWarnings([]);
     setApplicationZipUrl("");
+    setSmartAnalysis(null);
+    setSelectedLetterVariantId("");
+    setSelectedCvProposalId("");
+    setSmartPackUrl("");
   }
 
   function selectApplication(application) {
@@ -3208,6 +3233,10 @@ export default function Admin() {
     setCoverLetterLogs("");
     setCoverLetterWarnings([]);
     setApplicationZipUrl(application?.applicationZipUrl ?? "");
+    setSmartAnalysis(null);
+    setSelectedLetterVariantId("");
+    setSelectedCvProposalId("");
+    setSmartPackUrl("");
   }
 
   function updateApplicationForm(field, value) {
@@ -3380,18 +3409,282 @@ export default function Admin() {
     }
   }
 
-  function applyOfferCommandsToCv() {
-    if (!offerAnalysis?.commands?.length) return;
-    applyCvCommand("Adapter le CV à l’offre analysée", (draft) => {
-      const next = cloneDeep(draft);
-      for (const command of offerAnalysis.commands) {
-        if (command.type === "SET_TITLE") next.profile.title = command.value;
-        if (command.type === "LIMIT_EXPERIENCES") next.settings.experienceLimit = Number(command.value) || 2;
-        if (command.type === "LIMIT_PROJECTS") next.settings.projectLimit = Number(command.value) || 4;
-        if (command.type === "SET_DENSITY") next.settings.density = command.value || "compact";
+
+
+  function getSmartCommandKey(proposalId, index) {
+    return `${proposalId || "proposal"}::${index}`;
+  }
+
+  function getCommandValue(command) {
+    return command?.value ?? command?.targetValue ?? command?.payload ?? "";
+  }
+
+  function formatCvCommand(command) {
+    const value = getCommandValue(command);
+    const target = command?.target ? ` → ${command.target}` : "";
+    const valueLabel = value === "" || value === null || value === undefined ? "" : ` : ${value}`;
+    const labels = {
+      SET_TITLE: "Modifier le titre CV",
+      SET_HEADLINE: "Modifier l’accroche",
+      LIMIT_EXPERIENCES: "Limiter les expériences",
+      LIMIT_PROJECTS: "Limiter les projets",
+      SET_DENSITY: "Changer la densité",
+      SET_APPLICATION_MODE: "Définir le mode de candidature",
+      PRIORITIZE_SKILLS: "Prioriser les compétences",
+    };
+    return `${labels[command?.type] ?? command?.type ?? "Commande"}${target}${valueLabel}`;
+  }
+
+  function describeCvCommandImpact(command) {
+    const value = getCommandValue(command);
+    if (command?.type === "SET_TITLE") return `Titre CV remplacé par « ${value} ».`;
+    if (command?.type === "SET_HEADLINE") return "Phrase d’accroche remplacée par une version ciblée sur l’offre.";
+    if (command?.type === "LIMIT_EXPERIENCES") return `Limite d’expériences réglée à ${Number(value) || 2}.`;
+    if (command?.type === "LIMIT_PROJECTS") return `Limite de projets réglée à ${Number(value) || 4}.`;
+    if (command?.type === "SET_DENSITY") return `Densité visuelle réglée sur « ${value || "compact"} ».`;
+    if (command?.type === "SET_APPLICATION_MODE") return `Mode candidature mémorisé : ${value || "standard"}.`;
+    if (command?.type === "PRIORITIZE_SKILLS") return "Compétences réordonnées selon les mots-clés prioritaires de l’offre.";
+    return "Commande analysée et appliquée si elle est supportée par le CV Studio.";
+  }
+
+  function applySingleCvCommand(draft, command) {
+    if (!command?.type) return false;
+    const value = getCommandValue(command);
+    if (command.type === "SET_TITLE") {
+      draft.profile.title = String(value || draft.profile.title || "");
+      return true;
+    }
+    if (command.type === "SET_HEADLINE") {
+      draft.profile.headline = String(value || draft.profile.headline || "");
+      return true;
+    }
+    if (command.type === "LIMIT_EXPERIENCES") {
+      draft.settings.experienceLimit = Number(value) || 2;
+      return true;
+    }
+    if (command.type === "LIMIT_PROJECTS") {
+      draft.settings.projectLimit = Number(value) || 4;
+      return true;
+    }
+    if (command.type === "SET_DENSITY") {
+      draft.settings.density = String(value || "compact");
+      return true;
+    }
+    if (command.type === "SET_APPLICATION_MODE") {
+      draft.settings.applicationMode = String(value || "standard");
+      return true;
+    }
+    if (command.type === "PRIORITIZE_SKILLS") {
+      const priority = String(value ?? "")
+        .split(",")
+        .map((item) => item.trim().toLowerCase())
+        .filter(Boolean);
+      if (priority.length && Array.isArray(draft.skills)) {
+        draft.skills = [...draft.skills].sort((a, b) => {
+          const aText = `${a.label ?? ""} ${a.stack ?? ""} ${a.description ?? ""}`.toLowerCase();
+          const bText = `${b.label ?? ""} ${b.stack ?? ""} ${b.description ?? ""}`.toLowerCase();
+          const ai = priority.findIndex((item) => aText.includes(item));
+          const bi = priority.findIndex((item) => bText.includes(item));
+          return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi);
+        });
+        return true;
       }
+    }
+    return false;
+  }
+
+  function setProposalCommandsSelection(proposal, selected) {
+    if (!proposal?.commands?.length) return;
+    setSelectedSmartCommandKeys((current) => {
+      const next = { ...current };
+      proposal.commands.forEach((_, index) => {
+        next[getSmartCommandKey(proposal.id, index)] = selected;
+      });
       return next;
     });
+  }
+
+  function countSelectedProposalCommands(proposal) {
+    if (!proposal?.commands?.length) return 0;
+    return proposal.commands.filter((_, index) => selectedSmartCommandKeys[getSmartCommandKey(proposal.id, index)] !== false).length;
+  }
+
+  function appendCommandTrace(entry) {
+    setCommandTraceEntries((current) => [
+      ...current,
+      {
+        id: createCvId("trace"),
+        timestamp: new Date().toLocaleTimeString("fr-FR"),
+        ...entry,
+      },
+    ]);
+  }
+
+  function openCommandTrace(title) {
+    setCommandTraceTitle(title || "Trace d’application CV");
+    setCommandTraceStatus("running");
+    setCommandTraceEntries([]);
+    setCommandTraceOpened(true);
+  }
+
+  function waitCommandTrace(ms = 70) {
+    return new Promise((resolve) => window.setTimeout(resolve, ms));
+  }
+
+  function focusCvStudioAfterSmartApply(section = "profile") {
+    setAdminActiveTab("cv");
+    setCvActiveEditorTab("content");
+    setCvSelectedSection(section);
+    window.setTimeout(() => {
+      document.querySelector(".admin-tabs-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+  }
+
+  async function loadLetterTemplates() {
+    if (!selectedOwnerId) return;
+    const templates = await runAction(
+      () => apiRequest("GET", `/manager/${selectedOwnerId}/applications/letter-templates`),
+      "Bibliothèque de lettres chargée.",
+    );
+    if (templates) setLetterTemplates(templates ?? []);
+  }
+
+  async function runSmartApplicationAnalysis() {
+    if (!selectedOwnerId || !selectedApplicationId) {
+      setError("Enregistre d’abord la candidature avant l’analyse intelligente.");
+      return;
+    }
+    const versionQuery = applicationForm.versionId || selectedVersionId ? `?versionId=${applicationForm.versionId || selectedVersionId}` : "";
+    const analysis = await runAction(
+      () => apiRequest("POST", `/manager/${selectedOwnerId}/applications/${selectedApplicationId}/analyze-smart${versionQuery}`),
+      "Analyse intelligente terminée.",
+    );
+    if (analysis) {
+      setSmartAnalysis(analysis);
+      setSelectedLetterVariantId(analysis.letterVariants?.[0]?.id ?? "");
+      setSelectedCvProposalId(analysis.cvVariants?.[0]?.id ?? "");
+      const defaultCommandSelection = {};
+      (analysis.cvVariants ?? []).forEach((variant) => {
+        (variant.commands ?? []).forEach((_, index) => {
+          defaultCommandSelection[getSmartCommandKey(variant.id, index)] = true;
+        });
+      });
+      setSelectedSmartCommandKeys(defaultCommandSelection);
+      if (analysis.offer?.roleTitle && !applicationForm.targetProfile) {
+        updateApplicationForm("targetProfile", analysis.cvVariants?.[0]?.targetTitle ?? analysis.offer.roleTitle);
+      }
+    }
+  }
+
+  async function applySmartCvProposal(proposal = selectedSmartCvProposal, { selectedOnly = true } = {}) {
+    if (!proposal?.commands?.length) {
+      setError("Aucune commande CV disponible pour cette proposition.");
+      return;
+    }
+
+    const commands = selectedOnly
+      ? proposal.commands.filter((_, index) => selectedSmartCommandKeys[getSmartCommandKey(proposal.id, index)] !== false)
+      : proposal.commands;
+
+    if (!commands.length) {
+      setError("Aucune commande sélectionnée. Coche au moins une commande avant l’application.");
+      return;
+    }
+
+    setError(null);
+    setMessage(null);
+    setSelectedCvProposalId(proposal.id);
+    setCvVariantName(proposal.name || cvVariantName);
+    updateApplicationForm("cvVariantName", proposal.name || applicationForm.cvVariantName);
+    updateApplicationForm("targetProfile", proposal.targetTitle || applicationForm.targetProfile);
+    openCommandTrace(`Application CV Studio — ${proposal.name || "proposition intelligente"}`);
+    appendCommandTrace({ status: "running", title: "Préparation", detail: `${commands.length} commande(s) sélectionnée(s) sur ${proposal.commands.length}.` });
+    await waitCommandTrace();
+
+    const workingDocument = normalizeCvDocument(cloneDeep(cvDocument));
+    for (const [index, command] of commands.entries()) {
+      appendCommandTrace({
+        status: "running",
+        title: `Commande ${index + 1}/${commands.length}`,
+        detail: formatCvCommand(command),
+      });
+      await waitCommandTrace();
+      const applied = applySingleCvCommand(workingDocument, command);
+      appendCommandTrace({
+        status: applied ? "done" : "warning",
+        title: applied ? "Commande appliquée" : "Commande ignorée",
+        detail: applied ? describeCvCommandImpact(command) : `Type non supporté côté front : ${command.type}`,
+      });
+      await waitCommandTrace();
+    }
+
+    if (proposal.id?.includes("one-page") || proposal.id?.includes("ats")) {
+      workingDocument.settings.reduceDescriptions = true;
+      appendCommandTrace({ status: "done", title: "Optimisation automatique", detail: "Réduction des descriptions activée pour sécuriser le rendu compact/ATS." });
+      await waitCommandTrace();
+    }
+
+    const generatedSource = buildCvLatexFromDocument(workingDocument);
+    applyCvCommand(`Smart CV — ${proposal.name || "commandes sélectionnées"}`, () => workingDocument);
+    setCvLatexSource(generatedSource);
+    setCvManualLatexDirty(false);
+    setCvCompileSuccess(null);
+    setCvCompileLogs("");
+    setCvCompileWarnings([]);
+    setCvPreviewUrl("");
+    focusCvStudioAfterSmartApply("profile");
+    appendCommandTrace({ status: "done", title: "CV Studio chargé", detail: "Les données pertinentes sont maintenant visibles dans le formulaire du CV Builder. Tu peux personnaliser, compiler, sauvegarder comme CV ou créer une variante." });
+    setCommandTraceStatus("done");
+    setMessage("Commandes sélectionnées appliquées au CV Studio. Vérifie le formulaire puis compile le CV.");
+  }
+
+  function useSmartLetterVariant(variant) {
+    if (!variant) return;
+    setSelectedLetterVariantId(variant.id);
+    updateApplicationForm("coverLetterSource", variant.latexSource ?? "");
+    if (variant.plainText && !applicationForm.mailDraft) {
+      updateApplicationForm("mailDraft", smartAnalysis?.mail?.body ?? applicationForm.mailDraft);
+    }
+  }
+
+  async function exportSmartApplicationPack() {
+    if (!selectedOwnerId || !selectedApplicationId) {
+      setError("Enregistre d’abord la candidature avant l’export intelligent.");
+      return;
+    }
+    const versionQuery = applicationForm.versionId || selectedVersionId ? `?versionId=${applicationForm.versionId || selectedVersionId}` : "";
+    const response = await runAction(
+      () => apiRequest("POST", `/manager/${selectedOwnerId}/applications/${selectedApplicationId}/smart-pack${versionQuery}`),
+      "Package candidature intelligent exporté.",
+    );
+    if (response) {
+      setSmartPackUrl(response.zipUrl ?? "");
+    }
+  }
+
+  async function applyOfferCommandsToCv() {
+    if (!offerAnalysis?.commands?.length) {
+      setError("Aucune commande issue de l’analyse d’offre classique.");
+      return;
+    }
+    openCommandTrace("Application CV Studio — analyse d’offre classique");
+    appendCommandTrace({ status: "running", title: "Préparation", detail: `${offerAnalysis.commands.length} commande(s) à appliquer.` });
+    await waitCommandTrace();
+    const workingDocument = normalizeCvDocument(cloneDeep(cvDocument));
+    for (const [index, command] of offerAnalysis.commands.entries()) {
+      appendCommandTrace({ status: "running", title: `Commande ${index + 1}/${offerAnalysis.commands.length}`, detail: formatCvCommand(command) });
+      await waitCommandTrace();
+      const applied = applySingleCvCommand(workingDocument, command);
+      appendCommandTrace({ status: applied ? "done" : "warning", title: applied ? "Commande appliquée" : "Commande ignorée", detail: applied ? describeCvCommandImpact(command) : `Type non supporté côté front : ${command.type}` });
+      await waitCommandTrace();
+    }
+    applyCvCommand("Adapter le CV à l’offre analysée", () => workingDocument);
+    setCvLatexSource(buildCvLatexFromDocument(workingDocument));
+    setCvManualLatexDirty(false);
+    focusCvStudioAfterSmartApply("profile");
+    setCommandTraceStatus("done");
+    appendCommandTrace({ status: "done", title: "Terminé", detail: "Les commandes classiques sont appliquées et le CV Builder est ouvert." });
+    setMessage("Commandes d’offre appliquées au CV Studio.");
   }
 
   function renderApplicationsDashboard() {
@@ -3421,6 +3714,190 @@ export default function Admin() {
         {(offerAnalysis.missingKeywords ?? []).length > 0 && <Group gap="xs">{offerAnalysis.missingKeywords.map((keyword) => <Badge key={keyword} color="orange" variant="light">manque : {keyword}</Badge>)}</Group>}
         <Stack gap={4}>{(offerAnalysis.recommendations ?? []).map((item) => <Text key={item} size="sm">— {item}</Text>)}</Stack>
         <Button variant="light" onClick={applyOfferCommandsToCv}>Appliquer les commandes au CV Studio</Button>
+      </Stack>
+    );
+  }
+
+
+
+  function renderSmartApplicationEngine() {
+    const selectedLetter = smartAnalysis?.letterVariants?.find((variant) => variant.id === selectedLetterVariantId) ?? smartAnalysis?.letterVariants?.[0];
+    const selectedCv = selectedSmartCvProposal;
+
+    return (
+      <Stack gap="md">
+        <Group justify="space-between" align="flex-start">
+          <div>
+            <Text fw={900}>Système intelligent candidature</Text>
+            <Text size="sm" c="dimmed">
+              Analyse profonde de l’offre, matching preuves candidat, variantes de CV, variantes de lettres et export candidature enrichi.
+            </Text>
+          </div>
+          <Badge variant="light">Smart engine</Badge>
+        </Group>
+
+        <Group>
+          <Button variant="light" onClick={loadLetterTemplates} disabled={!selectedOwnerId}>Charger templates</Button>
+          <Button onClick={runSmartApplicationAnalysis} disabled={!selectedApplicationId}>Analyse intelligente</Button>
+          <Button variant="light" onClick={exportSmartApplicationPack} disabled={!selectedApplicationId || !smartAnalysis}>Exporter smart pack</Button>
+          <Button variant="subtle" onClick={() => setCommandTraceOpened(true)}>Traces commandes CV</Button>
+          {smartPackUrl && <Button component="a" href={smartPackUrl} target="_blank" rel="noreferrer">Télécharger smart ZIP</Button>}
+        </Group>
+        {selectedSmartCvProposal && (
+          <Alert color="blue" variant="light">
+            Proposition CV active : <strong>{selectedSmartCvProposal.name}</strong> — {selectedSmartCvCommands.length}/{selectedSmartCvProposal.commands?.length ?? 0} commande(s) sélectionnée(s). Après application, l’interface ouvre automatiquement le CV Builder avec les champs modifiés.
+          </Alert>
+        )}
+
+        {letterTemplates.length > 0 && (
+          <Paper withBorder radius="lg" p="md" className="smart-engine-box">
+            <Group justify="space-between" mb="xs">
+              <Text fw={800}>Bibliothèque de lettres</Text>
+              <Badge variant="light">{letterTemplates.length} modèles</Badge>
+            </Group>
+            <SimpleGrid cols={{ base: 1, md: 2 }} spacing="xs">
+              {letterTemplates.slice(0, 8).map((template) => (
+                <Paper key={template.id} withBorder radius="md" p="sm" className="smart-template-card">
+                  <Group justify="space-between" gap="xs">
+                    <Text fw={800} size="sm">{template.name}</Text>
+                    <Badge size="xs" variant="light">{template.category}</Badge>
+                  </Group>
+                  <Text size="xs" c="dimmed">{template.angle}</Text>
+                  <Group gap={4} mt={6}>{(template.bestFor ?? []).slice(0, 4).map((item) => <Badge key={item} size="xs" variant="light">{item}</Badge>)}</Group>
+                </Paper>
+              ))}
+            </SimpleGrid>
+          </Paper>
+        )}
+
+        {!smartAnalysis ? (
+          <Alert color="gray" variant="light">Lance l’analyse intelligente après avoir enregistré la candidature. Le moteur proposera plusieurs CV et plusieurs lettres.</Alert>
+        ) : (
+          <Stack gap="md">
+            <SimpleGrid cols={{ base: 2, md: 4 }} spacing="sm">
+              <Paper withBorder radius="lg" p="md"><Text size="xs" c="dimmed">Global</Text><Text fw={900} size="xl">{smartAnalysis.scores?.globalScore ?? 0}/100</Text></Paper>
+              <Paper withBorder radius="lg" p="md"><Text size="xs" c="dimmed">Hard skills</Text><Text fw={900} size="xl">{smartAnalysis.scores?.hardSkillsScore ?? 0}/100</Text></Paper>
+              <Paper withBorder radius="lg" p="md"><Text size="xs" c="dimmed">Preuves</Text><Text fw={900} size="xl">{smartAnalysis.scores?.evidenceScore ?? 0}/100</Text></Paper>
+              <Paper withBorder radius="lg" p="md"><Text size="xs" c="dimmed">ATS</Text><Text fw={900} size="xl">{smartAnalysis.scores?.atsScore ?? 0}/100</Text></Paper>
+            </SimpleGrid>
+
+            <Paper withBorder radius="lg" p="md" className="smart-engine-box">
+              <Text fw={800}>Offre structurée</Text>
+              <Text size="sm" c="dimmed">{smartAnalysis.explanation}</Text>
+              <Group gap="xs" mt="sm">
+                <Badge variant="light">{smartAnalysis.offer?.sector}</Badge>
+                <Badge variant="light">{smartAnalysis.offer?.tone}</Badge>
+                <Badge variant="light">{smartAnalysis.offer?.contractType}</Badge>
+                <Badge variant="light">{smartAnalysis.offer?.seniority}</Badge>
+              </Group>
+              <Group gap="xs" mt="sm">{(smartAnalysis.offer?.hardSkills ?? []).map((skill) => <Badge key={skill} color="green" variant="light">{skill}</Badge>)}</Group>
+              {(smartAnalysis.missingCriticalKeywords ?? []).length > 0 && <Group gap="xs" mt="xs">{smartAnalysis.missingCriticalKeywords.map((skill) => <Badge key={skill} color="orange" variant="light">manque critique : {skill}</Badge>)}</Group>}
+            </Paper>
+
+            <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="md">
+              <Paper withBorder radius="lg" p="md" className="smart-engine-box">
+                <Group justify="space-between" mb="xs"><Text fw={800}>CV proposés</Text><Badge variant="light">{smartAnalysis.cvVariants?.length ?? 0}</Badge></Group>
+                <Stack gap="sm">
+                  {(smartAnalysis.cvVariants ?? []).map((variant) => (
+                    <Paper key={variant.id} withBorder radius="md" p="sm" className={variant.id === selectedCv?.id ? "smart-proposal-card is-selected" : "smart-proposal-card"} onClick={() => setSelectedCvProposalId(variant.id)}>
+                      <Group justify="space-between">
+                        <Text fw={800} size="sm">{variant.name}</Text>
+                        <Badge color={variant.score >= 85 ? "green" : "blue"} variant="light">{variant.score}/100</Badge>
+                      </Group>
+                      <Text size="xs" c="dimmed">{variant.strategy}</Text>
+                      <Text size="xs" mt={4}><strong>Titre :</strong> {variant.targetTitle}</Text>
+                      <Group gap={4} mt={6}>{(variant.prioritizedKeywords ?? []).slice(0, 6).map((item) => <Badge key={item} size="xs" variant="light">{item}</Badge>)}</Group>
+                      <Group justify="space-between" mt="xs" gap="xs">
+                        <Text size="xs" c="dimmed">Commandes sélectionnées : {countSelectedProposalCommands(variant)}/{variant.commands?.length ?? 0}</Text>
+                        <Group gap={4}>
+                          <Button size="compact-xs" variant="subtle" onClick={(event) => { event.stopPropagation(); setProposalCommandsSelection(variant, true); }}>Tout</Button>
+                          <Button size="compact-xs" variant="subtle" onClick={(event) => { event.stopPropagation(); setProposalCommandsSelection(variant, false); }}>Aucune</Button>
+                        </Group>
+                      </Group>
+                      <Stack gap={4} mt="xs" className="smart-command-selector">
+                        {(variant.commands ?? []).map((command, commandIndex) => {
+                          const commandKey = getSmartCommandKey(variant.id, commandIndex);
+                          return (
+                            <Checkbox
+                              key={commandKey}
+                              size="xs"
+                              checked={selectedSmartCommandKeys[commandKey] !== false}
+                              label={formatCvCommand(command)}
+                              onClick={(event) => event.stopPropagation()}
+                              onChange={(event) => {
+                                const checked = event.currentTarget.checked;
+                                setSelectedSmartCommandKeys((current) => ({ ...current, [commandKey]: checked }));
+                              }}
+                            />
+                          );
+                        })}
+                      </Stack>
+                      <Group gap="xs" mt="xs">
+                        <Button size="xs" variant="light" onClick={(event) => { event.stopPropagation(); applySmartCvProposal(variant); }}>Appliquer la sélection</Button>
+                        <Button size="xs" variant="subtle" onClick={(event) => { event.stopPropagation(); setCommandTraceOpened(true); }}>Voir traces</Button>
+                      </Group>
+                    </Paper>
+                  ))}
+                </Stack>
+              </Paper>
+
+              <Paper withBorder radius="lg" p="md" className="smart-engine-box">
+                <Group justify="space-between" mb="xs"><Text fw={800}>Preuves candidat</Text><Badge variant="light">{smartAnalysis.evidence?.length ?? 0}</Badge></Group>
+                <Stack gap="sm">
+                  {(smartAnalysis.evidence ?? []).slice(0, 6).map((item) => (
+                    <Paper key={item.id} withBorder radius="md" p="sm" className="smart-evidence-card">
+                      <Group justify="space-between"><Text fw={800} size="sm">{item.title}</Text><Badge color={item.score >= 70 ? "green" : "yellow"} variant="light">{item.score}/100</Badge></Group>
+                      <Text size="xs" c="dimmed">{item.type} · {item.subtitle}</Text>
+                      <Text size="xs" mt={4}>{item.cvBullet}</Text>
+                      <Group gap={4} mt={6}>{(item.matchedKeywords ?? []).slice(0, 5).map((keyword) => <Badge key={keyword} size="xs" variant="light">{keyword}</Badge>)}</Group>
+                    </Paper>
+                  ))}
+                </Stack>
+              </Paper>
+            </SimpleGrid>
+
+            <Paper withBorder radius="lg" p="md" className="smart-engine-box">
+              <Group justify="space-between" mb="xs"><Text fw={800}>Lettres proposées</Text><Badge variant="light">{smartAnalysis.letterVariants?.length ?? 0}</Badge></Group>
+              <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
+                {(smartAnalysis.letterVariants ?? []).map((variant) => (
+                  <Paper key={variant.id} withBorder radius="md" p="sm" className={variant.id === selectedLetter?.id ? "smart-proposal-card is-selected" : "smart-proposal-card"} onClick={() => setSelectedLetterVariantId(variant.id)}>
+                    <Group justify="space-between">
+                      <Text fw={800} size="sm">{variant.name}</Text>
+                      <Badge color={variant.score >= 85 ? "green" : "blue"} variant="light">{variant.score}/100</Badge>
+                    </Group>
+                    <Text size="xs" c="dimmed">{variant.angle}</Text>
+                    <Group gap={4} mt={6}>
+                      <Badge size="xs" variant="light">{variant.tone}</Badge>
+                      <Badge size="xs" variant="light">tech {variant.technicalLevel}/100</Badge>
+                    </Group>
+                    <Button size="xs" variant="light" mt="xs" onClick={(event) => { event.stopPropagation(); useSmartLetterVariant(variant); }}>Utiliser cette lettre</Button>
+                  </Paper>
+                ))}
+              </SimpleGrid>
+              {selectedLetter && (
+                <Textarea mt="md" minRows={8} label={`Aperçu texte — ${selectedLetter.name}`} value={selectedLetter.plainText ?? ""} readOnly />
+              )}
+            </Paper>
+
+            <Paper withBorder radius="lg" p="md" className="smart-engine-box">
+              <Group justify="space-between" mb="xs"><Text fw={800}>Mail recommandé</Text><Badge variant="light">{smartAnalysis.mail?.score ?? 0}/100</Badge></Group>
+              <TextInput label="Objet" value={smartAnalysis.mail?.subject ?? ""} readOnly />
+              <Textarea mt="sm" minRows={6} label="Corps" value={smartAnalysis.mail?.body ?? ""} readOnly />
+              <Button size="xs" mt="sm" variant="light" onClick={() => updateApplicationForm("mailDraft", smartAnalysis.mail?.body ?? applicationForm.mailDraft)}>Utiliser ce mail</Button>
+            </Paper>
+
+            {(smartAnalysis.recommendations ?? []).length > 0 && (
+              <Alert color="blue" variant="light">
+                {(smartAnalysis.recommendations ?? []).slice(0, 5).map((item) => <Text key={item} size="sm">— {item}</Text>)}
+              </Alert>
+            )}
+            {(smartAnalysis.riskWarnings ?? []).length > 0 && (
+              <Alert color="orange" variant="light">
+                {(smartAnalysis.riskWarnings ?? []).map((item) => <Text key={item} size="sm">— {item}</Text>)}
+              </Alert>
+            )}
+          </Stack>
+        )}
       </Stack>
     );
   }
@@ -4381,6 +4858,39 @@ export default function Admin() {
       <div className="admin-orb admin-orb-two" />
       <div className="admin-orb admin-orb-three" />
 
+      <Modal opened={commandTraceOpened} onClose={() => setCommandTraceOpened(false)} title={commandTraceTitle} size="xl" centered>
+        <Stack gap="sm">
+          <Group justify="space-between">
+            <Text size="sm" c="dimmed">Journal temps réel des commandes appliquées au CV Studio.</Text>
+            <Badge color={commandTraceStatus === "done" ? "green" : commandTraceStatus === "running" ? "blue" : "gray"} variant="light">
+              {commandTraceStatus === "done" ? "Terminé" : commandTraceStatus === "running" ? "En cours" : "Inactif"}
+            </Badge>
+          </Group>
+          <div className="smart-command-trace-list">
+            {commandTraceEntries.length === 0 ? (
+              <Alert color="gray" variant="light">Aucune trace pour le moment.</Alert>
+            ) : commandTraceEntries.map((entry) => (
+              <Paper key={entry.id} withBorder radius="md" p="sm" className={`smart-command-trace-entry is-${entry.status}`}>
+                <Group justify="space-between" align="flex-start" gap="sm">
+                  <div>
+                    <Text fw={800} size="sm">{entry.title}</Text>
+                    <Text size="xs" c="dimmed">{entry.detail}</Text>
+                  </div>
+                  <Badge size="xs" color={entry.status === "done" ? "green" : entry.status === "warning" ? "orange" : "blue"} variant="light">
+                    {entry.status === "done" ? "OK" : entry.status === "warning" ? "Info" : "Run"}
+                  </Badge>
+                </Group>
+                <Text size="xs" c="dimmed" mt={4}>{entry.timestamp}</Text>
+              </Paper>
+            ))}
+          </div>
+          <Group justify="flex-end">
+            <Button variant="light" onClick={() => setCommandTraceOpened(false)}>Fermer</Button>
+            <Button onClick={() => focusCvStudioAfterSmartApply("profile")}>Ouvrir le CV Builder</Button>
+          </Group>
+        </Stack>
+      </Modal>
+
       <Stack gap="xl" className="admin-shell">
         <Paper withBorder radius="xl" p="xl" className="admin-hero-card">
           <Group justify="space-between" align="flex-start" gap="xl">
@@ -4545,7 +5055,7 @@ export default function Admin() {
         </Card>
 
         <Card shadow="sm" padding="xl" radius="xl" withBorder className="admin-tabs-card">
-          <Tabs defaultValue="version" variant="outline" radius="md" className="admin-tabs">
+          <Tabs value={adminActiveTab} onChange={(value) => setAdminActiveTab(value ?? "version")} variant="outline" radius="md" className="admin-tabs">
             <Tabs.List>
               <Tabs.Tab value="import">Import JSON</Tabs.Tab>
               <Tabs.Tab value="owner">Profil principal</Tabs.Tab>
@@ -4936,6 +5446,10 @@ export default function Admin() {
                   </Paper>
 
                   <Stack gap="lg">
+                    <Paper withBorder p="lg" radius="lg" className="admin-nested-panel smart-application-panel">
+                      {renderSmartApplicationEngine()}
+                    </Paper>
+
                     <Paper withBorder p="lg" radius="lg" className="admin-nested-panel application-analysis-panel">
                       <Stack gap="md">
                         <Text fw={900}>Analyse et adaptation CV</Text>

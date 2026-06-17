@@ -4363,3 +4363,67 @@ main,
 .application-letter-panel .mantine-Badge-root {
   text-transform: none;
 }
+
+.smart-application-panel,
+.smart-engine-box {
+  border-color: rgba(14, 116, 144, 0.18);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(240, 253, 250, 0.86));
+}
+
+.smart-template-card,
+.smart-proposal-card,
+.smart-evidence-card {
+  cursor: default;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.smart-proposal-card {
+  cursor: pointer;
+}
+
+.smart-proposal-card:hover,
+.smart-template-card:hover,
+.smart-evidence-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(14, 116, 144, 0.28);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+}
+
+.smart-proposal-card.is-selected {
+  border-color: rgba(14, 116, 144, 0.52);
+  box-shadow: 0 16px 40px rgba(14, 116, 144, 0.12);
+}
+
+.smart-command-selector {
+  padding: 0.65rem;
+  border: 1px dashed rgba(14, 116, 144, 0.22);
+  border-radius: 14px;
+  background: rgba(248, 250, 252, 0.82);
+  max-height: 210px;
+  overflow: auto;
+}
+
+.smart-command-trace-list {
+  max-height: 58vh;
+  overflow: auto;
+  display: grid;
+  gap: 0.55rem;
+  padding-right: 0.2rem;
+}
+
+.smart-command-trace-entry {
+  border-left: 4px solid rgba(59, 130, 246, 0.55);
+  background: rgba(248, 250, 252, 0.95);
+}
+
+.smart-command-trace-entry.is-done {
+  border-left-color: rgba(34, 197, 94, 0.75);
+}
+
+.smart-command-trace-entry.is-warning {
+  border-left-color: rgba(245, 158, 11, 0.82);
+}
+
+.smart-command-trace-entry.is-running {
+  border-left-color: rgba(59, 130, 246, 0.82);
+}
