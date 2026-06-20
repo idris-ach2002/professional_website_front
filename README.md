@@ -1,159 +1,289 @@
-# Portfolio professionnel — React / Mantine / GSAP
+# Portfolio professionnel — full stack React / Spring Boot
 
-Refonte front complète du portfolio professionnel générique. Cette version abandonne temporairement les shaders et le rendu PixiJS pour privilégier une identité visuelle animée avec **GSAP** : thème bleu océan, mer, îles volcaniques, récif du recrutement et tortues représentant les développeurs seniors.
+> Portfolio dynamique, administrable et versionné, composé d’un frontend React déployé sur Cloudflare Workers et d’un backend Spring Boot déployé sur Render avec Docker.
 
-Le backend Spring reste inchangé : le front consomme toujours `GET /manager` et bascule automatiquement sur `src/data/demoPortfolio.js` si l’API n’est pas disponible.
+[![Frontend](https://img.shields.io/badge/frontend-Cloudflare%20Workers-orange)](#déploiement)
+[![Backend](https://img.shields.io/badge/backend-Render%20Docker-purple)](#déploiement)
+[![Database](https://img.shields.io/badge/database-Neon%20PostgreSQL-0ea5e9)](#déploiement)
+[![Storage](https://img.shields.io/badge/storage-Cloudinary-3448c5)](#déploiement)
+[![Java](https://img.shields.io/badge/Java-21-b07219)](#stack-technique)
+[![React](https://img.shields.io/badge/React-19-61dafb)](#stack-technique)
 
----
+## Sommaire
 
-## Direction artistique
+| Document | Rôle |
+|---|---|
+| [`README.md`](./README.md) | Vue d’ensemble du portfolio, architecture globale, lancement local, déploiement et liens entre les deux projets. |
+| [`README-BACKEND.md`](./README-BACKEND.md) | Documentation détaillée du backend Spring Boot : API, sécurité, modèle de données, stockage, CV Builder, Docker, variables d’environnement. |
+| [`README-FRONTEND.md`](./README-FRONTEND.md) | Documentation détaillée du frontend React : routes, composants, intégration API, admin panel, animations, build Vite, déploiement Cloudflare. |
 
-Le site n’est plus organisé comme une grille de cards classique. Il fonctionne comme un **archipel professionnel** :
+## Vue d’ensemble
 
-- le profil est l’île d’entrée ;
-- la timeline est une route maritime qui se dessine progressivement au scroll ;
-- chaque projet est une île technique ;
-- les compétences forment des coraux ;
-- le recrutement est représenté par un récif et des tortues seniors ;
-- le contact devient un port d’arrivée.
+Ce portfolio est une application full stack structurée en deux projets indépendants :
 
-La palette est claire, élégante et non agressive : bleu océan, cyan lagon, teal récif, sable chaud, touches volcaniques orange/corail.
+- un **frontend React** qui affiche le portfolio public, le CV et une interface d’administration ;
+- un **backend Spring Boot** qui expose les API publiques et protégées, persiste les données dans PostgreSQL, gère les fichiers, les versions du site, la génération de CV LaTeX et le suivi des candidatures.
 
----
+Le site n’est pas un portfolio statique. Il repose sur une donnée métier administrable : propriétaire du portfolio, profil, expériences, projets, versions de site, documents, CV et candidatures. Le frontend consomme l’API publique pour afficher la version publiée et consomme l’API protégée pour l’administration.
 
-## Animations
+## Liens de production
 
-Toutes les animations visibles de cette version sont pilotées par GSAP :
+| Service | URL / Provider |
+|---|---|
+| Portfolio public | `https://professional-website-front.achabou02idris.workers.dev` |
+| Frontend | Cloudflare Workers Assets |
+| Backend | Render, déploiement Docker |
+| Base de données | NeonDB, PostgreSQL managé |
+| Stockage fichiers | Cloudinary |
+| Ping de maintien Render | `https://professional-website-hozo.onrender.com/actuator/health` via cron-job.org |
 
-- navbar animée à l’entrée ;
-- progression de scroll dans la navbar ;
-- hover des liens avec GSAP ;
-- apparition séquencée du hero ;
-- titre et mots-clés animés ;
-- orbites SVG autour de la photo de profil ;
-- fond SVG océanique animé ;
-- timeline révélée progressivement avec `ScrollTrigger` ;
-- îles projets qui apparaissent avec un stagger organique ;
-- récif animé avec flux, packets et tortue senior ;
-- sections expertise/contact animées au scroll.
-
-GSAP est chargé via CDN dans `index.html` pour éviter d’ajouter une nouvelle dépendance npm pendant que l’installation npm est instable. Le helper `src/animations/useGsap.js` attend `window.gsap`, enregistre `ScrollTrigger`, scope les animations au composant et nettoie les timelines au démontage.
-
-```txt
-src/animations/useGsap.js
-src/components/VisualIdentityBackground.jsx
-src/components/TopNavigation.jsx
-src/components/ProfileHero.jsx
-src/components/PortfolioTimeline.jsx
-src/components/ProjectsShowcase.jsx
-src/components/OceanRecruitmentReef.jsx
-src/components/ExpertisePanel.jsx
-src/components/ContactSection.jsx
-src/index.css
-```
-
----
-
-## Architecture
+## Architecture globale
 
 ```txt
-React
- ├─ SEO / pages / données / composants
- ├─ Mantine pour les composants d’interface
- └─ GSAP pour les animations DOM + SVG + scroll
+Navigateur
+   │
+   ▼
+Cloudflare Workers Assets
+Frontend React / Vite
+   │
+   │  HTTPS + credentials + CORS contrôlé
+   ▼
+Render
+Backend Spring Boot / Docker
+   │
+   ├── NeonDB PostgreSQL
+   │      └── données relationnelles : owners, versions, profils, timelines, projets, candidatures
+   │
+   ├── Cloudinary
+   │      └── fichiers publics ou administrés : images, PDF, CV, exports ZIP
+   │
+   └── Actuator health
+          └── route de ping cron-job.org pour limiter la mise en sommeil du service gratuit Render
 ```
 
-Aucun `setState` n’est déclenché dans une boucle d’animation. React rend la structure, puis GSAP manipule les éléments DOM/SVG dans un scope local.
+## Stack technique
 
----
+### Frontend
 
-## Installation
+- React 19 ;
+- Vite 8 ;
+- Mantine 9 ;
+- Tailwind CSS 4 via `@tailwindcss/vite` ;
+- React Router DOM 7 ;
+- Three.js, React Three Fiber, Drei et Rapier pour les scènes 3D et interactions physiques ;
+- GSAP et ScrollTrigger chargés via CDN ;
+- Cloudflare Workers Assets via Wrangler.
+
+### Backend
+
+- Java 21 ;
+- Spring Boot 4.0.6 ;
+- Spring Web MVC ;
+- Spring Data JPA / Hibernate ;
+- PostgreSQL ;
+- Flyway configuré côté application ;
+- Bean Validation Jakarta ;
+- Spring Security, CSRF, CORS, formulaire de connexion Thymeleaf ;
+- Actuator health ;
+- Cloudinary SDK ;
+- Docker multi-stage ;
+- LaTeX / latexmk / TeX Live dans l’image Docker pour la génération PDF.
+
+## Fonctionnalités principales
+
+| Domaine | Fonctionnalités |
+|---|---|
+| Portfolio public | Affichage du profil, des expériences, des projets publiés, des liens, du CV et des métadonnées SEO. |
+| Administration | Création et modification d’un owner, profil, timeline, expériences, projets et contacts. |
+| Versioning | Gestion de plusieurs versions du portfolio, duplication d’une version, activation d’une version unique, validation avant publication. |
+| Fichiers | Upload protégé, stockage local en développement ou Cloudinary en production, preview d’images et de PDF. |
+| CV Builder | Construction d’un CV LaTeX, preview PDF, sauvegarde, export ZIP, contrôle qualité et compilation asynchrone avec SSE. |
+| Candidatures | Suivi des candidatures, statuts, analyse d’offre, génération de lettres, variantes CV et smart pack. |
+| Sécurité | API manager protégée, rôle `ADMIN`, CSRF sur les méthodes mutantes, CORS restrictif, redirections frontend contrôlées. |
+| Déploiement | Front Cloudflare, back Render Docker, base NeonDB, fichiers Cloudinary, health ping cron-job.org. |
+
+## Lancement local
+
+### 1. Backend
+
+À lancer depuis le dossier du backend.
 
 ```bash
-npm ci --no-audit --no-fund --prefer-online --cache ./.npm-cache
+docker compose down
+docker compose build --no-cache backend
+docker compose up backend
 ```
 
-Si `npm ci` échoue à cause du lockfile ou du cache local :
-
-```bash
-rm -rf node_modules
-npm cache clean --force
-npm install --no-audit --no-fund --prefer-online --cache ./.npm-cache
-```
-
-Lancer le front :
-
-```bash
-npm run dev
-```
-
-Build :
-
-```bash
-npm run build
-```
-
----
-
-## Connexion au backend Spring
-
-Par défaut, le front appelle :
-
-```txt
-GET /manager
-```
-
-En développement, Vite proxifie `/api` et `/manager` vers :
+Cette commande démarre le backend et le service PostgreSQL déclaré dans `docker-compose.yml`. Le backend est exposé sur :
 
 ```txt
 http://localhost:8080
 ```
 
-Tu peux changer la cible avec :
+La base PostgreSQL locale est exposée sur :
+
+```txt
+localhost:5433
+```
+
+Route de santé locale :
+
+```txt
+http://localhost:8080/actuator/health
+```
+
+### 2. Frontend en mode production local
+
+À lancer depuis le dossier du frontend.
 
 ```bash
-VITE_API_PROXY_TARGET=http://localhost:8081 npm run dev
+npm run build
+npm run preview
 ```
 
----
+Le preview Vite est exposé par défaut sur :
 
-## Fichiers principaux
-
-- `src/App.jsx` : orchestration globale des sections.
-- `src/components/VisualIdentityBackground.jsx` : fond SVG océanique animé avec GSAP.
-- `src/components/TopNavigation.jsx` : navbar animée + progression de scroll.
-- `src/components/ProfileHero.jsx` : hero, mots-clés, photo, orbites SVG.
-- `src/components/PortfolioTimeline.jsx` : route maritime progressive au scroll.
-- `src/components/ProjectsShowcase.jsx` : archipel de projets filtrable.
-- `src/components/OceanRecruitmentReef.jsx` : section récif/recrutement/tortues seniors.
-- `src/components/ExpertisePanel.jsx` : coraux techniques et architecture métier.
-- `src/components/ContactSection.jsx` : port de contact + vCard.
-- `src/animations/useGsap.js` : helper GSAP propre pour React.
-
----
-
-## Notes performance
-
-- Les animations lourdes PixiJS/WebGPU ont été retirées pour cette version.
-- Les animations GSAP utilisent `transform`, `opacity` et SVG stroke-dash pour limiter les coûts.
-- Le rendu reste compatible Firefox/Chrome puisque l’on évite les gros canvas, les shaders et les filtres GPU coûteux.
-- `prefers-reduced-motion` est respecté côté CSS : les animations peuvent être neutralisées par l’OS.
-
----
-
-## CDN GSAP
-
-GSAP et ScrollTrigger sont chargés dans `index.html` :
-
-```html
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+```txt
+http://localhost:4173
 ```
 
-Si tu préfères une dépendance locale plus tard, installe GSAP :
+Cette URL est déjà prévue dans la configuration CORS locale du backend.
+
+### 3. Frontend en mode développement
+
+Le mode développement existe également :
 
 ```bash
-npm i gsap
+npm run dev
 ```
 
-Puis remplace le chargement global par des imports ESM dans les composants.
+Il démarre généralement sur :
+
+```txt
+http://localhost:5173
+```
+
+En développement, Vite proxifie les routes backend (`/website`, `/manager`, `/api`, `/uploads`, `/csrf`, `/login`, `/logout`) vers `http://localhost:8080`, sauf configuration contraire via `VITE_API_PROXY_TARGET`.
+
+## Connexion frontend / backend
+
+En production, le frontend utilise une URL backend explicite via :
+
+```txt
+VITE_API_BASE_URL=https://professional-website-hozo.onrender.com
+```
+
+Le backend doit autoriser l’origine Cloudflare dans :
+
+```txt
+APP_CORS_ALLOWED_ORIGINS=https://professional-website-front.achabou02idris.workers.dev
+APP_FRONTEND_ALLOWED_ORIGINS=https://professional-website-front.achabou02idris.workers.dev
+APP_FRONTEND_ORIGIN=https://professional-website-front.achabou02idris.workers.dev
+```
+
+En local, les origines utiles sont :
+
+```txt
+http://localhost:5173
+http://localhost:4173
+```
+
+## Déploiement
+
+### Frontend — Cloudflare Workers Assets
+
+Le frontend est compilé par Vite puis servi comme Single Page Application via Cloudflare Workers Assets. La configuration est portée par `wrangler.jsonc` :
+
+```txt
+assets.directory = ./dist
+assets.not_found_handling = single-page-application
+```
+
+Commande de déploiement disponible côté frontend :
+
+```bash
+npm run build
+npm run cf:deploy
+```
+
+### Backend — Render avec Docker
+
+Le backend est construit depuis le `Dockerfile`. L’image :
+
+1. compile l’application Maven avec Java 21 ;
+2. installe les dépendances LaTeX nécessaires à la génération de CV ;
+3. expose le port applicatif Spring Boot ;
+4. lance `app.jar`.
+
+Render fournit la variable `PORT`. L’application l’utilise via :
+
+```yaml
+server:
+  port: ${PORT:8080}
+```
+
+### Base de données — NeonDB PostgreSQL
+
+En production, Spring Boot se connecte à NeonDB via les variables :
+
+```txt
+SPRING_DATASOURCE_URL
+SPRING_DATASOURCE_USERNAME
+SPRING_DATASOURCE_PASSWORD
+```
+
+### Stockage — Cloudinary
+
+Le stockage de fichiers peut être local ou Cloudinary. En production :
+
+```txt
+STORAGE_PROVIDER=cloudinary
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
+CLOUDINARY_FOLDER=portfolio
+```
+
+### Health ping Render
+
+L’offre gratuite Render peut mettre le service en sommeil. Pour réduire ce comportement, cron-job.org appelle périodiquement :
+
+```txt
+https://professional-website-hozo.onrender.com/actuator/health
+```
+
+Cette route est volontairement légère : elle expose uniquement l’état de santé Actuator et ne retourne pas les données métier du portfolio.
+
+## Structure recommandée des dépôts
+
+Si les deux projets sont séparés, placer les README comme suit :
+
+```txt
+portfolio-root/
+├── README.md
+├── README-BACKEND.md
+├── README-FRONTEND.md
+├── professional_website/                # backend Spring Boot
+└── professional_website_front/          # frontend React
+```
+
+Ou, dans deux dépôts séparés :
+
+```txt
+professional_website/
+└── README.md                 # contenu de README-BACKEND.md
+
+professional_website_front/
+└── README.md                 # contenu de README-FRONTEND.md
+```
+
+## Notes d’audit
+
+- Le frontend inspecté utilise Three.js / React Three Fiber / Rapier. PixiJS n’est pas présent dans les dépendances de cette version.
+- GSAP est chargé par CDN dans `index.html`, et non par dépendance npm.
+- Flyway est configuré dans `application.yaml`, mais l’archive inspectée ne contient pas de dossier `src/main/resources/db/migration`. Le fichier SQL d’index partiel existe dans `src/main/java/.../sql`; pour une production stricte, il devrait être versionné dans `src/main/resources/db/migration` avec un nom de migration Flyway.
+- Les fichiers `.env` et secrets ne doivent jamais être commités. Utiliser les fichiers `.env.example` / `.env.local.example` comme base.
+
+## Licence
+
+Le projet contient un fichier `LICENSE` dans les deux bases de code. Se référer au contenu de ces fichiers pour les conditions exactes.
