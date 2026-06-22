@@ -2,7 +2,7 @@ import { Anchor, Burger, Drawer, Group, Stack, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useRef } from "react";
 import { useGsap } from "../animations/useGsap";
-import { getInitials, getOwnerFullName } from "../utils/portfolio";
+import { getInitials, getOwnerFullName, normalizeUrl } from "../utils/portfolio";
 
 const links = [
   { href: "#profile", label: "Profil" },
@@ -14,6 +14,7 @@ export default function TopNavigation({ owner }) {
   const rootRef = useRef(null);
   const [opened, { toggle, close }] = useDisclosure(false);
   const ownerName = getOwnerFullName(owner);
+  const logoUrl = owner?.prof?.logoUrl ? normalizeUrl(owner.prof.logoUrl) : "";
 
   useGsap(rootRef, (gsap) => {
     const root = rootRef.current;
@@ -91,7 +92,7 @@ export default function TopNavigation({ owner }) {
     });
 
     return () => cleanups.forEach((cleanup) => cleanup());
-  }, [ownerName]);
+  }, [ownerName, logoUrl]);
 
   const renderNavLinks = (suffix = "") =>
     links.map((link) => (
@@ -103,10 +104,32 @@ export default function TopNavigation({ owner }) {
   return (
     <header ref={rootRef} className="top-nav-shell">
       <div className="top-nav">
-        <a href="#top" className="brand-lockup" aria-label="Retour en haut de page">
-          <span className="brand-mark">{getInitials(owner)}</span>
-          <span>
+        <a href="#top" className={`brand-lockup${logoUrl ? " brand-lockup--dragon" : ""}`} aria-label="Retour en haut de page">
+          {logoUrl ? (
+            <span className="brand-dragon-silhouette" aria-hidden="true">
+              <img src={logoUrl} alt="" loading="eager" />
+            </span>
+          ) : null}
+
+          <span className={`brand-mark${logoUrl ? " brand-mark--logo brand-mark--dragon" : ""}`} aria-hidden="true">
+            {logoUrl ? (
+              <>
+                <span className="brand-logo-aura" />
+                <span className="brand-current brand-current--one" />
+                <span className="brand-current brand-current--two" />
+                <span className="brand-bubble brand-bubble--one" />
+                <span className="brand-bubble brand-bubble--two" />
+                <span className="brand-bubble brand-bubble--three" />
+                <span className="brand-dragon-orbit" />
+                <img src={logoUrl} alt="" className="brand-logo" loading="eager" />
+              </>
+            ) : (
+              getInitials(owner)
+            )}
+          </span>
+          <span className="brand-copy">
             <Text className="brand-name">{ownerName}</Text>
+            {logoUrl ? <span className="brand-subtitle"></span> : null}
           </span>
         </a>
 
