@@ -17,6 +17,7 @@ export default function TopNavigation({ owner }) {
   const [opened, { toggle, close }] = useDisclosure(false);
   const [activeHref, setActiveHref] = useState(links[0].href);
   const ownerName = getOwnerFullName(owner);
+  const activeIndex = Math.max(0, links.findIndex((link) => link.href === activeHref));
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof document === "undefined") return undefined;
@@ -63,6 +64,20 @@ export default function TopNavigation({ owner }) {
     };
   }, []);
 
+  useEffect(() => {
+    const nav = rootRef.current?.querySelector(".top-nav");
+    if (!nav) return undefined;
+
+    nav.style.setProperty("--energy-target-index", String(activeIndex));
+    nav.classList.add("is-energy-retargeting");
+
+    const pulseTimer = window.setTimeout(() => {
+      nav.classList.remove("is-energy-retargeting");
+    }, 880);
+
+    return () => window.clearTimeout(pulseTimer);
+  }, [activeIndex]);
+
   useGsap(rootRef, (gsap) => {
     const root = rootRef.current;
     if (!root) return undefined;
@@ -72,6 +87,7 @@ export default function TopNavigation({ owner }) {
     const scrollCurrent = root.querySelector(".scroll-current");
     const core = root.querySelector(".nav-signature-core");
     const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
+    const cleanups = [];
 
     if (nav) {
       gsap.set(nav, {
@@ -82,8 +98,16 @@ export default function TopNavigation({ owner }) {
         "--ribbon-hover-pitch": "0deg",
         "--ribbon-pointer-x": "54%",
         "--ribbon-pointer-y": "48%",
-        "--ribbon-sheen-x": "-42%",
+        "--ribbon-sheen-x": "-62%",
+        "--ribbon-sheen-opacity": 0,
         "--ribbon-scroll": 0,
+        "--ribbon-compact": 0,
+        "--nav-hover-intensity": 0,
+        "--core-energy": 0.62,
+        "--energy-hover": 1,
+        "--energy-pulse": 0,
+        "--energy-particle": 0,
+        "--energy-target-index": activeIndex,
       });
 
       gsap.fromTo(
@@ -93,13 +117,34 @@ export default function TopNavigation({ owner }) {
       );
 
       if (!reducedMotion) {
-        gsap.to(nav, {
+        const ribbonFloatTween = gsap.to(nav, {
           "--ribbon-float-y": "3px",
           "--ribbon-breath-pitch": "1.05deg",
           duration: 4.8,
           repeat: -1,
           yoyo: true,
           ease: "sine.inOut",
+        });
+
+        const coreEnergyTween = gsap.to(nav, {
+          "--core-energy": 1,
+          duration: 4.8,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+        });
+
+        const energyFiberTimeline = gsap.timeline({ repeat: -1, repeatDelay: 0.55 });
+        energyFiberTimeline
+          .set(nav, { "--energy-pulse": 0, "--energy-particle": 0.64 })
+          .to(nav, { "--energy-pulse": 1, "--energy-particle": 0.86, duration: 7.6, ease: "sine.inOut" })
+          .to(nav, { "--energy-pulse": 0, "--energy-particle": 0.58, duration: 7.2, ease: "sine.inOut" })
+          .to(nav, { "--energy-particle": 0.64, duration: 1.2, ease: "sine.inOut" });
+
+        cleanups.push(() => {
+          ribbonFloatTween.kill();
+          coreEnergyTween.kill();
+          energyFiberTimeline.kill();
         });
       }
     }
@@ -112,9 +157,39 @@ export default function TopNavigation({ owner }) {
       gsap.from(linkEls, { y: -8, autoAlpha: 0, duration: 0.55, stagger: 0.07, ease: "power3.out", delay: 0.18 });
     }
 
-    const cleanups = [];
-
     if (nav && !reducedMotion) {
+      const playContextualSheen = () => {
+        gsap.killTweensOf(nav, "--ribbon-sheen-x");
+        gsap.killTweensOf(nav, "--ribbon-sheen-opacity");
+
+        gsap.set(nav, { "--ribbon-sheen-x": "-62%", "--ribbon-sheen-opacity": 0 });
+        gsap.to(nav, {
+          "--ribbon-sheen-x": "142%",
+          "--ribbon-sheen-opacity": 0.24,
+          duration: 0.86,
+          ease: "power3.out",
+          overwrite: "auto",
+          onComplete: () => {
+            gsap.to(nav, {
+              "--ribbon-sheen-opacity": 0,
+              duration: 0.42,
+              ease: "power2.out",
+              overwrite: "auto",
+            });
+          },
+        });
+      };
+
+      const activatePremiumHover = () => {
+        gsap.to(nav, {
+          "--nav-hover-intensity": 1,
+          duration: 0.34,
+          ease: "power3.out",
+          overwrite: "auto",
+        });
+        playContextualSheen();
+      };
+
       const updateRibbonPointer = (event) => {
         const rect = nav.getBoundingClientRect();
         if (!rect.width || !rect.height) return;
@@ -139,15 +214,18 @@ export default function TopNavigation({ owner }) {
           "--ribbon-pointer-y": "48%",
           "--ribbon-tilt-z": "-1.05deg",
           "--ribbon-hover-pitch": "0deg",
+          "--nav-hover-intensity": 0,
           duration: 0.6,
           ease: "power3.out",
           overwrite: "auto",
         });
       };
 
+      nav.addEventListener("pointerenter", activatePremiumHover);
       nav.addEventListener("pointermove", updateRibbonPointer);
       nav.addEventListener("pointerleave", resetRibbonPointer);
       cleanups.push(() => {
+        nav.removeEventListener("pointerenter", activatePremiumHover);
         nav.removeEventListener("pointermove", updateRibbonPointer);
         nav.removeEventListener("pointerleave", resetRibbonPointer);
       });
@@ -188,9 +266,15 @@ export default function TopNavigation({ owner }) {
         }
 
         if (nav) {
+          const scrollingElement = document.scrollingElement || document.documentElement;
+          const scrollTop = scrollingElement.scrollTop || window.scrollY || 0;
+          const compact = scrollTop > 24 ? 1 : 0;
+
           gsap.to(nav, {
             "--ribbon-scroll": Number(progress.toFixed(3)),
-            duration: 0.2,
+            "--ribbon-compact": compact,
+            duration: 0.22,
+            ease: "power2.out",
             overwrite: "auto",
           });
         }
@@ -210,7 +294,7 @@ export default function TopNavigation({ owner }) {
     });
 
     return () => cleanups.forEach((cleanup) => cleanup());
-  }, [ownerName]);
+  }, [ownerName, activeIndex]);
 
   const renderDrawerLinks = () =>
     links.map((link) => (
@@ -226,7 +310,7 @@ export default function TopNavigation({ owner }) {
 
   return (
     <header ref={rootRef} className="top-nav-shell">
-      <div className="top-nav top-nav--holo-sonar">
+      <div className="top-nav top-nav--holo-sonar" style={{ "--energy-target-index": activeIndex }}>
         <a href="#top" className="brand-lockup brand-lockup--holo" aria-label="Retour en haut de page">
           <NavSignatureCore />
           <span className="brand-copy">

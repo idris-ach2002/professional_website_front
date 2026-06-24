@@ -1,4 +1,5 @@
 import { Anchor } from "@mantine/core";
+import { useState } from "react";
 
 function NavIcon({ type }) {
   const commonProps = {
@@ -53,13 +54,30 @@ function getIconType(href) {
 
 export default function NavSonarLinks({ links, activeHref, onLinkClick }) {
   const activeIndex = Math.max(0, links.findIndex((link) => link.href === activeHref));
+  const [hoverIndex, setHoverIndex] = useState(null);
+
+  const hoverVisible = hoverIndex !== null;
+  const interactionIndex = hoverIndex ?? activeIndex;
 
   return (
     <nav
-      className="sonar-nav sonar-nav--dock"
+      className={`sonar-nav sonar-nav--dock${hoverVisible ? " is-hovering" : ""}`}
       aria-label="Navigation principale"
-      style={{ "--dock-active-index": activeIndex, "--dock-count": links.length }}
+      style={{
+        "--dock-active-index": interactionIndex,
+        "--dock-preview-index": interactionIndex,
+        "--dock-preview-opacity": 0,
+        "--dock-capsule-opacity": hoverVisible ? 1 : 0,
+        "--dock-rail-index": interactionIndex,
+        "--dock-rail-opacity": hoverVisible ? 1 : 0,
+        "--dock-count": links.length,
+      }}
+      onMouseLeave={() => setHoverIndex(null)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setHoverIndex(null);
+      }}
     >
+      <span className="dock-hover-surface" aria-hidden="true" />
       <span className="dock-active-surface" aria-hidden="true" />
       <span className="dock-active-rail" aria-hidden="true" />
 
@@ -72,7 +90,10 @@ export default function NavSonarLinks({ links, activeHref, onLinkClick }) {
             href={link.href}
             className={`nav-link sonar-nav-link dock-nav-link${active ? " is-active" : ""}`}
             data-active={active ? "true" : "false"}
+            data-preview="false"
             style={{ "--dock-index": index }}
+            onMouseEnter={() => setHoverIndex(index)}
+            onFocus={() => setHoverIndex(index)}
             onClick={onLinkClick}
           >
             <span className="dock-icon-wrap" aria-hidden="true">

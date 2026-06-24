@@ -7004,20 +7004,6 @@ main,
   transition: left .42s cubic-bezier(.2, .85, .16, 1);
 }
 
-.sonar-nav.sonar-nav--dock:has(.dock-nav-link:nth-of-type(1):hover),
-.sonar-nav.sonar-nav--dock:has(.dock-nav-link:nth-of-type(1):focus-visible) {
-  --dock-active-index: 0 !important;
-}
-
-.sonar-nav.sonar-nav--dock:has(.dock-nav-link:nth-of-type(2):hover),
-.sonar-nav.sonar-nav--dock:has(.dock-nav-link:nth-of-type(2):focus-visible) {
-  --dock-active-index: 1 !important;
-}
-
-.sonar-nav.sonar-nav--dock:has(.dock-nav-link:nth-of-type(3):hover),
-.sonar-nav.sonar-nav--dock:has(.dock-nav-link:nth-of-type(3):focus-visible) {
-  --dock-active-index: 2 !important;
-}
 
 .sonar-nav.sonar-nav--dock .dock-nav-link.nav-link {
   position: relative;
@@ -7879,20 +7865,6 @@ main,
   display: none !important;
 }
 
-.sonar-nav.sonar-nav--dock:has(.dock-nav-link:nth-of-type(1):hover),
-.sonar-nav.sonar-nav--dock:has(.dock-nav-link:nth-of-type(1):focus-visible) {
-  --dock-active-index: 0 !important;
-}
-
-.sonar-nav.sonar-nav--dock:has(.dock-nav-link:nth-of-type(2):hover),
-.sonar-nav.sonar-nav--dock:has(.dock-nav-link:nth-of-type(2):focus-visible) {
-  --dock-active-index: 1 !important;
-}
-
-.sonar-nav.sonar-nav--dock:has(.dock-nav-link:nth-of-type(3):hover),
-.sonar-nav.sonar-nav--dock:has(.dock-nav-link:nth-of-type(3):focus-visible) {
-  --dock-active-index: 2 !important;
-}
 
 .sonar-nav.sonar-nav--dock .dock-nav-link.nav-link {
   position: relative;
@@ -8295,20 +8267,6 @@ main,
   display: none !important;
 }
 
-.sonar-nav.sonar-nav--dock:has(.dock-nav-link:nth-of-type(1):hover),
-.sonar-nav.sonar-nav--dock:has(.dock-nav-link:nth-of-type(1):focus-visible) {
-  --dock-active-index: 0 !important;
-}
-
-.sonar-nav.sonar-nav--dock:has(.dock-nav-link:nth-of-type(2):hover),
-.sonar-nav.sonar-nav--dock:has(.dock-nav-link:nth-of-type(2):focus-visible) {
-  --dock-active-index: 1 !important;
-}
-
-.sonar-nav.sonar-nav--dock:has(.dock-nav-link:nth-of-type(3):hover),
-.sonar-nav.sonar-nav--dock:has(.dock-nav-link:nth-of-type(3):focus-visible) {
-  --dock-active-index: 2 !important;
-}
 
 .sonar-nav.sonar-nav--dock .dock-nav-link.nav-link {
   position: relative;
@@ -9605,4 +9563,906 @@ main,
     height: 70px !important;
     margin-left: -9px !important;
   }
+}
+
+/* --------------------------------------------------------------------------
+   SAFE ULTRA PREMIUM NAV PATCH — stable layout, no extra grid children.
+   Keeps the final Glass Ribbon layout, adds contextual hover, core dock,
+   active-state depth and compact scroll without any global transparency.
+---------------------------------------------------------------------------- */
+.top-nav-shell > .top-nav.top-nav--holo-sonar {
+  --ribbon-sheen-opacity: 0;
+  --ribbon-compact: 0;
+  --nav-hover-intensity: 0;
+  --core-energy: 0;
+
+  min-height: calc(104px - (var(--ribbon-compact) * 10px)) !important;
+  padding-top: calc(10px - (var(--ribbon-compact) * 2px)) !important;
+  padding-bottom: calc(10px - (var(--ribbon-compact) * 2px)) !important;
+
+  transform:
+    translate3d(0, calc(var(--ribbon-enter-y) + var(--ribbon-float-y) - (var(--ribbon-compact) * 4px)), 0)
+    rotateZ(var(--ribbon-tilt-z))
+    perspective(1200px)
+    rotateX(calc(var(--ribbon-breath-pitch) + var(--ribbon-hover-pitch)))
+    scale(calc(1 - (var(--ribbon-compact) * .010))) !important;
+
+  background:
+    linear-gradient(112deg, transparent 0%, transparent 25%, rgb(222 236 241 / var(--ribbon-sheen-opacity)) 36%, transparent 49%) var(--ribbon-sheen-x) 0 / 48% 100% no-repeat,
+    radial-gradient(300px 136px at var(--ribbon-pointer-x) var(--ribbon-pointer-y), rgb(155 215 224 / calc(.055 + (var(--nav-hover-intensity) * .055))), transparent 66%),
+    radial-gradient(250px 158px at 5% 50%, rgb(125 211 252 / calc(.150 + (var(--core-energy) * .040))), transparent 68%),
+    radial-gradient(380px 142px at 24% -26%, rgb(255 255 255 / calc(.070 + (var(--nav-hover-intensity) * .025))), transparent 70%),
+    radial-gradient(540px 182px at 80% 124%, rgb(0 0 0 / calc(.30 + (var(--ribbon-compact) * .08))), transparent 76%),
+    linear-gradient(118deg, rgb(255 255 255 / .060), transparent 26%, rgb(255 255 255 / .020) 64%, rgb(255 255 255 / .045)),
+    linear-gradient(180deg, rgb(255 255 255 / .058), rgb(255 255 255 / .014) 42%, rgb(0 0 0 / .255)),
+    linear-gradient(120deg, rgb(18 25 33 / 1), rgb(24 38 49 / .995) 48%, rgb(13 47 61 / .990)) !important;
+
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / calc(.120 + (var(--nav-hover-intensity) * .020))),
+    inset 0 -1px 0 rgb(0 0 0 / .38),
+    inset 40px 0 78px rgb(125 211 252 / calc(.060 + (var(--core-energy) * .032))),
+    inset -34px -28px 64px rgb(0 0 0 / .34),
+    inset 0 0 0 1px rgb(255 255 255 / .045),
+    0 calc(30px + (var(--ribbon-compact) * 6px)) calc(68px + (var(--ribbon-compact) * 10px)) rgb(0 0 0 / .34),
+    0 10px 28px rgb(0 0 0 / .20) !important;
+
+  opacity: 1 !important;
+  mix-blend-mode: normal !important;
+  transition:
+    min-height .28s cubic-bezier(.18, .85, .16, 1),
+    padding .28s cubic-bezier(.18, .85, .16, 1),
+    box-shadow .28s ease;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar::after {
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / calc(.105 + (var(--nav-hover-intensity) * .038))), transparent 24%, rgb(0 0 0 / .155) 100%),
+    linear-gradient(100deg, transparent 4%, rgb(var(--nav-frame-line-rgb) / .115) 28%, rgb(var(--nav-frame-glow-rgb) / .130) 53%, rgb(255 255 255 / .060) 76%, transparent 96%),
+    repeating-linear-gradient(112deg, rgb(255 255 255 / .020) 0 1px, transparent 1px 24px) !important;
+  opacity: calc(.30 + (var(--nav-hover-intensity) * .10)) !important;
+}
+
+/* Core dock: encastre visuellement le Black Pearl sans déplacer la grille. */
+.top-nav-shell > .top-nav.top-nav--holo-sonar .brand-lockup.brand-lockup--holo {
+  isolation: isolate !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .brand-lockup.brand-lockup--holo::before {
+  content: "" !important;
+  display: block !important;
+  position: absolute !important;
+  left: -48px !important;
+  top: 50% !important;
+  z-index: -1 !important;
+  width: 160px !important;
+  height: 128px !important;
+  transform: translateY(-50%) rotate(-6deg) !important;
+  border-radius: 999px !important;
+  clip-path: polygon(6% 20%, 72% 0%, 100% 30%, 90% 77%, 61% 100%, 13% 83%, 0% 48%) !important;
+  pointer-events: none !important;
+  background:
+    radial-gradient(circle at 50% 50%, rgb(2 6 23 / .68), rgb(8 47 73 / .46) 42%, transparent 70%),
+    conic-gradient(from 110deg, rgb(125 211 252 / calc(.18 + (var(--core-energy) * .10))), transparent 23%, rgb(155 215 224 / .12), transparent 62%, rgb(125 211 252 / .16)) !important;
+  box-shadow:
+    inset 0 0 34px rgb(0 0 0 / .54),
+    inset 0 1px 0 rgb(255 255 255 / .07),
+    0 0 calc(28px + (var(--core-energy) * 12px)) rgb(125 211 252 / calc(.13 + (var(--core-energy) * .08))) !important;
+  opacity: .96 !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .brand-lockup.brand-lockup--holo::after {
+  content: "" !important;
+  display: block !important;
+  position: absolute !important;
+  left: -31px !important;
+  top: 50% !important;
+  z-index: -1 !important;
+  width: 116px !important;
+  height: 116px !important;
+  transform: translateY(-50%) !important;
+  border-radius: 999px !important;
+  pointer-events: none !important;
+  background:
+    radial-gradient(circle at 50% 50%, transparent 45%, rgb(125 211 252 / calc(.16 + (var(--core-energy) * .10))) 46% 48%, transparent 50%),
+    conic-gradient(from 0deg, transparent 0 18%, rgb(222 236 241 / .22) 20%, transparent 23% 52%, rgb(125 211 252 / .16) 54%, transparent 58% 100%) !important;
+  filter: drop-shadow(0 0 16px rgb(125 211 252 / .16));
+  opacity: calc(.72 + (var(--core-energy) * .18)) !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .nav-signature-core.nav-signature-core--black-pearl {
+  transform: scale(calc(1 + (var(--core-energy) * .035))) !important;
+  transform-origin: center;
+  transition: transform .34s cubic-bezier(.18, .85, .16, 1), filter .34s ease;
+  filter:
+    drop-shadow(0 0 calc(7px + (var(--core-energy) * 7px)) rgb(var(--nav-core-glow-rgb) / calc(.11 + (var(--core-energy) * .10))))
+    drop-shadow(0 13px 21px rgb(0 0 0 / .28)) !important;
+}
+
+/* Active dock : amélioration de la capsule existante, sans ajout de DOM. */
+.sonar-nav.sonar-nav--dock .dock-active-surface {
+  background:
+    radial-gradient(circle at 50% 100%, rgb(125 211 252 / .18), transparent 68%),
+    linear-gradient(135deg, rgb(255 255 255 / .090), rgb(255 255 255 / .025)) !important;
+  border: 1px solid rgb(222 236 241 / .105);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .12),
+    inset 0 -1px 0 rgb(0 0 0 / .12),
+    0 12px 28px rgb(0 0 0 / .18),
+    0 0 24px rgb(125 211 252 / .12) !important;
+  opacity: calc(.86 + (var(--nav-hover-intensity) * .10));
+}
+
+.sonar-nav.sonar-nav--dock .dock-active-rail {
+  box-shadow:
+    0 0 12px rgb(var(--nav-dock-active-rgb) / .32),
+    0 0 24px rgb(255 255 255 / .12) !important;
+}
+
+.sonar-nav.sonar-nav--dock .dock-nav-link:hover .dock-icon-wrap,
+.sonar-nav.sonar-nav--dock .dock-nav-link:focus-visible .dock-icon-wrap {
+  box-shadow:
+    0 14px 26px rgb(var(--nav-dock-active-rgb) / .28),
+    0 0 0 6px rgb(255 255 255 / .78),
+    0 0 0 8px rgb(125 211 252 / .060),
+    inset 0 1px 0 rgb(255 255 255 / .34) !important;
+}
+
+@media (max-width: 1180px) {
+  .top-nav-shell > .top-nav.top-nav--holo-sonar {
+    min-height: calc(90px - (var(--ribbon-compact) * 5px)) !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .top-nav-shell > .top-nav.top-nav--holo-sonar {
+    min-height: calc(78px - (var(--ribbon-compact) * 4px)) !important;
+  }
+
+  .top-nav-shell > .top-nav.top-nav--holo-sonar .brand-lockup.brand-lockup--holo::before {
+    left: -28px !important;
+    width: 96px !important;
+    height: 84px !important;
+  }
+
+  .top-nav-shell > .top-nav.top-nav--holo-sonar .brand-lockup.brand-lockup--holo::after {
+    left: -18px !important;
+    width: 74px !important;
+    height: 74px !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   LINK DOCK PREMIUM PATCH — liquid active capsule + hover preview only.
+   Scope limited to the navigation links module. The ribbon/core layout is left
+   untouched.
+---------------------------------------------------------------------------- */
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock {
+  --dock-preview-index: var(--dock-active-index);
+  --dock-preview-opacity: 0;
+  --dock-active-stretch: 1;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock.is-active-moving {
+  --dock-active-stretch: 1.075;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock.is-previewing {
+  --dock-preview-opacity: 1;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .dock-hover-surface {
+  position: absolute;
+  left: 9px;
+  top: 9px;
+  z-index: 1;
+  width: var(--dock-item-width);
+  height: calc(100% - 18px);
+  border-radius: 24px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 70%, rgb(125 211 252 / .115), transparent 68%),
+    linear-gradient(135deg, rgb(255 255 255 / .060), rgb(255 255 255 / .018));
+  border: 1px solid rgb(222 236 241 / .070);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .095),
+    inset 0 -1px 0 rgb(0 0 0 / .11),
+    0 8px 18px rgb(0 0 0 / .11),
+    0 0 18px rgb(125 211 252 / .065);
+  opacity: calc(var(--dock-preview-opacity) * .66);
+  transform: translateX(calc(var(--dock-preview-index) * 100%)) scale(.935);
+  transition:
+    transform .34s cubic-bezier(.18, .85, .16, 1),
+    opacity .22s ease,
+    box-shadow .22s ease;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-active-surface {
+  z-index: 2;
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 50% 115%, rgb(125 211 252 / .245), transparent 66%),
+    radial-gradient(circle at 48% 0%, rgb(255 255 255 / .150), transparent 42%),
+    linear-gradient(180deg, rgb(255 255 255 / .132), rgb(255 255 255 / .046) 45%, rgb(0 0 0 / .120)),
+    linear-gradient(135deg, rgb(255 255 255 / .070), rgb(255 255 255 / .024)) !important;
+  border: 1px solid rgb(222 236 241 / .135) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .165),
+    inset 0 -1px 0 rgb(0 0 0 / .170),
+    inset 18px 0 38px rgb(125 211 252 / .034),
+    inset -18px -16px 32px rgb(0 0 0 / .105),
+    0 15px 32px rgb(0 0 0 / .220),
+    0 0 28px rgb(125 211 252 / .130) !important;
+  transform:
+    translateX(calc(var(--dock-active-index) * 100%))
+    scaleX(var(--dock-active-stretch));
+  transform-origin: center;
+  transition:
+    transform .46s cubic-bezier(.16, 1, .3, 1),
+    box-shadow .28s ease,
+    opacity .28s ease,
+    border-color .28s ease;
+  overflow: hidden;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-active-surface::before,
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-active-surface::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-active-surface::before {
+  inset: 1px 2px auto;
+  height: 42%;
+  background: linear-gradient(180deg, rgb(255 255 255 / .180), rgb(255 255 255 / .035), transparent);
+  opacity: .86;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-active-surface::after {
+  left: 13%;
+  right: 13%;
+  bottom: 9px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgb(var(--nav-dock-active-2-rgb) / .48), rgb(255 255 255 / .52), rgb(var(--nav-dock-active-2-rgb) / .34), transparent);
+  box-shadow:
+    0 0 10px rgb(var(--nav-dock-active-2-rgb) / .22),
+    0 0 18px rgb(255 255 255 / .14);
+  opacity: .88;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-active-rail {
+  top: auto !important;
+  bottom: 10px !important;
+  left: calc(9px + (var(--dock-active-index) * var(--dock-item-width)) + (var(--dock-item-width) * .22)) !important;
+  z-index: 4;
+  width: calc(var(--dock-item-width) * .56) !important;
+  height: 2px !important;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgb(var(--nav-dock-active-2-rgb) / .68), rgb(255 255 255 / .66), rgb(var(--nav-dock-active-2-rgb) / .48), transparent) !important;
+  box-shadow:
+    0 0 11px rgb(var(--nav-dock-active-2-rgb) / .28),
+    0 0 20px rgb(255 255 255 / .12) !important;
+  transition:
+    left .46s cubic-bezier(.16, 1, .3, 1),
+    width .30s ease,
+    opacity .22s ease;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link.nav-link {
+  z-index: 5;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-icon-wrap {
+  overflow: visible;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-icon-wrap::before,
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-icon-wrap::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    opacity .24s ease,
+    transform .28s cubic-bezier(.18, .85, .16, 1);
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-icon-wrap::before {
+  background: radial-gradient(circle, rgb(125 211 252 / .22), transparent 66%);
+  filter: blur(2px);
+  transform: scale(.78);
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-icon-wrap::after {
+  inset: -4px;
+  border: 1px solid rgb(222 236 241 / .110);
+  background: radial-gradient(circle at 50% 42%, rgb(255 255 255 / .100), transparent 62%);
+  transform: scale(.88);
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link[data-preview="true"] {
+  color: rgb(226 237 244 / .98) !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link[data-preview="true"] .dock-icon-wrap {
+  transform: translateY(-3px) scale(1.035) !important;
+  background: rgb(255 255 255 / .105) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .16),
+    inset 0 -1px 0 rgb(0 0 0 / .14),
+    0 8px 18px rgb(0 0 0 / .12) !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link[data-preview="true"] .dock-icon-wrap::before {
+  opacity: .70;
+  transform: scale(1);
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link.is-active {
+  letter-spacing: -.010em;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link.is-active .dock-icon-wrap {
+  transform: translateY(-8px) scale(1.045) !important;
+  box-shadow:
+    0 15px 30px rgb(var(--nav-dock-active-rgb) / .30),
+    0 0 0 6px rgb(var(--nav-dock-bg-rgb) / .96),
+    0 0 0 8px rgb(125 211 252 / .095),
+    0 0 24px rgb(125 211 252 / .145),
+    inset 0 1px 0 rgb(255 255 255 / .38) !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link.is-active .dock-icon-wrap::before {
+  opacity: .95;
+  transform: scale(1.07);
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link.is-active .dock-icon-wrap::after {
+  opacity: .78;
+  transform: scale(1);
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link.is-active .dock-link-label {
+  text-shadow:
+    0 0 14px rgb(125 211 252 / .14),
+    0 1px 0 rgb(0 0 0 / .20);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-active-surface,
+  .top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-hover-surface,
+  .top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-active-rail {
+    transition-duration: .01ms !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   ENERGY FIBER + THIN HOVER RAIL PATCH
+   - Keeps the current elegant ribbon/core layout unchanged.
+   - Replaces thick bottom rails with a fine hover-only optical segment.
+   - Adds a subtle core-to-active-link fiber impulse on navbar hover/retarget.
+---------------------------------------------------------------------------- */
+.top-nav-shell > .top-nav.top-nav--holo-sonar {
+  --energy-target-index: 0;
+  --energy-hover: 0;
+  --energy-pulse: 0;
+  --energy-particle: 0;
+  --energy-line-width: calc(520px + (var(--energy-target-index) * 128px));
+}
+
+/* The fiber sits between the core and the navigation zone, behind the content. */
+.top-nav-shell > .top-nav.top-nav--holo-sonar::before {
+  content: "" !important;
+  display: block !important;
+  position: absolute !important;
+  left: 132px !important;
+  top: 50% !important;
+  z-index: 2 !important;
+  width: var(--energy-line-width) !important;
+  height: 42px !important;
+  transform: translateY(-50%) !important;
+  border-radius: 999px !important;
+  pointer-events: none !important;
+  clip-path: none !important;
+  backdrop-filter: none !important;
+  background:
+    radial-gradient(circle at calc(var(--energy-pulse) * 100%) 50%, rgb(245 252 255 / calc(.38 * var(--energy-pulse))), rgb(125 211 252 / calc(.20 * var(--energy-pulse))) 0 4px, transparent 15px),
+    radial-gradient(circle at calc(var(--energy-pulse) * 100% - 42px) 37%, rgb(125 211 252 / calc(.22 * var(--energy-particle))) 0 2px, transparent 8px),
+    radial-gradient(circle at calc(var(--energy-pulse) * 100% - 76px) 62%, rgb(222 236 241 / calc(.18 * var(--energy-particle))) 0 1.6px, transparent 7px),
+    radial-gradient(circle at calc(var(--energy-pulse) * 100% - 116px) 48%, rgb(125 211 252 / calc(.15 * var(--energy-particle))) 0 1.4px, transparent 6px),
+    linear-gradient(90deg, transparent 0%, rgb(125 211 252 / .105) 13%, rgb(222 236 241 / .145) 58%, rgb(125 211 252 / .105) 86%, transparent 100%) center / 100% 1px no-repeat !important;
+  box-shadow:
+    0 0 calc(10px + (var(--energy-hover) * 12px)) rgb(125 211 252 / calc(.06 + (var(--energy-hover) * .08))),
+    inset 0 0 0 1px transparent !important;
+  filter: drop-shadow(0 0 calc(6px + (var(--energy-pulse) * 12px)) rgb(125 211 252 / calc(.08 + (var(--energy-pulse) * .22)))) !important;
+  opacity: calc(.18 + (var(--energy-hover) * .20) + (var(--energy-pulse) * .22)) !important;
+  transition:
+    width .46s cubic-bezier(.16, 1, .3, 1),
+    opacity .28s ease,
+    box-shadow .28s ease !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar.is-energy-retargeting::before {
+  animation: navEnergyRetargetPulse .86s cubic-bezier(.16, 1, .3, 1) both;
+}
+
+@keyframes navEnergyRetargetPulse {
+  0% { opacity: .20; filter: drop-shadow(0 0 6px rgb(125 211 252 / .08)); }
+  42% { opacity: .52; filter: drop-shadow(0 0 20px rgb(125 211 252 / .28)); }
+  100% { opacity: .22; filter: drop-shadow(0 0 8px rgb(125 211 252 / .10)); }
+}
+
+/* Bottom rail: fine, hover-only, with a white segment preserved inside. */
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock {
+  --dock-rail-index: var(--dock-active-index);
+  --dock-rail-opacity: 0;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-active-surface::after {
+  left: 18% !important;
+  right: 18% !important;
+  bottom: 8px !important;
+  height: 1px !important;
+  background: linear-gradient(90deg, transparent, rgb(var(--nav-dock-active-2-rgb) / .18), rgb(255 255 255 / .24), rgb(var(--nav-dock-active-2-rgb) / .14), transparent) !important;
+  box-shadow: 0 0 6px rgb(var(--nav-dock-active-2-rgb) / .10) !important;
+  opacity: .24 !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-active-rail {
+  top: auto !important;
+  bottom: 7px !important;
+  left: calc(9px + (var(--dock-rail-index) * var(--dock-item-width)) + (var(--dock-item-width) * .30)) !important;
+  z-index: 6 !important;
+  width: calc(var(--dock-item-width) * .40) !important;
+  height: 1px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(90deg, transparent, rgb(var(--nav-dock-active-2-rgb) / .42), rgb(255 255 255 / .78), rgb(var(--nav-dock-active-2-rgb) / .34), transparent) !important;
+  box-shadow:
+    0 0 6px rgb(var(--nav-dock-active-2-rgb) / .18),
+    0 0 10px rgb(255 255 255 / .10) !important;
+  opacity: calc(var(--dock-rail-opacity) * .88) !important;
+  transform: translateY(0) scaleX(.96) !important;
+  transition:
+    left .34s cubic-bezier(.16, 1, .3, 1),
+    opacity .18s ease,
+    width .24s ease,
+    box-shadow .22s ease !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock:has(.dock-nav-link:hover) .dock-active-rail,
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock:has(.dock-nav-link:focus-visible) .dock-active-rail {
+  width: calc(var(--dock-item-width) * .48) !important;
+  box-shadow:
+    0 0 8px rgb(var(--nav-dock-active-2-rgb) / .24),
+    0 0 13px rgb(255 255 255 / .14) !important;
+}
+
+@media (max-width: 1180px) {
+  .top-nav-shell > .top-nav.top-nav--holo-sonar::before {
+    display: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .top-nav-shell > .top-nav.top-nav--holo-sonar::before {
+    transition-duration: .01ms !important;
+    animation: none !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   FINAL NAV ENERGY LOOP + LIQUID LINK RAIL TUNING
+   - The core/fiber now lives by default: no hover required.
+   - The hover rail is ultra-thin, moves between links, and keeps a visible
+     white inner segment.
+   - The active link keeps a liquid-glass capsule; the rest of the navbar is
+     untouched.
+---------------------------------------------------------------------------- */
+.top-nav-shell > .top-nav.top-nav--holo-sonar {
+  --nav-energy-warm-rgb: 56 189 248;
+  --nav-energy-hot-rgb: 103 232 249;
+  --nav-energy-white-rgb: 248 253 255;
+  --energy-hover: 1;
+  --energy-line-width: calc(520px + (var(--energy-target-index) * 128px));
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar::before {
+  left: 132px !important;
+  width: var(--energy-line-width) !important;
+  height: 36px !important;
+  background:
+    radial-gradient(circle at calc(var(--energy-pulse) * 100%) 50%, rgb(var(--nav-energy-white-rgb) / calc(.54 * var(--energy-pulse))), rgb(var(--nav-energy-hot-rgb) / calc(.34 * var(--energy-pulse))) 0 3.2px, transparent 13px),
+    radial-gradient(circle at calc(var(--energy-pulse) * 100% - 38px) 38%, rgb(var(--nav-energy-hot-rgb) / calc(.26 * var(--energy-particle))) 0 1.8px, transparent 7px),
+    radial-gradient(circle at calc(var(--energy-pulse) * 100% - 72px) 62%, rgb(var(--nav-energy-white-rgb) / calc(.22 * var(--energy-particle))) 0 1.35px, transparent 6px),
+    radial-gradient(circle at calc(var(--energy-pulse) * 100% - 108px) 48%, rgb(var(--nav-energy-warm-rgb) / calc(.20 * var(--energy-particle))) 0 1.2px, transparent 5px),
+    linear-gradient(90deg, transparent 0%, rgb(var(--nav-energy-warm-rgb) / .16) 13%, rgb(var(--nav-energy-white-rgb) / .24) 54%, rgb(var(--nav-energy-hot-rgb) / .15) 84%, transparent 100%) center / 100% 1px no-repeat !important;
+  box-shadow:
+    0 0 18px rgb(var(--nav-energy-warm-rgb) / .14),
+    0 0 calc(12px + (var(--energy-pulse) * 14px)) rgb(var(--nav-energy-hot-rgb) / calc(.08 + (var(--energy-pulse) * .18))) !important;
+  filter: drop-shadow(0 0 calc(7px + (var(--energy-pulse) * 13px)) rgb(var(--nav-energy-hot-rgb) / calc(.10 + (var(--energy-pulse) * .24)))) !important;
+  opacity: calc(.34 + (var(--energy-pulse) * .24)) !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .brand-lockup.brand-lockup--holo::before {
+  background:
+    radial-gradient(circle at 50% 50%, rgb(2 6 23 / .70), rgb(8 47 73 / .48) 42%, transparent 70%),
+    conic-gradient(from 110deg, rgb(var(--nav-energy-hot-rgb) / calc(.22 + (var(--core-energy) * .16))), transparent 23%, rgb(var(--nav-energy-warm-rgb) / .16), transparent 62%, rgb(var(--nav-energy-hot-rgb) / .20)) !important;
+  box-shadow:
+    inset 0 0 34px rgb(0 0 0 / .54),
+    inset 0 1px 0 rgb(255 255 255 / .07),
+    0 0 calc(31px + (var(--core-energy) * 17px)) rgb(var(--nav-energy-hot-rgb) / calc(.16 + (var(--core-energy) * .13))) !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .brand-lockup.brand-lockup--holo::after {
+  background:
+    radial-gradient(circle at 50% 50%, transparent 45%, rgb(var(--nav-energy-hot-rgb) / calc(.20 + (var(--core-energy) * .14))) 46% 48%, transparent 50%),
+    conic-gradient(from 0deg, transparent 0 18%, rgb(var(--nav-energy-white-rgb) / .28) 20%, transparent 23% 52%, rgb(var(--nav-energy-warm-rgb) / .22) 54%, transparent 58% 100%) !important;
+  filter: drop-shadow(0 0 18px rgb(var(--nav-energy-hot-rgb) / .22)) !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .nav-signature-core.nav-signature-core--black-pearl {
+  filter:
+    drop-shadow(0 0 calc(9px + (var(--core-energy) * 9px)) rgb(var(--nav-energy-hot-rgb) / calc(.18 + (var(--core-energy) * .16))))
+    drop-shadow(0 13px 21px rgb(0 0 0 / .28)) !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-active-surface {
+  top: 8px !important;
+  bottom: auto !important;
+  height: calc(100% - 16px) !important;
+  border-radius: 24px !important;
+  background:
+    radial-gradient(circle at 50% 112%, rgb(var(--nav-energy-hot-rgb) / .20), transparent 64%),
+    radial-gradient(circle at 48% 0%, rgb(255 255 255 / .18), transparent 40%),
+    linear-gradient(180deg, rgb(255 255 255 / .125), rgb(255 255 255 / .040) 46%, rgb(0 0 0 / .125)),
+    linear-gradient(135deg, rgb(255 255 255 / .070), rgb(255 255 255 / .022)) !important;
+  border: 1px solid rgb(var(--nav-energy-white-rgb) / .14) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .18),
+    inset 0 -1px 0 rgb(0 0 0 / .18),
+    inset 18px 0 38px rgb(var(--nav-energy-hot-rgb) / .045),
+    inset -18px -16px 32px rgb(0 0 0 / .12),
+    0 15px 32px rgb(0 0 0 / .22),
+    0 0 28px rgb(var(--nav-energy-hot-rgb) / .15) !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-active-surface::after {
+  left: 22% !important;
+  right: 22% !important;
+  bottom: 7px !important;
+  height: 1px !important;
+  transform: scaleY(.56) !important;
+  transform-origin: center !important;
+  background: linear-gradient(90deg, transparent 0%, rgb(var(--nav-energy-hot-rgb) / .30) 24%, rgb(var(--nav-energy-white-rgb) / .72) 50%, rgb(var(--nav-energy-hot-rgb) / .24) 76%, transparent 100%) !important;
+  box-shadow:
+    0 0 4px rgb(var(--nav-energy-white-rgb) / .22),
+    0 0 8px rgb(var(--nav-energy-hot-rgb) / .16) !important;
+  opacity: .58 !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-active-rail {
+  display: block !important;
+  top: auto !important;
+  bottom: 4px !important;
+  left: calc(9px + (var(--dock-rail-index) * var(--dock-item-width)) + (var(--dock-item-width) * .34)) !important;
+  z-index: 8 !important;
+  width: calc(var(--dock-item-width) * .32) !important;
+  height: 1px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(90deg, transparent 0%, rgb(var(--nav-energy-hot-rgb) / .40) 24%, rgb(var(--nav-energy-white-rgb) / .98) 50%, rgb(var(--nav-energy-hot-rgb) / .32) 76%, transparent 100%) !important;
+  box-shadow:
+    0 0 3px rgb(var(--nav-energy-white-rgb) / .34),
+    0 0 8px rgb(var(--nav-energy-hot-rgb) / .24),
+    0 0 14px rgb(var(--nav-energy-warm-rgb) / .12) !important;
+  opacity: var(--dock-rail-opacity) !important;
+  transform: translateY(0) scaleY(.62) !important;
+  transition:
+    left .34s cubic-bezier(.16, 1, .3, 1),
+    width .22s ease,
+    opacity .16s ease,
+    box-shadow .20s ease !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock:has(.dock-nav-link:hover) .dock-active-rail,
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock:has(.dock-nav-link:focus-visible) .dock-active-rail {
+  width: calc(var(--dock-item-width) * .38) !important;
+  box-shadow:
+    0 0 4px rgb(var(--nav-energy-white-rgb) / .42),
+    0 0 10px rgb(var(--nav-energy-hot-rgb) / .30),
+    0 0 16px rgb(var(--nav-energy-warm-rgb) / .15) !important;
+}
+
+/* --------------------------------------------------------------------------
+   FINAL NAV CALM LINKS + SLOW ENERGY PULSE TUNING
+   - Keeps the current navbar geometry and palette unchanged.
+   - Calms the link area: lighter liquid capsule, less icon chrome.
+   - Slows the core-to-links energy impulse so it reads as a realistic charge.
+---------------------------------------------------------------------------- */
+.top-nav-shell > .top-nav.top-nav--holo-sonar {
+  --energy-line-width: calc(500px + (var(--energy-target-index) * 116px));
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar::before {
+  height: 30px !important;
+  background:
+    radial-gradient(circle at calc(var(--energy-pulse) * 100%) 50%, rgb(var(--nav-energy-white-rgb) / calc(.34 * var(--energy-pulse))), rgb(var(--nav-energy-hot-rgb) / calc(.26 * var(--energy-pulse))) 0 2.6px, transparent 15px),
+    radial-gradient(circle at calc(var(--energy-pulse) * 100% - 44px) 39%, rgb(var(--nav-energy-hot-rgb) / calc(.18 * var(--energy-particle))) 0 1.4px, transparent 7px),
+    radial-gradient(circle at calc(var(--energy-pulse) * 100% - 88px) 61%, rgb(var(--nav-energy-white-rgb) / calc(.14 * var(--energy-particle))) 0 1px, transparent 6px),
+    linear-gradient(90deg, transparent 0%, rgb(var(--nav-energy-warm-rgb) / .10) 14%, rgb(var(--nav-energy-white-rgb) / .16) 54%, rgb(var(--nav-energy-hot-rgb) / .10) 84%, transparent 100%) center / 100% 1px no-repeat !important;
+  box-shadow:
+    0 0 12px rgb(var(--nav-energy-warm-rgb) / .10),
+    0 0 calc(10px + (var(--energy-pulse) * 10px)) rgb(var(--nav-energy-hot-rgb) / calc(.055 + (var(--energy-pulse) * .11))) !important;
+  filter: drop-shadow(0 0 calc(6px + (var(--energy-pulse) * 10px)) rgb(var(--nav-energy-hot-rgb) / calc(.08 + (var(--energy-pulse) * .15)))) !important;
+  opacity: calc(.27 + (var(--energy-pulse) * .19)) !important;
+  transition:
+    width .9s cubic-bezier(.16, 1, .3, 1),
+    opacity .55s ease,
+    box-shadow .55s ease !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .brand-lockup.brand-lockup--holo::before {
+  box-shadow:
+    inset 0 0 32px rgb(0 0 0 / .52),
+    inset 0 1px 0 rgb(255 255 255 / .06),
+    0 0 calc(24px + (var(--core-energy) * 12px)) rgb(var(--nav-energy-hot-rgb) / calc(.12 + (var(--core-energy) * .08))) !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .brand-lockup.brand-lockup--holo::after {
+  opacity: calc(.55 + (var(--core-energy) * .14)) !important;
+  filter: drop-shadow(0 0 13px rgb(var(--nav-energy-hot-rgb) / .16)) !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .nav-signature-core.nav-signature-core--black-pearl {
+  transform: scale(calc(1 + (var(--core-energy) * .020))) !important;
+  filter:
+    drop-shadow(0 0 calc(7px + (var(--core-energy) * 6px)) rgb(var(--nav-energy-hot-rgb) / calc(.14 + (var(--core-energy) * .10))))
+    drop-shadow(0 13px 21px rgb(0 0 0 / .28)) !important;
+}
+
+/* Lien actif moins chargé, mais toujours liquid glass. */
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-active-surface {
+  top: 11px !important;
+  bottom: auto !important;
+  height: calc(100% - 22px) !important;
+  border-radius: 21px !important;
+  background:
+    radial-gradient(circle at 50% 112%, rgb(var(--nav-energy-hot-rgb) / .12), transparent 66%),
+    radial-gradient(circle at 48% 0%, rgb(255 255 255 / .105), transparent 42%),
+    linear-gradient(180deg, rgb(255 255 255 / .078), rgb(255 255 255 / .026) 48%, rgb(0 0 0 / .085)),
+    linear-gradient(135deg, rgb(255 255 255 / .044), rgb(255 255 255 / .014)) !important;
+  border: 1px solid rgb(var(--nav-energy-white-rgb) / .085) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .105),
+    inset 0 -1px 0 rgb(0 0 0 / .14),
+    inset 14px 0 30px rgb(var(--nav-energy-hot-rgb) / .026),
+    inset -14px -14px 28px rgb(0 0 0 / .10),
+    0 10px 22px rgb(0 0 0 / .16),
+    0 0 16px rgb(var(--nav-energy-hot-rgb) / .08) !important;
+  opacity: .84 !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-active-surface::after {
+  left: 25% !important;
+  right: 25% !important;
+  bottom: 6px !important;
+  height: 1px !important;
+  transform: scaleY(.48) !important;
+  background: linear-gradient(90deg, transparent 0%, rgb(var(--nav-energy-hot-rgb) / .18) 24%, rgb(var(--nav-energy-white-rgb) / .54) 50%, rgb(var(--nav-energy-hot-rgb) / .16) 76%, transparent 100%) !important;
+  box-shadow:
+    0 0 3px rgb(var(--nav-energy-white-rgb) / .16),
+    0 0 6px rgb(var(--nav-energy-hot-rgb) / .10) !important;
+  opacity: .50 !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link.nav-link {
+  font-weight: 820 !important;
+  filter: none !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link:hover,
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link:focus-visible,
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link.is-active {
+  transform: translateY(-1px) !important;
+  filter: none !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link.is-active .dock-icon-wrap {
+  transform: translateY(-4px) scale(1.015) !important;
+  background: rgb(255 255 255 / .055) !important;
+  box-shadow:
+    0 9px 18px rgb(var(--nav-dock-active-rgb) / .14),
+    0 0 0 3px rgb(var(--nav-dock-bg-rgb) / .72),
+    0 0 0 4px rgb(125 211 252 / .045),
+    inset 0 1px 0 rgb(255 255 255 / .20) !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link.is-active .dock-icon-wrap::before {
+  opacity: .38 !important;
+  transform: scale(.95) !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link.is-active .dock-icon-wrap::after {
+  opacity: .36 !important;
+  transform: scale(.94) !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link:hover .dock-icon-wrap,
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link:focus-visible .dock-icon-wrap {
+  transform: translateY(-3px) scale(1.01) !important;
+  box-shadow:
+    0 8px 18px rgb(var(--nav-dock-active-rgb) / .12),
+    0 0 0 3px rgb(255 255 255 / .34),
+    inset 0 1px 0 rgb(255 255 255 / .20) !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link.is-active .dock-link-label {
+  text-shadow:
+    0 0 8px rgb(125 211 252 / .08),
+    0 1px 0 rgb(0 0 0 / .18) !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-active-rail {
+  bottom: 3px !important;
+  width: calc(var(--dock-item-width) * .28) !important;
+  height: 1px !important;
+  transform: translateY(0) scaleY(.48) !important;
+  background: linear-gradient(90deg, transparent 0%, rgb(var(--nav-energy-hot-rgb) / .26) 24%, rgb(var(--nav-energy-white-rgb) / .80) 50%, rgb(var(--nav-energy-hot-rgb) / .22) 76%, transparent 100%) !important;
+  box-shadow:
+    0 0 3px rgb(var(--nav-energy-white-rgb) / .24),
+    0 0 6px rgb(var(--nav-energy-hot-rgb) / .14) !important;
+  opacity: calc(var(--dock-rail-opacity) * .82) !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock:has(.dock-nav-link:hover) .dock-active-rail,
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock:has(.dock-nav-link:focus-visible) .dock-active-rail {
+  width: calc(var(--dock-item-width) * .33) !important;
+}
+
+/* --------------------------------------------------------------------------
+   FINAL USER TUNING — single liquid capsule + slow-motion energy fade-out.
+   - Keeps the current navbar/ribbon/core geometry unchanged.
+   - Removes the perceived double-capsule effect in the links.
+   - The blue impulse now travels slowly and disappears slowly at the end.
+---------------------------------------------------------------------------- */
+.top-nav-shell > .top-nav.top-nav--holo-sonar::before {
+  height: 30px !important;
+  background:
+    radial-gradient(circle at calc(var(--energy-pulse) * 100%) 50%, rgb(var(--nav-energy-white-rgb) / calc(.30 * var(--energy-particle))), rgb(var(--nav-energy-hot-rgb) / calc(.22 * var(--energy-particle))) 0 2.4px, transparent 16px),
+    radial-gradient(circle at calc(var(--energy-pulse) * 100% - 46px) 38%, rgb(var(--nav-energy-hot-rgb) / calc(.16 * var(--energy-particle))) 0 1.2px, transparent 7px),
+    radial-gradient(circle at calc(var(--energy-pulse) * 100% - 92px) 62%, rgb(var(--nav-energy-white-rgb) / calc(.12 * var(--energy-particle))) 0 1px, transparent 6px),
+    linear-gradient(90deg, transparent 0%, rgb(var(--nav-energy-warm-rgb) / .075) 14%, rgb(var(--nav-energy-white-rgb) / .105) 54%, rgb(var(--nav-energy-hot-rgb) / .075) 84%, transparent 100%) center / 100% 1px no-repeat !important;
+  box-shadow:
+    0 0 10px rgb(var(--nav-energy-warm-rgb) / .08),
+    0 0 calc(8px + (var(--energy-particle) * 16px)) rgb(var(--nav-energy-hot-rgb) / calc(.045 + (var(--energy-particle) * .13))) !important;
+  filter: drop-shadow(0 0 calc(5px + (var(--energy-particle) * 12px)) rgb(var(--nav-energy-hot-rgb) / calc(.06 + (var(--energy-particle) * .16)))) !important;
+  opacity: calc(.16 + (var(--energy-particle) * .28)) !important;
+  transition:
+    width 1.35s cubic-bezier(.16, 1, .3, 1),
+    opacity 1.8s ease,
+    box-shadow 1.8s ease,
+    filter 1.8s ease !important;
+}
+
+/* One active liquid-glass capsule only: no hover-preview capsule layer. */
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-hover-surface {
+  display: none !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-active-surface {
+  top: 12px !important;
+  height: calc(100% - 24px) !important;
+  border-radius: 22px !important;
+  background:
+    radial-gradient(circle at 50% 112%, rgb(var(--nav-energy-hot-rgb) / .105), transparent 66%),
+    radial-gradient(circle at 48% 0%, rgb(255 255 255 / .095), transparent 42%),
+    linear-gradient(180deg, rgb(255 255 255 / .070), rgb(255 255 255 / .024) 48%, rgb(0 0 0 / .080)),
+    linear-gradient(135deg, rgb(255 255 255 / .038), rgb(255 255 255 / .012)) !important;
+  border: 1px solid rgb(var(--nav-energy-white-rgb) / .080) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .095),
+    inset 0 -1px 0 rgb(0 0 0 / .135),
+    inset 12px 0 26px rgb(var(--nav-energy-hot-rgb) / .020),
+    inset -12px -12px 24px rgb(0 0 0 / .085),
+    0 9px 18px rgb(0 0 0 / .145),
+    0 0 13px rgb(var(--nav-energy-hot-rgb) / .060) !important;
+  opacity: .82 !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-active-surface::before {
+  inset: 1px 8px auto !important;
+  height: 30% !important;
+  background: linear-gradient(180deg, rgb(255 255 255 / .105), rgb(255 255 255 / .022), transparent) !important;
+  opacity: .46 !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-active-surface::after {
+  left: 31% !important;
+  right: 31% !important;
+  bottom: 6px !important;
+  height: 1px !important;
+  transform: scaleY(.42) !important;
+  background: linear-gradient(90deg, transparent 0%, rgb(var(--nav-energy-hot-rgb) / .15) 24%, rgb(var(--nav-energy-white-rgb) / .48) 50%, rgb(var(--nav-energy-hot-rgb) / .13) 76%, transparent 100%) !important;
+  box-shadow: 0 0 4px rgb(var(--nav-energy-white-rgb) / .12) !important;
+  opacity: .42 !important;
+}
+
+/* No individual icon capsule/ring: the single active surface carries the state. */
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-icon-wrap,
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link:hover .dock-icon-wrap,
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link:focus-visible .dock-icon-wrap,
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link.is-active .dock-icon-wrap,
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link[data-preview="true"] .dock-icon-wrap {
+  width: 40px !important;
+  height: 40px !important;
+  transform: translateY(-1px) scale(1) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: currentColor !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-icon-wrap::before,
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-icon-wrap::after,
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link.is-active .dock-icon-wrap::before,
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link.is-active .dock-icon-wrap::after,
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link[data-preview="true"] .dock-icon-wrap::before,
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link[data-preview="true"] .dock-icon-wrap::after {
+  opacity: 0 !important;
+  transform: scale(.86) !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link:hover,
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link:focus-visible,
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link.is-active {
+  transform: translateY(-1px) !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link:hover .dock-link-label,
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link:focus-visible .dock-link-label,
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link.is-active .dock-link-label {
+  transform: translateY(0) !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link.is-active .dock-link-label {
+  text-shadow: 0 1px 0 rgb(0 0 0 / .18) !important;
+}
+
+/* --------------------------------------------------------------------------
+   FINAL NAV REQUEST — hover-only link capsule + returning energy impulse.
+   - The link capsule no longer follows click/active-section changes.
+   - The single liquid capsule appears only while hovering/focusing a link.
+   - The blue impulse travels to the right, then returns slowly to the core.
+---------------------------------------------------------------------------- */
+.top-nav-shell > .top-nav.top-nav--holo-sonar::before {
+  opacity: calc(.22 + (var(--energy-particle) * .22)) !important;
+  transition:
+    width 1.6s cubic-bezier(.16, 1, .3, 1),
+    opacity 2.4s ease,
+    box-shadow 2.4s ease,
+    filter 2.4s ease !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-active-surface {
+  opacity: var(--dock-capsule-opacity, 0) !important;
+  transform: translateX(calc(var(--dock-active-index) * 100%)) !important;
+  transition:
+    transform .34s cubic-bezier(.16, 1, .3, 1),
+    opacity .18s ease,
+    box-shadow .22s ease !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock:not(.is-hovering) .dock-active-surface,
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock:not(.is-hovering) .dock-active-rail {
+  opacity: 0 !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link.is-active {
+  transform: none !important;
+}
+
+.top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link.is-active .dock-link-label {
+  text-shadow: none !important;
 }
