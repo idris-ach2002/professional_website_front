@@ -1,8 +1,10 @@
-import { Anchor, Burger, Drawer, Group, Stack, Text } from "@mantine/core";
+import { Anchor, Burger, Drawer, Stack, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGsap } from "../animations/useGsap";
-import { getInitials, getOwnerFullName, normalizeUrl } from "../utils/portfolio";
+import { getOwnerFullName } from "../utils/portfolio";
+import NavSignatureCore from "./navigation/NavSignatureCore";
+import NavSonarLinks from "./navigation/NavSonarLinks";
 
 const links = [
   { href: "#profile", label: "Profil" },
@@ -13,28 +15,146 @@ const links = [
 export default function TopNavigation({ owner }) {
   const rootRef = useRef(null);
   const [opened, { toggle, close }] = useDisclosure(false);
+  const [activeHref, setActiveHref] = useState(links[0].href);
   const ownerName = getOwnerFullName(owner);
-  const logoUrl = owner?.prof?.logoUrl ? normalizeUrl(owner.prof.logoUrl) : "";
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof document === "undefined") return undefined;
+
+    const sections = links
+      .map((link) => ({ link, section: document.querySelector(link.href) }))
+      .filter((item) => item.section);
+
+    const updateFromHash = () => {
+      const matchingLink = links.find((link) => link.href === window.location.hash);
+      if (matchingLink) setActiveHref(matchingLink.href);
+    };
+
+    updateFromHash();
+    window.addEventListener("hashchange", updateFromHash);
+
+    if (!sections.length || !window.IntersectionObserver) {
+      return () => window.removeEventListener("hashchange", updateFromHash);
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visibleEntry = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+        if (!visibleEntry) return;
+
+        const activeItem = sections.find((item) => item.section === visibleEntry.target);
+        if (activeItem) setActiveHref(activeItem.link.href);
+      },
+      {
+        root: null,
+        rootMargin: "-18% 0px -58% 0px",
+        threshold: [0.16, 0.32, 0.5, 0.68],
+      },
+    );
+
+    sections.forEach(({ section }) => observer.observe(section));
+
+    return () => {
+      window.removeEventListener("hashchange", updateFromHash);
+      observer.disconnect();
+    };
+  }, []);
 
   useGsap(rootRef, (gsap) => {
     const root = rootRef.current;
     if (!root) return undefined;
 
     const nav = root.querySelector(".top-nav");
-    const linkEls = gsap.utils.toArray(root.querySelectorAll(".nav-link"));
+    const linkEls = gsap.utils.toArray(root.querySelectorAll(".sonar-nav-link"));
     const scrollCurrent = root.querySelector(".scroll-current");
+    const core = root.querySelector(".nav-signature-core");
+    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
 
     if (nav) {
-      gsap.from(nav, { y: -28, autoAlpha: 0, duration: 0.8, ease: "power3.out" });
+      gsap.set(nav, {
+        "--ribbon-enter-y": "0px",
+        "--ribbon-float-y": "0px",
+        "--ribbon-tilt-z": "-1.05deg",
+        "--ribbon-breath-pitch": "0deg",
+        "--ribbon-hover-pitch": "0deg",
+        "--ribbon-pointer-x": "54%",
+        "--ribbon-pointer-y": "48%",
+        "--ribbon-sheen-x": "-42%",
+        "--ribbon-scroll": 0,
+      });
+
+      gsap.fromTo(
+        nav,
+        { "--ribbon-enter-y": "-26px", autoAlpha: 0 },
+        { "--ribbon-enter-y": "0px", autoAlpha: 1, duration: 0.82, ease: "power3.out" },
+      );
+
+      if (!reducedMotion) {
+        gsap.to(nav, {
+          "--ribbon-float-y": "3px",
+          "--ribbon-breath-pitch": "1.05deg",
+          duration: 4.8,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+        });
+      }
+    }
+
+    if (core) {
+      gsap.from(core, { scale: 0.82, autoAlpha: 0, duration: 0.9, ease: "power3.out", delay: 0.1 });
     }
 
     if (linkEls.length > 0) {
-      gsap.from(linkEls, { y: -10, autoAlpha: 0, duration: 0.55, stagger: 0.045, ease: "power3.out", delay: 0.15 });
+      gsap.from(linkEls, { y: -8, autoAlpha: 0, duration: 0.55, stagger: 0.07, ease: "power3.out", delay: 0.18 });
     }
 
     const cleanups = [];
+
+    if (nav && !reducedMotion) {
+      const updateRibbonPointer = (event) => {
+        const rect = nav.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+
+        const x = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+        const y = Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height));
+
+        gsap.to(nav, {
+          "--ribbon-pointer-x": `${(x * 100).toFixed(1)}%`,
+          "--ribbon-pointer-y": `${(y * 100).toFixed(1)}%`,
+          "--ribbon-tilt-z": `${(-1.05 + (x - 0.5) * 0.72).toFixed(3)}deg`,
+          "--ribbon-hover-pitch": `${((0.5 - y) * 1.35).toFixed(3)}deg`,
+          duration: 0.38,
+          ease: "power2.out",
+          overwrite: "auto",
+        });
+      };
+
+      const resetRibbonPointer = () => {
+        gsap.to(nav, {
+          "--ribbon-pointer-x": "54%",
+          "--ribbon-pointer-y": "48%",
+          "--ribbon-tilt-z": "-1.05deg",
+          "--ribbon-hover-pitch": "0deg",
+          duration: 0.6,
+          ease: "power3.out",
+          overwrite: "auto",
+        });
+      };
+
+      nav.addEventListener("pointermove", updateRibbonPointer);
+      nav.addEventListener("pointerleave", resetRibbonPointer);
+      cleanups.push(() => {
+        nav.removeEventListener("pointermove", updateRibbonPointer);
+        nav.removeEventListener("pointerleave", resetRibbonPointer);
+      });
+    }
+
     linkEls.forEach((link) => {
-      const enter = () => gsap.to(link, { y: -2, scale: 1.04, duration: 0.22, ease: "power2.out" });
+      const enter = () => gsap.to(link, { y: -2, scale: 1.035, duration: 0.22, ease: "power2.out" });
       const leave = () => gsap.to(link, { y: 0, scale: 1, duration: 0.28, ease: "power2.out" });
       link.addEventListener("mouseenter", enter);
       link.addEventListener("mouseleave", leave);
@@ -69,9 +189,7 @@ export default function TopNavigation({ owner }) {
 
         if (nav) {
           gsap.to(nav, {
-            boxShadow: progress > 0.02
-              ? "0 18px 50px rgba(14, 116, 144, .16)"
-              : "0 8px 30px rgba(14, 116, 144, .08)",
+            "--ribbon-scroll": Number(progress.toFixed(3)),
             duration: 0.2,
             overwrite: "auto",
           });
@@ -92,57 +210,46 @@ export default function TopNavigation({ owner }) {
     });
 
     return () => cleanups.forEach((cleanup) => cleanup());
-  }, [ownerName, logoUrl]);
+  }, [ownerName]);
 
-  const renderNavLinks = (suffix = "") =>
+  const renderDrawerLinks = () =>
     links.map((link) => (
-      <Anchor key={`${link.href}-${suffix}`} href={link.href} className="nav-link" onClick={close}>
+      <Anchor
+        key={`${link.href}-drawer`}
+        href={link.href}
+        className={`drawer-nav-link${activeHref === link.href ? " is-active" : ""}`}
+        onClick={close}
+      >
         {link.label}
       </Anchor>
     ));
 
   return (
     <header ref={rootRef} className="top-nav-shell">
-      <div className="top-nav">
-        <a href="#top" className={`brand-lockup${logoUrl ? " brand-lockup--dragon" : ""}`} aria-label="Retour en haut de page">
-          {logoUrl ? (
-            <span className="brand-dragon-silhouette" aria-hidden="true">
-              <img src={logoUrl} alt="" loading="eager" />
-            </span>
-          ) : null}
-
-          <span className={`brand-mark${logoUrl ? " brand-mark--logo brand-mark--dragon" : ""}`} aria-hidden="true">
-            {logoUrl ? (
-              <>
-                <span className="brand-logo-aura" />
-                <span className="brand-current brand-current--one" />
-                <span className="brand-current brand-current--two" />
-                <span className="brand-bubble brand-bubble--one" />
-                <span className="brand-bubble brand-bubble--two" />
-                <span className="brand-bubble brand-bubble--three" />
-                <span className="brand-dragon-orbit" />
-                <img src={logoUrl} alt="" className="brand-logo" loading="eager" />
-              </>
-            ) : (
-              getInitials(owner)
-            )}
-          </span>
+      <div className="top-nav top-nav--holo-sonar">
+        <a href="#top" className="brand-lockup brand-lockup--holo" aria-label="Retour en haut de page">
+          <NavSignatureCore />
           <span className="brand-copy">
             <Text className="brand-name">{ownerName}</Text>
-            {logoUrl ? <span className="brand-subtitle"></span> : null}
+            <span className="brand-subtitle">Software Engineering Portfolio</span>
           </span>
         </a>
 
-        <Group gap="xs" className="desktop-nav">
-          {renderNavLinks("desktop")}
-        </Group>
+        <NavSonarLinks links={links} activeHref={activeHref} onLinkClick={close} />
 
         <Burger opened={opened} onClick={toggle} className="mobile-burger" aria-label="Menu" />
         <span className="scroll-current" />
       </div>
 
-      <Drawer opened={opened} onClose={close} position="right" title="Navigation" padding="xl" classNames={{ content: "drawer-content", header: "drawer-header" }}>
-        <Stack gap="lg">{renderNavLinks("drawer")}</Stack>
+      <Drawer
+        opened={opened}
+        onClose={close}
+        position="right"
+        title="Navigation"
+        padding="xl"
+        classNames={{ content: "drawer-content", header: "drawer-header" }}
+      >
+        <Stack gap="lg">{renderDrawerLinks()}</Stack>
       </Drawer>
     </header>
   );
