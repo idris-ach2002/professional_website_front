@@ -253,37 +253,3 @@ https://professional-website-hozo.onrender.com/actuator/health
 ```
 
 Cette route est volontairement légère : elle expose uniquement l’état de santé Actuator et ne retourne pas les données métier du portfolio.
-
-## Structure recommandée des dépôts
-
-Si les deux projets sont séparés, placer les README comme suit :
-
-```txt
-portfolio-root/
-├── README.md
-├── README-BACKEND.md
-├── README-FRONTEND.md
-├── professional_website/                # backend Spring Boot
-└── professional_website_front/          # frontend React
-```
-
-Ou, dans deux dépôts séparés :
-
-```txt
-professional_website/
-└── README.md                 # contenu de README-BACKEND.md
-
-professional_website_front/
-└── README.md                 # contenu de README-FRONTEND.md
-```
-
-## Notes d’audit
-
-- Le frontend inspecté utilise Three.js / React Three Fiber / Rapier. PixiJS n’est pas présent dans les dépendances de cette version.
-- GSAP est chargé par CDN dans `index.html`, et non par dépendance npm.
-- Flyway est configuré dans `application.yaml`, mais l’archive inspectée ne contient pas de dossier `src/main/resources/db/migration`. Le fichier SQL d’index partiel existe dans `src/main/java/.../sql`; pour une production stricte, il devrait être versionné dans `src/main/resources/db/migration` avec un nom de migration Flyway.
-- Les fichiers `.env` et secrets ne doivent jamais être commités. Utiliser les fichiers `.env.example` / `.env.local.example` comme base.
-
-## Licence
-
-Le projet contient un fichier `LICENSE` dans les deux bases de code. Se référer au contenu de ces fichiers pour les conditions exactes.
