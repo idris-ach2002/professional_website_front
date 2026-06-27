@@ -205,3 +205,219 @@ export function downloadText(filename, content, mimeType = "text/plain;charset=u
   anchor.click();
   URL.revokeObjectURL(url);
 }
+
+export function slugify(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "projet";
+}
+
+export function getProjectSlug(project) {
+  return project?.slug || slugify(project?.title || `project-${project?.id ?? "case-study"}`);
+}
+
+export function findProjectBySlug(projects = [], slug) {
+  const normalizedSlug = slugify(slug);
+  return getPublicProjects(projects).find((project) => getProjectSlug(project) === normalizedSlug) ?? null;
+}
+
+function uniqueStrings(values = []) {
+  const seen = new Set();
+  return values
+    .map((value) => String(value ?? "").trim())
+    .filter(Boolean)
+    .filter((value) => {
+      const key = value.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function textContainsAny(text, terms = []) {
+  const normalizedText = String(text ?? "").toLowerCase();
+  return terms.some((term) => normalizedText.includes(String(term).toLowerCase()));
+}
+
+function projectSearchText(project) {
+  return [
+    project?.title,
+    project?.subtitle,
+    project?.shortDescription,
+    project?.description,
+    ...(project?.stacks ?? []),
+    ...(project?.features ?? []),
+    ...(project?.proofTags ?? []),
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function experienceSearchText(experience) {
+  return [
+    experience?.title,
+    experience?.organization,
+    experience?.summary,
+    experience?.description,
+    ...(experience?.skills ?? []),
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+const PROVEN_SKILL_DEFINITIONS = [
+  {
+    id: "backend-architecture",
+    label: "Backend & architecture",
+    shortLabel: "Backend",
+    description: "API REST, règles métier, persistance, versioning et conception de services maintenables.",
+    terms: ["java", "spring", "spring boot", "api", "backend", "jpa", "hibernate", "flyway", "maven", "validation", "architecture"],
+  },
+  {
+    id: "data-pipelines",
+    label: "Data pipelines",
+    shortLabel: "Data",
+    description: "Collecte, ingestion, transformation, stockage PostgreSQL et exploitation de données volumineuses.",
+    terms: ["data", "ais", "pipeline", "ingestion", "csv", "postgresql", "python", "systemd", "batch", "export"],
+  },
+  {
+    id: "frontend-product",
+    label: "Interfaces produit",
+    shortLabel: "Frontend",
+    description: "Interfaces React orientées usage, filtres, modales, interactions et lisibilité recruteur.",
+    terms: ["react", "mantine", "tailwind", "frontend", "ui", "ux", "web", "gsap", "vite", "interface"],
+  },
+  {
+    id: "graphics-performance",
+    label: "Performance graphique",
+    shortLabel: "Graphique",
+    description: "Rendu natif, visualisation, interactions temps réel et séparation stricte UI / moteur.",
+    terms: ["opengl", "jogl", "jni", "javafx", "graph", "graphe", "performance", "rendu", "native", "c"],
+  },
+  {
+    id: "devops-deployment",
+    label: "DevOps & déploiement",
+    shortLabel: "DevOps",
+    description: "Dockerisation, environnements reproductibles, exposition cloud, stockage fichiers et supervision.",
+    terms: ["docker", "kubernetes", "cloudflare", "render", "neon", "minio", "redis", "hpa", "ingress", "cloudinary", "systemd"],
+  },
+  {
+    id: "software-quality",
+    label: "Qualité logicielle",
+    shortLabel: "Qualité",
+    description: "Structuration, tests, robustesse, documentation, maintenabilité et gestion des cas limites.",
+    terms: ["test", "tests", "documentation", "mvc", "robuste", "qualité", "maintenable", "validation", "refactor", "séparation", "architecture"],
+  },
+];
+
+export function buildProvenSkills(projects = [], experiences = []) {
+  const publicProjects = getPublicProjects(projects);
+
+  return PROVEN_SKILL_DEFINITIONS.map((definition) => {
+    const matchingProjects = publicProjects
+      .map((project) => {
+        const text = projectSearchText(project);
+        const matches = definition.terms.filter((term) => textContainsAny(text, [term]));
+        return {
+          project,
+          matches,
+          score: matches.length + ((project?.featured && matches.length > 0) ? 1 : 0),
+        };
+      })
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score || (a.project?.displayOrder ?? 999) - (b.project?.displayOrder ?? 999));
+
+    const matchingExperiences = experiences
+      .map((experience) => {
+        const text = experienceSearchText(experience);
+        const matches = definition.terms.filter((term) => textContainsAny(text, [term]));
+        return { experience, matches, score: matches.length };
+      })
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score || (a.experience?.displayOrder ?? 999) - (b.experience?.displayOrder ?? 999));
+
+    const stacks = uniqueStrings(matchingProjects.flatMap(({ project }) => project?.stacks ?? [])).slice(0, 8);
+    const evidenceCount = matchingProjects.length + matchingExperiences.length;
+
+    return {
+      ...definition,
+      score: matchingProjects.reduce((total, item) => total + item.score, 0) + matchingExperiences.reduce((total, item) => total + item.score, 0),
+      evidenceCount,
+      projects: matchingProjects.map((item) => item.project).slice(0, 4),
+      experiences: matchingExperiences.map((item) => item.experience).slice(0, 3),
+      stacks,
+    };
+  })
+    .filter((skill) => skill.evidenceCount > 0)
+    .sort((a, b) => b.score - a.score || a.label.localeCompare(b.label))
+    .slice(0, 6);
+}
+
+export function getCaseStudySections(project) {
+  const caseStudy = project?.caseStudy ?? {};
+  const features = project?.features ?? [];
+  const stacks = project?.stacks ?? [];
+  const outcomes = caseStudy.outcomes?.length ? caseStudy.outcomes : caseStudy.results;
+
+  return [
+    {
+      id: "problem",
+      label: "Problème traité",
+      body: caseStudy.problem || project?.shortDescription || "Clarifier le besoin, structurer le périmètre et construire une solution exploitable.",
+    },
+    {
+      id: "context",
+      label: "Contexte",
+      body: caseStudy.context || project?.description,
+    },
+    {
+      id: "role",
+      label: "Rôle personnel",
+      body: caseStudy.role || "Conception, développement, intégration, documentation et arbitrages techniques sur le périmètre logiciel.",
+    },
+    {
+      id: "architecture",
+      label: "Architecture",
+      body: caseStudy.architecture || `Architecture construite autour de ${stacks.slice(0, 5).join(", ") || "composants séparés"}, avec une séparation claire entre responsabilité métier, interface et persistance.`,
+    },
+    {
+      id: "choices",
+      label: "Choix techniques",
+      items: caseStudy.technicalChoices || features.slice(0, 4),
+    },
+    {
+      id: "challenges",
+      label: "Difficultés résolues",
+      items: caseStudy.challenges || [
+        "Maintenir une interface lisible malgré la densité d'information.",
+        "Stabiliser les interactions et les états pour éviter les comportements fragiles.",
+      ],
+    },
+    {
+      id: "solutions",
+      label: "Solutions mises en place",
+      items: caseStudy.solutions,
+    },
+    {
+      id: "outcomes",
+      label: "Résultats",
+      items: outcomes || [
+        "Prototype exploitable et présentable dans un contexte professionnel.",
+        "Base technique claire pour continuer l'évolution du projet.",
+      ],
+    },
+    {
+      id: "limits",
+      label: "Limites assumées",
+      items: caseStudy.limits,
+    },
+    {
+      id: "next",
+      label: "Suite possible",
+      body: caseStudy.nextSteps || "Industrialiser les tests, enrichir la documentation et ajouter des scénarios d'usage plus ciblés.",
+    },
+  ].filter((section) => section.body || section.items?.length > 0);
+}

@@ -34,12 +34,42 @@ export async function fetchWebsite() {
   return owner;
 }
 
+export async function fetchDefaultProvenSkills() {
+  return requestJson("/website/default/proven-skills");
+}
+
+export async function fetchProjectCaseStudy(projectSlug, ownerId) {
+  if (!projectSlug) {
+    throw new Error("Slug projet manquant");
+  }
+
+  const encodedSlug = encodeURIComponent(projectSlug);
+  const path = ownerId
+    ? `/website/${ownerId}/projects/${encodedSlug}`
+    : `/website/default/projects/${encodedSlug}`;
+
+  return requestJson(path);
+}
+
 export async function loadPortfolio() {
   try {
     const owner = await fetchWebsite();
+    let provenSkills = [];
+
+    try {
+      provenSkills = await fetchDefaultProvenSkills();
+    } catch {
+      provenSkills = owner.provenSkills ?? [];
+    }
+
+    const enrichedOwner = {
+      ...owner,
+      provenSkills,
+    };
+
     return {
-      owners: [owner],
-      owner: owner,
+      owners: [enrichedOwner],
+      owner: enrichedOwner,
       source: "api",
       error: null,
     };
