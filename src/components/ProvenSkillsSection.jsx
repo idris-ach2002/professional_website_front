@@ -68,9 +68,9 @@ export default function ProvenSkillsSection({ projects = [], experiences = [], p
     <section id="skills" className="page-section proven-skills-section">
       <SectionTitle
         reveal="soft"
-        eyebrow=""
-        title="Compétences"
-        description=""
+        eyebrow="Preuves concrètes"
+        title="Compétences prouvées"
+        description="Chaque compétence est reliée à des projets et expériences réels pour éviter une simple liste de technologies."
       />
 
       <div className="proven-skills-grid">

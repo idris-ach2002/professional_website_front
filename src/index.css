@@ -10976,3 +10976,2206 @@ main,
   font-size: .78rem;
   font-weight: 800;
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Premium profile + timeline cards polish
+   Keeps data, layout logic and navbar unchanged. Pure visual refinement.
+────────────────────────────────────────────────────────────────────────── */
+.profile-island .hero-copy {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(186, 230, 253, .30) !important;
+  border-radius: clamp(38px, 5vw, 64px) clamp(28px, 4vw, 46px) clamp(58px, 6vw, 82px) clamp(30px, 4vw, 50px) !important;
+  background:
+    radial-gradient(420px 260px at 12% 0%, rgba(255, 255, 255, .78), transparent 64%),
+    radial-gradient(340px 220px at 98% 92%, rgba(56, 189, 248, .22), transparent 72%),
+    linear-gradient(135deg, rgba(255, 255, 255, .84), rgba(224, 251, 255, .62) 54%, rgba(125, 211, 252, .22)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .74),
+    inset 0 -1px 0 rgba(8, 47, 73, .08),
+    0 34px 110px rgba(8, 47, 73, .18),
+    0 12px 34px rgba(3, 105, 161, .10) !important;
+}
+
+.profile-island .hero-copy::before {
+  content: "";
+  position: absolute;
+  inset: 18px 22px auto auto;
+  width: min(360px, 44%);
+  height: 1px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .92), rgba(125, 211, 252, .30), transparent);
+  opacity: .62;
+  pointer-events: none;
+}
+
+.profile-island .hero-copy::after {
+  content: "";
+  position: absolute;
+  right: -120px;
+  bottom: -120px;
+  width: 340px;
+  height: 280px;
+  border-radius: 48% 52% 50% 42%;
+  background: radial-gradient(circle, rgba(125, 211, 252, .26), rgba(14, 116, 144, .08) 48%, transparent 72%);
+  pointer-events: none;
+}
+
+.profile-island .hero-panel {
+  gap: 20px;
+  perspective: 1000px;
+}
+
+.portrait-card.island-card,
+.availability-card.island-card,
+.contact-card.island-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid rgba(186, 230, 253, .32) !important;
+  background:
+    radial-gradient(260px 180px at 20% 8%, rgba(255, 255, 255, .82), transparent 64%),
+    radial-gradient(260px 190px at 100% 100%, rgba(125, 211, 252, .16), transparent 72%),
+    linear-gradient(135deg, rgba(255, 255, 255, .86), rgba(236, 253, 255, .72) 58%, rgba(186, 230, 253, .42)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .82),
+    inset 0 -1px 0 rgba(8, 47, 73, .08),
+    0 30px 92px rgba(8, 47, 73, .16),
+    0 12px 28px rgba(3, 105, 161, .08) !important;
+  transition:
+    transform .36s cubic-bezier(.19, 1, .22, 1),
+    border-color .28s ease,
+    box-shadow .36s ease,
+    background .36s ease;
+}
+
+.portrait-card.island-card {
+  min-height: 430px;
+  border-radius: 58px 34px 68px 40px !important;
+  transform: rotate(.35deg) translateZ(0);
+}
+
+.portrait-card.island-card::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 0;
+  width: 240px;
+  height: 240px;
+  transform: translate(-50%, -66%);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(2, 6, 23, .08), transparent 34%),
+    conic-gradient(from 120deg, rgba(125, 211, 252, .28), transparent 18%, rgba(255, 255, 255, .50), transparent 48%, rgba(6, 182, 212, .22), transparent 78%, rgba(125, 211, 252, .24));
+  filter: blur(.15px);
+  opacity: .70;
+  pointer-events: none;
+}
+
+.portrait-card.island-card::after,
+.availability-card.island-card::after,
+.contact-card.island-card::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, .28), transparent 24%, transparent 70%, rgba(8, 47, 73, .055)),
+    linear-gradient(90deg, transparent, rgba(125, 211, 252, .10), transparent);
+  pointer-events: none;
+}
+
+.portrait-preview-trigger,
+.portrait-placeholder,
+.portrait-content,
+.availability-card > *,
+.contact-card > * {
+  position: relative;
+  z-index: 2;
+}
+
+.portrait-preview-trigger {
+  width: 188px !important;
+  height: 188px !important;
+  border-radius: 46% 54% 52% 48% !important;
+  padding: 8px;
+  background:
+    radial-gradient(circle at 32% 20%, rgba(255, 255, 255, .92), transparent 30%),
+    linear-gradient(135deg, rgba(255, 255, 255, .72), rgba(125, 211, 252, .22));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, .74),
+    0 18px 60px rgba(8, 47, 73, .18),
+    0 0 0 9px rgba(224, 251, 255, .34);
+}
+
+.portrait-image,
+.portrait-placeholder {
+  width: 100% !important;
+  height: 100% !important;
+  border: 4px solid rgba(255, 255, 255, .86) !important;
+  box-shadow: inset 0 0 0 1px rgba(8, 47, 73, .08), 0 18px 52px rgba(8, 47, 73, .16) !important;
+}
+
+.portrait-name {
+  font-size: clamp(1.28rem, 1.7vw, 1.55rem) !important;
+  letter-spacing: -.045em;
+}
+
+.portrait-role {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 6px !important;
+  padding: 8px 14px;
+  border: 1px solid rgba(14, 116, 144, .12);
+  border-radius: 999px;
+  color: rgba(8, 47, 73, .68) !important;
+  background: rgba(255, 255, 255, .42);
+  font-size: .88rem !important;
+  font-weight: 850 !important;
+  line-height: 1.2;
+}
+
+.availability-card.island-card {
+  border-radius: 34px 46px 30px 42px !important;
+  transform: rotate(-.45deg) translateZ(0);
+}
+
+.contact-card.island-card {
+  border-radius: 40px 30px 48px 34px !important;
+  transform: rotate(.35deg) translateZ(0);
+}
+
+.availability-card.island-card::before {
+  content: "";
+  position: absolute;
+  left: 24px;
+  right: 118px;
+  bottom: 16px;
+  z-index: 1;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(6, 182, 212, .58), rgba(125, 211, 252, .26), transparent);
+  box-shadow: 0 0 18px rgba(125, 211, 252, .24);
+  opacity: .74;
+  pointer-events: none;
+}
+
+.availability-label,
+.card-kicker {
+  color: rgba(3, 105, 161, .86) !important;
+  letter-spacing: .13em !important;
+}
+
+.availability-value {
+  max-width: 290px;
+  font-size: .98rem !important;
+  line-height: 1.38 !important;
+}
+
+.availability-location {
+  margin-top: 5px !important;
+  color: rgba(72, 107, 122, .82) !important;
+  font-weight: 650 !important;
+}
+
+.availability-card .mantine-RingProgress-root {
+  filter: drop-shadow(0 14px 22px rgba(6, 182, 212, .14));
+}
+
+.contact-card .mantine-Stack-root {
+  margin-top: 12px;
+}
+
+.contact-pill {
+  position: relative;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 64px;
+  padding: 13px 16px 13px 18px !important;
+  border: 1px solid rgba(14, 116, 144, .13) !important;
+  border-radius: 20px 16px 22px 16px !important;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, .60), rgba(236, 253, 255, .34)) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .74);
+  transition: transform .22s ease, border-color .22s ease, background .22s ease, box-shadow .22s ease;
+}
+
+.contact-pill::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 3px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(125, 211, 252, .92), rgba(6, 182, 212, .34));
+  opacity: .68;
+}
+
+.contact-pill:hover,
+.contact-pill:focus-visible {
+  transform: translateX(3px);
+  border-color: rgba(6, 182, 212, .28) !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, .78), rgba(224, 251, 255, .48)) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .86), 0 14px 28px rgba(8, 47, 73, .08);
+}
+
+.contact-pill span {
+  color: rgba(3, 105, 161, .74) !important;
+  font-size: .70rem !important;
+}
+
+.contact-pill strong {
+  color: rgba(8, 47, 73, .92);
+  font-size: .92rem !important;
+  line-height: 1.25;
+}
+
+.portrait-card.island-card:hover,
+.availability-card.island-card:hover,
+.contact-card.island-card:hover {
+  transform: translateY(-4px) rotate(0deg) translateZ(0);
+  border-color: rgba(125, 211, 252, .42) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .90),
+    inset 0 -1px 0 rgba(8, 47, 73, .08),
+    0 38px 120px rgba(8, 47, 73, .20),
+    0 16px 34px rgba(3, 105, 161, .10) !important;
+}
+
+.timeline-subsea-track {
+  width: min(1320px, 100%);
+}
+
+.timeline-straight-line {
+  width: 3px !important;
+  background:
+    linear-gradient(180deg, transparent, rgba(226, 250, 255, .82) 8%, rgba(125, 211, 252, .56) 50%, rgba(226, 250, 255, .40) 92%, transparent) !important;
+  box-shadow:
+    0 0 0 1px rgba(186, 230, 253, .12),
+    0 0 26px rgba(56, 189, 248, .24) !important;
+}
+
+.timeline-straight-line-progress {
+  background: linear-gradient(180deg, #effdff 0%, #7dd3fc 42%, #0369a1 100%) !important;
+  box-shadow: 0 0 22px rgba(125, 211, 252, .66) !important;
+}
+
+.timeline-row {
+  position: relative;
+  min-height: 230px;
+}
+
+.timeline-row::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  width: clamp(58px, 6vw, 88px);
+  height: 1px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(226, 250, 255, .72), rgba(125, 211, 252, .28));
+  box-shadow: 0 0 18px rgba(125, 211, 252, .22);
+  opacity: .55;
+  pointer-events: none;
+  transition: opacity .28s ease, transform .28s ease, box-shadow .28s ease;
+}
+
+.timeline-row::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 3;
+  width: 11px;
+  height: 11px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(236, 253, 255, .74);
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(236, 253, 255, .96), rgba(125, 211, 252, .52) 48%, rgba(3, 105, 161, .48));
+  box-shadow: 0 0 18px rgba(125, 211, 252, .42);
+  pointer-events: none;
+}
+
+.timeline-row.is-left::before {
+  left: calc(50% - clamp(82px, 7vw, 112px));
+}
+
+.timeline-row.is-right::before {
+  left: calc(50% + 2px);
+  background: linear-gradient(90deg, rgba(125, 211, 252, .28), rgba(226, 250, 255, .72), transparent);
+}
+
+.timeline-card.island-card {
+  width: min(600px, 100%);
+  padding: clamp(24px, 3vw, 36px) !important;
+  border: 1px solid rgba(186, 230, 253, .28) !important;
+  background:
+    radial-gradient(330px 180px at 12% 0%, rgba(255, 255, 255, .78), transparent 64%),
+    radial-gradient(260px 220px at 100% 100%, rgba(125, 211, 252, .18), transparent 72%),
+    linear-gradient(135deg, rgba(255, 255, 255, .80), rgba(224, 251, 255, .60) 54%, rgba(125, 211, 252, .26)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .82),
+    inset 0 -1px 0 rgba(8, 47, 73, .08),
+    0 32px 94px rgba(8, 47, 73, .16),
+    0 12px 32px rgba(3, 105, 161, .09) !important;
+  transition:
+    transform .34s cubic-bezier(.19, 1, .22, 1),
+    border-color .28s ease,
+    box-shadow .34s ease,
+    background .34s ease !important;
+}
+
+.timeline-row.is-left .timeline-card.island-card {
+  border-radius: 42px 30px 56px 34px !important;
+  transform: rotate(-.35deg) translateZ(0);
+}
+
+.timeline-row.is-right .timeline-card.island-card {
+  border-radius: 30px 42px 34px 56px !important;
+  transform: rotate(.35deg) translateZ(0);
+}
+
+.timeline-card.island-card::before {
+  inset: auto -46px -58px auto !important;
+  width: 220px !important;
+  height: 170px !important;
+  background: radial-gradient(circle, rgba(125, 211, 252, .28), rgba(6, 182, 212, .08) 48%, transparent 72%) !important;
+  opacity: .9;
+}
+
+.timeline-card.island-card::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, .32), transparent 26%, transparent 70%, rgba(8, 47, 73, .055)),
+    linear-gradient(90deg, transparent, rgba(125, 211, 252, .08), transparent);
+  pointer-events: none;
+}
+
+.timeline-card.island-card > * {
+  position: relative;
+  z-index: 2;
+}
+
+.timeline-card-watermark {
+  width: 82px !important;
+  height: 82px !important;
+  border-color: rgba(236, 253, 255, .68) !important;
+  opacity: .42 !important;
+  filter: blur(.1px);
+}
+
+.timeline-category,
+.current-badge,
+.skill-badge {
+  min-height: 24px !important;
+  padding-inline: 10px !important;
+  border-radius: 999px !important;
+  font-size: .66rem !important;
+  font-weight: 900 !important;
+  letter-spacing: .065em !important;
+}
+
+.timeline-category {
+  background: rgba(236, 253, 255, .48) !important;
+  border-color: rgba(125, 211, 252, .30) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .74);
+}
+
+.current-badge {
+  color: rgba(15, 118, 110, .92) !important;
+  background: rgba(20, 184, 166, .12) !important;
+  border-color: rgba(20, 184, 166, .24) !important;
+}
+
+.timeline-card h2 {
+  margin-top: 4px !important;
+  font-size: clamp(1.5rem, 2.15vw, 2.35rem) !important;
+  letter-spacing: -.055em !important;
+}
+
+.timeline-org {
+  color: rgba(3, 105, 161, .86) !important;
+  font-weight: 900 !important;
+}
+
+.timeline-period {
+  display: inline-flex;
+  width: fit-content;
+  margin: 16px auto 10px !important;
+  padding: 7px 13px;
+  border: 1px solid rgba(14, 116, 144, .12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .46);
+  color: rgba(3, 105, 161, .86) !important;
+  font-size: .92rem !important;
+  line-height: 1.2 !important;
+}
+
+.timeline-summary {
+  margin-top: 10px !important;
+  color: rgba(8, 47, 73, .72) !important;
+  font-weight: 750 !important;
+}
+
+.timeline-description {
+  max-width: 92%;
+  margin-inline: auto !important;
+  color: rgba(72, 107, 122, .86) !important;
+  line-height: 1.74 !important;
+}
+
+.timeline-card .skill-row {
+  gap: 8px !important;
+  margin-top: 18px !important;
+}
+
+.skill-badge {
+  color: rgba(3, 105, 161, .82) !important;
+  background: rgba(255, 255, 255, .38) !important;
+  border-color: rgba(125, 211, 252, .22) !important;
+}
+
+.timeline-link {
+  min-height: 34px;
+  padding: 8px 13px;
+  border: 1px solid rgba(6, 182, 212, .20);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .42);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .70);
+}
+
+.timeline-row:hover::before {
+  opacity: .95;
+  box-shadow: 0 0 24px rgba(125, 211, 252, .38);
+}
+
+.timeline-row:hover::after {
+  box-shadow: 0 0 24px rgba(125, 211, 252, .62), 0 0 0 6px rgba(125, 211, 252, .10);
+}
+
+.timeline-row.is-left:hover .timeline-card.island-card,
+.timeline-row.is-right:hover .timeline-card.island-card {
+  transform: translateY(-5px) rotate(0deg) translateZ(0);
+  border-color: rgba(125, 211, 252, .42) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .90),
+    inset 0 -1px 0 rgba(8, 47, 73, .08),
+    0 40px 118px rgba(8, 47, 73, .20),
+    0 16px 38px rgba(3, 105, 161, .12) !important;
+}
+
+@media (max-width: 980px) {
+  .profile-island .hero-copy,
+  .portrait-card.island-card,
+  .availability-card.island-card,
+  .contact-card.island-card,
+  .timeline-row.is-left .timeline-card.island-card,
+  .timeline-row.is-right .timeline-card.island-card {
+    transform: none !important;
+  }
+
+  .portrait-card.island-card {
+    min-height: 360px;
+  }
+
+  .timeline-row::before,
+  .timeline-row::after {
+    display: none;
+  }
+
+  .timeline-card.island-card {
+    width: min(680px, 100%);
+    border-radius: 34px 24px 42px 28px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .profile-island .hero-copy {
+    border-radius: 34px 24px 44px 26px !important;
+  }
+
+  .portrait-preview-trigger {
+    width: 154px !important;
+    height: 154px !important;
+  }
+
+  .availability-card.island-card::before {
+    right: 24px;
+  }
+
+  .timeline-card.island-card {
+    padding: 22px !important;
+  }
+
+  .timeline-description {
+    max-width: 100%;
+  }
+}
+
+
+/* ──────────────────────────────────────────────────────────────────────────
+   WOW PUBLIC CARDS — profile command deck + faceted timeline modules
+   Keeps the existing palette, navbar and data model. Pure public UI layer.
+────────────────────────────────────────────────────────────────────────── */
+:root {
+  --premium-card-ink: 8 47 73;
+  --premium-card-cyan: 125 211 252;
+  --premium-card-aqua: 34 211 238;
+  --premium-card-foam: 236 253 255;
+  --premium-card-deep: 2 6 23;
+}
+
+.profile-island {
+  perspective: 1400px;
+  --hero-mx: 56%;
+  --hero-my: 26%;
+  --profile-light-opacity: .48;
+}
+
+.profile-island .hero-copy {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: clamp(34px, 5vw, 76px) clamp(26px, 4.8vw, 68px) clamp(32px, 4vw, 58px) !important;
+  border: 1px solid rgba(186, 230, 253, .30) !important;
+  border-radius: 0 !important;
+  clip-path: polygon(0 9%, 7% 0, 84% 0, 100% 16%, 97% 75%, 86% 100%, 10% 96%, 0 78%);
+  background:
+    radial-gradient(520px 320px at var(--hero-mx) var(--hero-my), rgba(255, 255, 255, var(--profile-light-opacity)), transparent 64%),
+    radial-gradient(420px 240px at 4% 12%, rgba(125, 211, 252, .22), transparent 70%),
+    linear-gradient(145deg, rgba(255, 255, 255, .78), rgba(224, 251, 255, .58) 44%, rgba(125, 211, 252, .28) 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .92),
+    inset 0 -1px 0 rgba(8, 47, 73, .14),
+    inset 28px 0 58px rgba(125, 211, 252, .10),
+    inset -42px -46px 74px rgba(8, 47, 73, .10),
+    0 46px 130px rgba(8, 47, 73, .22),
+    0 14px 38px rgba(3, 105, 161, .13) !important;
+  filter: drop-shadow(0 30px 58px rgba(8, 47, 73, .16));
+  transform-style: preserve-3d;
+  transform-origin: 50% 50%;
+  transition:
+    transform .55s cubic-bezier(.19, 1, .22, 1),
+    filter .55s ease,
+    border-color .35s ease,
+    box-shadow .55s ease !important;
+}
+
+.profile-island .hero-copy::before,
+.profile-island .hero-copy::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.profile-island .hero-copy::before {
+  background:
+    linear-gradient(115deg, transparent 0 11%, rgba(255,255,255,.34) 11.4%, transparent 12.2% 64%, rgba(8,47,73,.08) 64.6%, transparent 65.2%),
+    linear-gradient(172deg, rgba(255,255,255,.38), transparent 19%),
+    repeating-linear-gradient(90deg, rgba(8,47,73,.035) 0 1px, transparent 1px 68px),
+    repeating-linear-gradient(0deg, rgba(125,211,252,.055) 0 1px, transparent 1px 54px);
+  mix-blend-mode: soft-light;
+  opacity: .78;
+}
+
+.profile-island .hero-copy::after {
+  inset: 1px;
+  background:
+    linear-gradient(92deg, transparent 0%, rgba(255,255,255,.0) 34%, rgba(255,255,255,.52) 48%, rgba(125,211,252,.18) 52%, transparent 68%) -45% 0 / 52% 100% no-repeat,
+    radial-gradient(180px 18px at 74% 0%, rgba(236, 253, 255, .55), transparent 70%),
+    linear-gradient(180deg, rgba(255,255,255,.34), transparent 16%, transparent 82%, rgba(8,47,73,.08));
+  opacity: .50;
+  animation: profileDeckScan 9.8s cubic-bezier(.19, 1, .22, 1) infinite;
+}
+
+.profile-island .hero-copy > * {
+  position: relative;
+  z-index: 2;
+}
+
+.profile-island .hero-map-line {
+  z-index: 1;
+  opacity: .7;
+  filter: drop-shadow(0 0 14px rgba(125, 211, 252, .22));
+}
+
+.profile-island .hero-title {
+  text-shadow: 0 2px 0 rgba(255,255,255,.26), 0 18px 54px rgba(8,47,73,.12);
+}
+
+.profile-island .hero-lead {
+  position: relative;
+  width: fit-content;
+  max-width: 96%;
+  padding: clamp(14px, 1.7vw, 24px) clamp(18px, 2.5vw, 34px) !important;
+  border: 1px solid rgba(255, 255, 255, .46);
+  clip-path: polygon(0 22%, 6% 0, 86% 0, 100% 42%, 92% 100%, 7% 100%, 0 72%);
+  background:
+    linear-gradient(135deg, rgba(236,253,255,.78), rgba(255,255,255,.46) 54%, rgba(125,211,252,.16));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.80), 0 18px 44px rgba(8,47,73,.08);
+}
+
+.profile-island .hero-description {
+  position: relative;
+  z-index: 2;
+  max-width: 940px;
+}
+
+.profile-island .hero-copy:hover {
+  transform: translateY(-4px) rotateX(.8deg) rotateY(-.6deg) translateZ(0);
+  border-color: rgba(125, 211, 252, .46) !important;
+  filter: drop-shadow(0 36px 70px rgba(8, 47, 73, .20));
+}
+
+.hero-panel {
+  perspective: 1200px;
+}
+
+.portrait-card.island-card,
+.availability-card.island-card,
+.contact-card.island-card {
+  overflow: hidden;
+  border: 1px solid rgba(186, 230, 253, .32) !important;
+  background:
+    radial-gradient(240px 160px at 28% 0%, rgba(255,255,255,.82), transparent 62%),
+    radial-gradient(260px 180px at 100% 100%, rgba(125,211,252,.16), transparent 74%),
+    linear-gradient(145deg, rgba(255,255,255,.78), rgba(236,253,255,.62) 52%, rgba(224,251,255,.42)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.86),
+    inset 0 -1px 0 rgba(8,47,73,.08),
+    0 28px 80px rgba(8,47,73,.16) !important;
+  transform-style: preserve-3d;
+  transition:
+    transform .48s cubic-bezier(.19, 1, .22, 1),
+    border-color .35s ease,
+    box-shadow .48s ease,
+    filter .48s ease !important;
+}
+
+.portrait-card.island-card {
+  clip-path: polygon(10% 0, 100% 4%, 94% 82%, 78% 100%, 8% 96%, 0 18%);
+  border-radius: 0 !important;
+}
+
+.availability-card.island-card {
+  clip-path: polygon(0 16%, 8% 0, 92% 4%, 100% 32%, 94% 100%, 7% 94%);
+  border-radius: 0 !important;
+}
+
+.contact-card.island-card {
+  clip-path: polygon(5% 0, 100% 5%, 95% 100%, 0 92%, 0 18%);
+  border-radius: 0 !important;
+}
+
+.portrait-card.island-card::before,
+.availability-card.island-card::before,
+.contact-card.island-card::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: 0;
+  background:
+    linear-gradient(130deg, rgba(255,255,255,.48), transparent 24%, transparent 72%, rgba(8,47,73,.055)),
+    repeating-linear-gradient(100deg, rgba(8,47,73,.035) 0 1px, transparent 1px 36px);
+  opacity: .62;
+  pointer-events: none;
+}
+
+.portrait-card.island-card::after,
+.availability-card.island-card::after,
+.contact-card.island-card::after {
+  content: "";
+  position: absolute;
+  right: -48px;
+  top: -42px;
+  z-index: 1;
+  width: 136px;
+  height: 136px;
+  border: 1px solid rgba(236,253,255,.58);
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.88), rgba(125,211,252,.12) 45%, transparent 70%);
+  opacity: .56;
+  pointer-events: none;
+  animation: premiumOrbDrift 7.2s ease-in-out infinite;
+}
+
+.portrait-card.island-card > *,
+.availability-card.island-card > *,
+.contact-card.island-card > * {
+  position: relative;
+  z-index: 2;
+}
+
+.portrait-preview-trigger,
+.portrait-placeholder,
+.portrait-image {
+  border-radius: 36% 64% 54% 46% !important;
+  box-shadow:
+    0 0 0 10px rgba(236,253,255,.44),
+    0 0 0 1px rgba(125,211,252,.28),
+    0 28px 72px rgba(8,47,73,.20) !important;
+}
+
+.portrait-content {
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(255,255,255,.52), rgba(236,253,255,.20));
+  border: 1px solid rgba(255,255,255,.34);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.64);
+}
+
+.availability-card.island-card::before {
+  background:
+    linear-gradient(90deg, transparent 0%, rgba(125,211,252,.26) 42%, rgba(236,253,255,.66) 50%, rgba(125,211,252,.18) 58%, transparent 100%) -60% 88% / 42% 2px no-repeat,
+    linear-gradient(130deg, rgba(255,255,255,.46), transparent 24%, transparent 72%, rgba(8,47,73,.055)),
+    repeating-linear-gradient(100deg, rgba(8,47,73,.035) 0 1px, transparent 1px 36px);
+  animation: statusSignalSweep 5.6s cubic-bezier(.19, 1, .22, 1) infinite;
+}
+
+.contact-pill {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px 12px 20px 14px !important;
+  clip-path: polygon(0 0, 96% 0, 100% 32%, 96% 100%, 4% 100%, 0 72%);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.54), rgba(236,253,255,.28)) !important;
+  transition: transform .28s ease, border-color .28s ease, background .28s ease !important;
+}
+
+.contact-pill:hover {
+  transform: translateX(5px);
+  border-color: rgba(125,211,252,.34);
+}
+
+.timeline-subsea-track {
+  perspective: 1500px;
+}
+
+.timeline-row {
+  position: relative;
+  transform-style: preserve-3d;
+}
+
+.timeline-row::before {
+  top: calc(50% - 2px) !important;
+  height: 4px !important;
+  width: clamp(86px, 8vw, 132px) !important;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, transparent, rgba(125,211,252,.22), rgba(236,253,255,.90), rgba(125,211,252,.20), transparent),
+    repeating-linear-gradient(90deg, transparent 0 9px, rgba(236,253,255,.36) 9px 11px, transparent 11px 22px) !important;
+  box-shadow: 0 0 24px rgba(125,211,252,.34), 0 0 0 1px rgba(255,255,255,.12);
+  clip-path: polygon(0 50%, 8% 0, 92% 0, 100% 50%, 92% 100%, 8% 100%);
+  animation: timelineCableFlow 4.8s linear infinite;
+}
+
+.timeline-row.is-left::before {
+  left: calc(50% - clamp(130px, 10vw, 172px)) !important;
+}
+
+.timeline-row.is-right::before {
+  left: calc(50% + 10px) !important;
+}
+
+.timeline-row::after {
+  width: 16px !important;
+  height: 16px !important;
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255,255,255,.98), rgba(236,253,255,.64) 28%, rgba(125,211,252,.54) 56%, rgba(3,105,161,.66));
+  box-shadow:
+    0 0 0 7px rgba(125,211,252,.10),
+    0 0 28px rgba(125,211,252,.62),
+    inset 0 1px 0 rgba(255,255,255,.80) !important;
+  animation: timelineNodePulse 3.8s ease-in-out infinite;
+}
+
+.timeline-card.island-card {
+  position: relative;
+  width: min(620px, 100%);
+  overflow: visible;
+  isolation: isolate;
+  padding: clamp(26px, 3.2vw, 40px) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  filter: drop-shadow(0 38px 82px rgba(8,47,73,.18));
+  transform-style: preserve-3d;
+  transition:
+    transform .55s cubic-bezier(.19, 1, .22, 1),
+    filter .55s ease !important;
+}
+
+.timeline-row.is-left .timeline-card.island-card {
+  transform: rotate(-.65deg) rotateY(1.2deg) translateZ(0);
+}
+
+.timeline-row.is-right .timeline-card.island-card {
+  transform: rotate(.65deg) rotateY(-1.2deg) translateZ(0);
+}
+
+.timeline-card.island-card::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  border: 1px solid rgba(186,230,253,.34);
+  background:
+    radial-gradient(360px 190px at 12% 4%, rgba(255,255,255,.86), transparent 64%),
+    radial-gradient(310px 220px at 100% 100%, rgba(125,211,252,.22), transparent 74%),
+    linear-gradient(135deg, rgba(255,255,255,.78), rgba(224,251,255,.58) 52%, rgba(125,211,252,.24)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.92),
+    inset 0 -1px 0 rgba(8,47,73,.10),
+    inset 28px 0 60px rgba(125,211,252,.08),
+    0 28px 78px rgba(8,47,73,.13) !important;
+  opacity: 1 !important;
+  pointer-events: none;
+}
+
+.timeline-row.is-left .timeline-card.island-card::before {
+  clip-path: polygon(0 12%, 9% 0, 88% 0, 100% 20%, 96% 82%, 82% 100%, 6% 94%, 0 72%);
+}
+
+.timeline-row.is-right .timeline-card.island-card::before {
+  clip-path: polygon(12% 0, 100% 8%, 100% 74%, 91% 100%, 10% 96%, 0 82%, 4% 18%);
+}
+
+.timeline-card.island-card::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: 1;
+  background:
+    linear-gradient(120deg, rgba(255,255,255,.40), transparent 18%, transparent 76%, rgba(8,47,73,.07)),
+    linear-gradient(90deg, transparent 0%, rgba(125,211,252,.13) 16%, transparent 32%, transparent 72%, rgba(236,253,255,.20) 84%, transparent 100%),
+    repeating-linear-gradient(100deg, rgba(8,47,73,.032) 0 1px, transparent 1px 42px);
+  opacity: .78;
+  pointer-events: none;
+}
+
+.timeline-row.is-left .timeline-card.island-card::after {
+  clip-path: polygon(0 12%, 9% 0, 88% 0, 100% 20%, 96% 82%, 82% 100%, 6% 94%, 0 72%);
+}
+
+.timeline-row.is-right .timeline-card.island-card::after {
+  clip-path: polygon(12% 0, 100% 8%, 100% 74%, 91% 100%, 10% 96%, 0 82%, 4% 18%);
+}
+
+.timeline-card.island-card > * {
+  position: relative;
+  z-index: 3;
+}
+
+.timeline-card-watermark {
+  right: 20px !important;
+  top: 18px !important;
+  width: 92px !important;
+  height: 92px !important;
+  border-radius: 36% 64% 58% 42% !important;
+  background:
+    conic-gradient(from 180deg, rgba(125,211,252,.32), transparent 28%, rgba(255,255,255,.52), transparent 72%, rgba(125,211,252,.22)),
+    radial-gradient(circle at 35% 30%, rgba(255,255,255,.92), transparent 32%) !important;
+  opacity: .48 !important;
+  animation: premiumWatermarkOrbit 9s linear infinite;
+}
+
+.timeline-card .timeline-main-copy {
+  padding-right: clamp(0px, 8vw, 72px);
+}
+
+.timeline-category {
+  border-radius: 999px 999px 999px 8px !important;
+  background: rgba(236,253,255,.52) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.76), 0 10px 24px rgba(8,47,73,.08) !important;
+}
+
+.timeline-card h2 {
+  text-wrap: balance;
+  text-shadow: 0 1px 0 rgba(255,255,255,.50), 0 14px 34px rgba(8,47,73,.10);
+}
+
+.timeline-period {
+  clip-path: polygon(0 0, 93% 0, 100% 50%, 93% 100%, 0 100%, 6% 50%);
+  border-radius: 0 !important;
+  padding-inline: 18px 20px !important;
+}
+
+.skill-badge {
+  min-height: 22px !important;
+  border-radius: 999px !important;
+  background: rgba(255,255,255,.34) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.56);
+}
+
+.timeline-row:hover::before {
+  opacity: 1 !important;
+  transform: translateY(-1px) scaleX(1.08);
+  box-shadow: 0 0 36px rgba(125,211,252,.58), 0 0 0 1px rgba(255,255,255,.24) !important;
+}
+
+.timeline-row:hover::after {
+  transform: translate(-50%, -50%) scale(1.18) !important;
+}
+
+.timeline-row.is-left:hover .timeline-card.island-card {
+  transform: translateY(-12px) rotate(-1.15deg) rotateY(-5deg) translateZ(18px) !important;
+  filter: drop-shadow(0 48px 96px rgba(8,47,73,.24));
+}
+
+.timeline-row.is-right:hover .timeline-card.island-card {
+  transform: translateY(-12px) rotate(1.15deg) rotateY(5deg) translateZ(18px) !important;
+  filter: drop-shadow(0 48px 96px rgba(8,47,73,.24));
+}
+
+.timeline-row:hover .timeline-card.island-card::before {
+  border-color: rgba(125,211,252,.52);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.96),
+    inset 0 -1px 0 rgba(8,47,73,.10),
+    inset 34px 0 70px rgba(125,211,252,.12),
+    0 34px 98px rgba(8,47,73,.18) !important;
+}
+
+@keyframes profileDeckScan {
+  0%, 28% { background-position: -55% 0, center, center; opacity: .35; }
+  52% { background-position: 128% 0, center, center; opacity: .62; }
+  100% { background-position: 170% 0, center, center; opacity: .35; }
+}
+
+@keyframes premiumOrbDrift {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); opacity: .46; }
+  50% { transform: translate3d(-12px, 10px, 0) rotate(8deg); opacity: .66; }
+}
+
+@keyframes statusSignalSweep {
+  0%, 34% { background-position: -60% 88%, center, center; }
+  70%, 100% { background-position: 160% 88%, center, center; }
+}
+
+@keyframes timelineCableFlow {
+  0% { background-position: 0 0, 0 0; }
+  100% { background-position: 0 0, 88px 0; }
+}
+
+@keyframes timelineNodePulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.18); }
+}
+
+@keyframes premiumWatermarkOrbit {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-island .hero-copy::after,
+  .portrait-card.island-card::after,
+  .availability-card.island-card::after,
+  .contact-card.island-card::after,
+  .timeline-row::before,
+  .timeline-row::after,
+  .timeline-card-watermark {
+    animation: none !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .profile-island .hero-copy,
+  .portrait-card.island-card,
+  .availability-card.island-card,
+  .contact-card.island-card,
+  .timeline-card.island-card,
+  .timeline-card.island-card::before,
+  .timeline-card.island-card::after {
+    clip-path: none !important;
+    border-radius: 34px !important;
+    transform: none !important;
+  }
+
+  .timeline-card.island-card {
+    filter: drop-shadow(0 22px 52px rgba(8,47,73,.14));
+  }
+}
+
+@media (max-width: 640px) {
+  .profile-island .hero-copy {
+    padding: 28px 22px !important;
+  }
+
+  .timeline-card .timeline-main-copy {
+    padding-right: 0;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   FINAL WOW PASS — faster timeline reveal, safe geometric cards, navbar-aligned profile deck
+   Only public visual polish. Keeps data, admin and navbar behavior unchanged.
+────────────────────────────────────────────────────────────────────────── */
+.profile-island {
+  --hero-mx: 52%;
+  --hero-my: 18%;
+  --profile-light-opacity: .44;
+}
+
+.profile-island .hero-copy {
+  overflow: hidden !important;
+  border-radius: 0 !important;
+  clip-path: polygon(0 12%, 7.4% 0, 91.2% 0, 100% 12.5%, 97.6% 77%, 88.2% 100%, 5.8% 100%, 0 86%) !important;
+  padding-top: clamp(58px, 6vw, 96px) !important;
+  border-color: rgba(155, 215, 224, .34) !important;
+  background:
+    radial-gradient(560px 300px at var(--hero-mx) var(--hero-my), rgba(255,255,255,var(--profile-light-opacity)), transparent 66%),
+    radial-gradient(420px 240px at 4% 10%, rgba(125,211,252,.18), transparent 72%),
+    radial-gradient(620px 280px at 100% 100%, rgba(8,47,73,.11), transparent 76%),
+    linear-gradient(145deg, rgba(255,255,255,.82), rgba(224,251,255,.60) 48%, rgba(125,211,252,.24)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.94),
+    inset 0 -1px 0 rgba(8,47,73,.18),
+    inset 38px 0 70px rgba(125,211,252,.10),
+    inset -56px -48px 90px rgba(8,47,73,.12),
+    0 48px 132px rgba(8,47,73,.24),
+    0 16px 46px rgba(3,105,161,.14) !important;
+}
+
+.profile-island .hero-copy::before {
+  content: "" !important;
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: 0 !important;
+  height: clamp(46px, 5vw, 78px) !important;
+  z-index: 1 !important;
+  clip-path: polygon(0 30%, 7.4% 0, 91.2% 0, 100% 56%, 96% 100%, 12% 92%, 0 72%) !important;
+  background:
+    radial-gradient(180px 88px at 11% 52%, rgba(125,211,252,.22), transparent 70%),
+    linear-gradient(90deg, rgba(18,25,33,.96), rgba(22,37,49,.94) 52%, rgba(13,47,61,.90)) !important;
+  border-bottom: 1px solid rgba(222,236,241,.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.10),
+    inset 0 -16px 34px rgba(0,0,0,.20),
+    0 18px 44px rgba(8,47,73,.16);
+  opacity: .96 !important;
+  mix-blend-mode: normal !important;
+}
+
+.profile-island .hero-copy::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 1px !important;
+  z-index: 1 !important;
+  clip-path: inherit !important;
+  background:
+    linear-gradient(120deg, transparent 0 9%, rgba(255,255,255,.32) 9.6%, transparent 10.4% 61%, rgba(8,47,73,.07) 61.7%, transparent 62.4%),
+    linear-gradient(96deg, transparent 0%, rgba(255,255,255,0) 34%, rgba(255,255,255,.34) 48%, rgba(125,211,252,.14) 52%, transparent 68%) -45% 0 / 48% 100% no-repeat,
+    repeating-linear-gradient(90deg, rgba(8,47,73,.026) 0 1px, transparent 1px 72px),
+    repeating-linear-gradient(0deg, rgba(125,211,252,.045) 0 1px, transparent 1px 58px) !important;
+  opacity: .62 !important;
+  animation: profileDeckScan 12s cubic-bezier(.19, 1, .22, 1) infinite !important;
+  pointer-events: none !important;
+}
+
+.profile-island .hero-copy > * {
+  position: relative;
+  z-index: 3;
+}
+
+.profile-island .hero-title {
+  margin-top: 0 !important;
+}
+
+.profile-island .hero-map-line {
+  top: 8px !important;
+  opacity: .42 !important;
+}
+
+.profile-island .hero-lead {
+  display: block !important;
+  width: min(960px, 100%) !important;
+  max-width: 100% !important;
+  border-radius: 0 !important;
+  clip-path: polygon(0 0, 92% 0, 100% 48%, 92% 100%, 3.6% 100%, 0 76%) !important;
+  background:
+    radial-gradient(220px 90px at 82% 0%, rgba(255,255,255,.62), transparent 70%),
+    linear-gradient(135deg, rgba(236,253,255,.84), rgba(255,255,255,.52) 56%, rgba(125,211,252,.18)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.84),
+    inset 0 -1px 0 rgba(8,47,73,.08),
+    0 18px 44px rgba(8,47,73,.08) !important;
+}
+
+.profile-island .hero-copy:hover {
+  transform: translateY(-5px) rotateX(.9deg) rotateY(-.9deg) translateZ(0) !important;
+}
+
+/* Timeline: keep all text inside a safer faceted hull, with no ellipse-like shell. */
+.timeline-card.island-card {
+  overflow: hidden !important;
+  width: min(640px, 100%) !important;
+  padding: clamp(30px, 3.3vw, 44px) !important;
+  clip-path: polygon(0 9%, 6% 0, 95% 0, 100% 16%, 98% 100%, 4% 100%, 0 84%) !important;
+  border: 1px solid rgba(186,230,253,.36) !important;
+  background:
+    radial-gradient(390px 190px at 12% 0%, rgba(255,255,255,.86), transparent 66%),
+    radial-gradient(320px 230px at 100% 100%, rgba(125,211,252,.20), transparent 76%),
+    linear-gradient(135deg, rgba(255,255,255,.80), rgba(224,251,255,.58) 54%, rgba(125,211,252,.22)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.92),
+    inset 0 -1px 0 rgba(8,47,73,.10),
+    inset 28px 0 60px rgba(125,211,252,.08),
+    0 32px 86px rgba(8,47,73,.16) !important;
+  filter: drop-shadow(0 34px 76px rgba(8,47,73,.16)) !important;
+}
+
+.timeline-row.is-left .timeline-card.island-card,
+.timeline-row.is-right .timeline-card.island-card {
+  clip-path: polygon(0 9%, 6% 0, 95% 0, 100% 16%, 98% 100%, 4% 100%, 0 84%) !important;
+}
+
+.timeline-card.island-card::before {
+  inset: 0 !important;
+  clip-path: inherit !important;
+  border: 0 !important;
+  background:
+    linear-gradient(120deg, rgba(255,255,255,.38), transparent 18%, transparent 76%, rgba(8,47,73,.07)),
+    repeating-linear-gradient(100deg, rgba(8,47,73,.030) 0 1px, transparent 1px 42px) !important;
+  box-shadow: none !important;
+  opacity: .72 !important;
+}
+
+.timeline-card.island-card::after {
+  inset: auto 20px 18px 20px !important;
+  height: 2px !important;
+  clip-path: polygon(0 50%, 5% 0, 95% 0, 100% 50%, 95% 100%, 5% 100%) !important;
+  background: linear-gradient(90deg, transparent, rgba(125,211,252,.26), rgba(236,253,255,.62), rgba(125,211,252,.22), transparent) !important;
+  opacity: .58 !important;
+}
+
+.timeline-card.island-card > * {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.timeline-card .timeline-main-copy {
+  padding-right: clamp(0px, 6vw, 52px) !important;
+  min-width: 0;
+}
+
+.timeline-card h2,
+.timeline-summary,
+.timeline-description,
+.timeline-org,
+.timeline-period {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.timeline-card h2 {
+  max-width: min(100%, 520px);
+}
+
+.timeline-card-watermark {
+  width: 74px !important;
+  height: 74px !important;
+  border-radius: 0 !important;
+  clip-path: polygon(50% 0, 100% 24%, 86% 100%, 14% 100%, 0 24%) !important;
+  opacity: .32 !important;
+}
+
+.timeline-row:hover .timeline-card.island-card {
+  filter: drop-shadow(0 44px 92px rgba(8,47,73,.22)) !important;
+}
+
+@media (max-width: 980px) {
+  .profile-island .hero-copy,
+  .profile-island .hero-lead,
+  .timeline-card.island-card,
+  .timeline-card.island-card::before,
+  .timeline-card.island-card::after {
+    clip-path: none !important;
+    border-radius: 32px !important;
+  }
+
+  .profile-island .hero-copy {
+    padding-top: 36px !important;
+  }
+
+  .profile-island .hero-copy::before {
+    display: none !important;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   FINAL ART DIRECTION — navbar-aligned profile command deck + no-ellipse timeline
+   Intent: premium graphite/blue-gray, faceted geometry, cinematic but professional.
+────────────────────────────────────────────────────────────────────────── */
+.profile-island {
+  --hero-mx: 58%;
+  --hero-my: 24%;
+  --profile-light-opacity: .10;
+  perspective: 1400px;
+}
+
+.profile-island .hero-copy {
+  position: relative !important;
+  isolation: isolate !important;
+  overflow: hidden !important;
+  border-radius: 0 !important;
+  clip-path: polygon(0 11%, 5.8% 0, 90.6% 0, 100% 13.4%, 98% 72%, 89.4% 100%, 7.2% 96%, 0 82%) !important;
+  padding: clamp(58px, 6vw, 92px) clamp(30px, 4.7vw, 76px) clamp(34px, 4vw, 58px) !important;
+  border: 1px solid rgba(155, 215, 224, .22) !important;
+  background:
+    radial-gradient(620px 320px at var(--hero-mx) var(--hero-my), rgba(222,236,241,.105), transparent 68%),
+    linear-gradient(112deg, rgba(255,255,255,.055), transparent 18%, rgba(255,255,255,.018) 52%, rgba(0,0,0,.24)),
+    linear-gradient(120deg, rgba(18,25,33,.985), rgba(24,38,49,.972) 48%, rgba(13,47,61,.955)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.10),
+    inset 0 -1px 0 rgba(0,0,0,.46),
+    inset 38px 0 84px rgba(125,211,252,.045),
+    inset -62px -54px 92px rgba(0,0,0,.30),
+    0 54px 138px rgba(2,6,23,.28),
+    0 18px 48px rgba(8,47,73,.22) !important;
+  color: rgba(236,253,255,.94) !important;
+  transform-style: preserve-3d;
+}
+
+.profile-island .hero-copy::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 1 !important;
+  clip-path: inherit !important;
+  background:
+    linear-gradient(90deg, rgba(222,236,241,.18), transparent 15%, transparent 76%, rgba(125,211,252,.09)),
+    linear-gradient(120deg, transparent 0 9%, rgba(255,255,255,.105) 9.5%, transparent 10.3% 60%, rgba(0,0,0,.22) 60.8%, transparent 61.8%),
+    repeating-linear-gradient(90deg, rgba(222,236,241,.030) 0 1px, transparent 1px 72px),
+    repeating-linear-gradient(0deg, rgba(125,211,252,.022) 0 1px, transparent 1px 54px) !important;
+  border: 0 !important;
+  opacity: .74 !important;
+  animation: none !important;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.profile-island .hero-copy::after {
+  content: "" !important;
+  position: absolute !important;
+  left: clamp(18px, 3vw, 42px) !important;
+  right: clamp(18px, 3vw, 42px) !important;
+  top: clamp(18px, 2.8vw, 38px) !important;
+  height: clamp(34px, 4.4vw, 58px) !important;
+  z-index: 2 !important;
+  clip-path: polygon(0 42%, 5% 0, 87% 0, 100% 48%, 94% 100%, 7% 86%) !important;
+  background:
+    linear-gradient(90deg, rgba(18,25,33,.72), rgba(22,37,49,.46) 52%, rgba(13,47,61,.58)),
+    linear-gradient(90deg, transparent, rgba(222,236,241,.26), transparent 38%, rgba(125,211,252,.10), transparent) !important;
+  border: 1px solid rgba(222,236,241,.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.08),
+    inset 0 -12px 26px rgba(0,0,0,.20),
+    0 18px 44px rgba(0,0,0,.18) !important;
+  opacity: .82 !important;
+  animation: none !important;
+  pointer-events: none !important;
+}
+
+.profile-island .hero-copy > * {
+  position: relative;
+  z-index: 4;
+}
+
+.profile-island .hero-map-line {
+  display: none !important;
+}
+
+.profile-island .hero-title {
+  margin-top: clamp(10px, 2vw, 18px) !important;
+}
+
+.profile-island .hero-title-char,
+.profile-island .hero-title-main,
+.profile-island .hero-title {
+  color: rgba(244,251,255,.98) !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.08),
+    0 18px 38px rgba(0,0,0,.30) !important;
+}
+
+.profile-island .hero-title-current {
+  margin-top: .28em !important;
+}
+
+.profile-island .hero-keyword {
+  color: rgba(236,253,255,.94) !important;
+  background:
+    linear-gradient(135deg, rgba(222,236,241,.115), rgba(125,211,252,.045)),
+    linear-gradient(120deg, rgba(255,255,255,.040), transparent) !important;
+  border: 1px solid rgba(222,236,241,.12) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.10),
+    0 12px 26px rgba(0,0,0,.16) !important;
+  backdrop-filter: blur(14px) saturate(1.05);
+}
+
+.profile-island .hero-lead,
+.profile-island .hero-description {
+  display: block !important;
+  max-width: min(980px, 100%) !important;
+  color: rgba(222,236,241,.88) !important;
+  border-radius: 0 !important;
+  border: 1px solid rgba(222,236,241,.085) !important;
+  background:
+    linear-gradient(120deg, rgba(255,255,255,.070), rgba(255,255,255,.025) 48%, rgba(0,0,0,.10)),
+    linear-gradient(135deg, rgba(18,25,33,.34), rgba(13,47,61,.20)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.085),
+    inset 0 -1px 0 rgba(0,0,0,.18),
+    0 18px 48px rgba(0,0,0,.16) !important;
+  backdrop-filter: blur(18px) saturate(1.08);
+}
+
+.profile-island .hero-lead {
+  clip-path: polygon(0 0, 93% 0, 100% 38%, 96% 100%, 4% 100%, 0 70%) !important;
+  padding: clamp(18px, 2vw, 26px) clamp(20px, 2.6vw, 34px) !important;
+}
+
+.profile-island .hero-description {
+  clip-path: polygon(3% 0, 100% 0, 96% 100%, 0 100%, 0 22%) !important;
+  padding: clamp(16px, 1.8vw, 24px) clamp(20px, 2.6vw, 34px) !important;
+}
+
+.profile-island .hero-copy:hover {
+  transform: translateY(-5px) rotateX(.65deg) rotateY(-.65deg) translateZ(0) !important;
+}
+
+.profile-island .hero-panel {
+  gap: 16px !important;
+  transform-style: preserve-3d;
+}
+
+.portrait-card.island-card,
+.availability-card.island-card,
+.contact-card.island-card {
+  position: relative !important;
+  overflow: hidden !important;
+  border-radius: 0 !important;
+  color: rgba(236,253,255,.92) !important;
+  border: 1px solid rgba(155,215,224,.18) !important;
+  background:
+    linear-gradient(120deg, rgba(255,255,255,.060), rgba(255,255,255,.022) 45%, rgba(0,0,0,.16)),
+    linear-gradient(130deg, rgba(18,25,33,.935), rgba(24,38,49,.90) 54%, rgba(13,47,61,.88)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.085),
+    inset 0 -1px 0 rgba(0,0,0,.34),
+    0 28px 72px rgba(2,6,23,.22) !important;
+  backdrop-filter: blur(18px) saturate(1.08);
+}
+
+.portrait-card.island-card {
+  clip-path: polygon(0 12%, 12% 0, 92% 0, 100% 18%, 95% 100%, 8% 100%, 0 84%) !important;
+}
+
+.availability-card.island-card {
+  clip-path: polygon(4% 0, 100% 0, 96% 100%, 0 100%, 0 22%) !important;
+}
+
+.contact-card.island-card {
+  clip-path: polygon(0 0, 94% 0, 100% 14%, 100% 100%, 8% 100%, 0 86%) !important;
+}
+
+.portrait-card.island-card::before,
+.availability-card.island-card::before,
+.contact-card.island-card::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 0 !important;
+  clip-path: inherit !important;
+  background:
+    linear-gradient(115deg, rgba(222,236,241,.12), transparent 15%, transparent 68%, rgba(125,211,252,.06)),
+    repeating-linear-gradient(100deg, rgba(222,236,241,.026) 0 1px, transparent 1px 44px) !important;
+  border: 0 !important;
+  opacity: .72 !important;
+  animation: none !important;
+}
+
+.portrait-card.island-card::after,
+.availability-card.island-card::after,
+.contact-card.island-card::after {
+  content: "" !important;
+  position: absolute !important;
+  left: 18px !important;
+  right: 18px !important;
+  bottom: 15px !important;
+  height: 2px !important;
+  z-index: 1 !important;
+  clip-path: polygon(0 50%, 5% 0, 95% 0, 100% 50%, 95% 100%, 5% 100%) !important;
+  background: linear-gradient(90deg, transparent, rgba(125,211,252,.28), rgba(236,253,255,.54), rgba(125,211,252,.18), transparent) !important;
+  opacity: .54 !important;
+  animation: none !important;
+}
+
+.portrait-card.island-card > *,
+.availability-card.island-card > *,
+.contact-card.island-card > * {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+.portrait-image,
+.portrait-placeholder {
+  border-color: rgba(222,236,241,.32) !important;
+  box-shadow:
+    0 0 0 10px rgba(125,211,252,.045),
+    0 24px 72px rgba(0,0,0,.30),
+    inset 0 0 0 1px rgba(255,255,255,.12) !important;
+}
+
+.portrait-name,
+.portrait-role,
+.availability-label,
+.availability-value,
+.availability-location,
+.contact-pill span,
+.contact-pill strong,
+.card-kicker,
+.ring-label {
+  color: rgba(236,253,255,.92) !important;
+  text-shadow: none !important;
+}
+
+.availability-label,
+.card-kicker,
+.contact-pill span {
+  color: rgba(155,215,224,.72) !important;
+}
+
+.contact-pill {
+  border-radius: 0 !important;
+  clip-path: polygon(0 0, 96% 0, 100% 36%, 96% 100%, 4% 100%, 0 66%) !important;
+  border-color: rgba(222,236,241,.10) !important;
+  background:
+    linear-gradient(120deg, rgba(255,255,255,.066), rgba(255,255,255,.024) 48%, rgba(0,0,0,.12)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.07) !important;
+}
+
+/* Timeline: complex cinematic reveal kept in JS; this removes internal ellipses and uses faceted panels only. */
+.timeline-card.island-card {
+  overflow: hidden !important;
+  width: min(640px, 100%) !important;
+  padding: clamp(30px, 3.3vw, 44px) !important;
+  clip-path: polygon(0 10%, 7% 0, 94% 0, 100% 16%, 97% 100%, 5% 100%, 0 84%) !important;
+  border: 1px solid rgba(186,230,253,.34) !important;
+  background:
+    linear-gradient(116deg, rgba(255,255,255,.78) 0%, rgba(236,253,255,.68) 39%, rgba(219,242,249,.52) 61%, rgba(183,226,238,.38) 100%),
+    repeating-linear-gradient(102deg, rgba(8,47,73,.034) 0 1px, transparent 1px 54px) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.92),
+    inset 0 -1px 0 rgba(8,47,73,.12),
+    inset 28px 0 54px rgba(125,211,252,.055),
+    0 32px 86px rgba(8,47,73,.16) !important;
+  filter: drop-shadow(0 34px 76px rgba(8,47,73,.16)) !important;
+  transform-style: preserve-3d;
+}
+
+.timeline-row.is-left .timeline-card.island-card {
+  clip-path: polygon(0 12%, 8% 0, 96% 0, 100% 20%, 97% 100%, 4% 100%, 0 84%) !important;
+}
+
+.timeline-row.is-right .timeline-card.island-card {
+  clip-path: polygon(4% 0, 96% 0, 100% 12%, 100% 86%, 94% 100%, 0 100%, 3% 20%) !important;
+}
+
+.timeline-card.island-card::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  clip-path: inherit !important;
+  border: 0 !important;
+  background:
+    linear-gradient(121deg, rgba(255,255,255,.40), transparent 13%, transparent 72%, rgba(8,47,73,.075)),
+    linear-gradient(90deg, rgba(125,211,252,.16), transparent 18%, transparent 82%, rgba(8,47,73,.08)),
+    repeating-linear-gradient(100deg, rgba(8,47,73,.028) 0 1px, transparent 1px 42px) !important;
+  box-shadow: none !important;
+  opacity: .74 !important;
+  pointer-events: none !important;
+}
+
+.timeline-card.island-card::after {
+  content: "" !important;
+  position: absolute !important;
+  left: 22px !important;
+  right: 22px !important;
+  bottom: 18px !important;
+  height: 2px !important;
+  clip-path: polygon(0 50%, 5% 0, 95% 0, 100% 50%, 95% 100%, 5% 100%) !important;
+  background: linear-gradient(90deg, transparent, rgba(125,211,252,.30), rgba(236,253,255,.66), rgba(125,211,252,.24), transparent) !important;
+  opacity: .58 !important;
+  pointer-events: none !important;
+}
+
+.timeline-card.island-card > * {
+  position: relative;
+  z-index: 2;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.timeline-card-watermark {
+  width: 72px !important;
+  height: 72px !important;
+  border-radius: 0 !important;
+  clip-path: polygon(50% 0, 100% 24%, 86% 100%, 14% 100%, 0 24%) !important;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.66), transparent 32%),
+    repeating-linear-gradient(60deg, rgba(8,47,73,.10) 0 1px, transparent 1px 9px) !important;
+  opacity: .26 !important;
+  animation: none !important;
+}
+
+.timeline-row:hover .timeline-card.island-card::before {
+  background:
+    linear-gradient(121deg, rgba(255,255,255,.50), transparent 13%, transparent 72%, rgba(8,47,73,.085)),
+    linear-gradient(90deg, rgba(125,211,252,.22), transparent 20%, transparent 82%, rgba(8,47,73,.10)),
+    repeating-linear-gradient(100deg, rgba(8,47,73,.032) 0 1px, transparent 1px 42px) !important;
+}
+
+@media (max-width: 980px) {
+  .profile-island .hero-copy,
+  .profile-island .hero-lead,
+  .profile-island .hero-description,
+  .portrait-card.island-card,
+  .availability-card.island-card,
+  .contact-card.island-card,
+  .timeline-card.island-card,
+  .timeline-card.island-card::before,
+  .timeline-card.island-card::after {
+    clip-path: none !important;
+    border-radius: 32px !important;
+  }
+
+  .profile-island .hero-copy {
+    padding-top: 36px !important;
+  }
+
+  .profile-island .hero-copy::after {
+    display: none !important;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   ENERGY CORE PALETTE PATCH — profile + timeline + contact hover readability
+   Keeps the last art direction unchanged; only rebalances colors to the
+   navbar core palette: pearl white, graphite grey, cyan flame, deep center.
+────────────────────────────────────────────────────────────────────────── */
+.profile-island,
+.timeline-section {
+  --energy-core-center-rgb: 8 14 24;
+  --energy-core-deep-rgb: 15 23 42;
+  --energy-core-shell-rgb: 148 163 184;
+  --energy-core-pearl-rgb: 226 232 240;
+  --energy-core-aura-rgb: 125 211 252;
+  --energy-core-glow-rgb: 14 165 233;
+  --energy-core-accent-rgb: 45 212 191;
+}
+
+.profile-island .hero-copy {
+  border-color: rgb(var(--energy-core-shell-rgb) / .24) !important;
+  background:
+    radial-gradient(420px 260px at 10% 13%, rgb(var(--energy-core-aura-rgb) / .145), transparent 70%),
+    radial-gradient(520px 280px at 72% 4%, rgb(var(--energy-core-pearl-rgb) / .115), transparent 72%),
+    radial-gradient(680px 380px at 100% 100%, rgb(var(--energy-core-glow-rgb) / .070), transparent 78%),
+    linear-gradient(118deg,
+      rgb(var(--energy-core-center-rgb) / .982) 0%,
+      rgb(var(--energy-core-deep-rgb) / .965) 43%,
+      rgb(30 41 59 / .930) 68%,
+      rgb(13 47 61 / .910) 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(var(--energy-core-pearl-rgb) / .145),
+    inset 0 -1px 0 rgb(0 0 0 / .52),
+    inset 44px 0 92px rgb(var(--energy-core-aura-rgb) / .060),
+    inset -70px -58px 110px rgb(0 0 0 / .36),
+    0 56px 144px rgb(2 6 23 / .32),
+    0 18px 52px rgb(var(--energy-core-glow-rgb) / .18) !important;
+}
+
+.profile-island .hero-copy::before {
+  background:
+    linear-gradient(90deg, rgb(var(--energy-core-pearl-rgb) / .145), transparent 16%, transparent 75%, rgb(var(--energy-core-aura-rgb) / .105)),
+    linear-gradient(120deg, transparent 0 9%, rgb(255 255 255 / .090) 9.5%, transparent 10.3% 60%, rgb(0 0 0 / .25) 60.8%, transparent 61.8%),
+    repeating-linear-gradient(90deg, rgb(var(--energy-core-pearl-rgb) / .024) 0 1px, transparent 1px 72px),
+    repeating-linear-gradient(0deg, rgb(var(--energy-core-aura-rgb) / .020) 0 1px, transparent 1px 54px) !important;
+  mix-blend-mode: screen !important;
+}
+
+.profile-island .hero-copy::after {
+  background:
+    linear-gradient(90deg, rgb(var(--energy-core-center-rgb) / .78), rgb(var(--energy-core-deep-rgb) / .52) 52%, rgb(13 47 61 / .62)),
+    linear-gradient(90deg, transparent, rgb(var(--energy-core-pearl-rgb) / .24), transparent 38%, rgb(var(--energy-core-aura-rgb) / .105), transparent) !important;
+  border-color: rgb(var(--energy-core-pearl-rgb) / .075) !important;
+}
+
+.profile-island .hero-title-char,
+.profile-island .hero-title-main,
+.profile-island .hero-title {
+  color: rgb(244 251 255 / .985) !important;
+  text-shadow:
+    0 1px 0 rgb(var(--energy-core-pearl-rgb) / .08),
+    0 16px 36px rgb(0 0 0 / .32),
+    0 0 38px rgb(var(--energy-core-aura-rgb) / .075) !important;
+}
+
+.profile-island .hero-keyword {
+  color: rgb(var(--energy-core-pearl-rgb) / .94) !important;
+  border-color: rgb(var(--energy-core-pearl-rgb) / .135) !important;
+  background:
+    linear-gradient(135deg, rgb(var(--energy-core-pearl-rgb) / .115), rgb(var(--energy-core-aura-rgb) / .060)),
+    linear-gradient(120deg, rgb(255 255 255 / .035), transparent) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .10),
+    0 12px 30px rgb(0 0 0 / .18),
+    0 0 0 1px rgb(var(--energy-core-aura-rgb) / .035) !important;
+}
+
+.profile-island .hero-lead,
+.profile-island .hero-description {
+  color: rgb(var(--energy-core-pearl-rgb) / .90) !important;
+  border-color: rgb(var(--energy-core-pearl-rgb) / .105) !important;
+  background:
+    linear-gradient(120deg, rgb(var(--energy-core-pearl-rgb) / .078), rgb(255 255 255 / .024) 48%, rgb(0 0 0 / .115)),
+    linear-gradient(135deg, rgb(var(--energy-core-center-rgb) / .38), rgb(13 47 61 / .245)) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .090),
+    inset 0 -1px 0 rgb(0 0 0 / .20),
+    0 18px 48px rgb(0 0 0 / .18),
+    0 0 0 1px rgb(var(--energy-core-aura-rgb) / .025) !important;
+}
+
+.portrait-card.island-card,
+.availability-card.island-card,
+.contact-card.island-card {
+  border-color: rgb(var(--energy-core-shell-rgb) / .205) !important;
+  background:
+    radial-gradient(180px 120px at 12% 0%, rgb(var(--energy-core-aura-rgb) / .075), transparent 70%),
+    linear-gradient(120deg, rgb(var(--energy-core-pearl-rgb) / .060), rgb(255 255 255 / .021) 45%, rgb(0 0 0 / .165)),
+    linear-gradient(130deg, rgb(var(--energy-core-center-rgb) / .945), rgb(var(--energy-core-deep-rgb) / .918) 54%, rgb(13 47 61 / .890)) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .085),
+    inset 0 -1px 0 rgb(0 0 0 / .36),
+    0 28px 74px rgb(2 6 23 / .24),
+    0 0 0 1px rgb(var(--energy-core-aura-rgb) / .025) !important;
+}
+
+.portrait-card.island-card::before,
+.availability-card.island-card::before,
+.contact-card.island-card::before {
+  background:
+    linear-gradient(115deg, rgb(var(--energy-core-pearl-rgb) / .112), transparent 15%, transparent 68%, rgb(var(--energy-core-aura-rgb) / .065)),
+    repeating-linear-gradient(100deg, rgb(var(--energy-core-pearl-rgb) / .024) 0 1px, transparent 1px 44px) !important;
+}
+
+.portrait-card.island-card::after,
+.availability-card.island-card::after,
+.contact-card.island-card::after {
+  background: linear-gradient(90deg,
+    transparent,
+    rgb(var(--energy-core-aura-rgb) / .26),
+    rgb(var(--energy-core-pearl-rgb) / .52),
+    rgb(var(--energy-core-glow-rgb) / .22),
+    transparent) !important;
+}
+
+.portrait-image,
+.portrait-placeholder {
+  border-color: rgb(var(--energy-core-pearl-rgb) / .31) !important;
+  box-shadow:
+    0 0 0 10px rgb(var(--energy-core-aura-rgb) / .050),
+    0 24px 74px rgb(0 0 0 / .31),
+    0 0 38px rgb(var(--energy-core-glow-rgb) / .090),
+    inset 0 0 0 1px rgb(255 255 255 / .12) !important;
+}
+
+.contact-pill {
+  color: rgb(var(--energy-core-pearl-rgb) / .92) !important;
+  border-color: rgb(var(--energy-core-pearl-rgb) / .105) !important;
+  background:
+    linear-gradient(120deg, rgb(var(--energy-core-pearl-rgb) / .062), rgb(255 255 255 / .022) 48%, rgb(0 0 0 / .130)) !important;
+}
+
+.contact-pill:hover,
+.contact-pill:focus-visible {
+  transform: translateX(5px) translateY(-1px) !important;
+  color: rgb(244 251 255 / .96) !important;
+  border-color: rgb(var(--energy-core-aura-rgb) / .34) !important;
+  background:
+    radial-gradient(180px 80px at 14% 0%, rgb(var(--energy-core-aura-rgb) / .105), transparent 70%),
+    linear-gradient(120deg, rgb(var(--energy-core-pearl-rgb) / .090), rgb(125 211 252 / .045) 48%, rgb(0 0 0 / .16)) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .105),
+    0 14px 34px rgb(2 6 23 / .20),
+    0 0 28px rgb(var(--energy-core-glow-rgb) / .100) !important;
+}
+
+.contact-pill:hover span,
+.contact-pill:focus-visible span {
+  color: rgb(var(--energy-core-aura-rgb) / .78) !important;
+}
+
+.contact-pill:hover strong,
+.contact-pill:focus-visible strong {
+  color: rgb(244 251 255 / .98) !important;
+}
+
+.timeline-row::before {
+  background:
+    linear-gradient(90deg, transparent, rgb(var(--energy-core-aura-rgb) / .24), rgb(var(--energy-core-pearl-rgb) / .88), rgb(var(--energy-core-glow-rgb) / .22), transparent),
+    repeating-linear-gradient(90deg, transparent 0 9px, rgb(var(--energy-core-pearl-rgb) / .34) 9px 11px, transparent 11px 22px) !important;
+  box-shadow: 0 0 24px rgb(var(--energy-core-aura-rgb) / .32), 0 0 0 1px rgb(255 255 255 / .12) !important;
+}
+
+.timeline-row::after {
+  background:
+    radial-gradient(circle at 35% 28%, rgb(255 255 255 / .98), rgb(var(--energy-core-pearl-rgb) / .66) 28%, rgb(var(--energy-core-aura-rgb) / .54) 56%, rgb(var(--energy-core-glow-rgb) / .62)) !important;
+  box-shadow:
+    0 0 0 7px rgb(var(--energy-core-aura-rgb) / .105),
+    0 0 28px rgb(var(--energy-core-aura-rgb) / .60),
+    inset 0 1px 0 rgb(255 255 255 / .80) !important;
+}
+
+.timeline-card.island-card {
+  border-color: rgb(var(--energy-core-shell-rgb) / .36) !important;
+  background:
+    radial-gradient(380px 180px at 12% 0%, rgb(var(--energy-core-pearl-rgb) / .78), transparent 68%),
+    radial-gradient(340px 220px at 100% 100%, rgb(var(--energy-core-aura-rgb) / .18), transparent 76%),
+    linear-gradient(116deg,
+      rgb(248 252 255 / .80) 0%,
+      rgb(var(--energy-core-pearl-rgb) / .68) 42%,
+      rgb(var(--energy-core-shell-rgb) / .42) 67%,
+      rgb(var(--energy-core-aura-rgb) / .24) 100%),
+    repeating-linear-gradient(102deg, rgb(8 47 73 / .032) 0 1px, transparent 1px 54px) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .93),
+    inset 0 -1px 0 rgb(8 47 73 / .12),
+    inset 28px 0 58px rgb(var(--energy-core-aura-rgb) / .060),
+    0 32px 88px rgb(8 47 73 / .16),
+    0 0 42px rgb(var(--energy-core-glow-rgb) / .055) !important;
+}
+
+.timeline-card.island-card::before {
+  background:
+    linear-gradient(121deg, rgb(255 255 255 / .40), transparent 13%, transparent 72%, rgb(8 47 73 / .075)),
+    linear-gradient(90deg, rgb(var(--energy-core-aura-rgb) / .15), transparent 18%, transparent 82%, rgb(8 47 73 / .08)),
+    repeating-linear-gradient(100deg, rgb(8 47 73 / .028) 0 1px, transparent 1px 42px) !important;
+}
+
+.timeline-card.island-card::after {
+  background: linear-gradient(90deg,
+    transparent,
+    rgb(var(--energy-core-aura-rgb) / .30),
+    rgb(var(--energy-core-pearl-rgb) / .68),
+    rgb(var(--energy-core-glow-rgb) / .24),
+    transparent) !important;
+}
+
+.timeline-row:hover::before {
+  box-shadow: 0 0 34px rgb(var(--energy-core-aura-rgb) / .54), 0 0 0 1px rgb(255 255 255 / .22) !important;
+}
+
+.timeline-row:hover .timeline-card.island-card::before {
+  background:
+    linear-gradient(121deg, rgb(255 255 255 / .48), transparent 13%, transparent 72%, rgb(8 47 73 / .085)),
+    linear-gradient(90deg, rgb(var(--energy-core-aura-rgb) / .21), transparent 20%, transparent 82%, rgb(8 47 73 / .10)),
+    repeating-linear-gradient(100deg, rgb(8 47 73 / .032) 0 1px, transparent 1px 42px) !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   MINIMAL CORE BLUE REFINEMENT — profile + timeline readability
+   Keeps the latest version unchanged; only replaces profile graphite with the
+   navbar energy-core blue field and improves timeline text contrast.
+────────────────────────────────────────────────────────────────────────── */
+.profile-island,
+.timeline-section {
+  --energy-core-center-rgb: 6 44 65;
+  --energy-core-deep-rgb: 8 67 88;
+  --energy-core-shell-rgb: 111 196 221;
+  --energy-core-pearl-rgb: 232 242 247;
+  --energy-core-aura-rgb: 100 206 235;
+  --energy-core-glow-rgb: 13 174 214;
+  --energy-core-accent-rgb: 62 224 229;
+}
+
+/* Profile: replace the dark grey deck with the blue energy field from the core. */
+.profile-island .hero-copy {
+  border-color: rgb(var(--energy-core-aura-rgb) / .30) !important;
+  background:
+    radial-gradient(520px 280px at 10% 10%, rgb(var(--energy-core-aura-rgb) / .22), transparent 68%),
+    radial-gradient(600px 320px at 78% 0%, rgb(var(--energy-core-pearl-rgb) / .13), transparent 72%),
+    radial-gradient(760px 430px at 100% 100%, rgb(var(--energy-core-glow-rgb) / .15), transparent 78%),
+    linear-gradient(118deg,
+      rgb(5 38 58 / .982) 0%,
+      rgb(7 58 80 / .972) 42%,
+      rgb(9 76 98 / .945) 68%,
+      rgb(12 92 112 / .918) 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(var(--energy-core-pearl-rgb) / .18),
+    inset 0 -1px 0 rgb(0 0 0 / .38),
+    inset 48px 0 104px rgb(var(--energy-core-aura-rgb) / .105),
+    inset -78px -62px 120px rgb(2 30 44 / .30),
+    0 56px 144px rgb(2 34 52 / .30),
+    0 18px 56px rgb(var(--energy-core-glow-rgb) / .22) !important;
+}
+
+.profile-island .hero-copy::after {
+  background:
+    linear-gradient(90deg, rgb(4 34 52 / .72), rgb(8 67 88 / .48) 52%, rgb(13 101 124 / .52)),
+    linear-gradient(90deg, transparent, rgb(var(--energy-core-pearl-rgb) / .22), transparent 38%, rgb(var(--energy-core-aura-rgb) / .14), transparent) !important;
+  border-color: rgb(var(--energy-core-aura-rgb) / .11) !important;
+}
+
+.profile-island .hero-lead,
+.profile-island .hero-description {
+  color: rgb(241 250 255 / .94) !important;
+  border-color: rgb(var(--energy-core-aura-rgb) / .16) !important;
+  background:
+    linear-gradient(120deg, rgb(var(--energy-core-pearl-rgb) / .090), rgb(255 255 255 / .032) 48%, rgb(2 30 44 / .12)),
+    linear-gradient(135deg, rgb(7 58 80 / .45), rgb(12 92 112 / .28)) !important;
+}
+
+/* Timeline: keep the energy-core palette but increase copy contrast. */
+.timeline-card.island-card {
+  background:
+    linear-gradient(121deg, rgb(255 255 255 / .62), transparent 13%, transparent 72%, rgb(6 44 65 / .075)),
+    radial-gradient(420px 200px at 12% 0%, rgb(255 255 255 / .88), transparent 70%),
+    radial-gradient(360px 230px at 100% 100%, rgb(var(--energy-core-aura-rgb) / .22), transparent 76%),
+    linear-gradient(116deg,
+      rgb(250 253 255 / .90) 0%,
+      rgb(var(--energy-core-pearl-rgb) / .82) 42%,
+      rgb(179 211 223 / .58) 67%,
+      rgb(var(--energy-core-aura-rgb) / .31) 100%),
+    repeating-linear-gradient(102deg, rgb(6 44 65 / .030) 0 1px, transparent 1px 54px) !important;
+}
+
+.timeline-card h2 {
+  color: rgb(3 31 48 / .98) !important;
+  text-shadow: 0 1px 0 rgb(255 255 255 / .74), 0 14px 30px rgb(6 44 65 / .13) !important;
+}
+
+.timeline-org {
+  color: rgb(0 94 128 / .96) !important;
+}
+
+.timeline-summary {
+  color: rgb(5 43 62 / .88) !important;
+}
+
+.timeline-description {
+  color: rgb(25 70 88 / .94) !important;
+}
+
+.timeline-period {
+  color: rgb(3 78 110 / .98) !important;
+  border-color: rgb(var(--energy-core-aura-rgb) / .25) !important;
+  background: linear-gradient(120deg, rgb(255 255 255 / .72), rgb(var(--energy-core-aura-rgb) / .16)) !important;
+}
+
+.timeline-category,
+.current-badge,
+.skill-badge {
+  color: rgb(3 78 110 / .96) !important;
+  border-color: rgb(var(--energy-core-aura-rgb) / .30) !important;
+  background: linear-gradient(120deg, rgb(255 255 255 / .62), rgb(var(--energy-core-aura-rgb) / .15)) !important;
+}
+
+.timeline-link {
+  color: rgb(0 94 128 / .98) !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   LIGHTER CORE PROFILE TUNING — soften blue-grey profile field
+   Minimal override: keeps the last art direction, only brightens the profile area.
+────────────────────────────────────────────────────────────────────────── */
+.profile-island {
+  --energy-core-center-rgb: 13 78 104;
+  --energy-core-deep-rgb: 18 98 122;
+  --energy-core-shell-rgb: 145 218 238;
+  --energy-core-pearl-rgb: 244 251 255;
+  --energy-core-aura-rgb: 125 211 252;
+  --energy-core-glow-rgb: 56 189 248;
+}
+
+.profile-island .hero-copy {
+  border-color: rgb(var(--energy-core-aura-rgb) / .34) !important;
+  background:
+    radial-gradient(560px 300px at 10% 8%, rgb(var(--energy-core-aura-rgb) / .26), transparent 68%),
+    radial-gradient(640px 330px at 76% 0%, rgb(var(--energy-core-pearl-rgb) / .20), transparent 72%),
+    radial-gradient(820px 460px at 100% 100%, rgb(var(--energy-core-glow-rgb) / .17), transparent 78%),
+    linear-gradient(118deg,
+      rgb(11 70 96 / .955) 0%,
+      rgb(15 88 114 / .940) 42%,
+      rgb(18 108 134 / .915) 68%,
+      rgb(21 128 150 / .885) 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .22),
+    inset 0 -1px 0 rgb(4 35 54 / .28),
+    inset 46px 0 96px rgb(var(--energy-core-aura-rgb) / .13),
+    inset -70px -54px 112px rgb(4 47 67 / .22),
+    0 52px 136px rgb(3 57 78 / .25),
+    0 18px 52px rgb(var(--energy-core-glow-rgb) / .19) !important;
+}
+
+.profile-island .hero-copy::before {
+  opacity: .64 !important;
+  background:
+    linear-gradient(90deg, rgb(var(--energy-core-pearl-rgb) / .16), transparent 15%, transparent 76%, rgb(var(--energy-core-aura-rgb) / .10)),
+    linear-gradient(120deg, transparent 0 9%, rgb(255 255 255 / .12) 9.5%, transparent 10.3% 60%, rgb(3 57 78 / .16) 60.8%, transparent 61.8%),
+    repeating-linear-gradient(90deg, rgb(var(--energy-core-pearl-rgb) / .030) 0 1px, transparent 1px 72px),
+    repeating-linear-gradient(0deg, rgb(var(--energy-core-aura-rgb) / .026) 0 1px, transparent 1px 54px) !important;
+}
+
+.profile-island .hero-copy::after {
+  background:
+    linear-gradient(90deg, rgb(9 66 92 / .58), rgb(14 91 118 / .42) 52%, rgb(19 119 143 / .44)),
+    linear-gradient(90deg, transparent, rgb(var(--energy-core-pearl-rgb) / .24), transparent 38%, rgb(var(--energy-core-aura-rgb) / .16), transparent) !important;
+  border-color: rgb(var(--energy-core-aura-rgb) / .14) !important;
+  opacity: .70 !important;
+}
+
+.profile-island .hero-lead,
+.profile-island .hero-description {
+  color: rgb(247 252 255 / .96) !important;
+  border-color: rgb(var(--energy-core-aura-rgb) / .20) !important;
+  background:
+    linear-gradient(120deg, rgb(var(--energy-core-pearl-rgb) / .120), rgb(255 255 255 / .044) 48%, rgb(4 47 67 / .090)),
+    linear-gradient(135deg, rgb(15 88 114 / .44), rgb(21 128 150 / .25)) !important;
+}
+
+.profile-island .hero-keyword {
+  color: rgb(247 252 255 / .96) !important;
+  border-color: rgb(var(--energy-core-aura-rgb) / .20) !important;
+  background:
+    linear-gradient(135deg, rgb(var(--energy-core-pearl-rgb) / .13), rgb(var(--energy-core-aura-rgb) / .065)),
+    linear-gradient(120deg, rgb(255 255 255 / .055), transparent) !important;
+}
+
+.portrait-card.island-card,
+.availability-card.island-card,
+.contact-card.island-card {
+  border-color: rgb(var(--energy-core-aura-rgb) / .25) !important;
+  background:
+    radial-gradient(210px 140px at 12% 0%, rgb(var(--energy-core-aura-rgb) / .115), transparent 70%),
+    linear-gradient(120deg, rgb(var(--energy-core-pearl-rgb) / .085), rgb(255 255 255 / .032) 45%, rgb(4 47 67 / .105)),
+    linear-gradient(130deg, rgb(11 70 96 / .90), rgb(15 88 114 / .86) 54%, rgb(20 116 140 / .82)) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .13),
+    inset 0 -1px 0 rgb(3 57 78 / .24),
+    0 28px 74px rgb(3 57 78 / .20),
+    0 0 0 1px rgb(var(--energy-core-aura-rgb) / .040) !important;
+}
+
+.contact-pill {
+  background:
+    linear-gradient(120deg, rgb(var(--energy-core-pearl-rgb) / .095), rgb(255 255 255 / .034) 48%, rgb(4 47 67 / .100)) !important;
+}
+/* ──────────────────────────────────────────────────────────────────────────
+   PROFILE PROVEN-SKILLS PALETTE OVERRIDE
+   Aligns the profile area with the light, polished palette used by Proven Skills.
+   Keeps geometry, animations, timeline and navbar unchanged.
+────────────────────────────────────────────────────────────────────────── */
+.profile-island {
+  --profile-proven-ink: 7 35 52;
+  --profile-proven-muted: 72 107 122;
+  --profile-proven-line: 186 230 253;
+  --profile-proven-aura: 125 211 252;
+  --profile-proven-reef: 14 116 144;
+  --profile-proven-white: 255 255 255;
+  --profile-proven-pearl: 224 251 255;
+}
+
+.profile-island .hero-copy {
+  color: rgb(var(--profile-proven-ink) / .96) !important;
+  border-color: rgb(var(--profile-proven-line) / .42) !important;
+  background:
+    radial-gradient(560px 300px at 10% 8%, rgb(var(--profile-proven-aura) / .20), transparent 68%),
+    radial-gradient(680px 340px at 78% 0%, rgb(var(--profile-proven-white) / .78), transparent 72%),
+    radial-gradient(760px 420px at 100% 100%, rgb(20 184 166 / .12), transparent 78%),
+    linear-gradient(135deg,
+      rgb(var(--profile-proven-white) / .86) 0%,
+      rgb(var(--profile-proven-pearl) / .62) 46%,
+      rgb(205 241 250 / .48) 72%,
+      rgb(var(--profile-proven-aura) / .24) 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .90),
+    inset 0 -1px 0 rgb(8 47 73 / .10),
+    inset 48px 0 96px rgb(var(--profile-proven-aura) / .070),
+    inset -70px -54px 112px rgb(255 255 255 / .20),
+    0 52px 136px rgb(3 105 161 / .13),
+    0 18px 52px rgb(3 105 161 / .09) !important;
+}
+
+.profile-island .hero-copy::before {
+  opacity: .72 !important;
+  mix-blend-mode: normal !important;
+  background:
+    linear-gradient(90deg, rgb(255 255 255 / .42), transparent 17%, transparent 75%, rgb(var(--profile-proven-aura) / .16)),
+    linear-gradient(120deg, transparent 0 9%, rgb(255 255 255 / .52) 9.5%, transparent 10.3% 60%, rgb(8 47 73 / .050) 60.8%, transparent 61.8%),
+    repeating-linear-gradient(90deg, rgb(8 47 73 / .026) 0 1px, transparent 1px 72px),
+    repeating-linear-gradient(0deg, rgb(14 116 144 / .020) 0 1px, transparent 1px 54px) !important;
+}
+
+.profile-island .hero-copy::after {
+  opacity: .58 !important;
+  border-color: rgb(var(--profile-proven-line) / .30) !important;
+  background:
+    linear-gradient(90deg, rgb(255 255 255 / .54), rgb(var(--profile-proven-pearl) / .34) 52%, rgb(var(--profile-proven-aura) / .16)),
+    linear-gradient(90deg, transparent, rgb(255 255 255 / .72), transparent 38%, rgb(var(--profile-proven-aura) / .18), transparent) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .62),
+    inset 0 -10px 24px rgb(8 47 73 / .045),
+    0 18px 44px rgb(3 105 161 / .075) !important;
+}
+
+.profile-island .hero-title-char,
+.profile-island .hero-title-main,
+.profile-island .hero-title {
+  color: rgb(var(--profile-proven-ink) / .98) !important;
+  text-shadow:
+    0 1px 0 rgb(255 255 255 / .82),
+    0 18px 42px rgb(3 105 161 / .12) !important;
+}
+
+.profile-island .hero-title-current {
+  color: rgb(5 53 78 / .98) !important;
+}
+
+.profile-island .hero-keyword {
+  color: rgb(6 62 89 / .96) !important;
+  border-color: rgb(var(--profile-proven-line) / .48) !important;
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / .70), rgb(var(--profile-proven-pearl) / .46)),
+    linear-gradient(120deg, rgb(var(--profile-proven-aura) / .085), transparent) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .72),
+    0 12px 30px rgb(3 105 161 / .075),
+    0 0 0 1px rgb(var(--profile-proven-aura) / .050) !important;
+}
+
+.profile-island .hero-lead,
+.profile-island .hero-description {
+  color: rgb(var(--profile-proven-ink) / .93) !important;
+  border-color: rgb(var(--profile-proven-line) / .42) !important;
+  background:
+    radial-gradient(260px 140px at 14% 0%, rgb(var(--profile-proven-aura) / .12), transparent 70%),
+    linear-gradient(135deg, rgb(255 255 255 / .72), rgb(var(--profile-proven-pearl) / .48)) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .78),
+    inset 0 -1px 0 rgb(8 47 73 / .055),
+    0 18px 48px rgb(3 105 161 / .085),
+    0 0 0 1px rgb(var(--profile-proven-aura) / .035) !important;
+}
+
+.portrait-card.island-card,
+.availability-card.island-card,
+.contact-card.island-card {
+  color: rgb(var(--profile-proven-ink) / .95) !important;
+  border-color: rgb(var(--profile-proven-line) / .40) !important;
+  background:
+    radial-gradient(220px 140px at 12% 0%, rgb(var(--profile-proven-aura) / .14), transparent 70%),
+    radial-gradient(210px 160px at 100% 100%, rgb(20 184 166 / .10), transparent 74%),
+    linear-gradient(135deg, rgb(255 255 255 / .78), rgb(var(--profile-proven-pearl) / .50)) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .78),
+    inset 0 -1px 0 rgb(8 47 73 / .075),
+    0 28px 74px rgb(3 105 161 / .105),
+    0 0 0 1px rgb(var(--profile-proven-aura) / .045) !important;
+}
+
+.portrait-card.island-card::before,
+.availability-card.island-card::before,
+.contact-card.island-card::before {
+  opacity: .64 !important;
+  background:
+    linear-gradient(115deg, rgb(255 255 255 / .42), transparent 15%, transparent 68%, rgb(var(--profile-proven-aura) / .12)),
+    repeating-linear-gradient(100deg, rgb(8 47 73 / .026) 0 1px, transparent 1px 44px) !important;
+}
+
+.portrait-card.island-card::after,
+.availability-card.island-card::after,
+.contact-card.island-card::after {
+  opacity: .50 !important;
+  background: linear-gradient(90deg,
+    transparent,
+    rgb(var(--profile-proven-aura) / .34),
+    rgb(255 255 255 / .76),
+    rgb(20 184 166 / .20),
+    transparent) !important;
+}
+
+.portrait-name,
+.portrait-role,
+.availability-value,
+.availability-location,
+.contact-pill strong,
+.ring-label {
+  color: rgb(var(--profile-proven-ink) / .96) !important;
+}
+
+.availability-label,
+.card-kicker,
+.contact-pill span {
+  color: rgb(var(--profile-proven-muted) / .92) !important;
+}
+
+.portrait-image,
+.portrait-placeholder {
+  border-color: rgb(255 255 255 / .82) !important;
+  box-shadow:
+    0 0 0 10px rgb(var(--profile-proven-aura) / .10),
+    0 24px 74px rgb(3 105 161 / .13),
+    0 0 38px rgb(var(--profile-proven-aura) / .13),
+    inset 0 0 0 1px rgb(255 255 255 / .46) !important;
+}
+
+.contact-pill {
+  color: rgb(var(--profile-proven-ink) / .94) !important;
+  border-color: rgb(var(--profile-proven-line) / .42) !important;
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / .66), rgb(var(--profile-proven-pearl) / .40)) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .68),
+    0 10px 26px rgb(3 105 161 / .055) !important;
+}
+
+.contact-pill:hover,
+.contact-pill:focus-visible {
+  transform: translateX(5px) translateY(-1px) !important;
+  color: rgb(var(--profile-proven-ink) / .98) !important;
+  border-color: rgb(var(--profile-proven-aura) / .52) !important;
+  background:
+    radial-gradient(180px 80px at 14% 0%, rgb(var(--profile-proven-aura) / .18), transparent 70%),
+    linear-gradient(135deg, rgb(255 255 255 / .78), rgb(var(--profile-proven-pearl) / .52)) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / .76),
+    0 16px 36px rgb(3 105 161 / .11),
+    0 0 28px rgb(var(--profile-proven-aura) / .14) !important;
+}
+
+.contact-pill:hover span,
+.contact-pill:focus-visible span {
+  color: rgb(42 104 124 / .92) !important;
+}
+
+.contact-pill:hover strong,
+.contact-pill:focus-visible strong {
+  color: rgb(var(--profile-proven-ink) / .98) !important;
+}

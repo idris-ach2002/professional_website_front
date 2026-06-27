@@ -81,26 +81,40 @@ export default function PortfolioTimeline({ timeline, experiences }) {
     }
 
     cards.forEach((card) => {
+      const row = card.closest(".timeline-row");
+      const isLeft = row?.classList.contains("is-left");
+      const startX = isLeft ? -92 : 92;
+      const startRotateY = isLeft ? 18 : -18;
+      const startRotateZ = isLeft ? -3.5 : 3.5;
+
       gsap.fromTo(
         card,
         {
           autoAlpha: 0,
-          y: 60,
-          scale: 0.82,
-          clipPath: "circle(18% at 50% 50%)",
-          filter: "blur(10px) saturate(1.25)",
+          x: startX,
+          y: 54,
+          rotateY: startRotateY,
+          rotateZ: startRotateZ,
+          scale: 0.84,
+          clipPath: isLeft
+            ? "polygon(0 42%, 32% 32%, 78% 38%, 100% 50%, 80% 62%, 28% 68%, 0 58%)"
+            : "polygon(100% 42%, 68% 32%, 22% 38%, 0 50%, 20% 62%, 72% 68%, 100% 58%)",
+          filter: "blur(9px) saturate(1.16) brightness(1.04)",
         },
         {
           autoAlpha: 1,
+          x: 0,
           y: 0,
+          rotateY: 0,
+          rotateZ: 0,
           scale: 1,
-          clipPath: "circle(145% at 50% 50%)",
-          filter: "blur(0px) saturate(1)",
-          duration: 0.86,
-          ease: "back.out(1.35)",
+          clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)",
+          filter: "blur(0px) saturate(1) brightness(1)",
+          duration: 0.68,
+          ease: "expo.out",
           scrollTrigger: {
             trigger: card,
-            start: "top 82%",
+            start: "top 92%",
             toggleActions: "play none none reverse",
           },
         },
