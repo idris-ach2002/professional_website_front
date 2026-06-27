@@ -320,7 +320,7 @@ export default function TopNavigation({ owner }) {
           <NavSignatureCore />
           <span className="brand-copy">
             <Text className="brand-name">{ownerName}</Text>
-            <span className="brand-subtitle">Software Engineering Portfolio</span>
+            <span className="brand-subtitle">Software Engineer</span>
           </span>
         </a>
 

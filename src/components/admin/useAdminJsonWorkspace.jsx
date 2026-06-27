@@ -93,6 +93,7 @@ import {
   normalizeExperienceOrder,
   getProjectArchitectureUrl,
   hydrateProjectForm,
+  buildProjectCaseStudyPayload,
   downloadTextFile,
   escapeHtml,
   highlightJson,
@@ -308,6 +309,23 @@ export default function useAdminJsonWorkspace(ctx) {
     };
   }
 
+  function normalizeCaseStudyForJson(caseStudy) {
+    const payload = buildProjectCaseStudyPayload(caseStudy);
+    return payload ? {
+      problem: payload.problem ?? "",
+      context: payload.context ?? "",
+      role: payload.role ?? "",
+      architecture: payload.architecture ?? "",
+      technicalChoices: payload.technicalChoices ?? [],
+      challenges: payload.challenges ?? [],
+      solutions: payload.solutions ?? [],
+      outcomes: payload.outcomes ?? [],
+      results: payload.results ?? [],
+      limits: payload.limits ?? [],
+      nextSteps: payload.nextSteps ?? "",
+    } : null;
+  }
+
   function normalizeCurrentProjectForExport(project, index) {
     const githubUrl = project.githubUrl ?? "";
     const architectureUrl = getProjectArchitectureUrl(project);
@@ -326,8 +344,11 @@ export default function useAdminJsonWorkspace(ctx) {
       githubUrl,
       architectureUrl,
       documentationUrl,
+      slug: nullIfBlank(project.slug),
       stacks: toArray(project.stacks),
       features: toArray(project.features),
+      proofTags: toArray(project.proofTags),
+      caseStudy: normalizeCaseStudyForJson(project.caseStudy),
       links: [
         { type: "GITHUB", label: "GitHub", url: githubUrl },
         { type: "ARCHITECTURE", label: "Architecture", url: architectureUrl },
@@ -487,7 +508,7 @@ export default function useAdminJsonWorkspace(ctx) {
         { type: "DOCUMENTATION", label: "Documentation", url: documentationUrl },
       ].filter((link) => link.url),
       proofTags: toArray(project.proofTags),
-      caseStudy: project.caseStudy ?? null,
+      caseStudy: buildProjectCaseStudyPayload(project.caseStudy),
       featured: project.featured,
       published: project.published,
       displayOrder: Number(project.displayOrder),

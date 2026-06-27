@@ -48,6 +48,19 @@ export default function AdminProjectsPanel({
   const publishedCount = projects.filter((project) => project?.published !== false).length;
   const featuredCount = projects.filter((project) => project?.featured === true).length;
   const caseStudy = { ...(emptyProjectForm.caseStudy ?? {}), ...(projectForm.caseStudy ?? {}) };
+  const caseStudyFieldDescriptions = {
+    problem: "Ce qui devait être résolu : besoin utilisateur, douleur métier, contrainte académique ou problème technique initial.",
+    context: "Le cadre réel du projet : formation, stage, binôme, objectif, données manipulées, public visé ou environnement de déploiement.",
+    role: "Ce que tu as personnellement fait : conception, développement, intégration, tests, documentation, arbitrages.",
+    architecture: "La structure technique : frontend/backend, modules, base de données, services, flux de données, séparation des responsabilités.",
+    technicalChoices: "Une ligne par choix : technologie, approche, librairie ou architecture retenue, avec une justification courte.",
+    challenges: "Une ligne par difficulté concrète rencontrée : performance, intégration, modèle, UX, déploiement, dette technique.",
+    solutions: "Une ligne par réponse apportée : refactor, pipeline, validation, structure, automatisation, fallback, tests.",
+    outcomes: "Une ligne par impact humain ou produit : ce que le projet change pour l’utilisateur, le recruteur, l’équipe ou la maintenabilité.",
+    results: "Une ligne par résultat vérifiable : fonctionnalité livrée, base exploitable, documentation, robustesse, déploiement, preuve technique.",
+    limits: "Une ligne par limite assumée : ce qui reste perfectible, volontairement hors périmètre ou à industrialiser.",
+    nextSteps: "Suite réaliste du projet : améliorations, tests, déploiement, monitoring, UX, sécurité, nouvelles fonctionnalités."
+  };
 
   const slugifyProjectTitle = (value) => String(value ?? "")
     .normalize("NFD")
@@ -85,7 +98,9 @@ export default function AdminProjectsPanel({
       technicalChoices: caseStudy.technicalChoices || features.slice(0, 4).join("\n"),
       challenges: caseStudy.challenges || "Structurer le projet sans multiplier les responsabilités dans les mêmes modules.\nMaintenir une base lisible, testable et évolutive.",
       solutions: caseStudy.solutions || features.slice(0, 4).join("\n"),
+      outcomes: caseStudy.outcomes || "Projet plus lisible pour un recruteur, avec des preuves techniques reliées à des usages concrets.\nContenu exploitable comme base de discussion en entretien.",
       results: caseStudy.results || "Projet documenté et exploitable comme preuve technique.\nFonctionnalités principales livrées et reliées à des compétences concrètes.",
+      limits: caseStudy.limits || "Certaines parties peuvent encore être renforcées par des tests, du monitoring ou une documentation plus ciblée.",
       nextSteps: caseStudy.nextSteps || "Renforcer les tests, enrichir la documentation technique et industrialiser les scénarios d’usage.",
     });
   };
@@ -262,10 +277,10 @@ export default function AdminProjectsPanel({
                 <Accordion.Control>Résumé, rôle et architecture</Accordion.Control>
                 <Accordion.Panel>
                   <Stack gap="sm">
-                    <Textarea label="Problème traité" minRows={2} value={caseStudy.problem} onChange={(event) => updateCaseStudy("problem", event.currentTarget.value)} />
-                    <Textarea label="Contexte" minRows={3} value={caseStudy.context} onChange={(event) => updateCaseStudy("context", event.currentTarget.value)} />
-                    <Textarea label="Rôle personnel" minRows={2} value={caseStudy.role} onChange={(event) => updateCaseStudy("role", event.currentTarget.value)} />
-                    <Textarea label="Architecture" minRows={3} value={caseStudy.architecture} onChange={(event) => updateCaseStudy("architecture", event.currentTarget.value)} />
+                    <Textarea label="Problème traité" description={caseStudyFieldDescriptions.problem} minRows={2} value={caseStudy.problem} onChange={(event) => updateCaseStudy("problem", event.currentTarget.value)} />
+                    <Textarea label="Contexte" description={caseStudyFieldDescriptions.context} minRows={3} value={caseStudy.context} onChange={(event) => updateCaseStudy("context", event.currentTarget.value)} />
+                    <Textarea label="Rôle personnel" description={caseStudyFieldDescriptions.role} minRows={2} value={caseStudy.role} onChange={(event) => updateCaseStudy("role", event.currentTarget.value)} />
+                    <Textarea label="Architecture" description={caseStudyFieldDescriptions.architecture} minRows={3} value={caseStudy.architecture} onChange={(event) => updateCaseStudy("architecture", event.currentTarget.value)} />
                   </Stack>
                 </Accordion.Panel>
               </Accordion.Item>
@@ -274,12 +289,13 @@ export default function AdminProjectsPanel({
                 <Accordion.Control>Choix techniques, difficultés et preuves</Accordion.Control>
                 <Accordion.Panel>
                   <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
-                    <Textarea label="Choix techniques" description="Une ligne par choix" minRows={5} value={caseStudy.technicalChoices} onChange={(event) => updateCaseStudy("technicalChoices", event.currentTarget.value)} />
-                    <Textarea label="Difficultés" description="Une ligne par difficulté" minRows={5} value={caseStudy.challenges} onChange={(event) => updateCaseStudy("challenges", event.currentTarget.value)} />
-                    <Textarea label="Solutions" description="Une ligne par solution" minRows={5} value={caseStudy.solutions} onChange={(event) => updateCaseStudy("solutions", event.currentTarget.value)} />
-                    <Textarea label="Résultats / impacts" description="Une ligne par résultat" minRows={5} value={caseStudy.results} onChange={(event) => updateCaseStudy("results", event.currentTarget.value)} />
-                    <Textarea label="Limites" description="Une ligne par limite" minRows={4} value={caseStudy.limits} onChange={(event) => updateCaseStudy("limits", event.currentTarget.value)} />
-                    <Textarea label="Suites possibles" minRows={4} value={caseStudy.nextSteps} onChange={(event) => updateCaseStudy("nextSteps", event.currentTarget.value)} />
+                    <Textarea label="Choix techniques" description={caseStudyFieldDescriptions.technicalChoices} minRows={5} value={caseStudy.technicalChoices} onChange={(event) => updateCaseStudy("technicalChoices", event.currentTarget.value)} />
+                    <Textarea label="Difficultés" description={caseStudyFieldDescriptions.challenges} minRows={5} value={caseStudy.challenges} onChange={(event) => updateCaseStudy("challenges", event.currentTarget.value)} />
+                    <Textarea label="Solutions" description={caseStudyFieldDescriptions.solutions} minRows={5} value={caseStudy.solutions} onChange={(event) => updateCaseStudy("solutions", event.currentTarget.value)} />
+                    <Textarea label="Outcomes / impact humain" description={caseStudyFieldDescriptions.outcomes} minRows={5} value={caseStudy.outcomes} onChange={(event) => updateCaseStudy("outcomes", event.currentTarget.value)} />
+                    <Textarea label="Résultats vérifiables" description={caseStudyFieldDescriptions.results} minRows={5} value={caseStudy.results} onChange={(event) => updateCaseStudy("results", event.currentTarget.value)} />
+                    <Textarea label="Limites" description={caseStudyFieldDescriptions.limits} minRows={4} value={caseStudy.limits} onChange={(event) => updateCaseStudy("limits", event.currentTarget.value)} />
+                    <Textarea label="Suites possibles" description={caseStudyFieldDescriptions.nextSteps} minRows={4} value={caseStudy.nextSteps} onChange={(event) => updateCaseStudy("nextSteps", event.currentTarget.value)} />
                   </SimpleGrid>
                 </Accordion.Panel>
               </Accordion.Item>

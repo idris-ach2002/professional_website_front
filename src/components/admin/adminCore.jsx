@@ -223,7 +223,7 @@ export const cvTargetPresets = [
   {
     key: "java-backend",
     label: "Java Backend",
-    title: "Alternance Développeur Java Full Stack",
+    title: "Alternance Développeur Full spectre",
     headline: "Développeur Java full stack orienté backend, qualité logicielle, API REST et données relationnelles.",
     prioritySkills: ["Java", "Java 21", "Spring Boot", "PostgreSQL", "API REST", "Maven", "Docker"],
   },
@@ -1372,17 +1372,17 @@ export function hydrateProjectCaseStudyForm(caseStudy) {
   if (!caseStudy) return { ...emptyProjectCaseStudyForm };
 
   return {
-    problem: caseStudy.problem ?? "",
-    context: caseStudy.context ?? "",
-    role: caseStudy.role ?? "",
-    architecture: caseStudy.architecture ?? "",
-    technicalChoices: toMultiline(caseStudy.technicalChoices),
-    challenges: toMultiline(caseStudy.challenges),
+    problem: caseStudy.problem ?? caseStudy.issue ?? caseStudy.need ?? "",
+    context: caseStudy.context ?? caseStudy.background ?? "",
+    role: caseStudy.role ?? caseStudy.personalRole ?? caseStudy.contribution ?? "",
+    architecture: caseStudy.architecture ?? caseStudy.design ?? "",
+    technicalChoices: toMultiline(caseStudy.technicalChoices ?? caseStudy.choices),
+    challenges: toMultiline(caseStudy.challenges ?? caseStudy.difficulties),
     solutions: toMultiline(caseStudy.solutions),
-    outcomes: toMultiline(caseStudy.outcomes),
+    outcomes: toMultiline(caseStudy.outcomes ?? caseStudy.impacts),
     results: toMultiline(caseStudy.results),
-    limits: toMultiline(caseStudy.limits),
-    nextSteps: caseStudy.nextSteps ?? "",
+    limits: toMultiline(caseStudy.limits ?? caseStudy.limitations),
+    nextSteps: toMultiline(caseStudy.nextSteps ?? caseStudy.next ?? caseStudy.futureWork),
   };
 }
 
@@ -1399,7 +1399,7 @@ export function buildProjectCaseStudyPayload(caseStudy) {
     outcomes: toLines(source.outcomes),
     results: toLines(source.results),
     limits: toLines(source.limits),
-    nextSteps: nullIfBlank(source.nextSteps),
+    nextSteps: nullIfBlank(toLines(source.nextSteps).join("\n") || source.nextSteps),
   };
 
   const hasContent = Object.values(payload).some((value) => Array.isArray(value) ? value.length > 0 : Boolean(value));

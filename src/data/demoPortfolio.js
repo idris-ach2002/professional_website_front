@@ -31,7 +31,7 @@ export const demoOwner = {
   "versionPublished": true,
   "versionActive": true,
   "prof": {
-    "title": "Développeur Java Full Stack",
+    "title": "Développeur Full Spectre",
     "subtitle": "Java 21 / Spring Boot / React / PostgreSQL",
     "headline": "Étudiant en Master Informatique STL à Sorbonne Université, orienté ingénierie logicielle, backend robuste, interfaces métier et qualité applicative.",
     "shortDescription": "Portfolio professionnel centré sur le développement Java full stack, les API REST, les bases PostgreSQL, les interfaces web métier et les projets académiques avancés.",

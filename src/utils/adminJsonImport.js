@@ -79,6 +79,37 @@ function asArray(value) {
     .filter(Boolean);
 }
 
+function asLines(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);
+
+  return String(value)
+    .split(/\r?\n/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeCaseStudy(caseStudy) {
+  if (!isObject(caseStudy)) return null;
+
+  const normalized = {
+    problem: asString(caseStudy.problem ?? caseStudy.issue ?? caseStudy.need).trim(),
+    context: asString(caseStudy.context ?? caseStudy.background).trim(),
+    role: asString(caseStudy.role ?? caseStudy.personalRole ?? caseStudy.contribution).trim(),
+    architecture: asString(caseStudy.architecture ?? caseStudy.design).trim(),
+    technicalChoices: asLines(caseStudy.technicalChoices ?? caseStudy.choices),
+    challenges: asLines(caseStudy.challenges ?? caseStudy.difficulties),
+    solutions: asLines(caseStudy.solutions),
+    outcomes: asLines(caseStudy.outcomes ?? caseStudy.impacts),
+    results: asLines(caseStudy.results),
+    limits: asLines(caseStudy.limits ?? caseStudy.limitations),
+    nextSteps: asString(Array.isArray(caseStudy.nextSteps) ? caseStudy.nextSteps.join("\n") : (caseStudy.nextSteps ?? caseStudy.next ?? caseStudy.futureWork)).trim(),
+  };
+
+  const hasContent = Object.values(normalized).some((value) => Array.isArray(value) ? value.length > 0 : value.length > 0);
+  return hasContent ? normalized : null;
+}
+
 function pick(source, keys, fallback = "") {
   if (!isObject(source)) return fallback;
 
@@ -193,7 +224,7 @@ function normalizeProject(project, index) {
     features: asArray(project?.features ?? project?.functionalities),
     links,
     proofTags: asArray(project?.proofTags ?? project?.proofs ?? project?.evidenceTags),
-    caseStudy: isObject(project?.caseStudy) ? project.caseStudy : null,
+    caseStudy: normalizeCaseStudy(project?.caseStudy),
     featured: asBoolean(project?.featured, false),
     published: asBoolean(project?.published, true),
     displayOrder: asNumber(project?.displayOrder ?? project?.order, index + 1),
