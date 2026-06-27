@@ -10466,3 +10466,513 @@ main,
 .top-nav-shell > .top-nav.top-nav--holo-sonar .sonar-nav.sonar-nav--dock .dock-nav-link.is-active .dock-link-label {
   text-shadow: none !important;
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Public features — proven skills + project case study pages
+────────────────────────────────────────────────────────────────────────── */
+.proven-skills-section {
+  scroll-margin-top: 132px;
+}
+
+.proven-skills-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(300px, .84fr) minmax(0, 1.16fr);
+  gap: clamp(18px, 3vw, 34px);
+  align-items: stretch;
+}
+
+.proven-skills-list {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.proven-skill-button {
+  position: relative;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  width: 100%;
+  min-height: 94px;
+  padding: 16px 18px;
+  border: 1px solid rgba(14, 116, 144, .15);
+  border-radius: 28px;
+  color: var(--ink);
+  text-align: left;
+  background:
+    radial-gradient(circle at 12% 20%, rgba(125, 211, 252, .16), transparent 34%),
+    linear-gradient(135deg, rgba(255, 255, 255, .72), rgba(224, 251, 255, .48));
+  box-shadow: 0 18px 56px rgba(3, 105, 161, .08);
+  cursor: pointer;
+  overflow: hidden;
+  appearance: none;
+  transition:
+    transform .28s ease,
+    border-color .28s ease,
+    background .28s ease,
+    box-shadow .28s ease;
+}
+
+.proven-skill-button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, rgba(125, 211, 252, .26), transparent 46%),
+    radial-gradient(circle at 88% 48%, rgba(255, 255, 255, .42), transparent 36%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .28s ease;
+}
+
+.proven-skill-button:hover,
+.proven-skill-button:focus-visible,
+.proven-skill-button.is-selected {
+  transform: translateY(-2px);
+  border-color: rgba(3, 105, 161, .28);
+  box-shadow: 0 26px 76px rgba(3, 105, 161, .14);
+}
+
+.proven-skill-button:hover::before,
+.proven-skill-button:focus-visible::before,
+.proven-skill-button.is-selected::before {
+  opacity: 1;
+}
+
+.proven-skill-index {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  color: var(--deep-ocean);
+  font-size: .74rem;
+  font-weight: 950;
+  letter-spacing: .08em;
+  background: rgba(255, 255, 255, .66);
+  border: 1px solid rgba(6, 182, 212, .18);
+}
+
+.proven-skill-copy {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.proven-skill-copy strong {
+  color: var(--ink);
+  font-size: 1rem;
+  letter-spacing: -.025em;
+}
+
+.proven-skill-copy span {
+  color: rgba(72, 107, 122, .92);
+  font-size: .88rem;
+  line-height: 1.45;
+}
+
+.proven-skill-count {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 9px;
+  border-radius: 999px;
+  color: white;
+  font-size: .82rem;
+  font-weight: 950;
+  background: linear-gradient(135deg, var(--deep-ocean), var(--reef));
+  box-shadow: 0 12px 28px rgba(3, 105, 161, .18);
+}
+
+.proven-skill-detail-card {
+  position: sticky;
+  top: 118px;
+  min-height: 520px;
+  padding: clamp(24px, 3vw, 36px) !important;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 88% 16%, rgba(125, 211, 252, .20), transparent 28%),
+    radial-gradient(circle at 10% 100%, rgba(20, 184, 166, .16), transparent 34%),
+    linear-gradient(135deg, rgba(255, 255, 255, .82), rgba(224, 251, 255, .64)) !important;
+}
+
+.proven-skill-detail-orb {
+  position: absolute;
+  right: -90px;
+  top: -90px;
+  width: 260px;
+  height: 260px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, .92), transparent 26%),
+    radial-gradient(circle, rgba(56, 189, 248, .24), rgba(6, 182, 212, .08) 54%, transparent 70%);
+  filter: blur(.2px);
+  pointer-events: none;
+}
+
+.proven-skill-detail-content {
+  position: relative;
+  z-index: 1;
+}
+
+.proven-skill-detail-card h3 {
+  margin: 12px 0 8px !important;
+  color: var(--ink) !important;
+  font-size: clamp(2rem, 4vw, 4.2rem) !important;
+  line-height: .95 !important;
+  letter-spacing: -.07em !important;
+}
+
+.proven-skill-detail-text {
+  max-width: 680px;
+  color: var(--muted) !important;
+  font-size: 1rem !important;
+  line-height: 1.7 !important;
+}
+
+.proven-skill-score {
+  display: grid;
+  place-items: center;
+  min-width: 94px;
+  padding: 14px;
+  border: 1px solid rgba(6, 182, 212, .2);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, .55);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.72);
+}
+
+.proven-skill-score strong {
+  color: var(--deep-ocean);
+  font-size: 2rem;
+  line-height: 1;
+  letter-spacing: -.06em;
+}
+
+.proven-skill-score span {
+  color: var(--muted);
+  font-size: .74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.proven-skill-stack-row,
+.case-study-stack-row {
+  margin-top: 2px;
+}
+
+.proven-skill-proof-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.proven-proof-column {
+  display: grid;
+  gap: 10px;
+}
+
+.proven-proof-kicker,
+.case-study-section-kicker {
+  color: rgba(8, 47, 73, .58) !important;
+  font-size: .74rem !important;
+  font-weight: 950 !important;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.proven-proof-item,
+.proven-proof-empty {
+  display: grid;
+  gap: 4px;
+  min-height: 70px;
+  padding: 14px 16px;
+  border: 1px solid rgba(14, 116, 144, .13);
+  border-radius: 22px;
+  color: inherit;
+  text-decoration: none;
+  background: rgba(255, 255, 255, .52);
+  transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+}
+
+.proven-proof-item:hover,
+.proven-proof-item:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(3, 105, 161, .28);
+  box-shadow: 0 18px 46px rgba(3, 105, 161, .12);
+}
+
+.proven-proof-item span {
+  color: var(--ink);
+  font-weight: 950;
+  line-height: 1.2;
+}
+
+.proven-proof-item small,
+.proven-proof-empty {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.proven-skill-actions {
+  margin-top: 4px;
+}
+
+.project-case-study-link {
+  text-decoration: none;
+}
+
+.project-detail-resource-actions .project-links {
+  margin: 0;
+}
+
+.project-case-page-shell .top-nav-shell {
+  margin-bottom: -96px;
+}
+
+.project-case-content {
+  padding-top: 136px;
+}
+
+.project-case-breadcrumb {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  align-items: center;
+  width: fit-content;
+  padding: 10px 14px;
+  border: 1px solid rgba(14, 116, 144, .14);
+  border-radius: 999px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, .56);
+  backdrop-filter: blur(18px);
+}
+
+.project-case-breadcrumb a {
+  color: var(--deep-ocean);
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.project-case-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, .64fr);
+  gap: clamp(24px, 4vw, 54px);
+  align-items: center;
+  padding: clamp(28px, 5vw, 58px) !important;
+  overflow: hidden;
+  border-radius: 56px 34px 66px 38px !important;
+  background:
+    radial-gradient(circle at 10% 12%, rgba(125, 211, 252, .19), transparent 28%),
+    radial-gradient(circle at 88% 18%, rgba(255, 255, 255, .72), transparent 26%),
+    linear-gradient(135deg, rgba(255, 255, 255, .84), rgba(224, 251, 255, .62)) !important;
+}
+
+.project-case-hero::before {
+  content: "";
+  position: absolute;
+  right: -120px;
+  bottom: -150px;
+  width: 440px;
+  height: 320px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(6, 182, 212, .20), transparent 68%);
+  pointer-events: none;
+}
+
+.project-case-hero-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.project-case-meta {
+  margin-bottom: 18px;
+}
+
+.project-case-hero h1 {
+  margin: 0 !important;
+  color: var(--ink) !important;
+  font-size: clamp(3rem, 7vw, 7.2rem) !important;
+  line-height: .88 !important;
+  letter-spacing: -.09em !important;
+}
+
+.project-case-subtitle {
+  margin-top: 16px !important;
+  color: var(--deep-ocean) !important;
+  font-size: clamp(1.06rem, 1.8vw, 1.34rem) !important;
+  font-weight: 900 !important;
+}
+
+.project-case-lead {
+  max-width: 780px;
+  margin-top: 18px !important;
+  color: rgba(72, 107, 122, .96) !important;
+  font-size: clamp(1rem, 1.3vw, 1.15rem) !important;
+  line-height: 1.75 !important;
+}
+
+.project-case-period {
+  margin-top: 16px !important;
+  color: var(--deep-ocean) !important;
+  font-weight: 900 !important;
+}
+
+.project-case-actions {
+  margin-top: 26px;
+}
+
+.project-case-image-preview-trigger {
+  position: relative;
+  z-index: 1;
+  display: block;
+  min-height: clamp(280px, 32vw, 440px);
+  overflow: hidden;
+  border: 1px solid rgba(14, 116, 144, .18);
+  border-radius: 42px 26px 50px 30px;
+  background: rgba(255, 255, 255, .52);
+  box-shadow: 0 28px 90px rgba(8, 47, 73, .16);
+}
+
+.project-case-image {
+  width: 100%;
+  height: 100%;
+  min-height: clamp(280px, 32vw, 440px);
+  object-fit: cover;
+}
+
+.case-study-map {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(16px, 2.6vw, 28px);
+}
+
+.case-study-section-card,
+.case-study-stack-card,
+.case-study-links-card {
+  padding: clamp(22px, 3vw, 34px) !important;
+  border-radius: 34px !important;
+  background: rgba(255, 255, 255, .70) !important;
+}
+
+.case-study-section-card:first-child,
+.case-study-section-card:nth-child(3) {
+  grid-column: span 2;
+}
+
+.case-study-section-body {
+  margin-top: 12px !important;
+  color: var(--muted) !important;
+  font-size: 1rem !important;
+  line-height: 1.75 !important;
+}
+
+.case-study-list {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.case-study-list li {
+  position: relative;
+  padding: 12px 14px 12px 36px;
+  border: 1px solid rgba(14, 116, 144, .12);
+  border-radius: 18px;
+  color: rgba(72, 107, 122, .98);
+  line-height: 1.55;
+  background: rgba(255, 255, 255, .48);
+}
+
+.case-study-list li::before {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: 19px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--reef);
+  box-shadow: 0 0 14px rgba(6, 182, 212, .42);
+}
+
+.project-case-links {
+  margin-top: 14px;
+}
+
+@media (max-width: 1020px) {
+  .proven-skills-grid,
+  .project-case-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .proven-skill-detail-card {
+    position: relative;
+    top: auto;
+  }
+
+  .case-study-map,
+  .case-study-section-card:first-child,
+  .case-study-section-card:nth-child(3) {
+    grid-template-columns: 1fr;
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .proven-skill-button {
+    grid-template-columns: 38px minmax(0, 1fr);
+    min-height: auto;
+    border-radius: 22px;
+  }
+
+  .proven-skill-count {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .proven-skill-proof-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .project-case-hero {
+    padding: 24px !important;
+    border-radius: 36px 24px 42px 26px !important;
+  }
+
+  .project-case-actions .mantine-Button-root {
+    flex: 1 1 100%;
+  }
+}
+
+/* Proven skills API enrichments */
+.proven-proof-points {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.proven-proof-points span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 6px 10px;
+  border: 1px solid rgba(125, 211, 252, .18);
+  border-radius: 999px;
+  color: rgba(8, 47, 73, .82);
+  background: rgba(255, 255, 255, .48);
+  font-size: .78rem;
+  font-weight: 800;
+}
