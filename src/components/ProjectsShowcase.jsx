@@ -1,6 +1,7 @@
 import { Anchor, Badge, Button, Card, Group, MultiSelect, Stack, Text, TextInput, Title } from "@mantine/core";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { Link } from "react-router-dom";
 import { gsapReady, useGsap } from "../animations/useGsap";
 import SectionTitle from "./SectionTitle";
 import { FilePreviewButton, PreviewableImage } from "./FilePreview";
@@ -12,6 +13,7 @@ import {
   formatPeriod,
   getAvailableStacks,
   getAvailableStatuses,
+  getProjectSlug,
   getPublicProjects,
   normalizeUrl,
 } from "../utils/portfolio";
@@ -41,6 +43,7 @@ function ProjectVisual({ project, index }) {
 function findProjectLink(project, predicate) {
   const directLinks = [
     project.githubUrl && { label: "GitHub", url: project.githubUrl, type: "GITHUB" },
+    project.architectureUrl && { label: "Architecture", url: project.architectureUrl, type: "ARCHITECTURE" },
     project.documentationUrl && { label: "Documentation", url: project.documentationUrl, type: "DOCUMENTATION" },
     ...(project.links ?? []).map((link) => ({
       label: link.label || LINK_LABELS[link.type] || "Lien",
@@ -301,12 +304,15 @@ function ProjectDetailsModal({ project, opened, onClose }) {
                 </section>
               )}
 
-              {links.length > 0 && (
-                <section className="project-detail-section project-detail-links-section">
-                  <h3>Liens</h3>
-                  <ProjectLinks project={project} />
-                </section>
-              )}
+              <section className="project-detail-section project-detail-links-section">
+                <h3>Ressources</h3>
+                <Group gap="xs" className="project-detail-resource-actions">
+                  <Link to={`/projects/${getProjectSlug(project)}`} className="project-link project-case-study-link" onClick={onClose}>
+                    Étude de cas
+                  </Link>
+                  {links.length > 0 && <ProjectLinks project={project} />}
+                </Group>
+              </section>
             </div>
           </div>
         </div>
@@ -346,6 +352,14 @@ function ProjectIsland({ project, index, featured, total, active, onOpenDetails 
 
               <Group gap="xs" className="project-card-actions">
                 <ProjectLinks project={project} />
+                <Link
+                  to={`/projects/${getProjectSlug(project)}`}
+                  className="project-read-more project-case-study-link"
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <span>Étude de cas</span>
+                </Link>
                 {showDetails && (
                   <button
                     type="button"
