@@ -223,7 +223,7 @@ export const cvTargetPresets = [
   {
     key: "java-backend",
     label: "Java Backend",
-    title: "Alternance Développeur Full spectre",
+    title: "Alternance Développeur Java Full Stack",
     headline: "Développeur Java full stack orienté backend, qualité logicielle, API REST et données relationnelles.",
     prioritySkills: ["Java", "Java 21", "Spring Boot", "PostgreSQL", "API REST", "Maven", "Docker"],
   },
