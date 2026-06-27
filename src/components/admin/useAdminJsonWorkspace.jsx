@@ -478,6 +478,7 @@ export default function useAdminJsonWorkspace(ctx) {
       githubUrl,
       documentationUrl,
       architectureUrl,
+      slug: nullIfBlank(project.slug),
       stacks: toArray(project.stacks),
       features: toArray(project.features),
       links: [
@@ -485,6 +486,8 @@ export default function useAdminJsonWorkspace(ctx) {
         { type: "ARCHITECTURE", label: "Architecture", url: architectureUrl },
         { type: "DOCUMENTATION", label: "Documentation", url: documentationUrl },
       ].filter((link) => link.url),
+      proofTags: toArray(project.proofTags),
+      caseStudy: project.caseStudy ?? null,
       featured: project.featured,
       published: project.published,
       displayOrder: Number(project.displayOrder),

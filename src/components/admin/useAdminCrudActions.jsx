@@ -275,6 +275,8 @@ export default function useAdminCrudActions(ctx) {
       demoUrl: nullIfBlank(projectForm.demoUrl),
       githubUrl: nullIfBlank(projectForm.githubUrl),
       documentationUrl,
+      architectureUrl,
+      slug: nullIfBlank(projectForm.slug),
       stacks: toArray(projectForm.stacks),
       features: toArray(projectForm.features),
       links: [
@@ -282,6 +284,8 @@ export default function useAdminCrudActions(ctx) {
         { type: "ARCHITECTURE", label: "Architecture", url: architectureUrl },
         { type: "DOCUMENTATION", label: "Documentation", url: documentationUrl },
       ].filter((link) => link.url),
+      proofTags: toArray(projectForm.proofTags),
+      caseStudy: projectForm.caseStudy ?? null,
       featured: projectForm.featured,
       published: projectForm.published,
       displayOrder: Number(projectForm.displayOrder),
