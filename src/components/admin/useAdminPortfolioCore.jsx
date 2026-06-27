@@ -284,6 +284,7 @@ export default function useAdminPortfolioCore(ctx) {
     setSelectedProjectId(null);
     setProjectForm({
       ...emptyProjectForm,
+      caseStudy: { ...(emptyProjectForm.caseStudy ?? {}) },
       displayOrder: (sourceProjects?.length ?? 0) + 1,
     });
     setProjectFiles(emptyProjectFiles);

@@ -1,4 +1,5 @@
 import {
+  Accordion,
   Alert,
   Badge,
   Button,
@@ -46,6 +47,48 @@ export default function AdminProjectsPanel({
   const disabled = !selectedOwnerId || !selectedVersionId;
   const publishedCount = projects.filter((project) => project?.published !== false).length;
   const featuredCount = projects.filter((project) => project?.featured === true).length;
+  const caseStudy = { ...(emptyProjectForm.caseStudy ?? {}), ...(projectForm.caseStudy ?? {}) };
+
+  const slugifyProjectTitle = (value) => String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 90);
+
+  const updateCaseStudy = (field, value) => {
+    updateProjectForm("caseStudy", {
+      ...(emptyProjectForm.caseStudy ?? {}),
+      ...(projectForm.caseStudy ?? {}),
+      [field]: value,
+    });
+  };
+
+  const fillCaseStudyFromProject = () => {
+    const features = String(projectForm.features ?? "")
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+    const stacks = String(projectForm.stacks ?? "")
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    updateProjectForm("caseStudy", {
+      ...(emptyProjectForm.caseStudy ?? {}),
+      ...(projectForm.caseStudy ?? {}),
+      problem: caseStudy.problem || projectForm.shortDescription || "Clarifier le besoin, structurer le périmètre et livrer une solution exploitable.",
+      context: caseStudy.context || projectForm.description || "Projet construit dans un contexte académique ou professionnel avec un objectif applicatif concret.",
+      role: caseStudy.role || "Conception, développement, intégration, tests, documentation et arbitrages techniques sur le périmètre logiciel.",
+      architecture: caseStudy.architecture || `Architecture construite autour de ${stacks.slice(0, 5).join(", ") || "composants séparés"}, avec séparation des responsabilités et données structurées.`,
+      technicalChoices: caseStudy.technicalChoices || features.slice(0, 4).join("\n"),
+      challenges: caseStudy.challenges || "Structurer le projet sans multiplier les responsabilités dans les mêmes modules.\nMaintenir une base lisible, testable et évolutive.",
+      solutions: caseStudy.solutions || features.slice(0, 4).join("\n"),
+      results: caseStudy.results || "Projet documenté et exploitable comme preuve technique.\nFonctionnalités principales livrées et reliées à des compétences concrètes.",
+      nextSteps: caseStudy.nextSteps || "Renforcer les tests, enrichir la documentation technique et industrialiser les scénarios d’usage.",
+    });
+  };
 
   return (
     <Stack gap="lg">
@@ -187,12 +230,61 @@ export default function AdminProjectsPanel({
             <TextInput label="Demo URL" placeholder="https://..." value={projectForm.demoUrl} onChange={(event) => updateProjectForm("demoUrl", event.currentTarget.value)} />
             <TextInput label="GitHub URL" placeholder="https://github.com/..." value={projectForm.githubUrl} onChange={(event) => updateProjectForm("githubUrl", event.currentTarget.value)} />
             <TextInput label="Architecture URL" placeholder="Schéma, PDF ou page d’architecture" value={projectForm.architectureUrl} onChange={(event) => updateProjectForm("architectureUrl", event.currentTarget.value)} />
+            <Group align="end" gap="xs" grow>
+              <TextInput label="Slug public" placeholder="portfolio-backend-spring-boot" value={projectForm.slug} onChange={(event) => updateProjectForm("slug", event.currentTarget.value)} />
+              <Button variant="light" onClick={() => updateProjectForm("slug", slugifyProjectTitle(projectForm.title))}>
+                Générer
+              </Button>
+            </Group>
             <TextInput label="Stacks séparées par des virgules" placeholder="Java, Spring Boot, React, PostgreSQL" value={projectForm.stacks} onChange={(event) => updateProjectForm("stacks", event.currentTarget.value)} />
             <TextInput label="Features séparées par des virgules" placeholder="CRUD, versioning, upload, dashboard" value={projectForm.features} onChange={(event) => updateProjectForm("features", event.currentTarget.value)} />
+            <TextInput label="Proof tags séparés par des virgules" placeholder="Java, REST API, PostgreSQL, Architecture" value={projectForm.proofTags} onChange={(event) => updateProjectForm("proofTags", event.currentTarget.value)} />
           </SimpleGrid>
 
           <Textarea label="Description courte" minRows={2} value={projectForm.shortDescription} onChange={(event) => updateProjectForm("shortDescription", event.currentTarget.value)} />
           <Textarea label="Description complète" minRows={5} value={projectForm.description} onChange={(event) => updateProjectForm("description", event.currentTarget.value)} />
+
+          <Paper withBorder p="lg" radius="lg" className="admin-file-panel">
+            <Group justify="space-between" align="flex-start" mb="sm">
+              <div>
+                <Text fw={850}>Étude de cas publique</Text>
+                <Text size="sm" c="dimmed">
+                  Ces champs alimentent la page /projects/:slug et les compétences prouvées. Les listes se remplissent une ligne par élément.
+                </Text>
+              </div>
+              <Button size="xs" variant="light" onClick={fillCaseStudyFromProject}>
+                Préremplir
+              </Button>
+            </Group>
+
+            <Accordion variant="contained" defaultValue="main">
+              <Accordion.Item value="main">
+                <Accordion.Control>Résumé, rôle et architecture</Accordion.Control>
+                <Accordion.Panel>
+                  <Stack gap="sm">
+                    <Textarea label="Problème traité" minRows={2} value={caseStudy.problem} onChange={(event) => updateCaseStudy("problem", event.currentTarget.value)} />
+                    <Textarea label="Contexte" minRows={3} value={caseStudy.context} onChange={(event) => updateCaseStudy("context", event.currentTarget.value)} />
+                    <Textarea label="Rôle personnel" minRows={2} value={caseStudy.role} onChange={(event) => updateCaseStudy("role", event.currentTarget.value)} />
+                    <Textarea label="Architecture" minRows={3} value={caseStudy.architecture} onChange={(event) => updateCaseStudy("architecture", event.currentTarget.value)} />
+                  </Stack>
+                </Accordion.Panel>
+              </Accordion.Item>
+
+              <Accordion.Item value="proofs">
+                <Accordion.Control>Choix techniques, difficultés et preuves</Accordion.Control>
+                <Accordion.Panel>
+                  <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+                    <Textarea label="Choix techniques" description="Une ligne par choix" minRows={5} value={caseStudy.technicalChoices} onChange={(event) => updateCaseStudy("technicalChoices", event.currentTarget.value)} />
+                    <Textarea label="Difficultés" description="Une ligne par difficulté" minRows={5} value={caseStudy.challenges} onChange={(event) => updateCaseStudy("challenges", event.currentTarget.value)} />
+                    <Textarea label="Solutions" description="Une ligne par solution" minRows={5} value={caseStudy.solutions} onChange={(event) => updateCaseStudy("solutions", event.currentTarget.value)} />
+                    <Textarea label="Résultats / impacts" description="Une ligne par résultat" minRows={5} value={caseStudy.results} onChange={(event) => updateCaseStudy("results", event.currentTarget.value)} />
+                    <Textarea label="Limites" description="Une ligne par limite" minRows={4} value={caseStudy.limits} onChange={(event) => updateCaseStudy("limits", event.currentTarget.value)} />
+                    <Textarea label="Suites possibles" minRows={4} value={caseStudy.nextSteps} onChange={(event) => updateCaseStudy("nextSteps", event.currentTarget.value)} />
+                  </SimpleGrid>
+                </Accordion.Panel>
+              </Accordion.Item>
+            </Accordion>
+          </Paper>
 
           <Group>
             <Checkbox label="Featured : mettre en avant" checked={projectForm.featured} onChange={(event) => updateProjectForm("featured", event.currentTarget.checked)} />

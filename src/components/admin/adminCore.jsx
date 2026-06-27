@@ -126,6 +126,20 @@ export const emptyExperienceForm = {
   displayOrder: 1,
 };
 
+export const emptyProjectCaseStudyForm = {
+  problem: "",
+  context: "",
+  role: "",
+  architecture: "",
+  technicalChoices: "",
+  challenges: "",
+  solutions: "",
+  outcomes: "",
+  results: "",
+  limits: "",
+  nextSteps: "",
+};
+
 export const emptyProjectForm = {
   title: "Portfolio professionnel",
   subtitle: "Spring Boot / React / PostgreSQL",
@@ -144,7 +158,7 @@ export const emptyProjectForm = {
   stacks: "Java, Spring Boot, React, PostgreSQL, Docker",
   features: "Versioning, Version active unique, Admin panel, API REST",
   proofTags: "",
-  caseStudy: null,
+  caseStudy: { ...emptyProjectCaseStudyForm },
   featured: true,
   published: true,
   displayOrder: 1,
@@ -1338,6 +1352,70 @@ export function normalizeExperienceOrder(items) {
   }));
 }
 
+export function toMultiline(value) {
+  if (!value) return "";
+  if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean).join("\n");
+  return String(value);
+}
+
+export function toLines(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);
+
+  return String(value)
+    .split(/\r?\n/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+export function hydrateProjectCaseStudyForm(caseStudy) {
+  if (!caseStudy) return { ...emptyProjectCaseStudyForm };
+
+  return {
+    problem: caseStudy.problem ?? "",
+    context: caseStudy.context ?? "",
+    role: caseStudy.role ?? "",
+    architecture: caseStudy.architecture ?? "",
+    technicalChoices: toMultiline(caseStudy.technicalChoices),
+    challenges: toMultiline(caseStudy.challenges),
+    solutions: toMultiline(caseStudy.solutions),
+    outcomes: toMultiline(caseStudy.outcomes),
+    results: toMultiline(caseStudy.results),
+    limits: toMultiline(caseStudy.limits),
+    nextSteps: caseStudy.nextSteps ?? "",
+  };
+}
+
+export function buildProjectCaseStudyPayload(caseStudy) {
+  const source = { ...emptyProjectCaseStudyForm, ...(caseStudy ?? {}) };
+  const payload = {
+    problem: nullIfBlank(source.problem),
+    context: nullIfBlank(source.context),
+    role: nullIfBlank(source.role),
+    architecture: nullIfBlank(source.architecture),
+    technicalChoices: toLines(source.technicalChoices),
+    challenges: toLines(source.challenges),
+    solutions: toLines(source.solutions),
+    outcomes: toLines(source.outcomes),
+    results: toLines(source.results),
+    limits: toLines(source.limits),
+    nextSteps: nullIfBlank(source.nextSteps),
+  };
+
+  const hasContent = Object.values(payload).some((value) => Array.isArray(value) ? value.length > 0 : Boolean(value));
+  return hasContent ? payload : null;
+}
+
+export function slugifyProjectTitle(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 90);
+}
+
 export function getProjectArchitectureUrl(project) {
   const directArchitectureUrl = project?.architectureUrl;
   if (directArchitectureUrl) return directArchitectureUrl;
@@ -1377,8 +1455,11 @@ export function hydrateProjectForm(project) {
     githubUrl: project.githubUrl ?? "",
     documentationUrl: project.documentationUrl ?? "",
     architectureUrl: getProjectArchitectureUrl(project),
+    slug: project.slug ?? slugifyProjectTitle(project.title),
     stacks: toCsv(project.stacks),
     features: toCsv(project.features),
+    proofTags: toCsv(project.proofTags),
+    caseStudy: hydrateProjectCaseStudyForm(project.caseStudy),
     featured: Boolean(project.featured),
     published: project.published !== false,
     displayOrder: project.displayOrder ?? 1,
