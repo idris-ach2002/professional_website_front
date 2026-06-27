@@ -1,6 +1,7 @@
 import { Anchor, Burger, Drawer, Stack, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useGsap } from "../animations/useGsap";
 import { getOwnerFullName } from "../utils/portfolio";
 import NavSignatureCore from "./navigation/NavSignatureCore";
@@ -14,13 +15,17 @@ const links = [
 
 export default function TopNavigation({ owner }) {
   const rootRef = useRef(null);
+  const location = useLocation();
+  const isHomePath = location.pathname === "/";
+  const navigationLinks = isHomePath ? links : links.map((link) => ({ ...link, href: `/${link.href}` }));
   const [opened, { toggle, close }] = useDisclosure(false);
   const [activeHref, setActiveHref] = useState(links[0].href);
   const ownerName = getOwnerFullName(owner);
-  const activeIndex = Math.max(0, links.findIndex((link) => link.href === activeHref));
+  const activeIndex = isHomePath ? Math.max(0, links.findIndex((link) => link.href === activeHref)) : 0;
+  const visibleActiveHref = isHomePath ? activeHref : "";
 
   useEffect(() => {
-    if (typeof window === "undefined" || typeof document === "undefined") return undefined;
+    if (!isHomePath || typeof window === "undefined" || typeof document === "undefined") return undefined;
 
     const sections = links
       .map((link) => ({ link, section: document.querySelector(link.href) }))
@@ -62,7 +67,7 @@ export default function TopNavigation({ owner }) {
       window.removeEventListener("hashchange", updateFromHash);
       observer.disconnect();
     };
-  }, []);
+  }, [isHomePath]);
 
   useEffect(() => {
     const nav = rootRef.current?.querySelector(".top-nav");
@@ -297,7 +302,7 @@ export default function TopNavigation({ owner }) {
   }, [ownerName, activeIndex]);
 
   const renderDrawerLinks = () =>
-    links.map((link) => (
+    navigationLinks.map((link) => (
       <Anchor
         key={`${link.href}-drawer`}
         href={link.href}
@@ -319,7 +324,7 @@ export default function TopNavigation({ owner }) {
           </span>
         </a>
 
-        <NavSonarLinks links={links} activeHref={activeHref} onLinkClick={close} />
+        <NavSonarLinks links={navigationLinks} activeHref={visibleActiveHref} onLinkClick={close} />
 
         <Burger opened={opened} onClick={toggle} className="mobile-burger" aria-label="Menu" />
         <span className="scroll-current" />

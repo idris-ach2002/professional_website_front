@@ -47,8 +47,8 @@ function NavIcon({ type }) {
 }
 
 function getIconType(href) {
-  if (href === "#timeline") return "timeline";
-  if (href === "#projects") return "projects";
+  if (href?.includes("timeline")) return "timeline";
+  if (href?.includes("projects")) return "projects";
   return "profile";
 }
 
