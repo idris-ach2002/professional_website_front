@@ -11,30 +11,20 @@ import {
 } from "../utils/portfolio";
 
 function AnimatedTitle({ title, headline }) {
-  const words = String(headline ?? "").split(" · ").filter(Boolean);
-  const titleChars = String(title ?? "").split("");
+  const words = String(headline ?? "").split(" · " ).filter(Boolean);
 
   return (
     <Title className="hero-title">
-      <span className="hero-title-main" style={{ display: "block" }}>
-        {titleChars.map((char, index) => (
-          <span
-            key={index}
-            className="hero-title-char"
-            style={{ display: "inline-block" }}
-          >
-            {/* Gestion de l'espace pour éviter l'effondrement du layout */}
-            {char === " " ? "\u00A0" : char}
-          </span>
-        ))}
-      </span>
-      <span className="hero-title-current">
-        {words.map((word, index) => (
-          <em key={word} className="hero-keyword" style={{ "--delay": index }}>
-            {word}
-          </em>
-        ))}
-      </span>
+      <span className="hero-title-main">{title}</span>
+      {words.length > 0 && (
+        <span className="hero-title-current">
+          {words.map((word) => (
+            <em key={word} className="hero-keyword">
+              {word}
+            </em>
+          ))}
+        </span>
+      )}
     </Title>
   );
 }
@@ -81,86 +71,34 @@ export default function ProfileHero({ owner, profile }) {
   const linkedin = getPrimaryContact(owner, "LINKEDIN");
 
   useGsap(rootRef, (gsap) => {
-    const root = rootRef.current;
-
-    gsap.set(".hero-title-main", { perspective: 900, transformStyle: "preserve-3d" });
-    gsap.set(".profile-island .hero-copy", { transformPerspective: 1400, transformOrigin: "50% 50%" });
-
     const timeline = gsap.timeline({ defaults: { ease: "power3.out" } });
 
     timeline
+      .from(".profile-island .hero-copy", {
+        autoAlpha: 0,
+        y: 24,
+        duration: 0.68,
+      })
       .from(
-        ".profile-island .hero-copy",
+        ".hero-title-main, .hero-title-current, .profile-copy-card, .hero-actions .mantine-Button-root",
         {
           autoAlpha: 0,
-          y: 64,
-          scale: 0.94,
-          rotateX: 8,
-          rotateY: -3,
-          clipPath: "polygon(8% 18%, 76% 10%, 96% 26%, 90% 72%, 78% 88%, 14% 82%, 4% 66%, 0 34%)",
-          filter: "blur(10px) saturate(1.2)",
-          duration: 1.05,
-          ease: "expo.out",
+          y: 16,
+          stagger: 0.055,
+          duration: 0.46,
         },
-        0,
+        "-=0.42",
       )
-      .to(
-        ".profile-island .hero-copy",
+      .from(
+        ".hero-panel > *",
         {
-          clipPath: "polygon(0 9%, 7% 0, 84% 0, 100% 16%, 97% 75%, 86% 100%, 10% 96%, 0 78%)",
-          filter: "blur(0px) saturate(1)",
-          duration: 1.05,
-          ease: "expo.out",
-        },
-        0,
-      )
-      .fromTo(
-        ".hero-title-char",
-        {
-          rotationX: -90,
           autoAlpha: 0,
-          y: 20,
+          y: 18,
+          stagger: 0.08,
+          duration: 0.48,
         },
-        {
-          rotationX: 0,
-          autoAlpha: 1,
-          y: 0,
-          stagger: 0.04,
-          duration: 0.55,
-          transformOrigin: "50% 50% -30px",
-          ease: "back.out(1.5)",
-        },
-        0.18,
-      )
-      .from(".hero-keyword", { y: 22, autoAlpha: 0, rotateX: -48, transformOrigin: "50% 50% -40", stagger: 0.09, duration: 0.58 }, "-=0.35")
-      .from(".hero-lead, .hero-description", { y: 20, autoAlpha: 0, stagger: 0.08, duration: 0.55 }, "-=0.28")
-      .from(".hero-actions .mantine-Button-root", { y: 14, autoAlpha: 0, stagger: 0.06, duration: 0.45 }, "-=0.25")
-      .from(".hero-panel", { x: 46, y: 26, rotateY: -9, rotate: 2.2, autoAlpha: 0, duration: 0.9, ease: "expo.out" }, "-=0.68");
-
-    gsap.to(".hero-keyword", { y: -3, duration: 2.8, repeat: -1, yoyo: true, ease: "sine.inOut", stagger: 0.18 });
-
-    const updatePointer = (event) => {
-      if (!root) return;
-      const rect = root.getBoundingClientRect();
-      const x = ((event.clientX - rect.left) / rect.width) * 100;
-      const y = ((event.clientY - rect.top) / rect.height) * 100;
-      root.style.setProperty("--hero-mx", `${Math.max(0, Math.min(100, x)).toFixed(2)}%`);
-      root.style.setProperty("--hero-my", `${Math.max(0, Math.min(100, y)).toFixed(2)}%`);
-    };
-
-    const resetPointer = () => {
-      if (!root) return;
-      root.style.setProperty("--hero-mx", "56%");
-      root.style.setProperty("--hero-my", "26%");
-    };
-
-    root?.addEventListener("pointermove", updatePointer);
-    root?.addEventListener("pointerleave", resetPointer);
-
-    return () => {
-      root?.removeEventListener("pointermove", updatePointer);
-      root?.removeEventListener("pointerleave", resetPointer);
-    };
+        "-=0.34",
+      );
   }, [fullName]);
 
   return (
@@ -168,8 +106,19 @@ export default function ProfileHero({ owner, profile }) {
       <div className="hero-copy">
         <div className="hero-map-line" />
         <AnimatedTitle title={profile?.title ?? fullName} headline={profile?.headline ?? profile?.subtitle ?? ""} />
-        <Text className="hero-lead">{profile?.shortDescription ?? profile?.description}</Text>
-        <Text className="hero-description">{profile?.description}</Text>
+
+        <div className="profile-copy-stack">
+          {(profile?.shortDescription ?? profile?.description) && (
+            <div className="profile-copy-card profile-copy-card--lead">
+              <Text className="hero-lead">{profile?.shortDescription ?? profile?.description}</Text>
+            </div>
+          )}
+          {profile?.description && profile.description !== profile?.shortDescription && (
+            <div className="profile-copy-card profile-copy-card--description">
+              <Text className="hero-description">{profile.description}</Text>
+            </div>
+          )}
+        </div>
 
         <Group className="hero-actions">
           {profile?.cvUrl && profile.cvUrl !== "#" && (
