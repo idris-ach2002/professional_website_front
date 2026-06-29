@@ -336,7 +336,7 @@ function ProjectIsland({ project, index, featured, total, active, onOpenDetails 
           </div>
           <div className="project-island-topline">
             <Badge className="project-status">{STATUS_LABELS[project.status] ?? project.status}</Badge>
-            {featured && <Badge className="featured-badge">Focus</Badge>}
+         
           </div>
 
           <div className="project-slide-grid">
