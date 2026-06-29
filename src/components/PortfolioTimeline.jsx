@@ -3,7 +3,7 @@ import { useRef } from "react";
 import { useGsap } from "../animations/useGsap";
 import SectionTitle from "./SectionTitle";
 import { PreviewableImage } from "./FilePreview";
-import { CATEGORY_LABELS, formatPeriod, normalizeUrl } from "../utils/portfolio";
+import { CATEGORY_LABELS, formatPeriod, normalizeUrl, slugify } from "../utils/portfolio";
 
 const categoryClasses = {
   SCHOOL: "timeline-school",
@@ -15,6 +15,11 @@ const categoryClasses = {
   CERTIFICATION: "timeline-certification",
   VOLUNTEERING: "timeline-volunteering",
 };
+
+function getExperienceAnchor(experience, index) {
+  const source = [experience?.title, experience?.organization].filter(Boolean).join(" ") || `experience-${index + 1}`;
+  return `experience-${slugify(source)}-${index}`;
+}
 
 export default function PortfolioTimeline({ timeline, experiences }) {
   const rootRef = useRef(null);
@@ -153,6 +158,7 @@ export default function PortfolioTimeline({ timeline, experiences }) {
 
             return (
               <article
+                id={getExperienceAnchor(experience, index)}
                 key={experience.id ?? `${experience.title}-${index}`}
                 className={`timeline-row is-${side} ${categoryClasses[experience.category] ?? ""}`}
               >

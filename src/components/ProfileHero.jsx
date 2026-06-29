@@ -219,7 +219,7 @@ export default function ProfileHero({ owner, profile }) {
           </Group>
         </Card>
         {contacts.length > 0 && (
-          <Card className="contact-card island-card" radius="xl">
+          <Card id="contact" className="contact-card island-card" radius="xl">
             <Text className="card-kicker">Coordonnées</Text>
             <Stack gap="xs">
               {contacts.map((contact) => (

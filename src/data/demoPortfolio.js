@@ -26,8 +26,8 @@ export const demoOwner = {
     }
   ],
   "versionTag": "v1-github-cv-stage-case-studies",
-  "versionLabel": "Version enrichie études de cas + compétences prouvées",
-  "versionDescription": "Version adaptée pour les pages publiques de projets et la section compétences prouvées. Les projets publiés ont été enrichis à partir du JSON courant, des liens GitHub publics et des rapports/documentations disponibles.",
+  "versionLabel": "Version enrichie études de cas + compétences",
+  "versionDescription": "Version adaptée pour les pages publiques de projets et la section compétences. Les projets publiés ont été enrichis à partir du JSON courant, des liens GitHub publics et des rapports/documentations disponibles.",
   "versionPublished": true,
   "versionActive": true,
   "prof": {
@@ -195,7 +195,7 @@ export const demoOwner = {
       ],
       "features": [
         "Frontend React/Vite connecté à une API portfolio avec fallback mock local.",
-        "Sections publiques orientées recruteur : profil, timeline, projets, compétences prouvées et études de cas.",
+        "Sections publiques orientées recruteur : profil, timeline, projets, compétences et études de cas.",
         "Animations GSAP au scroll, navigation premium et interactions visuelles contrôlées.",
         "Intégration Three.js/R3F/Rapier pour enrichir l’identité visuelle sans bloquer l’usage.",
         "Viewer PDF/image, modales, liens GitHub et documentation exploitables depuis les projets.",
@@ -246,7 +246,7 @@ export const demoOwner = {
         ],
         "outcomes": [
           "Portfolio public différenciant, administrable et visuellement signé.",
-          "Base prête pour des pages projet détaillées et une section compétences prouvées.",
+          "Base prête pour des pages projet détaillées et une section compétences.",
           "Expérience recruteur plus directe grâce aux preuves, liens et exports."
         ],
         "nextSteps": "Ajouter un mode recruteur condensé et un export dossier candidat."

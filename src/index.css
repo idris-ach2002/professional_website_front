@@ -13179,3 +13179,792 @@ main,
 .contact-pill:focus-visible strong {
   color: rgb(var(--profile-proven-ink) / .98) !important;
 }
+
+/* ----------------------------------------------------------------------------
+   Wispr Flow reference navbar - portfolio adaptation.
+   Fixed cream shell, attached hover tabs, mega menu geometry and no navbar
+   vertical motion. The structure mirrors the uploaded Webflow nav classes:
+   nav_fixed / nav_component / nav_container-v2 / dropdown-list-v2.
+---------------------------------------------------------------------------- */
+.nav_fixed.nav_fixed--portfolio {
+  position: fixed !important;
+  top: 18px !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 999 !important;
+  display: flex !important;
+  justify-content: center !important;
+  pointer-events: none !important;
+  transform: none !important;
+  animation: none !important;
+}
+
+.nav_fixed.nav_fixed--portfolio *,
+.nav_fixed.nav_fixed--portfolio *::before,
+.nav_fixed.nav_fixed--portfolio *::after {
+  box-sizing: border-box;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_component {
+  position: relative !important;
+  width: min(1036px, calc(100vw - 42px)) !important;
+  pointer-events: auto !important;
+  transform: none !important;
+  animation: none !important;
+  font-family: "Figtree", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_container-v2 {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: 132px minmax(530px, 1fr) 284px auto !important;
+  align-items: stretch !important;
+  gap: 0 !important;
+  min-height: 70px !important;
+  width: 100% !important;
+  padding: 8px 8px 8px 16px !important;
+  color: #171717 !important;
+  background: rgba(255, 253, 249, .94) !important;
+  border: 1px solid #dfdfcf !important;
+  border-radius: 10px !important;
+  box-shadow:
+    0 10px 28px rgba(21, 21, 17, .035),
+    inset 0 1px 0 rgba(255, 255, 255, .74) !important;
+  backdrop-filter: blur(14px) saturate(1.02) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(1.02) !important;
+  overflow: visible !important;
+  transform: none !important;
+  animation: none !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_brand,
+.nav_fixed.nav_fixed--portfolio .nav_menu,
+.nav_fixed.nav_fixed--portfolio .nav_actions-wrap,
+.nav_fixed.nav_fixed--portfolio .nav_button,
+.nav_fixed.nav_fixed--portfolio .nav_mobile-panel {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_brand {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  padding-right: 16px !important;
+  color: #171717 !important;
+  text-decoration: none !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_logo-mark {
+  display: inline-flex !important;
+  align-items: flex-end !important;
+  justify-content: center !important;
+  gap: 2px !important;
+  width: 23px !important;
+  height: 24px !important;
+  color: #171717 !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_logo-mark span {
+  display: block !important;
+  width: 3px !important;
+  border-radius: 999px !important;
+  background: currentColor !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_logo-mark span:nth-child(1) { height: 14px; }
+.nav_fixed.nav_fixed--portfolio .nav_logo-mark span:nth-child(2) { height: 20px; }
+.nav_fixed.nav_fixed--portfolio .nav_logo-mark span:nth-child(3) { height: 11px; }
+.nav_fixed.nav_fixed--portfolio .nav_logo-mark span:nth-child(4) { height: 18px; }
+.nav_fixed.nav_fixed--portfolio .nav_logo-mark span:nth-child(5) { height: 24px; }
+
+.nav_fixed.nav_fixed--portfolio .nav_brand-text {
+  display: block !important;
+  min-width: 0 !important;
+  color: #171717 !important;
+  font-size: 1.02rem !important;
+  font-weight: 760 !important;
+  letter-spacing: -.055em !important;
+  line-height: 1 !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_brand-text span {
+  display: block !important;
+  max-width: 112px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_menu.v2 {
+  display: flex !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  min-width: 0 !important;
+  height: 100% !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_menu-wrapper.grid.v2 {
+  display: flex !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  gap: 0 !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2 {
+  position: relative !important;
+  flex: 0 0 auto !important;
+  display: flex !important;
+  align-items: stretch !important;
+  transform: none !important;
+  animation: none !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .dropdown1_toggle.v2,
+.nav_fixed.nav_fixed--portfolio .nav_direct-link {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  min-height: 52px !important;
+  padding: 0 15px !important;
+  border: 1px solid transparent !important;
+  border-radius: 12px !important;
+  appearance: none !important;
+  color: #171717 !important;
+  background: transparent !important;
+  font: inherit !important;
+  font-size: .91rem !important;
+  font-weight: 720 !important;
+  line-height: 1 !important;
+  letter-spacing: -.025em !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  transition: color .16s ease, background-color .16s ease, border-color .16s ease !important;
+  transform: none !important;
+  animation: none !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .dropdown1_toggle.v2:hover,
+.nav_fixed.nav_fixed--portfolio .dropdown1_toggle.v2:focus-visible,
+.nav_fixed.nav_fixed--portfolio .nav_direct-link:hover,
+.nav_fixed.nav_fixed--portfolio .nav_direct-link:focus-visible {
+  color: #171717 !important;
+  background: rgba(244, 243, 231, .72) !important;
+  outline: none !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2.is-open .dropdown1_toggle.v2,
+.nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2:hover .dropdown1_toggle.v2,
+.nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2:focus-within .dropdown1_toggle.v2 {
+  z-index: 6 !important;
+  color: #171717 !important;
+  background: #fffdf9 !important;
+  border-color: #171717 !important;
+  border-bottom-color: #fffdf9 !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-arrow {
+  width: 12px !important;
+  height: 12px !important;
+  color: currentColor !important;
+  transform: rotate(0deg) !important;
+  transition: transform .18s ease !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2.is-open .nav_menu-dropdown-arrow,
+.nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2:hover .nav_menu-dropdown-arrow,
+.nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2:focus-within .nav_menu-dropdown-arrow {
+  transform: rotate(180deg) !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .dropdown-list-v2 {
+  position: absolute !important;
+  top: calc(100% - 1px) !important;
+  left: 0 !important;
+  display: block !important;
+  width: 392px !important;
+  padding: 0 !important;
+  color: #171717 !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transform: none !important;
+  transform-origin: top left !important;
+  transition: opacity .14s ease, visibility .14s ease !important;
+  pointer-events: none !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2.wide .dropdown-list-v2 {
+  width: 628px !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2.align-right .dropdown-list-v2 {
+  left: auto !important;
+  right: 0 !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2.is-open .dropdown-list-v2,
+.nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2:hover .dropdown-list-v2,
+.nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2:focus-within .dropdown-list-v2 {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .dropdown-inside-wrap {
+  position: relative !important;
+  width: 100% !important;
+  padding: 18px 20px 18px !important;
+  border: 1px solid #171717 !important;
+  border-radius: 0 14px 14px 14px !important;
+  background: #fffdf9 !important;
+  box-shadow: 0 18px 46px rgba(21, 21, 17, .08) !important;
+  overflow: hidden !important;
+  transform: none !important;
+  animation: wisprDropdownFade .14s ease both !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2.align-right .dropdown-inside-wrap {
+  border-radius: 14px 0 14px 14px !important;
+}
+
+@keyframes wisprDropdownFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.nav_fixed.nav_fixed--portfolio .dropdown-wrap {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 0 !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2.wide .dropdown-wrap {
+  grid-template-columns: minmax(0, 1fr) minmax(226px, .72fr) !important;
+  gap: 28px !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .dropdown-column {
+  position: relative !important;
+  display: grid !important;
+  align-content: start !important;
+  gap: 2px !important;
+  min-width: 0 !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .dropdown-column-rule {
+  position: absolute !important;
+  top: 0 !important;
+  right: -14px !important;
+  width: 1px !important;
+  height: 100% !important;
+  background: #e4e4d0 !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .dropdown-list-heading {
+  padding: 0 0 12px !important;
+  color: rgba(23, 23, 23, .58) !important;
+  font-size: .71rem !important;
+  font-weight: 760 !important;
+  letter-spacing: .035em !important;
+  line-height: 1 !important;
+  text-transform: uppercase !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .dropdown-link {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: 24px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 12px !important;
+  min-width: 0 !important;
+  padding: 10px 0 !important;
+  border-radius: 0 !important;
+  color: #171717 !important;
+  text-decoration: none !important;
+  background: transparent !important;
+  transition: color .16s ease !important;
+  overflow: visible !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .dropdown-link + .dropdown-link {
+  border-top: 1px solid rgba(228, 228, 208, .68) !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .dropdown-link:hover,
+.nav_fixed.nav_fixed--portfolio .dropdown-link:focus-visible {
+  color: #034f46 !important;
+  outline: none !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .dropdown-link-icon {
+  position: relative !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 24px !important;
+  height: 24px !important;
+  color: currentColor !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  transform: none !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .dropdown-link-icon-svg {
+  width: 19px !important;
+  height: 19px !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .dropdown-link-copy {
+  display: grid !important;
+  gap: 7px !important;
+  min-width: 0 !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .dropdown-link-title-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .dropdown-link-text {
+  display: block !important;
+  min-width: 0 !important;
+  color: currentColor !important;
+  font-size: .93rem !important;
+  font-weight: 770 !important;
+  line-height: 1.05 !important;
+  letter-spacing: -.035em !important;
+  white-space: nowrap !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .dropdown-link-text > span {
+  position: relative !important;
+  display: inline-block !important;
+  transform: translate3d(0, 0, 0) !important;
+  transition: transform .23s cubic-bezier(.22, 1, .36, 1) !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .dropdown-link:hover .dropdown-link-text > span,
+.nav_fixed.nav_fixed--portfolio .dropdown-link:focus-visible .dropdown-link-text > span {
+  transform: translate3d(0, -1.5px, 0) !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .dropdown-link-description {
+  display: block !important;
+  max-width: 100% !important;
+  color: rgba(23, 23, 23, .58) !important;
+  font-size: .82rem !important;
+  font-weight: 520 !important;
+  line-height: 1.25 !important;
+  letter-spacing: -.015em !important;
+  white-space: normal !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .dropdown-link-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 20px !important;
+  padding: 0 7px !important;
+  border-radius: 5px !important;
+  color: #171717 !important;
+  background: #ff9c1a !important;
+  font-size: .65rem !important;
+  font-weight: 850 !important;
+  line-height: 1 !important;
+  letter-spacing: .015em !important;
+  text-transform: uppercase !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_actions-wrap {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 0 !important;
+  height: 100% !important;
+  padding-left: 28px !important;
+  border-left: 1px solid #e4e4d0 !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_big-button.button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 52px !important;
+  min-width: 188px !important;
+  padding: 0 23px !important;
+  border: 2px solid #171717 !important;
+  border-radius: 10px !important;
+  color: #171717 !important;
+  text-decoration: none !important;
+  font-size: .91rem !important;
+  font-weight: 760 !important;
+  line-height: 1 !important;
+  letter-spacing: -.025em !important;
+  background: #edcfff !important;
+  box-shadow: inset 0 -2px 0 rgba(23, 23, 23, .11) !important;
+  transition: background-color .16s ease, box-shadow .16s ease !important;
+  transform: none !important;
+  animation: none !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_big-button.button:hover,
+.nav_fixed.nav_fixed--portfolio .nav_big-button.button:focus-visible {
+  background: #e7bdff !important;
+  box-shadow: inset 0 -2px 0 rgba(23, 23, 23, .16) !important;
+  outline: none !important;
+  transform: none !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_button {
+  display: none !important;
+  width: 52px !important;
+  height: 52px !important;
+  padding: 0 !important;
+  border: 1px solid #171717 !important;
+  border-radius: 10px !important;
+  background: #fffdf9 !important;
+  color: #171717 !important;
+  cursor: pointer !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .hamburger_12_line {
+  display: block !important;
+  width: 19px !important;
+  height: 2px !important;
+  margin: 4px auto !important;
+  border-radius: 999px !important;
+  background: currentColor !important;
+  transition: transform .18s ease, opacity .18s ease !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_button.w--open .hamburger_12_line:first-child {
+  transform: translateY(3px) rotate(45deg) !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_button.w--open .hamburger_12_line:last-child {
+  transform: translateY(-3px) rotate(-45deg) !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_mobile-panel {
+  display: none !important;
+}
+
+@media (max-width: 1100px) {
+  .nav_fixed.nav_fixed--portfolio .nav_component {
+    width: min(760px, calc(100vw - 24px)) !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_container-v2 {
+    grid-template-columns: minmax(0, 1fr) auto auto !important;
+    min-height: 68px !important;
+    padding: 8px !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_brand {
+    padding-left: 8px !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_menu.v2 {
+    display: none !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_actions-wrap {
+    padding-left: 0 !important;
+    border-left: 0 !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_big-button.button {
+    min-width: 112px !important;
+    padding-inline: 16px !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_big-button.button span {
+    max-width: 92px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_button {
+    display: grid !important;
+    place-items: center !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_container-v2:has(.nav_button.w--open) {
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_mobile-panel {
+    position: absolute !important;
+    top: calc(100% - 1px) !important;
+    left: -1px !important;
+    right: -1px !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px 24px !important;
+    max-height: min(72vh, 640px) !important;
+    padding: 18px 20px 20px !important;
+    border: 1px solid #171717 !important;
+    border-radius: 0 0 14px 14px !important;
+    background: #fffdf9 !important;
+    box-shadow: 0 18px 46px rgba(21, 21, 17, .08) !important;
+    overflow-y: auto !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transform: none !important;
+    transition: opacity .14s ease, visibility .14s ease !important;
+    pointer-events: none !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_mobile-panel.is-open {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_mobile-group {
+    display: grid !important;
+    gap: 0 !important;
+    align-content: start !important;
+    min-width: 0 !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_mobile-heading {
+    padding: 0 0 10px !important;
+    color: rgba(23, 23, 23, .58) !important;
+    font-size: .71rem !important;
+    font-weight: 760 !important;
+    letter-spacing: .035em !important;
+    text-transform: uppercase !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_mobile-panel .dropdown-link {
+    min-width: 0 !important;
+    padding: 10px 0 !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_mobile-panel .dropdown-link-description {
+    max-width: none !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .nav_fixed.nav_fixed--portfolio {
+    top: 10px !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_component {
+    width: min(100%, calc(100vw - 16px)) !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_container-v2 {
+    grid-template-columns: minmax(0, 1fr) auto auto !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_brand-text span {
+    max-width: 126px !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_big-button.button {
+    min-width: 62px !important;
+    padding-inline: 12px !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_big-button.button span {
+    max-width: 26px !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_mobile-panel {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   Idris navbar refinement - official Flow structure + personal logo.
+   This layer keeps the Wispr-like shell but fixes logo visibility, real links
+   and one-dropdown-at-a-time behaviour.
+---------------------------------------------------------------------------- */
+.nav_fixed.nav_fixed--portfolio .nav_component {
+  width: min(1228px, calc(100vw - 44px)) !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_container-v2 {
+  grid-template-columns: 244px minmax(645px, 1fr) 236px auto !important;
+  min-height: 76px !important;
+  padding: 8px 8px 8px 14px !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_brand {
+  justify-content: flex-start !important;
+  align-items: center !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  padding-right: 22px !important;
+  overflow: visible !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_personal-logo {
+  display: block !important;
+  width: 206px !important;
+  height: 60px !important;
+  max-width: 100% !important;
+  object-fit: contain !important;
+  object-position: left center !important;
+  filter:
+    drop-shadow(0 2px 1px rgba(255, 255, 255, .55))
+    drop-shadow(0 7px 14px rgba(23, 23, 17, .08)) !important;
+  transform: translateX(-2px) scale(1.03) !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_menu-wrapper.grid.v2 {
+  width: 100% !important;
+  justify-content: flex-start !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .dropdown1_toggle.v2,
+.nav_fixed.nav_fixed--portfolio .nav_direct-link {
+  min-height: 58px !important;
+  padding: 0 17px !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_actions-wrap {
+  padding-left: 24px !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_big-button.button {
+  min-height: 58px !important;
+  min-width: 184px !important;
+  padding-inline: 21px !important;
+}
+
+/* Only the React-controlled active dropdown is allowed to show.
+   This prevents two panels from remaining visible when the cursor crosses
+   overlapping menu areas. */
+.nav_fixed.nav_fixed--portfolio .dropdown-list-v2,
+.nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2:hover .dropdown-list-v2,
+.nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2:focus-within .dropdown-list-v2 {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2.is-open .dropdown-list-v2 {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2.is-open .dropdown1_toggle.v2 {
+  z-index: 4 !important;
+  color: #171717 !important;
+  background: #fffdf9 !important;
+  border-color: #171717 !important;
+  border-bottom-color: #fffdf9 !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .dropdown-list-v2 {
+  top: calc(100% - 1px) !important;
+  transition: opacity .12s ease, visibility .12s ease !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .dropdown-inside-wrap {
+  animation: wisprDropdownFade .12s ease both !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .dropdown-link-description {
+  display: -webkit-box !important;
+  overflow: hidden !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .dropdown-link-text {
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2.single .dropdown-list-v2 {
+  min-width: 382px !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2.wide .dropdown-list-v2 {
+  width: 690px !important;
+}
+
+.nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2.align-right .dropdown-list-v2 {
+  right: -6px !important;
+}
+
+@media (max-width: 1240px) {
+  .nav_fixed.nav_fixed--portfolio .nav_component {
+    width: min(1120px, calc(100vw - 32px)) !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_container-v2 {
+    grid-template-columns: 214px minmax(570px, 1fr) 214px auto !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_personal-logo {
+    width: 184px !important;
+    height: 56px !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .dropdown1_toggle.v2,
+  .nav_fixed.nav_fixed--portfolio .nav_direct-link {
+    padding-inline: 13px !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_big-button.button {
+    min-width: 166px !important;
+  }
+}
+
+@media (max-width: 1100px) {
+  .nav_fixed.nav_fixed--portfolio .nav_component {
+    width: min(800px, calc(100vw - 24px)) !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_container-v2 {
+    grid-template-columns: minmax(0, 1fr) auto auto !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_personal-logo {
+    width: min(230px, 54vw) !important;
+    height: 56px !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .nav_fixed.nav_fixed--portfolio .nav_personal-logo {
+    width: min(190px, 50vw) !important;
+    height: 50px !important;
+  }
+
+  .nav_fixed.nav_fixed--portfolio .nav_big-button.button {
+    min-width: 98px !important;
+  }
+}
+
+/* Anchor target for navbar Contact item */
+.nav_fixed.nav_fixed--portfolio ~ main #contact,
+#contact {
+  scroll-margin-top: 140px;
+}
