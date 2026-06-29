@@ -10,21 +10,10 @@ import {
   getPrimaryContact,
 } from "../utils/portfolio";
 
-function AnimatedTitle({ title, headline }) {
-  const words = String(headline ?? "").split(" · " ).filter(Boolean);
-
+function AnimatedTitle({ title }) {
   return (
     <Title className="hero-title">
       <span className="hero-title-main">{title}</span>
-      {words.length > 0 && (
-        <span className="hero-title-current">
-          {words.map((word) => (
-            <em key={word} className="hero-keyword">
-              {word}
-            </em>
-          ))}
-        </span>
-      )}
     </Title>
   );
 }
@@ -80,7 +69,7 @@ export default function ProfileHero({ owner, profile }) {
         duration: 0.68,
       })
       .from(
-        ".hero-title-main, .hero-title-current, .profile-copy-card, .hero-actions .mantine-Button-root",
+        ".hero-title-main, .profile-headline-card, .profile-copy-card, .hero-actions .mantine-Button-root",
         {
           autoAlpha: 0,
           y: 16,
@@ -105,7 +94,14 @@ export default function ProfileHero({ owner, profile }) {
     <section ref={rootRef} id="profile" className="hero-grid island-section profile-island">
       <div className="hero-copy">
         <div className="hero-map-line" />
-        <AnimatedTitle title={profile?.title ?? fullName} headline={profile?.headline ?? profile?.subtitle ?? ""} />
+        <AnimatedTitle title={profile?.title ?? fullName} />
+
+        {profile?.headline && (
+          <article className="profile-sub-card profile-headline-card">
+            <span className="profile-sub-card-label">Positionnement</span>
+            <p className="profile-sub-card-text">{profile.headline}</p>
+          </article>
+        )}
 
         <div className="profile-copy-stack">
           {(profile?.shortDescription ?? profile?.description) && (
