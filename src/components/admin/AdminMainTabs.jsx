@@ -3,6 +3,7 @@ import AdminImportPanel from "./AdminImportPanel";
 import AdminOwnerPanel from "./AdminOwnerPanel";
 import AdminVersionsPanel from "./AdminVersionsPanel";
 import AdminApplicationsPanel from "./AdminApplicationsPanel";
+import AdminAnalyticsPanel from "./AdminAnalyticsPanel";
 import AdminSafetyPanel from "./AdminSafetyPanel";
 import AdminCvBuilderPanel from "./AdminCvBuilderPanel";
 import AdminProfilePanel from "./AdminProfilePanel";
@@ -229,6 +230,7 @@ export default function AdminMainTabs({ controller }) {
           <Tabs.Tab value="version">Versions</Tabs.Tab>
           <Tabs.Tab value="safety">Santé & backup</Tabs.Tab>
           <Tabs.Tab value="applications">Candidatures</Tabs.Tab>
+          <Tabs.Tab value="analytics">Analytics</Tabs.Tab>
           <Tabs.Tab value="profile">Profil & fichiers</Tabs.Tab>
           <Tabs.Tab value="cv">CV Builder</Tabs.Tab>
           <Tabs.Tab value="timeline">Timeline</Tabs.Tab>
@@ -270,6 +272,10 @@ export default function AdminMainTabs({ controller }) {
           selectVersion={selectVersion}
           activateVersionWithValidation={activateVersionWithValidation}
         />
+        <Tabs.Panel value="analytics" pt="lg">
+          <AdminAnalyticsPanel />
+        </Tabs.Panel>
+
         <AdminApplicationsPanel
           applicationsDashboard={applicationsDashboard}
           offerAnalysis={offerAnalysis}

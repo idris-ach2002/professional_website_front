@@ -2,6 +2,7 @@ import { Loader, Select, Stack, Text } from "@mantine/core";
 import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
+import AnalyticsTracker from "./components/AnalyticsTracker";
 import OceanMorphBackground from "./components/OceanMorphBackground";
 import ProfileHero from "./components/ProfileHero";
 import ProjectsShowcase from "./components/ProjectsShowcase";
@@ -168,7 +169,9 @@ export default function App() {
   }
 
   return (
-    <Routes>
+    <>
+      <AnalyticsTracker source={state.source} />
+      <Routes>
       <Route
         path="/"
         element={
@@ -191,7 +194,8 @@ export default function App() {
         element={<ProjectCaseStudyPage owner={owner} projects={projects} />}
       />
 
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   );
 }
