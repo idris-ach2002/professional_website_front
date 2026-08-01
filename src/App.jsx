@@ -3,6 +3,7 @@ import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import AnalyticsTracker from "./components/AnalyticsTracker";
+import GlobalAquarium from "./components/GlobalAquarium";
 import OceanMorphBackground from "./components/OceanMorphBackground";
 import ProfileHero from "./components/ProfileHero";
 import ProjectsShowcase from "./components/ProjectsShowcase";
@@ -20,6 +21,7 @@ import useResponsiveProfile from "./hooks/useResponsiveProfile";
 
 import "./index.css";
 import "./mobile-performance.css";
+import "./global-aquarium.css";
 
 const PortfolioTimeline = lazy(() => import("./components/PortfolioTimeline"));
 const BeachBallField = lazy(() => import("./components/three/BeachBallField"));
@@ -43,6 +45,7 @@ function Home({
       <SEOHead owner={owner} projects={projects} experiences={experiences} />
 
       <OceanMorphBackground staticMode={isMobile || reducedMotion} />
+      <GlobalAquarium isMobile={isMobile} reducedMotion={reducedMotion} />
 
       <TopNavigation owner={owner} source={state.source} />
 

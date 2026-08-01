@@ -1,0 +1,312 @@
+.global-aquarium {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+}
+
+.aquarium-route {
+  position: absolute;
+  top: var(--fish-top);
+  left: 0;
+  display: block;
+  width: var(--fish-size);
+  aspect-ratio: 2 / 1;
+  opacity: var(--fish-opacity);
+  will-change: transform;
+  backface-visibility: hidden;
+  animation-duration: var(--fish-duration);
+  animation-delay: var(--fish-delay);
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.aquarium-route--ltr {
+  animation-name: aquarium-cross-left-to-right;
+}
+
+.aquarium-route--rtl {
+  animation-name: aquarium-cross-right-to-left;
+}
+
+.aquarium-route--far {
+  z-index: 1;
+}
+
+.aquarium-route--mid {
+  z-index: 2;
+}
+
+.aquarium-route--near {
+  z-index: 3;
+}
+
+.aquarium-fish-bob {
+  display: block;
+  width: 100%;
+  height: 100%;
+  animation: aquarium-fish-bob 4.8s ease-in-out infinite alternate;
+  animation-delay: var(--fish-bob-delay);
+  transform-origin: 50% 50%;
+  backface-visibility: hidden;
+}
+
+.aquarium-fish-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+}
+
+.aquarium-route--rtl .aquarium-fish-image {
+  transform: scaleX(-1);
+}
+
+.global-aquarium.is-paused .aquarium-route,
+.global-aquarium.is-paused .aquarium-fish-bob {
+  animation-play-state: paused !important;
+}
+
+.global-aquarium.is-reduced-motion .aquarium-route {
+  top: 64%;
+  left: auto;
+  right: 8vw;
+  opacity: .18;
+  animation: none;
+  transform: none;
+}
+
+.global-aquarium.is-reduced-motion .aquarium-fish-bob {
+  animation: none;
+}
+
+@keyframes aquarium-cross-left-to-right {
+  from { transform: translate3d(-24vw, 0, 0); }
+  50% { transform: translate3d(50vw, var(--fish-drift-mid), 0); }
+  to { transform: translate3d(124vw, var(--fish-drift), 0); }
+}
+
+@keyframes aquarium-cross-right-to-left {
+  from { transform: translate3d(124vw, 0, 0); }
+  50% { transform: translate3d(50vw, var(--fish-drift-mid), 0); }
+  to { transform: translate3d(-24vw, var(--fish-drift), 0); }
+}
+
+@keyframes aquarium-fish-bob {
+  0% { transform: translate3d(0, -5px, 0) rotate(-2deg); }
+  45% { transform: translate3d(0, 7px, 0) rotate(2.2deg); }
+  100% { transform: translate3d(0, -2px, 0) rotate(-1deg); }
+}
+
+/* Exploration drone v6 — responsive curved route with scroll-direction awareness. */
+.timeline-exploration-drone {
+  --drone-beam-min: .18;
+  --drone-beam-max: .46;
+  --drone-sonar-peak: .32;
+  position: absolute;
+  top: 26px;
+  right: clamp(18px, 2.8vw, 40px);
+  z-index: 1;
+  width: clamp(190px, 16vw, 258px);
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0);
+}
+
+.timeline-exploration-drone-float {
+  transform-origin: 52% 50%;
+  animation: exploration-drone-float 8.5s ease-in-out infinite alternate;
+}
+
+.timeline-exploration-drone-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  filter: drop-shadow(0 18px 24px rgba(5, 44, 67, .22));
+}
+
+.exploration-drone-rotor {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: exploration-drone-rotor .82s linear infinite;
+}
+
+.exploration-drone-rotor--reverse {
+  animation-direction: reverse;
+  animation-duration: .94s;
+}
+
+.exploration-drone-beam {
+  transform-origin: 68px 118px;
+  animation: exploration-drone-beam 4.6s ease-in-out infinite;
+}
+
+.exploration-drone-sonar {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: exploration-drone-sonar 3.8s ease-out infinite;
+}
+
+.exploration-drone-lamp {
+  animation: exploration-drone-lamp 2.8s ease-in-out infinite;
+}
+
+.exploration-drone-lamp--delayed {
+  animation-delay: -1.4s;
+}
+
+.exploration-drone-beacon,
+.exploration-drone-status {
+  animation: exploration-drone-status 2.2s ease-in-out infinite;
+}
+
+
+.exploration-drone-level-meter {
+  opacity: .9;
+}
+
+.exploration-drone-level {
+  fill: #dffbff;
+  opacity: .12;
+  transition: opacity .55s ease, filter .55s ease, fill .55s ease;
+}
+
+.timeline-exploration-drone[data-scan-level="1"] {
+  --drone-beam-min: .16;
+  --drone-beam-max: .42;
+  --drone-sonar-peak: .26;
+}
+
+.timeline-exploration-drone[data-scan-level="2"] {
+  --drone-beam-min: .22;
+  --drone-beam-max: .58;
+  --drone-sonar-peak: .36;
+}
+
+.timeline-exploration-drone[data-scan-level="3"] {
+  --drone-beam-min: .28;
+  --drone-beam-max: .72;
+  --drone-sonar-peak: .46;
+}
+
+.timeline-exploration-drone[data-scan-level="4"] {
+  --drone-beam-min: .34;
+  --drone-beam-max: .88;
+  --drone-sonar-peak: .58;
+}
+
+.timeline-exploration-drone[data-scan-level="1"] .exploration-drone-level--1,
+.timeline-exploration-drone[data-scan-level="2"] .exploration-drone-level--1,
+.timeline-exploration-drone[data-scan-level="2"] .exploration-drone-level--2,
+.timeline-exploration-drone[data-scan-level="3"] .exploration-drone-level--1,
+.timeline-exploration-drone[data-scan-level="3"] .exploration-drone-level--2,
+.timeline-exploration-drone[data-scan-level="3"] .exploration-drone-level--3,
+.timeline-exploration-drone[data-scan-level="4"] .exploration-drone-level {
+  fill: #baf7ff;
+  opacity: .98;
+  filter: drop-shadow(0 0 4px rgba(103, 232, 249, .82));
+}
+
+.timeline-exploration-drone[data-scan-level="2"] .exploration-drone-lamp,
+.timeline-exploration-drone[data-scan-level="3"] .exploration-drone-lamp,
+.timeline-exploration-drone[data-scan-level="4"] .exploration-drone-lamp {
+  filter: drop-shadow(0 0 4px rgba(186, 247, 255, .72));
+}
+
+.timeline-exploration-drone[data-scan-level="3"] .exploration-drone-beacon,
+.timeline-exploration-drone[data-scan-level="4"] .exploration-drone-beacon {
+  filter: drop-shadow(0 0 5px rgba(103, 232, 249, .92));
+}
+
+.timeline-exploration-drone[data-scan-level="4"] .exploration-drone-status {
+  filter: drop-shadow(0 0 5px rgba(94, 234, 212, .72));
+}
+
+
+.exploration-drone-bubbles circle {
+  fill: rgba(224, 251, 255, .46);
+  stroke: rgba(103, 232, 249, .48);
+  stroke-width: 1;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: exploration-drone-bubble 4.8s ease-in-out infinite;
+}
+
+.exploration-drone-bubbles circle:nth-child(2) {
+  animation-delay: -1.6s;
+}
+
+.exploration-drone-bubbles circle:nth-child(3) {
+  animation-delay: -3.1s;
+}
+
+.timeline-exploration-drone.is-paused *,
+.timeline-exploration-drone.is-paused .timeline-exploration-drone-float {
+  animation-play-state: paused !important;
+}
+
+@keyframes exploration-drone-float {
+  0% { transform: translate3d(0, -12px, 0) rotate(-1.8deg); }
+  48% { transform: translate3d(-8px, 5px, 0) rotate(.5deg); }
+  100% { transform: translate3d(3px, 17px, 0) rotate(1.9deg); }
+}
+
+@keyframes exploration-drone-rotor {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes exploration-drone-beam {
+  0%, 100% { opacity: var(--drone-beam-min); transform: scaleY(.92) rotate(-1deg); }
+  50% { opacity: var(--drone-beam-max); transform: scaleY(1.05) rotate(1deg); }
+}
+
+@keyframes exploration-drone-sonar {
+  0% { opacity: .12; transform: scale(.78); }
+  58% { opacity: var(--drone-sonar-peak); }
+  100% { opacity: 0; transform: scale(1.16); }
+}
+
+@keyframes exploration-drone-lamp {
+  0%, 100% { opacity: .72; }
+  50% { opacity: 1; }
+}
+
+@keyframes exploration-drone-status {
+  0%, 100% { opacity: .48; }
+  50% { opacity: 1; }
+}
+
+@keyframes exploration-drone-bubble {
+  0%, 100% { opacity: .12; transform: translate3d(0, 5px, 0) scale(.8); }
+  45% { opacity: .58; }
+  80% { opacity: .18; transform: translate3d(4px, -13px, 0) scale(1.08); }
+}
+
+@media (max-width: 1100px) {
+  .timeline-exploration-drone {
+    right: clamp(16px, 2.2vw, 28px);
+    width: clamp(168px, 18vw, 220px);
+    opacity: .58;
+  }
+}
+
+@media (max-width: 820px) {
+  .timeline-exploration-drone {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timeline-exploration-drone *,
+  .timeline-exploration-drone-float {
+    animation: none !important;
+  }
+
+  .exploration-drone-beam {
+    opacity: .34;
+  }
+}
