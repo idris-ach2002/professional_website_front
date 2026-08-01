@@ -32,6 +32,7 @@ export default function PortfolioTimeline({ timeline, experiences }) {
     const lineProgress = root.querySelector(".timeline-straight-line-progress");
     const submarine = root.querySelector(".timeline-submarine");
     const cards = gsap.utils.toArray(root.querySelectorAll(".timeline-card"));
+    const isMobile = window.matchMedia?.("(max-width: 820px)").matches;
 
     if (lineProgress && track) {
       gsap.fromTo(
@@ -86,6 +87,25 @@ export default function PortfolioTimeline({ timeline, experiences }) {
     }
 
     cards.forEach((card) => {
+      if (isMobile) {
+        gsap.fromTo(
+          card,
+          { autoAlpha: 0, y: 24 },
+          {
+            autoAlpha: 1,
+            y: 0,
+            duration: 0.38,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: card,
+              start: "top 94%",
+              toggleActions: "play none none reverse",
+            },
+          },
+        );
+        return;
+      }
+
       const row = card.closest(".timeline-row");
       const isLeft = row?.classList.contains("is-left");
       const startX = isLeft ? -92 : 92;
@@ -127,7 +147,7 @@ export default function PortfolioTimeline({ timeline, experiences }) {
     });
 
     return undefined;
-  }, [experiences.length]);
+  }, [experiences.length], { allowOnMobile: true });
 
   return (
     <section ref={rootRef} id="timeline" className="page-section timeline-section island-section route-island">

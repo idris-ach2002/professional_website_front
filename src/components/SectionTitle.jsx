@@ -134,7 +134,7 @@ export default function SectionTitle({ eyebrow, title, description, rightSlot, r
     animateIfPresent(timeline, action, { y: 0, autoAlpha: 1, duration: 0.62 }, reveal === "bubbles" ? 0.78 : 0.72);
 
     return undefined;
-  }, [title, description, reveal]);
+  }, [title, description, reveal], { allowOnMobile: reveal === "fish" });
 
   return (
     <div ref={rootRef} className={`section-title section-title-${reveal}`}>

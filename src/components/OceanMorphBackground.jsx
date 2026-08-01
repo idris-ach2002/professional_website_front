@@ -29,10 +29,11 @@ function renderPath(path, points) {
   path.setAttribute("d", d);
 }
 
-export default function OceanMorphBackground() {
+export default function OceanMorphBackground({ staticMode = false }) {
   const rootRef = useRef(null);
 
   useGsap(rootRef, (gsap, ScrollTrigger) => {
+    if (staticMode) return undefined;
     const root = rootRef.current;
     const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     const paths = gsap.utils.toArray(root.querySelectorAll(".ocean-morph-path"));
@@ -129,10 +130,10 @@ export default function OceanMorphBackground() {
       depthTrigger?.kill();
       document.documentElement.style.removeProperty("--global-ocean-depth");
     };
-  }, []);
+  }, [staticMode]);
 
   return (
-    <div ref={rootRef} className="ocean-background" aria-hidden="true">
+    <div ref={rootRef} className={`ocean-background${staticMode ? " is-static" : ""}`} aria-hidden="true">
       <div className="ocean-depth-gradient" />
       <div className="ocean-surface-layer">
         <svg className="ocean-surface-waves" viewBox="0 0 1200 260" preserveAspectRatio="none">

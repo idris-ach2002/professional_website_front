@@ -3,6 +3,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { gsapReady, useGsap } from "../animations/useGsap";
+import useResponsiveProfile from "../hooks/useResponsiveProfile";
 import SectionTitle from "./SectionTitle";
 import { FilePreviewButton, PreviewableImage } from "./FilePreview";
 import { isPreviewableFile } from "../utils/filePreview";
@@ -18,7 +19,7 @@ import {
   normalizeUrl,
 } from "../utils/portfolio";
 
-function ProjectVisual({ project, index }) {
+function ProjectVisual({ project, index, active = false }) {
   if (project.imageUrl) {
     return (
       <PreviewableImage
@@ -28,6 +29,8 @@ function ProjectVisual({ project, index }) {
         imageClassName="project-image"
         modalTitle={`Projet — ${project.title}`}
         showOverlay={false}
+        loading={active ? "eager" : "lazy"}
+        fetchPriority={active ? "high" : "low"}
       />
     );
   }
@@ -340,7 +343,7 @@ function ProjectIsland({ project, index, featured, total, active, onOpenDetails 
           </div>
 
           <div className="project-slide-grid">
-            <ProjectVisual project={project} index={index} />
+            <ProjectVisual project={project} index={index} active={active} />
 
             <Stack ref={contentRef} gap="sm" className="project-content">
               <Text className="project-period">
@@ -569,6 +572,7 @@ function GalleryNavButton({ direction, label, onNavigate }) {
 
 
 function ProjectGallery({ projects }) {
+  const { isMobile } = useResponsiveProfile();
   const galleryRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [detailsProject, setDetailsProject] = useState(null);
@@ -690,7 +694,10 @@ function ProjectGallery({ projects }) {
             const offset = getRelativeIndex(index, safeActiveIndex, projects.length);
             const isActive = offset === 0;
             const isVisible = Math.abs(offset) <= 2;
+            const shouldMount = !isMobile || Math.abs(offset) <= 1;
             const key = project.id ?? `${project.title}-${index}`;
+
+            if (!shouldMount) return null;
 
             return (
               <div

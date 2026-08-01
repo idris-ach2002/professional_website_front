@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
+import useResponsiveProfile from "../hooks/useResponsiveProfile";
 import {
   getOwnerFullName,
   getPrimaryContact,
@@ -328,6 +329,7 @@ function MobileMenu({ opened, groups, isHomePath, owner, profile, onClose }) {
 }
 
 export default function TopNavigation({ owner }) {
+  const { isMobile } = useResponsiveProfile();
   const location = useLocation();
   const [active, setActive] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -346,10 +348,13 @@ export default function TopNavigation({ owner }) {
       <div data-wf--navbar--variant="base" data-animation="default" data-collapse="medium" data-duration="400" data-easing="ease" data-easing2="ease" role="banner" className="nav_component w-nav">
         <div className="nav_container-v2">
           <a href={isHomePath ? "#top" : "/"} className="nav_brand w-nav-brand" aria-label={`Accueil portfolio ${ownerName || "Idris ACHABOU"}`}>
-            <img src={NAV_LOGO_SRC} alt={ownerName || "Idris ACHABOU"} className="nav_personal-logo" loading="eager" />
+            <picture>
+              <source srcSet="/assets/identity/idris-navbar-logo.webp" type="image/webp" />
+              <img src={NAV_LOGO_SRC} alt={ownerName || "Idris ACHABOU"} className="nav_personal-logo" loading="eager" decoding="async" />
+            </picture>
           </a>
 
-          <nav role="navigation" className="nav_menu v2 w-nav-menu" aria-label="Navigation principale">
+          {!isMobile && <nav role="navigation" className="nav_menu v2 w-nav-menu" aria-label="Navigation principale">
             <div className="nav_menu-wrapper grid v2">
               {groups.map((group) => (
                 <DesktopDropdown
@@ -364,15 +369,15 @@ export default function TopNavigation({ owner }) {
               ))}
               <a href={contactHref} className="nav_direct-link w-inline-block">Contact</a>
             </div>
-          </nav>
+          </nav>}
 
-          <div className="nav_actions-wrap">
+          {!isMobile && <div className="nav_actions-wrap">
             <a id="nav-download" href={cvHref} target={cvHref?.startsWith("http") ? "_blank" : undefined} rel={cvHref?.startsWith("http") ? "noreferrer" : undefined} className="nav_big-button button w-inline-block">
               <span>Télécharger le CV</span>
             </a>
-          </div>
+          </div>}
 
-          <button
+          {isMobile && <button
             type="button"
             className={`nav_button w-nav-button${mobileOpen ? " w--open" : ""}`}
             aria-label="Menu"
@@ -381,16 +386,16 @@ export default function TopNavigation({ owner }) {
           >
             <span className="hamburger_12_line" />
             <span className="hamburger_12_line" />
-          </button>
+          </button>}
 
-          <MobileMenu
+          {isMobile && mobileOpen && <MobileMenu
             opened={mobileOpen}
             groups={groups}
             isHomePath={isHomePath}
             owner={owner}
             profile={profile}
             onClose={() => setMobileOpen(false)}
-          />
+          />}
         </div>
       </div>
     </div>

@@ -14495,3 +14495,40 @@ main,
   background: linear-gradient(180deg, rgba(56, 189, 248, 0.9), rgba(8, 145, 178, 0.42));
   box-shadow: 0 10px 22px rgba(14, 165, 233, 0.16);
 }
+
+/* Skill selection mapping */
+.proven-skill-button {
+  position: relative;
+}
+.proven-skill-button.is-locked {
+  opacity: .46;
+  filter: saturate(.55);
+}
+.proven-skills-list:hover .proven-skill-button.is-locked,
+.proven-skill-button.is-locked:focus-visible,
+.proven-skill-button.is-locked:hover {
+  opacity: .78;
+  filter: saturate(.85);
+}
+.proven-skill-map-arrow {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: opacity .2s ease, transform .2s ease;
+}
+.proven-skill-button.is-selected .proven-skill-map-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+.proven-skill-detail-card {
+  animation: skill-panel-enter .28s ease both;
+}
+@keyframes skill-panel-enter {
+  from { opacity: 0; transform: translateX(14px); }
+  to { opacity: 1; transform: translateX(0); }
+}

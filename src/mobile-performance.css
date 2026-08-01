@@ -1,0 +1,69 @@
+@media (max-width: 820px) {
+  html { scroll-behavior: smooth; }
+  body { overflow-x: hidden; }
+
+  .ocean-background.is-static .ocean-map,
+  .ocean-background.is-static .ocean-depth-particles,
+  .ocean-background.is-static .ocean-surface-waves {
+    display: none;
+  }
+  .ocean-background.is-static {
+    opacity: 1 !important;
+    background:
+      radial-gradient(circle at 18% 12%, rgba(186,230,253,.34), transparent 34%),
+      radial-gradient(circle at 82% 38%, rgba(94,234,212,.16), transparent 38%),
+      linear-gradient(180deg, #effbff 0%, #d9f3fb 34%, #b8e4ee 67%, #91ccd9 100%);
+  }
+  .ocean-background.is-static .ocean-glow { animation: none !important; transform: none !important; }
+
+  .page-section,
+  .portfolio-timeline,
+  .projects-section,
+  .site-footer {
+    content-visibility: auto;
+    contain-intrinsic-size: 720px;
+  }
+
+  .timeline-section {
+    content-visibility: visible;
+    contain-intrinsic-size: auto;
+  }
+
+  .island-card,
+  .project-toolbar,
+  .nav_component,
+  .proven-skill-button {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .proven-skills-grid { grid-template-columns: 1fr !important; }
+  .proven-skill-button.is-locked { opacity: .58; }
+  .proven-skill-map-arrow { transform: rotate(90deg) translateX(-6px); }
+  .proven-skill-button.is-selected .proven-skill-map-arrow { transform: rotate(90deg) translateX(0); }
+  .proven-skill-detail-card { animation-name: skill-panel-enter-mobile; }
+  @keyframes skill-panel-enter-mobile {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .gallery-panel { will-change: auto !important; }
+  .gallery-panel.is-hidden { display: none !important; }
+  .project-slide-card,
+  .project-gallery-camera,
+  .gallery-panel { filter: none !important; }
+
+  .nav_menu.v2,
+  .nav_actions-wrap { display: none !important; }
+
+  *:hover { transition-duration: .12s; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

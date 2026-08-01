@@ -1,5 +1,5 @@
 import { Badge, Button, Card, Group, Stack, Text, Title } from "@mantine/core";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 import SectionTitle from "./SectionTitle";
@@ -59,6 +59,13 @@ export default function ProvenSkillsSection({ projects = [], experiences = [], p
     return apiSkills.length > 0 ? apiSkills : buildProvenSkills(projects, experiences);
   }, [projects, experiences, provenSkills]);
   const [selectedSkillId, setSelectedSkillId] = useState(null);
+  const buttonRefs = useRef([]);
+
+  useEffect(() => {
+    if (skills.length > 0 && !skills.some((skill) => skill.id === selectedSkillId)) {
+      setSelectedSkillId(skills[0].id);
+    }
+  }, [skills, selectedSkillId]);
 
   const selectedSkill = skills.find((skill) => skill.id === selectedSkillId) ?? skills[0];
 
@@ -74,17 +81,34 @@ export default function ProvenSkillsSection({ projects = [], experiences = [], p
       />
 
       <div className="proven-skills-grid">
-        <div className="proven-skills-list" aria-label="Compétences prouvées">
+        <div className="proven-skills-list" role="tablist" aria-label="Compétences prouvées">
           {skills.map((skill, index) => {
             const selected = skill.id === selectedSkill?.id;
 
             return (
               <button
                 key={skill.id}
+                ref={(node) => { buttonRefs.current[index] = node; }}
                 type="button"
-                className={`proven-skill-button ${selected ? "is-selected" : ""}`}
+                role="tab"
+                id={`skill-tab-${skill.id}`}
+                aria-controls={`skill-panel-${skill.id}`}
+                aria-selected={selected}
+                tabIndex={selected ? 0 : -1}
+                className={`proven-skill-button ${selected ? "is-selected" : "is-locked"}`}
                 onClick={() => setSelectedSkillId(skill.id)}
-                aria-pressed={selected}
+                onKeyDown={(event) => {
+                  if (!["ArrowDown", "ArrowUp", "ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)) return;
+                  event.preventDefault();
+                  const lastIndex = skills.length - 1;
+                  let nextIndex = index;
+                  if (event.key === "Home") nextIndex = 0;
+                  else if (event.key === "End") nextIndex = lastIndex;
+                  else if (event.key === "ArrowDown" || event.key === "ArrowRight") nextIndex = (index + 1) % skills.length;
+                  else nextIndex = (index - 1 + skills.length) % skills.length;
+                  setSelectedSkillId(skills[nextIndex].id);
+                  buttonRefs.current[nextIndex]?.focus();
+                }}
               >
                 <span className="proven-skill-index">{String(index + 1).padStart(2, "0")}</span>
                 <span className="proven-skill-copy">
@@ -92,13 +116,14 @@ export default function ProvenSkillsSection({ projects = [], experiences = [], p
                   <span>{skill.description}</span>
                 </span>
                 <span className="proven-skill-count">{skill.evidenceCount}</span>
+                <span className="proven-skill-map-arrow" aria-hidden="true">→</span>
               </button>
             );
           })}
         </div>
 
         {selectedSkill && (
-          <Card className="island-card proven-skill-detail-card" radius="xl">
+          <Card key={selectedSkill.id} id={`skill-panel-${selectedSkill.id}`} role="tabpanel" aria-labelledby={`skill-tab-${selectedSkill.id}`} className="island-card proven-skill-detail-card" radius="xl">
             <div className="proven-skill-detail-orb" aria-hidden="true" />
             <Stack gap="lg" className="proven-skill-detail-content">
               <Group justify="space-between" gap="md" align="flex-start">

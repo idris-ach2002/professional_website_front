@@ -27,8 +27,11 @@ function waitForGsap(timeout = 5000) {
   return gsapPromise;
 }
 
-export function useGsap(rootRef, setup, deps = []) {
+export function useGsap(rootRef, setup, deps = [], options = {}) {
   useEffect(() => {
+    const isMobile = typeof window !== "undefined" && window.matchMedia?.("(max-width: 820px)").matches;
+    if (isMobile && !options.allowOnMobile) return undefined;
+
     let disposed = false;
     let cleanup = () => {};
 

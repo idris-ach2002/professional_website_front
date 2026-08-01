@@ -18,6 +18,8 @@ export function PreviewableImage({
   radius,
   showOverlay = false,
   modalZIndex = 12050,
+  loading = "lazy",
+  fetchPriority = "auto",
 }) {
   const [opened, setOpened] = useState(false);
   const fileUrl = normalizeFileUrl(src);
@@ -38,6 +40,9 @@ export function PreviewableImage({
           radius={radius}
           className={imageClassName}
           fit="cover"
+          loading={loading}
+          fetchPriority={fetchPriority}
+          decoding="async"
         />
         {showOverlay && <span className="file-preview-overlay">Voir l’image</span>}
       </button>

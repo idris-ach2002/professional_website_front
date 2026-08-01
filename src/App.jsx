@@ -6,23 +6,26 @@ import AnalyticsTracker from "./components/AnalyticsTracker";
 import OceanMorphBackground from "./components/OceanMorphBackground";
 import ProfileHero from "./components/ProfileHero";
 import ProjectsShowcase from "./components/ProjectsShowcase";
-import ProjectCaseStudyPage from "./components/ProjectCaseStudyPage";
 import ProvenSkillsSection from "./components/ProvenSkillsSection";
 import SEOHead from "./components/MetadataHead";
 import SiteFooter from "./components/SiteFooter"
 import StatusBanner from "./components/StatusBanner";
 import TopNavigation from "./components/TopNavigation";
 
-import Admin from "./components/Admin";
-import CvPage from "./components/CvPage";
 
 import { loadPortfolio } from "./services/portfolioApi";
 import { getOwnerFullName, sortByDisplayOrder } from "./utils/portfolio";
 
+import useResponsiveProfile from "./hooks/useResponsiveProfile";
+
 import "./index.css";
+import "./mobile-performance.css";
 
 const PortfolioTimeline = lazy(() => import("./components/PortfolioTimeline"));
 const BeachBallField = lazy(() => import("./components/three/BeachBallField"));
+const Admin = lazy(() => import("./components/Admin"));
+const CvPage = lazy(() => import("./components/CvPage"));
+const ProjectCaseStudyPage = lazy(() => import("./components/ProjectCaseStudyPage"));
 
 function Home({
   owner,
@@ -33,11 +36,13 @@ function Home({
   selectedOwnerId,
   setSelectedOwnerId,
 }) {
+  const { isMobile, reducedMotion } = useResponsiveProfile();
+
   return (
     <main id="top" className="app-shell">
       <SEOHead owner={owner} projects={projects} experiences={experiences} />
 
-      <OceanMorphBackground />
+      <OceanMorphBackground staticMode={isMobile || reducedMotion} />
 
       <TopNavigation owner={owner} source={state.source} />
 
@@ -80,15 +85,17 @@ function Home({
           />
         </Suspense>
 
-        <Suspense
-          fallback={
-            <div className="section-skeleton">
-              Chargement de l’animation 3D…
-            </div>
-          }
-        >
-          <BeachBallField />
-        </Suspense>
+        {!isMobile && !reducedMotion && (
+          <Suspense
+            fallback={
+              <div className="section-skeleton">
+                Chargement de l’animation 3D…
+              </div>
+            }
+          >
+            <BeachBallField />
+          </Suspense>
+        )}
 
         <ProjectsShowcase projects={projects} />
         <SiteFooter owner={owner} />
@@ -187,11 +194,11 @@ export default function App() {
         }
       />
 
-      <Route path="/admin" element={<Admin />} />
-      <Route path="/cv" element={<CvPage owner={owner} profile={profile} />} />
+      <Route path="/admin" element={<Suspense fallback={<div className="route-loading">Chargement…</div>}><Admin /></Suspense>} />
+      <Route path="/cv" element={<Suspense fallback={<div className="route-loading">Chargement…</div>}><CvPage owner={owner} profile={profile} /></Suspense>} />
       <Route
         path="/projects/:projectSlug"
-        element={<ProjectCaseStudyPage owner={owner} projects={projects} />}
+        element={<Suspense fallback={<div className="route-loading">Chargement…</div>}><ProjectCaseStudyPage owner={owner} projects={projects} /></Suspense>}
       />
 
         <Route path="*" element={<Navigate to="/" replace />} />
