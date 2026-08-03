@@ -1,30 +1,16 @@
 import { useEffect } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-let gsapPromise;
+let registered = false;
 
-function waitForGsap(timeout = 5000) {
-  if (typeof window === "undefined") return Promise.resolve(null);
-  if (window.gsap) return Promise.resolve({ gsap: window.gsap, ScrollTrigger: window.ScrollTrigger });
-
-  if (!gsapPromise) {
-    gsapPromise = new Promise((resolve) => {
-      const startedAt = performance.now();
-      const tick = () => {
-        if (window.gsap) {
-          resolve({ gsap: window.gsap, ScrollTrigger: window.ScrollTrigger });
-          return;
-        }
-        if (performance.now() - startedAt > timeout) {
-          resolve(null);
-          return;
-        }
-        window.requestAnimationFrame(tick);
-      };
-      tick();
-    });
+function getGsapRuntime() {
+  if (!registered && typeof window !== "undefined") {
+    gsap.registerPlugin(ScrollTrigger);
+    registered = true;
   }
 
-  return gsapPromise;
+  return { gsap, ScrollTrigger };
 }
 
 export function useGsap(rootRef, setup, deps = [], options = {}) {
@@ -32,34 +18,23 @@ export function useGsap(rootRef, setup, deps = [], options = {}) {
     const isMobile = typeof window !== "undefined" && window.matchMedia?.("(max-width: 820px)").matches;
     if (isMobile && !options.allowOnMobile) return undefined;
 
-    let disposed = false;
-    let cleanup = () => {};
+    const { gsap: runtimeGsap, ScrollTrigger: runtimeScrollTrigger } = getGsapRuntime();
+    if (!rootRef.current) return undefined;
 
-    waitForGsap().then((runtime) => {
-      if (disposed || !runtime?.gsap || !rootRef.current) return;
-      const { gsap, ScrollTrigger } = runtime;
-      if (ScrollTrigger) gsap.registerPlugin(ScrollTrigger);
-
-      let localCleanup = () => {};
-      const context = gsap.context(() => {
-        const returnedCleanup = setup(gsap, ScrollTrigger);
-        if (typeof returnedCleanup === "function") localCleanup = returnedCleanup;
-      }, rootRef.current);
-
-      cleanup = () => {
-        localCleanup();
-        context.revert();
-      };
-    });
+    let localCleanup = () => {};
+    const context = runtimeGsap.context(() => {
+      const returnedCleanup = setup(runtimeGsap, runtimeScrollTrigger);
+      if (typeof returnedCleanup === "function") localCleanup = returnedCleanup;
+    }, rootRef.current);
 
     return () => {
-      disposed = true;
-      cleanup();
+      localCleanup();
+      context.revert();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 }
 
 export function gsapReady() {
-  return waitForGsap();
+  return Promise.resolve(getGsapRuntime());
 }

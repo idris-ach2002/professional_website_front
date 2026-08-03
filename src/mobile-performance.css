@@ -3,10 +3,10 @@
   body { overflow-x: hidden; }
 
   .ocean-background.is-static .ocean-map,
-  .ocean-background.is-static .ocean-depth-particles,
-  .ocean-background.is-static .ocean-surface-waves {
+  .ocean-background.is-static .ocean-depth-particles {
     display: none;
   }
+
   .ocean-background.is-static {
     opacity: 1 !important;
     background:
@@ -14,7 +14,60 @@
       radial-gradient(circle at 82% 38%, rgba(94,234,212,.16), transparent 38%),
       linear-gradient(180deg, #effbff 0%, #d9f3fb 34%, #b8e4ee 67%, #91ccd9 100%);
   }
-  .ocean-background.is-static .ocean-glow { animation: none !important; transform: none !important; }
+
+  /* Mobile keeps a visible ocean surface without rebuilding SVG geometry.
+     Only compositor-friendly transforms are animated. */
+  .ocean-background.is-static .ocean-surface-layer {
+    display: block;
+    height: 30vh;
+    opacity: .72 !important;
+    transform: translate3d(0, 0, 0) !important;
+  }
+
+  .ocean-background.is-static .ocean-surface-waves {
+    display: block;
+    filter: none !important;
+    transform-origin: 50% 38%;
+    animation: mobile-ocean-sheet-drift 16s ease-in-out infinite alternate;
+    will-change: transform;
+  }
+
+  .ocean-background.is-static .ocean-surface-wave-a {
+    animation: mobile-ocean-wave-a 12s ease-in-out infinite alternate;
+  }
+
+  .ocean-background.is-static .ocean-surface-wave-b {
+    animation: mobile-ocean-wave-b 15s ease-in-out infinite alternate-reverse;
+  }
+
+  .ocean-background.is-static .ocean-surface-wave-c {
+    animation: mobile-ocean-wave-c 10s ease-in-out infinite alternate;
+  }
+
+  .ocean-background.is-static .ocean-glow {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  @keyframes mobile-ocean-sheet-drift {
+    from { transform: translate3d(-1.8%, 0, 0) scaleY(1); }
+    to { transform: translate3d(1.8%, 4px, 0) scaleY(1.025); }
+  }
+
+  @keyframes mobile-ocean-wave-a {
+    from { transform: translate3d(-1.2%, 1px, 0) scaleY(.99); }
+    to { transform: translate3d(1.2%, -3px, 0) scaleY(1.035); }
+  }
+
+  @keyframes mobile-ocean-wave-b {
+    from { transform: translate3d(1.4%, -1px, 0) scaleY(1.025); }
+    to { transform: translate3d(-1.4%, 4px, 0) scaleY(.985); }
+  }
+
+  @keyframes mobile-ocean-wave-c {
+    from { transform: translate3d(-.8%, 0, 0); }
+    to { transform: translate3d(.8%, 3px, 0); }
+  }
 
   .page-section,
   .portfolio-timeline,

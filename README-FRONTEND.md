@@ -258,14 +258,8 @@ Le backend reste responsable de la compilation PDF réelle, car l’image Docker
 
 ### GSAP
 
-GSAP et ScrollTrigger sont chargés via CDN dans `index.html` :
-
-```html
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
-```
-
-Le helper `src/animations/useGsap.js` attend la disponibilité de `window.gsap`, scope les animations et nettoie les timelines au démontage.
+GSAP et ScrollTrigger sont installés par npm puis importés en ESM depuis `src/animations/useGsap.js`.
+Le helper enregistre ScrollTrigger une seule fois, scope les animations avec `gsap.context()` et nettoie les timelines au démontage. Aucun script CDN ni polling global n’est nécessaire.
 
 ### Three.js / React Three Fiber / Rapier
 
@@ -442,15 +436,9 @@ Le backend utilise une session cookie et le frontend appelle l’API protégée 
 
 Si Render met le backend en sommeil, le premier chargement API peut échouer ou être lent. Le front bascule alors sur le fallback demo. Le ping cron-job.org sur `/actuator/health` réduit ce risque, sans charger les données métier.
 
-### GSAP via CDN
+### GSAP local
 
-GSAP n’est pas installé par npm dans cette version. Si une politique de sécurité stricte interdit les scripts CDN, il faudra :
-
-```bash
-npm install gsap
-```
-
-puis remplacer l’accès global `window.gsap` par des imports ESM.
+GSAP 3.13.0 est déclaré dans les dépendances du projet. Le build Vite l’intègre aux chunks JavaScript et Cloudflare peut le mettre en cache avec le reste de l’application.
 
 ### Cohérence npm / pnpm
 

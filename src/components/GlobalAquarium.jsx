@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const DESKTOP_FISH = [
   {
@@ -69,6 +69,8 @@ const DESKTOP_FISH = [
   },
 ];
 
+const BALANCED_FISH = [DESKTOP_FISH[0], DESKTOP_FISH[1], DESKTOP_FISH[3], DESKTOP_FISH[4]];
+
 const MOBILE_FISH = [
   {
     ...DESKTOP_FISH[0],
@@ -126,10 +128,18 @@ function FishRoute({ fish }) {
   );
 }
 
-export default function GlobalAquarium({ isMobile = false, reducedMotion = false }) {
+export default function GlobalAquarium({
+  isMobile = false,
+  reducedMotion = false,
+  performanceMode = "full",
+  isFirefox = false,
+}) {
   const [isPageHidden, setIsPageHidden] = useState(() =>
     typeof document !== "undefined" ? document.hidden : false,
   );
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimerRef = useRef(0);
+  const scrollingRef = useRef(false);
 
   useEffect(() => {
     const handleVisibility = () => setIsPageHidden(document.hidden);
@@ -137,15 +147,42 @@ export default function GlobalAquarium({ isMobile = false, reducedMotion = false
     return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, []);
 
+  useEffect(() => {
+    if (!isFirefox || !isMobile || reducedMotion) return undefined;
+
+    const handleScroll = () => {
+      if (!scrollingRef.current) {
+        scrollingRef.current = true;
+        setIsScrolling(true);
+      }
+
+      window.clearTimeout(scrollTimerRef.current);
+      scrollTimerRef.current = window.setTimeout(() => {
+        scrollingRef.current = false;
+        setIsScrolling(false);
+      }, 150);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.clearTimeout(scrollTimerRef.current);
+    };
+  }, [isFirefox, isMobile, reducedMotion]);
+
   const fish = useMemo(() => {
     if (reducedMotion) return [MOBILE_FISH[0]];
-    return isMobile ? MOBILE_FISH : DESKTOP_FISH;
-  }, [isMobile, reducedMotion]);
+    if (isMobile) return isScrolling && isFirefox ? [MOBILE_FISH[0]] : MOBILE_FISH;
+    if (performanceMode === "balanced") return BALANCED_FISH;
+    return DESKTOP_FISH;
+  }, [isFirefox, isMobile, isScrolling, performanceMode, reducedMotion]);
 
   return (
     <div
       className={`global-aquarium${isPageHidden ? " is-paused" : ""}${
         reducedMotion ? " is-reduced-motion" : ""
+      }${performanceMode === "balanced" ? " is-balanced" : ""}${
+        isScrolling ? " is-scrolling" : ""
       }`}
       aria-hidden="true"
     >

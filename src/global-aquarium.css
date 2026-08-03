@@ -310,3 +310,14 @@
     opacity: .34;
   }
 }
+
+/* V7 performance profiles */
+.global-aquarium.is-balanced .aquarium-fish-bob {
+  animation: none;
+  transform: translate3d(0, 0, 0);
+}
+
+.global-aquarium.is-scrolling .aquarium-route,
+.global-aquarium.is-scrolling .aquarium-fish-bob {
+  animation-play-state: paused !important;
+}

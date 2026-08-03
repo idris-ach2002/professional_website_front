@@ -22,7 +22,7 @@ function getExperienceAnchor(experience, index) {
   return `experience-${slugify(source)}-${index}`;
 }
 
-export default function PortfolioTimeline({ timeline, experiences }) {
+export default function PortfolioTimeline({ timeline, experiences, performanceMode = "full" }) {
   const rootRef = useRef(null);
 
   useGsap(rootRef, (gsap, ScrollTrigger) => {
@@ -35,6 +35,7 @@ export default function PortfolioTimeline({ timeline, experiences }) {
     const explorationDrone = root.querySelector(".timeline-exploration-drone");
     const cards = gsap.utils.toArray(root.querySelectorAll(".timeline-card"));
     const isMobile = window.matchMedia?.("(max-width: 820px)").matches;
+    const balancedMode = performanceMode === "balanced";
 
     if (lineProgress && track) {
       gsap.fromTo(
@@ -47,7 +48,7 @@ export default function PortfolioTimeline({ timeline, experiences }) {
             trigger: track,
             start: "top 66%",
             end: "bottom 42%",
-            scrub: 1.05,
+            scrub: balancedMode ? 0.28 : 1.05,
           },
         },
       );
@@ -67,7 +68,7 @@ export default function PortfolioTimeline({ timeline, experiences }) {
             trigger: track,
             start: "top 66%",
             end: "bottom 42%",
-            scrub: 1.15,
+            scrub: balancedMode ? 0.34 : 1.15,
             invalidateOnRefresh: true,
             onLeave: () => gsap.set(submarine, { autoAlpha: 0 }),
             onEnterBack: () => gsap.set(submarine, { autoAlpha: 1 }),
@@ -82,7 +83,7 @@ export default function PortfolioTimeline({ timeline, experiences }) {
           trigger: track,
           start: "bottom 56%",
           end: "bottom 42%",
-          scrub: 0.7,
+          scrub: balancedMode ? 0.24 : 0.7,
           invalidateOnRefresh: true,
         },
       });
@@ -185,6 +186,8 @@ export default function PortfolioTimeline({ timeline, experiences }) {
 
       routeMetrics = measureDroneRoute();
       const initialPoint = sampleDroneRoute(0);
+      const motionState = { progress: 0 };
+      let latestDirection = 1;
 
       gsap.set(explorationDrone, {
         autoAlpha: 0,
@@ -195,24 +198,7 @@ export default function PortfolioTimeline({ timeline, experiences }) {
         transformOrigin: "50% 50%",
       });
 
-      const moveX = gsap.quickTo(explorationDrone, "x", {
-        duration: 1.5,
-        ease: "power3.out",
-      });
-      const moveY = gsap.quickTo(explorationDrone, "y", {
-        duration: 1.72,
-        ease: "power3.out",
-      });
-      const bankDrone = gsap.quickTo(explorationDrone, "rotation", {
-        duration: 0.72,
-        ease: "power2.out",
-      });
-      const turnDrone = gsap.quickTo(explorationDrone, "scaleX", {
-        duration: 0.58,
-        ease: "power2.inOut",
-      });
-
-      const applyDronePosition = (progress, direction = 1, immediate = false) => {
+      const renderDroneAtProgress = (progress, direction = 1) => {
         const currentPoint = sampleDroneRoute(progress);
         const probeDistance = 0.006;
         const previousPoint = sampleDroneRoute(clamp(progress - probeDistance, 0, 1));
@@ -228,21 +214,30 @@ export default function PortfolioTimeline({ timeline, experiences }) {
             : lastFacing;
 
         lastFacing = desiredFacing;
+        gsap.set(explorationDrone, {
+          x: currentPoint.x,
+          y: currentPoint.y,
+          rotation: curveStrength + pitchCorrection,
+          scaleX: desiredFacing,
+          force3D: true,
+        });
+      };
 
+      const smoothProgress = gsap.quickTo(motionState, "progress", {
+        duration: balancedMode ? 0.38 : 1.12,
+        ease: balancedMode ? "power2.out" : "power3.out",
+        onUpdate: () => renderDroneAtProgress(motionState.progress, latestDirection),
+      });
+
+      const applyDronePosition = (progress, direction = 1, immediate = false) => {
+        latestDirection = direction;
         if (immediate) {
-          gsap.set(explorationDrone, {
-            x: currentPoint.x,
-            y: currentPoint.y,
-            rotation: curveStrength + pitchCorrection,
-            scaleX: desiredFacing,
-          });
+          smoothProgress.tween?.pause();
+          motionState.progress = progress;
+          renderDroneAtProgress(progress, direction);
           return;
         }
-
-        moveX(currentPoint.x);
-        moveY(currentPoint.y);
-        bankDrone(curveStrength + pitchCorrection);
-        turnDrone(desiredFacing);
+        smoothProgress(progress);
       };
 
       const droneScrollTrigger = ScrollTrigger.create({
@@ -252,17 +247,17 @@ export default function PortfolioTimeline({ timeline, experiences }) {
         invalidateOnRefresh: true,
         onEnter: () => gsap.to(explorationDrone, {
           autoAlpha: 0.82,
-          duration: 0.45,
+          duration: balancedMode ? 0.28 : 0.45,
           overwrite: "auto",
         }),
         onEnterBack: () => gsap.to(explorationDrone, {
           autoAlpha: 0.82,
-          duration: 0.35,
+          duration: balancedMode ? 0.24 : 0.35,
           overwrite: "auto",
         }),
         onLeave: () => gsap.to(explorationDrone, {
           autoAlpha: 0.24,
-          duration: 0.7,
+          duration: balancedMode ? 0.42 : 0.7,
           overwrite: "auto",
         }),
         onLeaveBack: () => gsap.to(explorationDrone, {
@@ -300,75 +295,99 @@ export default function PortfolioTimeline({ timeline, experiences }) {
       cleanupDroneRoute = () => {
         window.cancelAnimationFrame(resizeFrame);
         resizeObserver?.disconnect();
-        moveX.tween?.kill();
-        moveY.tween?.kill();
-        bankDrone.tween?.kill();
-        turnDrone.tween?.kill();
+        smoothProgress.tween?.kill();
+        droneScrollTrigger.kill();
       };
     }
 
-    cards.forEach((card) => {
-      if (isMobile) {
+    let cleanupCardReveals = () => {};
+
+    if (isMobile || balancedMode) {
+      gsap.set(cards, { autoAlpha: 0, y: 24, x: 0, scale: 0.985 });
+      const batchedTriggers = ScrollTrigger.batch(cards, {
+        start: isMobile ? "top 94%" : "top 92%",
+        interval: 0.08,
+        batchMax: 3,
+        onEnter: (batch) => gsap.to(batch, {
+          autoAlpha: 1,
+          y: 0,
+          scale: 1,
+          duration: balancedMode ? 0.42 : 0.38,
+          stagger: 0.06,
+          ease: "power2.out",
+          overwrite: true,
+          force3D: true,
+        }),
+        onEnterBack: (batch) => gsap.to(batch, {
+          autoAlpha: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.3,
+          stagger: 0.04,
+          ease: "power2.out",
+          overwrite: true,
+          force3D: true,
+        }),
+        onLeaveBack: (batch) => gsap.to(batch, {
+          autoAlpha: 0,
+          y: 18,
+          scale: 0.99,
+          duration: 0.24,
+          stagger: 0.03,
+          overwrite: true,
+          force3D: true,
+        }),
+      });
+
+      cleanupCardReveals = () => batchedTriggers.forEach((trigger) => trigger.kill());
+    } else {
+      cards.forEach((card) => {
+        const row = card.closest(".timeline-row");
+        const isLeft = row?.classList.contains("is-left");
+        const startX = isLeft ? -92 : 92;
+        const startRotateY = isLeft ? 18 : -18;
+        const startRotateZ = isLeft ? -3.5 : 3.5;
+
         gsap.fromTo(
           card,
-          { autoAlpha: 0, y: 24 },
+          {
+            autoAlpha: 0,
+            x: startX,
+            y: 54,
+            rotateY: startRotateY,
+            rotateZ: startRotateZ,
+            scale: 0.84,
+            clipPath: isLeft
+              ? "polygon(0 42%, 32% 32%, 78% 38%, 100% 50%, 80% 62%, 28% 68%, 0 58%)"
+              : "polygon(100% 42%, 68% 32%, 22% 38%, 0 50%, 20% 62%, 72% 68%, 100% 58%)",
+            filter: "blur(9px) saturate(1.16) brightness(1.04)",
+          },
           {
             autoAlpha: 1,
+            x: 0,
             y: 0,
-            duration: 0.38,
-            ease: "power2.out",
+            rotateY: 0,
+            rotateZ: 0,
+            scale: 1,
+            clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)",
+            filter: "blur(0px) saturate(1) brightness(1)",
+            duration: 0.68,
+            ease: "expo.out",
             scrollTrigger: {
               trigger: card,
-              start: "top 94%",
+              start: "top 92%",
               toggleActions: "play none none reverse",
             },
           },
         );
-        return;
-      }
+      });
+    }
 
-      const row = card.closest(".timeline-row");
-      const isLeft = row?.classList.contains("is-left");
-      const startX = isLeft ? -92 : 92;
-      const startRotateY = isLeft ? 18 : -18;
-      const startRotateZ = isLeft ? -3.5 : 3.5;
-
-      gsap.fromTo(
-        card,
-        {
-          autoAlpha: 0,
-          x: startX,
-          y: 54,
-          rotateY: startRotateY,
-          rotateZ: startRotateZ,
-          scale: 0.84,
-          clipPath: isLeft
-            ? "polygon(0 42%, 32% 32%, 78% 38%, 100% 50%, 80% 62%, 28% 68%, 0 58%)"
-            : "polygon(100% 42%, 68% 32%, 22% 38%, 0 50%, 20% 62%, 72% 68%, 100% 58%)",
-          filter: "blur(9px) saturate(1.16) brightness(1.04)",
-        },
-        {
-          autoAlpha: 1,
-          x: 0,
-          y: 0,
-          rotateY: 0,
-          rotateZ: 0,
-          scale: 1,
-          clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)",
-          filter: "blur(0px) saturate(1) brightness(1)",
-          duration: 0.68,
-          ease: "expo.out",
-          scrollTrigger: {
-            trigger: card,
-            start: "top 92%",
-            toggleActions: "play none none reverse",
-          },
-        },
-      );
-    });
-
-    return cleanupDroneRoute;
-  }, [experiences.length], { allowOnMobile: true });
+    return () => {
+      cleanupCardReveals();
+      cleanupDroneRoute();
+    };
+  }, [experiences.length, performanceMode], { allowOnMobile: true });
 
   return (
     <section ref={rootRef} id="timeline" className="page-section timeline-section island-section route-island">

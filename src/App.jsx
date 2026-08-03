@@ -1,5 +1,5 @@
 import { Loader, Select, Stack, Text } from "@mantine/core";
-import { Suspense, lazy, useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import AnalyticsTracker from "./components/AnalyticsTracker";
@@ -22,12 +22,71 @@ import useResponsiveProfile from "./hooks/useResponsiveProfile";
 import "./index.css";
 import "./mobile-performance.css";
 import "./global-aquarium.css";
+import "./firefox-performance.css";
 
 const PortfolioTimeline = lazy(() => import("./components/PortfolioTimeline"));
 const BeachBallField = lazy(() => import("./components/three/BeachBallField"));
 const Admin = lazy(() => import("./components/Admin"));
 const CvPage = lazy(() => import("./components/CvPage"));
 const ProjectCaseStudyPage = lazy(() => import("./components/ProjectCaseStudyPage"));
+
+function DeferredBeachBall({ performanceMode }) {
+  const sentinelRef = useRef(null);
+  const [shouldLoad, setShouldLoad] = useState(false);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || shouldLoad) return undefined;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setShouldLoad(true);
+        observer.disconnect();
+      },
+      { rootMargin: "1200px 0px", threshold: 0.01 },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [shouldLoad]);
+
+  if (shouldLoad) {
+    return (
+      <Suspense
+        fallback={
+          <section className="beach-3d-section is-suspended" aria-hidden="true">
+            <div className="beach-3d-stage">
+              <div className="beach-3d-suspended-placeholder">
+                <span />
+                <span />
+                <span />
+              </div>
+            </div>
+          </section>
+        }
+      >
+        <BeachBallField performanceMode={performanceMode} />
+      </Suspense>
+    );
+  }
+
+  return (
+    <section
+      ref={sentinelRef}
+      className="beach-3d-section is-suspended"
+      aria-label="Animation 3D chargée à l’approche"
+    >
+      <div className="beach-3d-stage">
+        <div className="beach-3d-suspended-placeholder" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function Home({
   owner,
@@ -38,14 +97,23 @@ function Home({
   selectedOwnerId,
   setSelectedOwnerId,
 }) {
-  const { isMobile, reducedMotion } = useResponsiveProfile();
+  const responsiveProfile = useResponsiveProfile();
+  const { isMobile, reducedMotion, performanceMode, isFirefox } = responsiveProfile;
 
   return (
     <main id="top" className="app-shell">
       <SEOHead owner={owner} projects={projects} experiences={experiences} />
 
-      <OceanMorphBackground staticMode={isMobile || reducedMotion} />
-      <GlobalAquarium isMobile={isMobile} reducedMotion={reducedMotion} />
+      <OceanMorphBackground
+        staticMode={performanceMode === "lite"}
+        performanceMode={performanceMode}
+      />
+      <GlobalAquarium
+        isMobile={isMobile}
+        reducedMotion={reducedMotion}
+        performanceMode={performanceMode}
+        isFirefox={isFirefox}
+      />
 
       <TopNavigation owner={owner} source={state.source} />
 
@@ -85,19 +153,12 @@ function Home({
           <PortfolioTimeline
             timeline={owner?.timeline}
             experiences={experiences}
+            performanceMode={performanceMode}
           />
         </Suspense>
 
         {!isMobile && !reducedMotion && (
-          <Suspense
-            fallback={
-              <div className="section-skeleton">
-                Chargement de l’animation 3D…
-              </div>
-            }
-          >
-            <BeachBallField />
-          </Suspense>
+          <DeferredBeachBall performanceMode={performanceMode} />
         )}
 
         <ProjectsShowcase projects={projects} />

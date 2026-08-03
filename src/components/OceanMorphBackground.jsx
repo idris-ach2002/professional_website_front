@@ -3,10 +3,14 @@ import { useGsap } from "../animations/useGsap";
 
 const PATH_COUNT = 4;
 const POINT_COUNT = 12;
-const PARTICLE_COUNT = 34;
+const BALANCED_POINT_COUNT = 8;
+const BALANCED_MORPH_PATH_COUNT = 2;
+const BALANCED_WAVE_FPS = 40;
+const FULL_PARTICLE_COUNT = 15;
+const BALANCED_PARTICLE_COUNT = 12;
 
-function getWavePoint(pathIndex, pointIndex, phase = 0) {
-  const normalized = pointIndex / (POINT_COUNT - 1);
+function getWavePoint(pathIndex, pointIndex, phase = 0, pointCount = POINT_COUNT) {
+  const normalized = pointIndex / (pointCount - 1);
   const base = 54 + pathIndex * 9;
   const amplitude = 8 + pathIndex * 2.2;
   const frequency = 1.35 + pathIndex * 0.22;
@@ -17,11 +21,12 @@ function getWavePoint(pathIndex, pointIndex, phase = 0) {
 }
 
 function renderPath(path, points) {
+  const pointCount = points.length;
   let d = `M 0 100 V ${points[0]} C`;
 
-  for (let index = 0; index < POINT_COUNT - 1; index += 1) {
-    const p = ((index + 1) / (POINT_COUNT - 1)) * 100;
-    const cp = p - (100 / (POINT_COUNT - 1)) / 2;
+  for (let index = 0; index < pointCount - 1; index += 1) {
+    const p = ((index + 1) / (pointCount - 1)) * 100;
+    const cp = p - (100 / (pointCount - 1)) / 2;
     d += ` ${cp} ${points[index]} ${cp} ${points[index + 1]} ${p} ${points[index + 1]}`;
   }
 
@@ -29,8 +34,14 @@ function renderPath(path, points) {
   path.setAttribute("d", d);
 }
 
-export default function OceanMorphBackground({ staticMode = false }) {
+export default function OceanMorphBackground({ staticMode = false, performanceMode = "full" }) {
   const rootRef = useRef(null);
+  const balancedMode = performanceMode === "balanced";
+  const particleCount = staticMode
+    ? 0
+    : balancedMode
+      ? BALANCED_PARTICLE_COUNT
+      : FULL_PARTICLE_COUNT;
 
   useGsap(rootRef, (gsap, ScrollTrigger) => {
     if (staticMode) return undefined;
@@ -43,7 +54,10 @@ export default function OceanMorphBackground({ staticMode = false }) {
     if (paths.length === 0) return undefined;
 
     const initialPoints = paths.map((_, pathIndex) => (
-      Array.from({ length: POINT_COUNT }, (_, pointIndex) => getWavePoint(pathIndex, pointIndex, 0))
+      Array.from(
+        { length: POINT_COUNT },
+        (_, pointIndex) => getWavePoint(pathIndex, pointIndex, balancedMode ? pathIndex * 0.44 : 0),
+      )
     ));
     paths.forEach((path, pathIndex) => renderPath(path, initialPoints[pathIndex]));
 
@@ -53,10 +67,10 @@ export default function OceanMorphBackground({ staticMode = false }) {
     const glows = root.querySelectorAll(".ocean-glow");
     if (glows.length > 0 && !reducedMotion) {
       gsap.to(glows, {
-        xPercent: (index) => (index % 2 === 0 ? 4 : -4),
-        yPercent: (index) => (index % 2 === 0 ? -3 : 3),
-        scale: 1.06,
-        duration: 7,
+        xPercent: (index) => (index % 2 === 0 ? 3 : -3),
+        yPercent: (index) => (index % 2 === 0 ? -2 : 2),
+        scale: balancedMode ? 1.025 : 1.06,
+        duration: balancedMode ? 11 : 7,
         repeat: -1,
         yoyo: true,
         ease: "sine.inOut",
@@ -66,35 +80,56 @@ export default function OceanMorphBackground({ staticMode = false }) {
 
     if (surfaceWaves.length > 0 && !reducedMotion) {
       gsap.to(surfaceWaves, {
-        xPercent: (index) => (index % 2 === 0 ? -10 : 12),
-        duration: (index) => 8 + index * 1.8,
+        xPercent: (index) => (index % 2 === 0 ? -7 : 8),
+        duration: (index) => (balancedMode ? 13 : 8) + index * 1.8,
         ease: "sine.inOut",
         repeat: -1,
         yoyo: true,
         stagger: 0.22,
+        force3D: true,
       });
     }
 
     if (particles.length > 0 && !reducedMotion) {
       gsap.to(particles, {
-        y: (index) => -60 - (index % 5) * 22,
-        x: (index) => (index % 2 === 0 ? 16 : -14),
-        autoAlpha: (index) => 0.35 + (index % 4) * 0.1,
-        duration: (index) => 7 + (index % 6) * 1.4,
+        y: (index) => -42 - (index % 5) * (balancedMode ? 12 : 22),
+        x: (index) => (index % 2 === 0 ? 12 : -10),
+        autoAlpha: (index) => 0.28 + (index % 4) * 0.08,
+        duration: (index) => (balancedMode ? 10 : 7) + (index % 6) * 1.4,
         ease: "sine.inOut",
         repeat: -1,
         yoyo: true,
-        stagger: 0.09,
+        stagger: balancedMode ? 0.18 : 0.09,
+        force3D: true,
+      });
+    }
+
+    if (balancedMode && !reducedMotion) {
+      gsap.to(paths, {
+        xPercent: (index) => (index % 2 === 0 ? -1.8 : 1.5),
+        yPercent: (index) => (index % 2 === 0 ? -1.2 : 1.4),
+        scaleY: (index) => 1 + (index % 2 === 0 ? 0.018 : -0.012),
+        transformOrigin: "50% 72%",
+        duration: (index) => 9 + index * 1.6,
+        ease: "sine.inOut",
+        repeat: -1,
+        yoyo: true,
+        force3D: true,
       });
     }
 
     let depthTrigger;
+    let lastDepthPaint = 0;
     if (ScrollTrigger) {
       depthTrigger = ScrollTrigger.create({
         trigger: document.documentElement,
         start: "top top",
         end: "bottom bottom",
         onUpdate: (self) => {
+          const now = performance.now();
+          if (balancedMode && now - lastDepthPaint < 34) return;
+          lastDepthPaint = now;
+
           const depth = Number(Math.min(1, Math.pow(self.progress * 1.5, 0.92)).toFixed(4));
           root.style.setProperty("--ocean-depth", String(depth));
           root.style.setProperty("--surface-opacity", String(Math.max(0, 1 - depth * 2.05)));
@@ -111,13 +146,38 @@ export default function OceanMorphBackground({ staticMode = false }) {
     }
 
     let phase = 0;
+    let lastBalancedFrame = 0;
+    const balancedFrameInterval = 1000 / BALANCED_WAVE_FPS;
+    const morphPaths = balancedMode
+      ? paths.slice(0, BALANCED_MORPH_PATH_COUNT)
+      : paths;
+    const morphPointCount = balancedMode ? BALANCED_POINT_COUNT : POINT_COUNT;
 
-    const onTick = () => {
-      phase += 0.015;
+    const onTick = (tickerTime) => {
+      const now = typeof tickerTime === "number"
+        ? tickerTime * 1000
+        : performance.now();
 
-      paths.forEach((path, pathIndex) => {
-        const currentPoints = Array.from({ length: POINT_COUNT }, (_, pointIndex) =>
-          getWavePoint(pathIndex, pointIndex, phase + pointIndex * 0.08),
+      if (balancedMode && now - lastBalancedFrame < balancedFrameInterval) {
+        return;
+      }
+
+      if (balancedMode) {
+        lastBalancedFrame = now;
+      }
+
+      // 0.0375 × 24 FPS keeps roughly the same perceived wave speed as
+      // 0.015 × 60 FPS, while Firefox recalculates only two simplified paths.
+      phase += balancedMode ? 0.0375 : 0.015;
+
+      morphPaths.forEach((path, pathIndex) => {
+        const currentPoints = Array.from({ length: morphPointCount }, (_, pointIndex) =>
+          getWavePoint(
+            pathIndex,
+            pointIndex,
+            phase + pointIndex * 0.08,
+            morphPointCount,
+          ),
         );
         renderPath(path, currentPoints);
       });
@@ -130,10 +190,14 @@ export default function OceanMorphBackground({ staticMode = false }) {
       depthTrigger?.kill();
       document.documentElement.style.removeProperty("--global-ocean-depth");
     };
-  }, [staticMode]);
+  }, [staticMode, performanceMode]);
 
   return (
-    <div ref={rootRef} className={`ocean-background${staticMode ? " is-static" : ""}`} aria-hidden="true">
+    <div
+      ref={rootRef}
+      className={`ocean-background${staticMode ? " is-static" : ""}${balancedMode ? " is-balanced" : ""}`}
+      aria-hidden="true"
+    >
       <div className="ocean-depth-gradient" />
       <div className="ocean-surface-layer">
         <svg className="ocean-surface-waves" viewBox="0 0 1200 260" preserveAspectRatio="none">
@@ -145,7 +209,7 @@ export default function OceanMorphBackground({ staticMode = false }) {
       <div className="ocean-sky-glow ocean-glow" />
       <div className="ocean-deep-glow ocean-glow" />
       <div className="ocean-depth-particles">
-        {Array.from({ length: PARTICLE_COUNT }, (_, index) => (
+        {Array.from({ length: particleCount }, (_, index) => (
           <span
             key={index}
             className="ocean-depth-particle"
