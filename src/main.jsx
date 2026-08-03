@@ -3,8 +3,8 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { MantineProvider, createTheme } from "@mantine/core";
 import "@mantine/core/styles.css";
-import App from "./App";
 import "./index.css";
+import App from "./App";
 
 const theme = createTheme({
   fontFamily: "Inter, Arial, Helvetica, sans-serif",

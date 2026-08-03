@@ -19,10 +19,6 @@ import { getOwnerFullName, sortByDisplayOrder } from "./utils/portfolio";
 
 import useResponsiveProfile from "./hooks/useResponsiveProfile";
 
-import "./index.css";
-import "./mobile-performance.css";
-import "./global-aquarium.css";
-import "./firefox-performance.css";
 
 const PortfolioTimeline = lazy(() => import("./components/PortfolioTimeline"));
 const BeachBallField = lazy(() => import("./components/three/BeachBallField"));

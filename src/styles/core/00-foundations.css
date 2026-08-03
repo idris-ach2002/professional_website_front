@@ -1,0 +1,93 @@
+/* Foundations: tokens, reset and document defaults. */
+:root {
+  --volcano: #f97316;
+  --white: rgba(255, 255, 255, .84);
+  --glass: rgba(255, 255, 255, .62);
+  --radius-xl: 36px;
+  color: var(--ink);
+  background: #ecfeff;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+}
+
+a {
+  color: inherit;
+}
+
+input,
+button {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(34, 211, 238, .28);
+}
+
+.content-shell {
+  position: relative;
+  z-index: 4;
+  width: min(1500px, calc(100vw - 36px));
+  margin: 0 auto;
+  padding: 132px 0 72px;
+}
+
+.loading-shell {
+  display: grid;
+  place-items: center;
+  gap: 16px;
+  min-height: 100vh;
+}
+
+.footer-shell {
+  position: relative;
+  z-index: 3;
+  width: min(1500px, calc(100vw - 36px));
+  margin: 0 auto 30px;
+  padding: 22px 28px;
+  border: 1px solid var(--stroke);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, .54);
+  backdrop-filter: blur(18px);
+  color: var(--muted);
+  text-align: center;
+}
+
+.ocean-deep-glow,
+.ocean-sky-glow {
+  position: absolute;
+  inset: -12%;
+}
+
+.ocean-morph-path {
+  transform-box: fill-box;
+  transform-origin: center;
+  mix-blend-mode: multiply;
+}
+
+.ocean-morph-path-1 {
+  filter: drop-shadow(0 -18px 38px rgba(14,165,233,.08));
+}
+
+.ocean-morph-path-2 {
+  opacity: .86;
+}
+
+.ocean-morph-path-3 {
+  opacity: .74;
+}
+
+.ocean-morph-path-4 {
+  opacity: .62;
+}
+

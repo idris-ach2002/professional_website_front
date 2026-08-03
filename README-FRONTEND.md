@@ -44,7 +44,7 @@ L’application est une SPA React servie par Cloudflare Workers Assets en produc
 | Routing | React Router DOM 7 |
 | 3D | Three.js, React Three Fiber, Drei |
 | Physique | React Three Rapier / Rapier |
-| Animations DOM/SVG | GSAP 3.13 et ScrollTrigger via CDN |
+| Animations DOM/SVG | GSAP 3.13 et ScrollTrigger via dépendance npm |
 | Déploiement | Wrangler, Cloudflare Workers Assets |
 | Outillage | ESLint 9, React Compiler Babel plugin |
 
@@ -67,7 +67,16 @@ Le routeur est initialisé dans `main.jsx` avec `BrowserRouter`.
 src/
 ├── App.jsx                         # orchestration des routes et chargement du portfolio
 ├── main.jsx                        # bootstrap React, MantineProvider, BrowserRouter
-├── index.css                       # style global, responsive, thème visuel
+├── index.css                       # façade CSS globale (imports uniquement)
+├── styles/                         # règles réparties par responsabilité
+│   ├── core/                       # tokens, reset et document
+│   ├── components/                 # composants publics partagés
+│   ├── sections/                   # timeline, compétences, études de cas
+│   ├── effects/                    # Rapier, océan, aquarium
+│   ├── navigation/                 # navigation et couches historiques
+│   ├── pages/                      # administration, CV, analytics
+│   ├── overrides/                  # raffinements tardifs de la cascade
+│   └── profiles/                   # mobile et Firefox
 ├── services/
 │   ├── portfolioApi.js             # API publique, fallback demo
 │   └── authApi.js                  # API protégée, CSRF, cookies, upload, logout

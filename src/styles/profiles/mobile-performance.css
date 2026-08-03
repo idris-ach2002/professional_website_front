@@ -91,9 +91,7 @@
   }
 
   .proven-skills-grid { grid-template-columns: 1fr !important; }
-  .proven-skill-button.is-locked { opacity: .58; }
-  .proven-skill-map-arrow { transform: rotate(90deg) translateX(-6px); }
-  .proven-skill-button.is-selected .proven-skill-map-arrow { transform: rotate(90deg) translateX(0); }
+  .proven-skill-button.is-locked { opacity: .50; }
   .proven-skill-detail-card { animation-name: skill-panel-enter-mobile; }
   @keyframes skill-panel-enter-mobile {
     from { opacity: 0; transform: translateY(10px); }

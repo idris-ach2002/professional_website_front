@@ -68,6 +68,8 @@ export default function ProvenSkillsSection({ projects = [], experiences = [], p
   }, [skills, selectedSkillId]);
 
   const selectedSkill = skills.find((skill) => skill.id === selectedSkillId) ?? skills[0];
+  const selectedSkillIndex = Math.max(0, skills.findIndex((skill) => skill.id === selectedSkill?.id));
+  const selectedSkillNumber = String(selectedSkillIndex + 1).padStart(2, "0");
 
   if (skills.length === 0) return null;
 
@@ -115,18 +117,40 @@ export default function ProvenSkillsSection({ projects = [], experiences = [], p
                   <strong>{skill.label}</strong>
                   <span>{skill.description}</span>
                 </span>
-                <span className="proven-skill-count">{skill.evidenceCount}</span>
-                <span className="proven-skill-map-arrow" aria-hidden="true">→</span>
+                <span className="proven-skill-side">
+                  <span className="proven-skill-count">{skill.evidenceCount}</span>
+                  <span className="proven-skill-selected-label">Détail</span>
+                </span>
+                <span className="proven-skill-connector" aria-hidden="true">
+                  <span className="proven-skill-connector-line">
+                    <span className="proven-skill-connector-pulse" />
+                  </span>
+                  <span className="proven-skill-connector-arrow">›</span>
+                </span>
               </button>
             );
           })}
         </div>
 
         {selectedSkill && (
-          <Card key={selectedSkill.id} id={`skill-panel-${selectedSkill.id}`} role="tabpanel" aria-labelledby={`skill-tab-${selectedSkill.id}`} className="island-card proven-skill-detail-card" radius="xl">
-            <div className="proven-skill-detail-orb" aria-hidden="true" />
-            <Stack gap="lg" className="proven-skill-detail-content">
-              <Group justify="space-between" gap="md" align="flex-start">
+          <>
+            <div className="proven-skills-mobile-bridge" aria-hidden="true">
+              <span className="proven-skills-mobile-bridge-index">{selectedSkillNumber}</span>
+              <span>Affiche le détail sélectionné</span>
+              <span className="proven-skills-mobile-bridge-arrow">↓</span>
+            </div>
+            <Card key={selectedSkill.id} id={`skill-panel-${selectedSkill.id}`} role="tabpanel" aria-labelledby={`skill-tab-${selectedSkill.id}`} aria-live="polite" className="island-card proven-skill-detail-card" radius="xl">
+              <div className="proven-skill-detail-orb" aria-hidden="true" />
+              <Stack gap="lg" className="proven-skill-detail-content">
+                <div className="proven-skill-detail-context">
+                  <span className="proven-skill-detail-index">{selectedSkillNumber}</span>
+                  <span className="proven-skill-detail-context-copy">
+                    <small>Compétence sélectionnée</small>
+                    <strong>{selectedSkill.shortLabel}</strong>
+                  </span>
+                  <span className="proven-skill-detail-context-line" aria-hidden="true" />
+                </div>
+                <Group justify="space-between" gap="md" align="flex-start">
                 <div>
                   <Badge className="executive-badge">{selectedSkill.shortLabel}</Badge>
                   <Title order={3}>{selectedSkill.label}</Title>
@@ -186,18 +210,19 @@ export default function ProvenSkillsSection({ projects = [], experiences = [], p
                 </div>
               </div>
 
-              <Group gap="sm" className="proven-skill-actions">
-                {selectedSkill.projects[0] && (
-                  <Button component={Link} to={`/projects/${getProjectSlug(selectedSkill.projects[0])}`} radius="xl" className="primary-action">
-                    Voir l’étude de cas principale
+                <Group gap="sm" className="proven-skill-actions">
+                  {selectedSkill.projects[0] && (
+                    <Button component={Link} to={`/projects/${getProjectSlug(selectedSkill.projects[0])}`} radius="xl" className="primary-action">
+                      Voir l’étude de cas principale
+                    </Button>
+                  )}
+                  <Button component="a" href="#projects" radius="xl" variant="light">
+                    Explorer les projets
                   </Button>
-                )}
-                <Button component="a" href="#projects" radius="xl" variant="light">
-                  Explorer les projets
-                </Button>
-              </Group>
-            </Stack>
-          </Card>
+                </Group>
+              </Stack>
+            </Card>
+          </>
         )}
       </div>
     </section>

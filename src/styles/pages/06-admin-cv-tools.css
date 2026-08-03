@@ -1,0 +1,372 @@
+/* CV studio, admin editing, safety and application workflow. */
+.cv-builder-panel,
+.cv-preview-panel {
+  border-color: rgba(15, 118, 110, 0.18) !important;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(241, 249, 248, 0.92)),
+    radial-gradient(circle at top left, rgba(20, 184, 166, 0.1), transparent 34%);
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+}
+
+.cv-latex-editor textarea,
+.cv-logs-editor textarea {
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 12.5px;
+  line-height: 1.55;
+  border-radius: 18px;
+  background: #0d1520;
+  color: #d7f9ff;
+  border-color: rgba(148, 163, 184, 0.28);
+  tab-size: 2;
+}
+
+.cv-latex-editor textarea:focus,
+.cv-logs-editor textarea:focus {
+  border-color: rgba(45, 212, 191, 0.75);
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.16);
+}
+
+.cv-logs-editor textarea {
+  color: #cbd5e1;
+  background: #111827;
+}
+
+.cv-preview-frame {
+  width: 100%;
+  min-height: 760px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 22px;
+  background: #f8fafc;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+.cv-preview-empty {
+  min-height: 760px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px dashed rgba(15, 118, 110, 0.3);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(20, 184, 166, 0.14), transparent 32%),
+    rgba(248, 250, 252, 0.84);
+  padding: 2rem;
+}
+
+@media (max-width: 820px) {
+  .cv-preview-frame,
+  .cv-preview-empty {
+    min-height: 560px;
+  }
+
+  .cv-latex-editor textarea,
+  .cv-logs-editor textarea {
+    font-size: 11.5px;
+  }
+}
+
+.cv-builder-photoshop-shell {
+  border-color: rgba(15, 118, 110, 0.2) !important;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(45, 212, 191, 0.16), transparent 30%),
+    radial-gradient(circle at 88% 14%, rgba(59, 130, 246, 0.12), transparent 28%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(241, 249, 248, 0.94));
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.12);
+}
+
+.cv-command-panel,
+.cv-live-preview-panel,
+.cv-mini-inspector {
+  border-color: rgba(15, 118, 110, 0.18) !important;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+}
+
+.cv-command-panel .mantine-Tabs-list {
+  padding: 0.35rem;
+  border: 1px solid rgba(15, 118, 110, 0.14);
+  border-radius: 18px;
+  background: rgba(240, 253, 250, 0.72);
+}
+
+.cv-command-panel .mantine-Tabs-tab {
+  border-radius: 13px;
+  font-weight: 800;
+}
+
+.cv-section-selector {
+  min-width: min(100%, 320px);
+}
+
+.cv-editor-muted-item {
+  opacity: 0.58;
+  background: rgba(241, 245, 249, 0.72) !important;
+}
+
+.cv-live-preview-panel {
+  position: sticky;
+  top: 96px;
+}
+
+.cv-preview-empty-advanced {
+  min-height: 760px;
+  background:
+    linear-gradient(135deg, rgba(15, 23, 42, 0.04) 25%, transparent 25%) -16px 0/32px 32px,
+    linear-gradient(225deg, rgba(15, 23, 42, 0.04) 25%, transparent 25%) -16px 0/32px 32px,
+    radial-gradient(circle at center, rgba(45, 212, 191, 0.14), transparent 36%),
+    rgba(248, 250, 252, 0.92);
+}
+
+.cv-mini-inspector .mantine-Card-root {
+  background: linear-gradient(145deg, rgba(240, 253, 250, 0.86), rgba(255, 255, 255, 0.95));
+}
+
+@media (max-width: 1200px) {
+  .cv-live-preview-panel {
+    position: static;
+  }
+}
+
+/* Admin textareas: readable, resizable and visibly focused. */
+.admin-page .mantine-Textarea-input {
+  min-height: 112px;
+  resize: vertical;
+  transition:
+    min-height 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease,
+    background 180ms ease;
+  transform-origin: center top;
+}
+
+.admin-page .mantine-Textarea-input:focus,
+.admin-page .mantine-Textarea-input:focus-within {
+  min-height: 148px;
+  transform: scale(1.006);
+  z-index: 2;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15), 0 18px 38px rgba(15, 23, 42, 0.12);
+}
+
+.admin-page .cv-latex-editor textarea,
+.admin-page .cv-logs-editor textarea,
+.admin-page .json-editor-textarea {
+  resize: vertical !important;
+}
+
+.cv-typography-group {
+  background: linear-gradient(145deg, rgba(248, 250, 252, 0.96), rgba(240, 253, 250, 0.88));
+  border-color: rgba(15, 118, 110, 0.16) !important;
+}
+
+.cv-command-panel .mantine-Card-root[draggable="true"] {
+  cursor: grab;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.cv-command-panel .mantine-Card-root[draggable="true"]:hover {
+  transform: translateY(-2px);
+  border-color: rgba(15, 118, 110, 0.34) !important;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.10);
+}
+
+.cv-command-panel .mantine-Card-root[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.admin-page .mantine-Textarea-input {
+  resize: vertical !important;
+}
+
+.cv-asset-import-card {
+  background: rgba(248, 250, 252, 0.92);
+  border-color: rgba(110, 135, 126, 0.24);
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.06);
+}
+
+.cv-asset-import-card code {
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.07);
+  padding: 2px 6px;
+  font-size: 0.78rem;
+}
+
+.cv-asset-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(240, 248, 246, 0.92));
+  border-color: rgba(110, 135, 126, 0.22) !important;
+}
+
+.cv-asset-preview {
+  display: block;
+  max-width: 120px;
+  max-height: 120px;
+  margin-top: 0.75rem;
+  object-fit: cover;
+  border-radius: 18px;
+  border: 1px solid rgba(110, 135, 126, 0.28);
+  box-shadow: 0 14px 30px rgba(17, 24, 39, 0.12);
+}
+
+.cv-asset-logo-preview {
+  max-width: 96px;
+  max-height: 72px;
+  object-fit: contain;
+  padding: 0.45rem;
+  background: white;
+}
+
+.cv-command-panel .mantine-Tabs-list {
+  overflow-x: auto;
+  flex-wrap: nowrap;
+}
+
+.cv-command-panel .mantine-Tabs-tab {
+  white-space: nowrap;
+}
+
+.cv-builder-photoshop-shell textarea:not(.cv-latex-editor):not(.cv-logs-editor) {
+  min-height: 7.5rem;
+  resize: vertical;
+  transition: min-height 180ms ease, transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.cv-builder-photoshop-shell textarea:not(.cv-latex-editor):not(.cv-logs-editor):focus {
+  min-height: 10rem;
+  transform: scale(1.006);
+  box-shadow: 0 16px 38px rgba(15, 23, 42, 0.12);
+  border-color: rgba(110, 135, 126, 0.55);
+}
+
+.admin-safety-panel {
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-safety-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at top right, rgba(69, 107, 96, 0.13), transparent 35%);
+}
+
+.admin-health-check {
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.admin-health-check:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 34px rgba(12, 23, 30, 0.08);
+}
+
+/* Application tracker / candidature workflow */
+.application-list-panel,
+.application-editor-panel,
+.application-analysis-panel,
+.application-letter-panel {
+  position: relative;
+  overflow: hidden;
+}
+
+.application-card {
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.application-card:hover,
+.application-card:focus-within {
+  transform: translateY(-2px) scale(1.01);
+  border-color: rgba(65, 91, 86, 0.35);
+  box-shadow: 0 18px 38px rgba(17, 24, 39, 0.12);
+}
+
+.application-card.is-selected {
+  border-color: rgba(46, 125, 104, 0.72);
+  background: linear-gradient(135deg, rgba(239, 253, 247, 0.98), rgba(255, 255, 255, 0.92));
+  box-shadow: 0 20px 45px rgba(21, 94, 74, 0.16);
+}
+
+.application-analysis-panel .mantine-Badge-root,
+.application-letter-panel .mantine-Badge-root {
+  text-transform: none;
+}
+
+.smart-application-panel,
+.smart-engine-box {
+  border-color: rgba(14, 116, 144, 0.18);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(240, 253, 250, 0.86));
+}
+
+.smart-template-card,
+.smart-proposal-card,
+.smart-evidence-card {
+  cursor: default;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.smart-proposal-card {
+  cursor: pointer;
+}
+
+.smart-proposal-card:hover,
+.smart-template-card:hover,
+.smart-evidence-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(14, 116, 144, 0.28);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+}
+
+.smart-proposal-card.is-selected {
+  border-color: rgba(14, 116, 144, 0.52);
+  box-shadow: 0 16px 40px rgba(14, 116, 144, 0.12);
+}
+
+.smart-command-selector {
+  padding: 0.65rem;
+  border: 1px dashed rgba(14, 116, 144, 0.22);
+  border-radius: 14px;
+  background: rgba(248, 250, 252, 0.82);
+  max-height: 210px;
+  overflow: auto;
+}
+
+.smart-command-trace-list {
+  max-height: 58vh;
+  overflow: auto;
+  display: grid;
+  gap: 0.55rem;
+  padding-right: 0.2rem;
+}
+
+.smart-command-trace-entry {
+  border-left: 4px solid rgba(59, 130, 246, 0.55);
+  background: rgba(248, 250, 252, 0.95);
+}
+
+.smart-command-trace-entry.is-done {
+  border-left-color: rgba(34, 197, 94, 0.75);
+}
+
+.smart-command-trace-entry.is-warning {
+  border-left-color: rgba(245, 158, 11, 0.82);
+}
+
+.smart-command-trace-entry.is-running {
+  border-left-color: rgba(59, 130, 246, 0.82);
+}
+
+@media (max-width: 820px) {
+  .brand-lockup {
+    min-width: 0;
+    max-width: min(62vw, 420px);
+    padding-right: 12px;
+  }
+
+  .brand-subtitle {
+    display: none;
+  }
+}
