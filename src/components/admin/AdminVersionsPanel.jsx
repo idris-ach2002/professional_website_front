@@ -1,5 +1,20 @@
-import { Badge, Button, Card, Divider, Group, Paper, Select, SimpleGrid, Stack, Switch, Tabs, Text, Textarea, TextInput } from "@mantine/core";
-import { getEntityId } from "./adminCore";
+import {
+  Badge,
+  Button,
+  Card,
+  Divider,
+  Group,
+  Paper,
+  Select,
+  SimpleGrid,
+  Stack,
+  Switch,
+  Tabs,
+  Text,
+  Textarea,
+  TextInput } from "@mantine/core";
+import { getEntityId,
+} from "./adminCoreUtils";
 
 export default function AdminVersionsPanel(props) {
   const {

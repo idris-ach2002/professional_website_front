@@ -1,4 +1,4 @@
-import { Anchor, Badge, Button, Card, Group, RingProgress, Stack, Text, Title } from "@mantine/core";
+import { Anchor, Button, Card, Group, RingProgress, Stack, Text, Title } from "@mantine/core";
 import { useRef } from "react";
 import { useGsap } from "../animations/useGsap";
 import { PreviewableImage } from "./FilePreview";

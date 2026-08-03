@@ -3,7 +3,6 @@ import {
   Badge,
   Button,
   Card,
-  Checkbox,
   Divider,
   FileInput,
   Group,
@@ -17,7 +16,6 @@ import {
   Text,
   Textarea,
   TextInput,
-  Title,
 } from "@mantine/core";
 import { FilePreviewButton } from "../FilePreview";
 import {
@@ -29,7 +27,7 @@ import {
   inferSchoolDefaults,
   safeCvAssetFilename,
   toCsv,
-} from "./adminCore";
+} from "./adminCoreUtils";
 
 export default function AdminCvBuilderPanel(props) {
   const {

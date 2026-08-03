@@ -1,5 +1,5 @@
 import { Badge, Button, Card, Group, Stack, Text, Title } from "@mantine/core";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 import SectionTitle from "./SectionTitle";
@@ -61,11 +61,6 @@ export default function ProvenSkillsSection({ projects = [], experiences = [], p
   const [selectedSkillId, setSelectedSkillId] = useState(null);
   const buttonRefs = useRef([]);
 
-  useEffect(() => {
-    if (skills.length > 0 && !skills.some((skill) => skill.id === selectedSkillId)) {
-      setSelectedSkillId(skills[0].id);
-    }
-  }, [skills, selectedSkillId]);
 
   const selectedSkill = skills.find((skill) => skill.id === selectedSkillId) ?? skills[0];
   const selectedSkillIndex = Math.max(0, skills.findIndex((skill) => skill.id === selectedSkill?.id));

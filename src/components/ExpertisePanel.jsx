@@ -1,17 +1,9 @@
-import { Badge, Card, Group, Progress, SimpleGrid, Stack, Text, Title } from "@mantine/core";
+import { Badge, Card, Group, Progress, Stack, Text, Title } from "@mantine/core";
 import { useRef } from "react";
 import { useGsap } from "../animations/useGsap";
 import SectionTitle from "./SectionTitle";
 import { collectStacks, getPublicProjects } from "../utils/portfolio";
 
-function ArchitectureNode({ label, value, active }) {
-  return (
-    <div className={`architecture-node coral-node ${active ? "active" : ""}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
-}
 
 export default function ExpertisePanel({ projects, experiences }) {
   const rootRef = useRef(null);

@@ -1,161 +1,101 @@
-import { useEffect, useMemo } from "react";
-import { normalizeAdminPortfolioJson } from "../../utils/adminJsonImport";
+import { useCallback, useEffect } from "react";
+
 import {
   apiRequest,
-  isAuthRequiredError,
-  logoutAdmin,
-  buildBackendUrl
-} from "../../services/authApi";
+  } from "../../services/authApi";
 import {
-  contactTypeOptions,
-  applicationStatusOptions,
-  applicationStatusLabels,
-  applicationStatusColors,
-  emptyApplicationForm,
-  defaultOwnerContacts,
-  emptyOwnerForm,
-  emptyVersionForm,
-  emptyProfileForm,
-  emptyTimelineForm,
-  emptyExperienceForm,
-  emptyProjectForm,
-  emptyProfileFiles,
-  emptyExperienceFiles,
-  emptyProjectFiles,
-  experienceCategories,
-  projectStatuses,
-  cvSectionDefinitions,
-  cvContentSections,
-  cvTargetPresets,
   createCvId,
   cloneDeep,
-  ensureCvId,
   normalizeCvString,
-  collectSkillLabels,
-  sortByDisplayOrder,
   createEmptyCvDocument,
   createCvDocumentFromVersionData,
   normalizeCvDocument,
-  escapeLatex,
-  sanitizeHexColor,
   safeCvAssetFilename,
   cvFileExtension,
   cvAssetMimeFromDataUrl,
   readCvAssetFile,
   inferSchoolDefaults,
-  latexSchoolLinks,
   buildCvAssetsPayload,
-  latexItemize,
-  latexSection,
-  enabledItems,
   clampNumber,
-  latexSize,
-  latexLeading,
-  shortenCvText,
-  cvMonthYear,
-  cvDateLabel,
-  cvYearRange,
-  latexHref,
-  contactValueFromDocument,
-  buildLatexContact,
-  buildDefaultSkillCards,
-  buildLatexSkillCards,
-  buildLatexExperience,
-  buildLatexProject,
-  buildLatexEducationEntry,
-  buildLatexSectionContent,
-  buildColumnLatex,
   buildCvLatexFromDocument,
   moveCvItem,
-  cvTextSignature,
   scoreCvItemForKeywords,
   buildLocalCvQualityReport,
-  extractOfferKeywords,
   buildOfferAnalysis,
   diffCvDocuments,
   toArray,
   toCsv,
-  getEntityId,
-  getProjectId,
-  getOwnerLabel,
-  normalizeDate,
   nullIfBlank,
-  createEmptyContact,
-  cloneContactRows,
-  sanitizeContactRows,
-  hydrateOwnerForm,
   normalizeGeneratedFileUrl,
-  normalizeUrlFromUpload,
-  hydrateProfileForm,
-  hydrateTimelineForm,
-  hydrateExperiences,
-  hydrateExperienceFormForEditing,
-  normalizeExperienceOrder,
-  getProjectArchitectureUrl,
-  hydrateProjectForm,
-  downloadTextFile,
-  escapeHtml,
-  highlightJson,
-  getLineColumnFromPosition,
-  getJsonSyntaxLocation,
-  buildJsonEditorAnalysis,
-  JsonCodeEditor,
-  FileLink,
-  AdminAuthShell,
-  AdminChecking,
-  AdminLoginRedirect,
-  uploadFile
-} from "./adminCore";
+} from "./adminCoreUtils";
 
 export default function useAdminCvStudio(ctx) {
   const {
-    loading, setLoading, message, setMessage,
-    error, setError, authStatus, setAuthStatus,
-    owners, setOwners, versions, setVersions,
-    projects, setProjects, selectedOwnerId, setSelectedOwnerId,
-    selectedVersionId, setSelectedVersionId, selectedProjectId, setSelectedProjectId,
-    projectMode, setProjectMode, cloneSourceVersionId, setCloneSourceVersionId,
-    ownerForm, setOwnerForm, versionForm, setVersionForm,
-    profileForm, setProfileForm, timelineForm, setTimelineForm,
-    experienceForm, setExperienceForm, experiences, setExperiences,
-    experienceMode, setExperienceMode, selectedExperienceIndex, setSelectedExperienceIndex,
-    projectForm, setProjectForm, profileFiles, setProfileFiles,
-    experienceFiles, setExperienceFiles, projectFiles, setProjectFiles,
-    jsonImportFile, setJsonImportFile, jsonImportText, setJsonImportText,
-    jsonImportSummary, setJsonImportSummary, jsonEditorOpened, setJsonEditorOpened,
-    jsonEditorText, setJsonEditorText, jsonEditorError, setJsonEditorError,
-    cvEditorState, setCvEditorState, cvSelectedSection, setCvSelectedSection,
-    cvActiveEditorTab, setCvActiveEditorTab, cvDraggingItem, setCvDraggingItem,
-    cvManualLatexDirty, setCvManualLatexDirty, cvLatexSource, setCvLatexSource,
-    cvPreviewUrl, setCvPreviewUrl, cvCompileLogs, setCvCompileLogs,
-    cvCompileWarnings, setCvCompileWarnings, cvCompileSuccess, setCvCompileSuccess,
-    cvTemplateLocked, setCvTemplateLocked, cvQualityReport, setCvQualityReport,
-    cvVariants, setCvVariants, selectedCvVariantId, setSelectedCvVariantId,
-    cvVariantName, setCvVariantName, cvDiffReport, setCvDiffReport,
-    cvOfferText, setCvOfferText, cvOfferAnalysis, setCvOfferAnalysis,
-    cvPresetName, setCvPresetName, cvCommandPresets, setCvCommandPresets,
-    cvExportZipUrl, setCvExportZipUrl, cvAsyncJob, setCvAsyncJob,
-    cvRegressionReport, setCvRegressionReport, portfolioHealthReport, setPortfolioHealthReport,
-    publishValidationReport, setPublishValidationReport, portfolioBackupUrl, setPortfolioBackupUrl,
-    portfolioBackupJson, setPortfolioBackupJson, portfolioRestoreText, setPortfolioRestoreText,
-    portfolioRestoreLabel, setPortfolioRestoreLabel, applications, setApplications,
-    applicationsDashboard, setApplicationsDashboard, selectedApplicationId, setSelectedApplicationId,
-    applicationForm, setApplicationForm, offerAnalysis, setOfferAnalysis,
-    coverLetterPreviewUrl, setCoverLetterPreviewUrl, coverLetterLogs, setCoverLetterLogs,
-    coverLetterWarnings, setCoverLetterWarnings, applicationZipUrl, setApplicationZipUrl,
-    smartAnalysis, setSmartAnalysis, letterTemplates, setLetterTemplates,
-    selectedLetterVariantId, setSelectedLetterVariantId, selectedCvProposalId, setSelectedCvProposalId,
-    smartPackUrl, setSmartPackUrl, adminActiveTab, setAdminActiveTab,
-    selectedSmartCommandKeys, setSelectedSmartCommandKeys, commandTraceOpened, setCommandTraceOpened,
-    commandTraceStatus, setCommandTraceStatus, commandTraceTitle, setCommandTraceTitle,
-    commandTraceEntries, setCommandTraceEntries, jsonEditorAnalysis, cvDocument,
-    cvCanUndo, cvCanRedo, cvSelectedItems, cvQualitySummary,
-    selectedVersion, selectedProject, selectedApplication, runAction,
-    fetchOwners, fetchVersions, fetchProjects, refreshOwners,
-    refreshVersions, refreshProjects, selectVersion, selectProject,
-    resetProjectForm, resetExperienceForm, selectExperience, applyNormalizedPortfolioData,
-    buildCurrentVersionJsonPayload
+    setMessage,
+    setError,
+    projects,
+    selectedOwnerId,
+    selectedVersionId,
+    ownerForm,
+    profileForm,
+    experiences,
+    setCvEditorState,
+    setCvSelectedSection,
+    cvDraggingItem,
+    setCvDraggingItem,
+    setCvManualLatexDirty,
+    cvLatexSource,
+    setCvLatexSource,
+    cvPreviewUrl,
+    setCvPreviewUrl,
+    setCvCompileLogs,
+    setCvCompileWarnings,
+    setCvCompileSuccess,
+    setCvTemplateLocked,
+    setCvQualityReport,
+    cvVariants,
+    setCvVariants,
+    selectedCvVariantId,
+    setSelectedCvVariantId,
+    cvVariantName,
+    setCvVariantName,
+    setCvDiffReport,
+    cvOfferText,
+    cvOfferAnalysis,
+    setCvOfferAnalysis,
+    cvPresetName,
+    cvCommandPresets,
+    setCvCommandPresets,
+    setCvExportZipUrl,
+    setCvAsyncJob,
+    setCvRegressionReport,
+    setPortfolioHealthReport,
+    setPublishValidationReport,
+    setPortfolioBackupUrl,
+    setPortfolioBackupJson,
+    cvDocument,
+    runAction,
+    refreshVersions
   } = ctx;
+
+  const cvLocalStorageKey = useCallback(
+    (kind) => `portfolio-cv-${kind}-${selectedOwnerId ?? "owner"}-${selectedVersionId ?? "version"}`,
+    [selectedOwnerId, selectedVersionId],
+  );
+
+  const readCvLocalList = useCallback((kind) => {
+    try {
+      const raw = localStorage.getItem(cvLocalStorageKey(kind));
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }, [cvLocalStorageKey]);
+
+  const writeCvLocalList = useCallback((kind, list) => {
+    localStorage.setItem(cvLocalStorageKey(kind), JSON.stringify(list));
+  }, [cvLocalStorageKey]);
 
   useEffect(() => {
     const variants = readCvLocalList("variants");
@@ -171,25 +111,20 @@ export default function useAdminCvStudio(ctx) {
     setPublishValidationReport(null);
     setPortfolioBackupUrl("");
     setPortfolioBackupJson("");
-  }, [selectedOwnerId, selectedVersionId]);
-
-  function cvLocalStorageKey(kind) {
-    return `portfolio-cv-${kind}-${selectedOwnerId ?? "owner"}-${selectedVersionId ?? "version"}`;
-  }
-
-  function readCvLocalList(kind) {
-    try {
-      const raw = localStorage.getItem(cvLocalStorageKey(kind));
-      const parsed = raw ? JSON.parse(raw) : [];
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  }
-
-  function writeCvLocalList(kind, list) {
-    localStorage.setItem(cvLocalStorageKey(kind), JSON.stringify(list));
-  }
+  }, [
+    readCvLocalList,
+    setCvAsyncJob,
+    setCvCommandPresets,
+    setCvDiffReport,
+    setCvExportZipUrl,
+    setCvQualityReport,
+    setCvVariants,
+    setPortfolioBackupJson,
+    setPortfolioBackupUrl,
+    setPortfolioHealthReport,
+    setPublishValidationReport,
+    setSelectedCvVariantId,
+  ]);
 
   function resetCvEditorFromData({ owner = ownerForm, profile = profileForm, experiences: sourceExperiences = experiences, projects: sourceProjects = projects, label = "CV réinitialisé depuis le portfolio" } = {}) {
     const nextDocument = normalizeCvDocument(createCvDocumentFromVersionData({

@@ -1,9 +1,13 @@
-import { useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import {
+  useMemo,
+  useState,
+} from "react";
+import {
+  useLocation,
+} from "react-router-dom";
 import useResponsiveProfile from "../hooks/useResponsiveProfile";
 import {
   getOwnerFullName,
-  getPrimaryContact,
   getProjectSlug,
   getPublicProjects,
   normalizeUrl,
@@ -210,7 +214,7 @@ function resolveItemHref(item, { isHomePath, profile, owner }) {
   if (item.href === "github") return normalizeUrl(getContactValue(owner, "GITHUB") || "#projects");
   if (item.href === "linkedin") return normalizeUrl(getContactValue(owner, "LINKEDIN") || "#profile");
   if (item.href === "email") {
-    const email = getPrimaryContact(owner, "EMAIL")?.value;
+    const email = getContactValue(owner, "EMAIL");
     return email ? `mailto:${email}` : isHomePath ? "#profile" : "/#profile";
   }
   if (!item.href?.startsWith("#")) return normalizeUrl(item.href);
@@ -336,7 +340,6 @@ export default function TopNavigation({ owner }) {
   const isHomePath = location.pathname === "/";
   const ownerName = getOwnerFullName(owner);
   const profile = owner?.prof ?? owner?.profile ?? {};
-  const email = getPrimaryContact(owner, "EMAIL")?.value;
   const contactHref = isHomePath ? "#contact" : "/#contact";
   const cvHref = normalizeUrl(profile?.cvUrl || "#profile");
 

@@ -1,5 +1,21 @@
-import { Badge, Button, Checkbox, Divider, Group, NumberInput, Paper, Select, SimpleGrid, Stack, Switch, Tabs, Text, Textarea, TextInput } from "@mantine/core";
-import { contactTypeOptions } from "./adminCore";
+import {
+  Badge,
+  Button,
+  Checkbox,
+  Divider,
+  Group,
+  NumberInput,
+  Paper,
+  Select,
+  SimpleGrid,
+  Stack,
+  Switch,
+  Tabs,
+  Text,
+  Textarea,
+  TextInput } from "@mantine/core";
+import { contactTypeOptions,
+} from "./adminCoreUtils";
 
 export default function AdminOwnerPanel(props) {
   const {

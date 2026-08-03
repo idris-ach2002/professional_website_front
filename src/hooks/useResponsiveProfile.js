@@ -43,7 +43,7 @@ function resolvePerformanceMode({ isMobile, reducedMotion, isFirefox, lowPowerDe
 }
 
 export default function useResponsiveProfile() {
-  const browserSignals = useMemo(readBrowserSignals, []);
+  const browserSignals = useMemo(() => readBrowserSignals(), []);
   const [mediaState, setMediaState] = useState(() => ({
     isMobile: readMedia(MOBILE_QUERY),
     reducedMotion: readMedia(REDUCED_MOTION_QUERY),

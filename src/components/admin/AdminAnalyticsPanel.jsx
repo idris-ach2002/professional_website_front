@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Badge, Button, Card, Group, Loader, Paper, SimpleGrid, Stack, Table, Text, TextInput, Title } from "@mantine/core";
 import { apiRequest, isAuthRequiredError } from "../../services/authApi";
 
@@ -10,6 +10,14 @@ function addDays(date, days) {
   const next = new Date(date);
   next.setDate(next.getDate() + days);
   return next.toISOString().slice(0, 10);
+}
+
+
+async function fetchAnalyticsSummary(from, to) {
+  const params = new URLSearchParams({ recentLimit: "80" });
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+  return apiRequest("GET", `/manager/analytics/summary?${params.toString()}`);
 }
 
 function formatDateTime(value) {
@@ -62,8 +70,9 @@ export default function AdminAnalyticsPanel() {
   const [from, setFrom] = useState(addDays(new Date(), -30));
   const [to, setTo] = useState(todayIso());
   const [summary, setSummary] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const initialRangeRef = useRef({ from, to });
 
   const dailyMax = useMemo(
     () => Math.max(...(summary?.dailyVisits ?? []).map((item) => item.pageViews ?? 0), 1),
@@ -74,10 +83,7 @@ export default function AdminAnalyticsPanel() {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ recentLimit: "80" });
-      if (from) params.set("from", from);
-      if (to) params.set("to", to);
-      const data = await apiRequest("GET", `/manager/analytics/summary?${params.toString()}`);
+      const data = await fetchAnalyticsSummary(from, to);
       setSummary(data);
     } catch (loadError) {
       if (isAuthRequiredError(loadError)) {
@@ -91,8 +97,28 @@ export default function AdminAnalyticsPanel() {
   }
 
   useEffect(() => {
-    loadAnalytics();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    let cancelled = false;
+    const initialRange = initialRangeRef.current;
+
+    fetchAnalyticsSummary(initialRange.from, initialRange.to)
+      .then((data) => {
+        if (!cancelled) setSummary(data);
+      })
+      .catch((loadError) => {
+        if (cancelled) return;
+        if (isAuthRequiredError(loadError)) {
+          setError("Connexion admin requise pour consulter les analytics.");
+        } else {
+          setError(loadError?.message ?? "Impossible de charger les analytics.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (

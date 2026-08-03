@@ -85,8 +85,10 @@ function CaseStudySection({ section }) {
 export default function ProjectCaseStudyPage({ owner, projects = [] }) {
   const { projectSlug } = useParams();
   const localProject = useMemo(() => findProjectBySlug(projects, projectSlug), [projects, projectSlug]);
-  const [apiProject, setApiProject] = useState(null);
-  const [loadingProject, setLoadingProject] = useState(false);
+  const requestKey = projectSlug ? `${owner?.ownerId ?? "default"}:${projectSlug}` : "";
+  const [apiState, setApiState] = useState({ key: "", project: null });
+  const apiProject = apiState.key === requestKey ? apiState.project : null;
+  const loadingProject = Boolean(projectSlug) && apiState.key !== requestKey;
   const project = apiProject ?? localProject;
   const sections = useMemo(() => getCaseStudySections(project), [project]);
   const ownerName = getOwnerFullName(owner);
@@ -96,25 +98,20 @@ export default function ProjectCaseStudyPage({ owner, projects = [] }) {
 
     if (!projectSlug) return undefined;
 
-    setLoadingProject(true);
     fetchProjectCaseStudy(projectSlug, owner?.ownerId)
       .then((payload) => {
         if (!mounted) return;
-        setApiProject(payload);
+        setApiState({ key: requestKey, project: payload });
       })
       .catch(() => {
         if (!mounted) return;
-        setApiProject(null);
-      })
-      .finally(() => {
-        if (!mounted) return;
-        setLoadingProject(false);
+        setApiState({ key: requestKey, project: null });
       });
 
     return () => {
       mounted = false;
     };
-  }, [owner?.ownerId, projectSlug]);
+  }, [owner?.ownerId, projectSlug, requestKey]);
 
   useEffect(() => {
     if (!project) return;

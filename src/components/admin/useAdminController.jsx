@@ -1,6 +1,9 @@
-import { useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useGsap } from "../../animations/useGsap";
-import * as adminCore from "./adminCore";
+import * as adminCoreUi from "./adminCore";
+import * as adminCoreUtils from "./adminCoreUtils";
+
+const adminCore = { ...adminCoreUtils, ...adminCoreUi };
 import useAdminApplications from "./useAdminApplications";
 import useAdminCrudActions from "./useAdminCrudActions";
 import useAdminCvStudio from "./useAdminCvStudio";
@@ -214,19 +217,22 @@ export default function useAdminController() {
   };
 
   const cvStudio = useAdminCvStudio({ ...state, ...refServices });
-  servicesRef.current = { ...servicesRef.current, ...cvStudio };
-
   const portfolioCore = useAdminPortfolioCore({ ...state, ...refServices, ...cvStudio });
-  servicesRef.current = { ...servicesRef.current, ...portfolioCore };
-
   const jsonWorkspace = useAdminJsonWorkspace({ ...state, ...refServices, ...cvStudio, ...portfolioCore });
-  servicesRef.current = { ...servicesRef.current, ...jsonWorkspace };
-
   const safetyActions = useAdminSafetyActions({ ...state, ...refServices, ...portfolioCore, ...jsonWorkspace });
   const applicationsActions = useAdminApplications({ ...state, ...refServices, ...cvStudio, ...portfolioCore });
   const crudActions = useAdminCrudActions({ ...state, ...refServices, ...portfolioCore, ...cvStudio });
-  servicesRef.current = { ...servicesRef.current, ...safetyActions, ...applicationsActions, ...crudActions };
 
+  useLayoutEffect(() => {
+    servicesRef.current = {
+      ...cvStudio,
+      ...portfolioCore,
+      ...jsonWorkspace,
+      ...safetyActions,
+      ...applicationsActions,
+      ...crudActions,
+    };
+  }, [cvStudio, portfolioCore, jsonWorkspace, safetyActions, applicationsActions, crudActions]);
   const activeVersionsCount = versions.filter((version) => version.active).length;
   const selectedVersionProjectsCount = projects.length;
   const selectedVersionExperiencesCount = experiences.length;

@@ -2,9 +2,7 @@ import {
   Alert,
   Badge,
   Button,
-  Card,
   Checkbox,
-  Divider,
   Group,
   Paper,
   Select,
@@ -14,14 +12,13 @@ import {
   Text,
   Textarea,
   TextInput,
-  Title,
 } from "@mantine/core";
 import {
   applicationStatusColors,
   applicationStatusLabels,
   applicationStatusOptions,
   getEntityId,
-} from "./adminCore";
+} from "./adminCoreUtils";
 
 export default function AdminApplicationsPanel(props) {
   const {
@@ -47,7 +44,6 @@ export default function AdminApplicationsPanel(props) {
     setProposalCommandsSelection,
     countSelectedProposalCommands,
     applySmartCvProposal,
-    selectedCvProposalId,
     setSelectedCvProposalId,
     setSelectedLetterVariantId,
     applySmartLetterVariant,
@@ -59,7 +55,6 @@ export default function AdminApplicationsPanel(props) {
     updateApplicationForm,
     versions,
     selectedVersionId,
-    cvVariants,
     analyzeCurrentOffer,
     saveApplication,
     deleteApplication,
