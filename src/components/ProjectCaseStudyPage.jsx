@@ -1,8 +1,9 @@
 import { Anchor, Badge, Button, Card, Group, Loader, Stack, Text, Title } from "@mantine/core";
 import { useEffect, useMemo, useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 import OceanMorphBackground from "./OceanMorphBackground";
+import NotFoundPage from "./NotFoundPage";
 import { FilePreviewButton, PreviewableImage } from "./FilePreview";
 import SiteFooter from "./SiteFooter";
 import TopNavigation from "./TopNavigation";
@@ -142,7 +143,7 @@ export default function ProjectCaseStudyPage({ owner, projects = [] }) {
   }
 
   if (!project) {
-    return <Navigate to="/#projects" replace />;
+    return <NotFoundPage />;
   }
 
   const current = project.status === "IN_PROGRESS" || project.status === "MAINTAINED";

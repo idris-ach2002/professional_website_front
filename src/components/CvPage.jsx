@@ -3,6 +3,7 @@ import OceanMorphBackground from "./OceanMorphBackground";
 import { PdfPreviewPanel } from "./FilePreview";
 import { normalizeFileUrl } from "../utils/filePreview";
 import { getContactHref, getOwnerFullName, getPrimaryContact } from "../utils/portfolio";
+import "../styles/pages/cv-page.css";
 
 export default function CvPage({ owner, profile }) {
   const cvUrl = normalizeFileUrl(profile?.cvUrl);

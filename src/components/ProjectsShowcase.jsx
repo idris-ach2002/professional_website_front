@@ -337,10 +337,6 @@ function ProjectIsland({ project, index, featured, total, active, onOpenDetails 
           <div className="project-slide-index">
             {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
           </div>
-          <div className="project-island-topline">
-            <Badge className="project-status">{STATUS_LABELS[project.status] ?? project.status}</Badge>
-          </div>
-
           <div className="project-slide-grid">
             <ProjectVisual project={project} index={index} active={active} />
 

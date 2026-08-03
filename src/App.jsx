@@ -1,6 +1,6 @@
 import { Loader, Select, Stack, Text } from "@mantine/core";
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
 import AnalyticsTracker from "./components/AnalyticsTracker";
 import GlobalAquarium from "./components/GlobalAquarium";
@@ -12,9 +12,9 @@ import SEOHead from "./components/MetadataHead";
 import SiteFooter from "./components/SiteFooter"
 import StatusBanner from "./components/StatusBanner";
 import TopNavigation from "./components/TopNavigation";
+import { ErrorBoundary } from "./components/errors/ErrorBoundary";
 
-
-import { loadPortfolio } from "./services/portfolioApi";
+import { loadDemoPortfolio, readCachedPortfolio, refreshPortfolio } from "./services/portfolioApi";
 import { getOwnerFullName, sortByDisplayOrder } from "./utils/portfolio";
 
 import useResponsiveProfile from "./hooks/useResponsiveProfile";
@@ -25,6 +25,7 @@ const BeachBallField = lazy(() => import("./components/three/BeachBallField"));
 const Admin = lazy(() => import("./components/Admin"));
 const CvPage = lazy(() => import("./components/CvPage"));
 const ProjectCaseStudyPage = lazy(() => import("./components/ProjectCaseStudyPage"));
+const NotFoundPage = lazy(() => import("./components/NotFoundPage"));
 
 function DeferredBeachBall({ performanceMode }) {
   const sentinelRef = useRef(null);
@@ -49,8 +50,9 @@ function DeferredBeachBall({ performanceMode }) {
 
   if (shouldLoad) {
     return (
-      <Suspense
-        fallback={
+      <ErrorBoundary
+        title="La scène 3D a été désactivée"
+        fallback={() => (
           <section className="beach-3d-section is-suspended" aria-hidden="true">
             <div className="beach-3d-stage">
               <div className="beach-3d-suspended-placeholder">
@@ -60,10 +62,24 @@ function DeferredBeachBall({ performanceMode }) {
               </div>
             </div>
           </section>
-        }
+        )}
       >
-        <BeachBallField performanceMode={performanceMode} />
-      </Suspense>
+        <Suspense
+          fallback={
+            <section className="beach-3d-section is-suspended" aria-hidden="true">
+              <div className="beach-3d-stage">
+                <div className="beach-3d-suspended-placeholder">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+              </div>
+            </section>
+          }
+        >
+          <BeachBallField performanceMode={performanceMode} />
+        </Suspense>
+      </ErrorBoundary>
     );
   }
 
@@ -114,7 +130,7 @@ function Home({
       <TopNavigation owner={owner} source={state.source} />
 
       <Stack gap="xl" className="content-shell">
-        <StatusBanner source={state.source} error={state.error} />
+        <StatusBanner source={state.source} error={state.error} cachedAt={state.cachedAt} />
 
         {state.owners.length > 1 && (
           <Select
@@ -171,39 +187,53 @@ export default function App() {
     owner: null,
     source: "demo",
     error: null,
+    cachedAt: null,
   });
 
   const [selectedOwnerId, setSelectedOwnerId] = useState(null);
 
   useEffect(() => {
     let mounted = true;
+    const cached = readCachedPortfolio();
 
-    loadPortfolio()
-      .then((payload) => {
+    const applyPayload = (payload) => {
+      if (!mounted) return;
+
+      setState({
+        owners: payload.owners ?? [],
+        owner: payload.owner ?? null,
+        source: payload.source ?? "api",
+        error: payload.error ?? null,
+        loading: false,
+        cachedAt: payload.cachedAt ?? null,
+      });
+
+      const primaryOwnerId = payload.owner?.ownerId;
+      const firstOwnerId = payload.owners?.[0]?.ownerId;
+      setSelectedOwnerId(String(primaryOwnerId || firstOwnerId || ""));
+    };
+
+    if (cached) {
+      applyPayload(cached);
+    }
+
+    refreshPortfolio()
+      .then((payload) => applyPayload(payload))
+      .catch(async (error) => {
         if (!mounted) return;
 
-        setState({
-          owners: payload.owners ?? [],
-          owner: payload.owner ?? null,
-          source: payload.source ?? "api",
-          error: payload.error ?? null,
-          loading: false,
-        });
+        if (cached) {
+          setState((previousState) => ({
+            ...previousState,
+            loading: false,
+                    source: "cache",
+            error: error?.message ?? "Actualisation de l’API indisponible.",
+          }));
+          return;
+        }
 
-        const primaryOwnerId = payload.owner?.ownerId;
-        const firstOwnerId = payload.owners?.[0]?.ownerId;
-
-        setSelectedOwnerId(String(primaryOwnerId || firstOwnerId || ""));
-      })
-      .catch((error) => {
-        if (!mounted) return;
-
-        setState((previousState) => ({
-          ...previousState,
-          loading: false,
-          source: "error",
-          error: error?.message ?? "Erreur lors du chargement du portfolio.",
-        }));
+        const fallback = await loadDemoPortfolio(error);
+        applyPayload(fallback);
       });
 
     return () => {
@@ -254,14 +284,44 @@ export default function App() {
         }
       />
 
-      <Route path="/admin" element={<Suspense fallback={<div className="route-loading">Chargement…</div>}><Admin /></Suspense>} />
-      <Route path="/cv" element={<Suspense fallback={<div className="route-loading">Chargement…</div>}><CvPage owner={owner} profile={profile} /></Suspense>} />
+      <Route
+        path="/admin"
+        element={
+          <ErrorBoundary title="L’administration n’a pas pu être chargée">
+            <Suspense fallback={<div className="route-loading">Chargement…</div>}>
+              <Admin />
+            </Suspense>
+          </ErrorBoundary>
+        }
+      />
+      <Route
+        path="/cv"
+        element={
+          <ErrorBoundary title="Le CV n’a pas pu être chargé">
+            <Suspense fallback={<div className="route-loading">Chargement…</div>}>
+              <CvPage owner={owner} profile={profile} />
+            </Suspense>
+          </ErrorBoundary>
+        }
+      />
       <Route
         path="/projects/:projectSlug"
-        element={<Suspense fallback={<div className="route-loading">Chargement…</div>}><ProjectCaseStudyPage owner={owner} projects={projects} /></Suspense>}
+        element={
+          <ErrorBoundary title="Cette étude de cas n’a pas pu être chargée">
+            <Suspense fallback={<div className="route-loading">Chargement…</div>}>
+              <ProjectCaseStudyPage owner={owner} projects={projects} />
+            </Suspense>
+          </ErrorBoundary>
+        }
       />
-
-        <Route path="*" element={<Navigate to="/" replace />} />
+      <Route
+        path="*"
+        element={
+          <Suspense fallback={<div className="route-loading">Chargement…</div>}>
+            <NotFoundPage />
+          </Suspense>
+        }
+      />
       </Routes>
     </>
   );

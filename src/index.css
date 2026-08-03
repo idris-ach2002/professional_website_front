@@ -3,11 +3,11 @@
 
 @import "./styles/core/00-foundations.css";
 @import "./styles/components/01-public-shell.css";
-@import "./styles/pages/02-admin-cv-base.css";
+@import "./styles/components/02-file-preview.css";
+@import "./styles/components/error-boundary.css";
 @import "./styles/sections/03-ocean-timeline-base.css";
 @import "./styles/effects/04-rapier-and-responsive.css";
 @import "./styles/effects/05-ocean-drops.css";
-@import "./styles/pages/06-admin-cv-tools.css";
 @import "./styles/navigation/07-dragon-holo-navigation.css";
 @import "./styles/navigation/08-dock-navigation-experiments.css";
 @import "./styles/navigation/09-black-pearl-navigation.css";
@@ -20,7 +20,6 @@
 @import "./styles/overrides/16-profile-proven-palette.css";
 @import "./styles/navigation/17-current-navigation.css";
 @import "./styles/overrides/18-current-profile.css";
-@import "./styles/pages/19-admin-analytics.css";
 @import "./styles/sections/20-proven-skills-connector.css";
 @import "./styles/profiles/mobile-performance.css";
 @import "./styles/effects/global-aquarium.css";

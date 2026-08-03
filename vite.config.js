@@ -47,7 +47,6 @@ export default defineConfig(({ mode }) => {
           manualChunks(id) {
             if (!id.includes('node_modules')) return undefined
             if (id.includes('@mantine')) return 'vendor-mantine'
-            if (id.includes('@mui') || id.includes('@emotion')) return 'vendor-mui'
             if (id.includes('@react-three') || id.includes('three') || id.includes('@dimforge') || id.includes('@react-spring') || id.includes('postprocessing') || id.includes('rapier')) return 'vendor-three'
             if (id.includes('react') || id.includes('scheduler')) return 'vendor-react'
             return 'vendor'

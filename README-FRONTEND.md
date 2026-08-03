@@ -78,7 +78,7 @@ src/
 │   ├── overrides/                  # raffinements tardifs de la cascade
 │   └── profiles/                   # mobile et Firefox
 ├── services/
-│   ├── portfolioApi.js             # API publique, fallback demo
+│   ├── portfolioApi.js             # API publique, cache local et fallback dynamique
 │   └── authApi.js                  # API protégée, CSRF, cookies, upload, logout
 ├── components/
 │   ├── Admin.jsx                   # back-office complet
@@ -205,7 +205,7 @@ Le portfolio public est composé de plusieurs blocs :
 | `MetadataHead` | Injecte les métadonnées SEO dynamiques. |
 | `OceanMorphBackground` | Fond visuel animé. |
 | `TopNavigation` | Navigation principale. |
-| `StatusBanner` | Indique si les données viennent de l’API ou du fallback demo. |
+| `StatusBanner` | Indique si les données viennent de l’API, du cache local ou du fallback de démonstration. |
 | `ProfileHero` | Présente l’identité, le titre, les contacts et les indicateurs clés. |
 | `PortfolioTimeline` | Affiche le parcours et les expériences. |
 | `BeachBallField` | Ajoute une scène 3D interactive. |
@@ -293,18 +293,10 @@ Le code tient compte de `prefers-reduced-motion` sur les animations lourdes. Les
 
 ### Installation
 
-Le projet contient `package-lock.json`, `pnpm-lock.yaml` et `packageManager: pnpm@10.11.1`. Si l’équipe utilise npm, rester cohérent avec npm. Si elle utilise pnpm, rester cohérent avec pnpm.
-
-Avec npm :
+Le projet utilise npm, `package-lock.json` et `packageManager: npm@10.9.2`.
 
 ```bash
 npm install
-```
-
-Avec pnpm :
-
-```bash
-pnpm install
 ```
 
 ### Mode production local demandé
@@ -443,15 +435,15 @@ Le backend utilise une session cookie et le frontend appelle l’API protégée 
 
 ### Render peut dormir
 
-Si Render met le backend en sommeil, le premier chargement API peut échouer ou être lent. Le front bascule alors sur le fallback demo. Le ping cron-job.org sur `/actuator/health` réduit ce risque, sans charger les données métier.
+Si Render met le backend en sommeil, le front affiche immédiatement la dernière réponse API valide enregistrée dans le navigateur, puis actualise les données en arrière-plan. Le fallback de démonstration n’est chargé que si aucune réponse API ni version enregistrée n’est disponible.
 
 ### GSAP local
 
 GSAP 3.13.0 est déclaré dans les dépendances du projet. Le build Vite l’intègre aux chunks JavaScript et Cloudflare peut le mettre en cache avec le reste de l’application.
 
-### Cohérence npm / pnpm
+### Gestionnaire de paquets
 
-Le projet contient deux lockfiles. Pour une CI/CD propre, choisir un seul gestionnaire de paquets et supprimer l’autre lockfile afin d’éviter des installations divergentes.
+Le projet est standardisé sur npm. Utiliser `npm ci` en CI/CD pour respecter exactement le lockfile.
 
 ### Variables publiques Vite
 

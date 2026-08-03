@@ -5,6 +5,7 @@ import { MantineProvider, createTheme } from "@mantine/core";
 import "@mantine/core/styles.css";
 import "./index.css";
 import App from "./App";
+import { AppErrorBoundary } from "./components/errors/ErrorBoundary";
 
 const theme = createTheme({
   fontFamily: "Inter, Arial, Helvetica, sans-serif",
@@ -20,7 +21,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <MantineProvider theme={theme} defaultColorScheme="light">
       <BrowserRouter>
-        <App />
+        <AppErrorBoundary>
+          <App />
+        </AppErrorBoundary>
       </BrowserRouter>
     </MantineProvider>
   </React.StrictMode>,

@@ -1,0 +1,39 @@
+/* Public CV route styles, loaded with /cv. */
+.cv-page-shell {
+  min-height: 100vh;
+}
+
+.cv-page-content {
+  position: relative;
+  z-index: 1;
+  padding-top: 110px;
+  padding-bottom: 72px;
+}
+
+.cv-preview-card,
+.cv-page-heading {
+  padding: clamp(22px, 4vw, 42px);
+  border: 1px solid rgba(14, 116, 144, .14);
+  border-radius: 34px;
+  background: rgba(255, 255, 255, .78);
+  backdrop-filter: blur(20px) saturate(1.12);
+  box-shadow: 0 28px 90px rgba(14, 116, 144, .11);
+}
+
+.cv-page-heading h1 {
+  font-size: clamp(2.4rem, 6vw, 5.8rem);
+  line-height: .9;
+  letter-spacing: -.07em;
+}
+
+.cv-page-actions {
+  position: sticky;
+  top: 16px;
+  z-index: 4;
+  padding: 12px;
+  border: 1px solid rgba(14, 116, 144, .14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .72);
+  backdrop-filter: blur(18px);
+  width: fit-content;
+}
