@@ -569,3 +569,55 @@ et y déplacer l’index PostgreSQL.
 ### Coût Render gratuit
 
 Le ping cron garde le service plus disponible, mais il reste dépendant des limites de l’offre gratuite. La route `/actuator/health` est le meilleur compromis, car elle évite de charger les données métier ou de provoquer une compilation / génération coûteuse.
+
+## Traductions FR/EN et LibreTranslate
+
+### Composants backend
+
+```text
+translation/
+├── config/       # URL privée, timeout et client HTTP
+├── controller/   # endpoints admin protégés
+├── dto/          # preview, catalogue, sauvegarde et health
+├── entity/       # ContentTranslation, type et statut
+├── repository/   # accès PostgreSQL
+└── service/      # source, hash, LibreTranslate, overlay public et compétences
+```
+
+### Variables
+
+```text
+LIBRETRANSLATE_ENABLED=true
+LIBRETRANSLATE_BASE_URL=http://libretranslate:5000
+LIBRETRANSLATE_TIMEOUT=45s
+LIBRETRANSLATE_IMAGE=libretranslate/libretranslate:latest
+```
+
+### Sécurité et performances
+
+- `/api/translations/**` est réservé au rôle `ADMIN` ;
+- le navigateur public ne connaît jamais l’URL privée LibreTranslate ;
+- les traductions publiques sont lues dans PostgreSQL ;
+- une traduction est appliquée uniquement lorsqu’elle est `PUBLISHED` et que son hash source reste valide ;
+- le français reste le fallback champ par champ.
+
+Voir [`V13-LIBRETRANSLATE-LOCALIZATION.md`](./V13-LIBRETRANSLATE-LOCALIZATION.md) pour le contrat API et le déploiement Render.
+
+
+
+## V13 — localisation backend et LibreTranslate
+
+Voir [`V13-LIBRETRANSLATE-LOCALIZATION.md`](./V13-LIBRETRANSLATE-LOCALIZATION.md).
+
+
+## V13.1 — traduction automatique par entité et traitement global
+
+Le backend expose désormais :
+
+```http
+POST /api/translations/{contentType}/{contentKey}/auto?locale=en
+```
+
+Cet endpoint protégé charge tous les champs français de l’entité, appelle LibreTranslate, puis persiste le résultat dans `content_translation` avec le statut `DRAFT` ou `PUBLISHED`. L’administration orchestre séquentiellement cet endpoint pour proposer **Traduire tout le site** avec progression et rapport d’échec.
+
+Le traitement global couvre le profil, la timeline, les expériences, les projets et les compétences prouvées. L’API publique continue d’utiliser le français comme fallback si une traduction est absente, incomplète ou obsolète. Documentation : [`V13.1-TRANSLATION-CENTER.md`](./V13.1-TRANSLATION-CENTER.md).

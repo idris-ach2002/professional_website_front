@@ -188,7 +188,7 @@ export default function OceanBubbleField({ compact = false, fullBleed = true }) 
   const progressRef = useRef(0);
   const drops = useMemo(() => createDropSpecs(DROP_COUNT), []);
 
-  useGsap(rootRef, (gsap, ScrollTrigger) => {
+  useGsap(rootRef, (_gsap, ScrollTrigger) => {
     const root = rootRef.current;
     if (!root || !ScrollTrigger) return undefined;
 

@@ -448,3 +448,74 @@ Le projet est standardisé sur npm. Utiliser `npm ci` en CI/CD pour respecter ex
 ### Variables publiques Vite
 
 Toute variable préfixée `VITE_` est exposée au navigateur après build. Ne jamais y mettre de secret.
+
+## Internationalisation et vue recruteur
+
+La V12 expose une version anglaise via le bouton `FR/EN` ou le paramètre `?lang=en`.
+
+Routes publiques principales :
+
+```text
+/
+/recruiter
+/cv
+/projects/:projectSlug
+```
+
+Pour générer les pages HTML enrichies et un sitemap absolu, configurer :
+
+```env
+VITE_PUBLIC_SITE_URL=https://votre-domaine.fr
+```
+
+Puis lancer :
+
+```bash
+npm run build
+```
+
+## Localisation V13
+
+### Répartition des responsabilités
+
+- `src/localization/uiMessages.js` : libellés statiques de l’interface uniquement ;
+- `LanguageProvider` : préférence `FR | EN`, paramètre `?lang=en` et liens localisés ;
+- `portfolioApi.js` : transmet `?locale=fr|en` au backend et maintient un cache distinct par langue ;
+- `AdminTranslationPanel.jsx` : preview LibreTranslate, correction, brouillon et publication ;
+- PostgreSQL : source unique des traductions métier publiées.
+
+Le build exécute :
+
+```bash
+npm run check:localization
+```
+
+Ce contrôle vérifie la couverture FR/EN des libellés d’interface, l’absence du dossier historique `src/i18n` et l’absence d’anciens overlays de contenu.
+
+Voir [`V13-LIBRETRANSLATE-LOCALIZATION.md`](./V13-LIBRETRANSLATE-LOCALIZATION.md).
+
+
+
+## V13 — localisation backend et LibreTranslate
+
+Voir [`V13-LIBRETRANSLATE-LOCALIZATION.md`](./V13-LIBRETRANSLATE-LOCALIZATION.md).
+
+
+## V13.1 — centre de traduction global
+
+L’onglet **Traductions** est désormais découpé en sous-onglets Projets, Expériences, Timeline, Profil et Compétences. Chaque catégorie affiche sa liste complète et permet une traduction manuelle ou LibreTranslate champ par champ.
+
+Le bouton **Traduire tout le site** traite en une action tout le contenu métier stocké dans PostgreSQL. Par défaut, il ne retraduit que les éléments absents ou obsolètes et les enregistre en brouillon ; une option explicite permet la publication automatique. La progression et les erreurs sont visibles dans l’administration.
+
+La navbar adopte un sélecteur `FR / EN` futuriste avec indicateur coulissant, glow cyan-violet et variante mobile. Documentation : [`V13.1-TRANSLATION-CENTER.md`](./V13.1-TRANSLATION-CENTER.md).
+
+## V13.2 — Light controls
+
+The recruiter action, FR/EN selector and translation-center tabs now use light translucent surfaces. Decorative status dots were removed from the markup to keep the controls consistent with the public navbar and Admin interface.
+
+## Navigation V13.3
+
+- `Vue recruteur` est rendu comme un lien direct de navigation.
+- `FR / EN` est un sélecteur textuel aligné sur les autres entrées.
+- Le bouton CV reste séparé comme CTA principal.
+- Sous 1100 px, le logo et le hamburger restent seuls dans l'en-tête ; les contrôles recruteur et langue sont accessibles dans le panneau mobile.

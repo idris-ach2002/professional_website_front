@@ -2,9 +2,10 @@ import { Anchor, Badge, Card, Group, Stack, Text, Title } from "@mantine/core";
 import { useRef } from "react";
 import { useGsap } from "../animations/useGsap";
 import SectionTitle from "./SectionTitle";
+import useLanguage from "../localization/useLanguage";
 import ExplorationDrone from "./ExplorationDrone";
 import { PreviewableImage } from "./FilePreview";
-import { CATEGORY_LABELS, formatPeriod, normalizeUrl, slugify } from "../utils/portfolio";
+import { formatPeriod, normalizeUrl, slugify } from "../utils/portfolio";
 
 const categoryClasses = {
   SCHOOL: "timeline-school",
@@ -24,6 +25,7 @@ function getExperienceAnchor(experience, index) {
 
 export default function PortfolioTimeline({ timeline, experiences, performanceMode = "full" }) {
   const rootRef = useRef(null);
+  const { locale, t } = useLanguage();
 
   useGsap(rootRef, (gsap, ScrollTrigger) => {
     const root = rootRef.current;
@@ -393,11 +395,9 @@ export default function PortfolioTimeline({ timeline, experiences, performanceMo
     <section ref={rootRef} id="timeline" className="page-section timeline-section island-section route-island">
       <SectionTitle
         reveal="fish"
-        title="Expériences"
-        description={
-          timeline?.description ??
-          "Les expériences apparaissent progressivement comme des bulles pendant la descente vers les zones plus profondes du portfolio."
-        }
+        eyebrow={t("timeline.eyebrow")}
+        title={timeline?.title ?? t("timeline.defaultTitle")}
+        description={timeline?.description ?? t("timeline.defaultDescription")}
       />
 
       <div className="timeline-subsea-track">
@@ -428,7 +428,7 @@ export default function PortfolioTimeline({ timeline, experiences, performanceMo
                   <Group justify="space-between" align="flex-start" gap="md">
                     <Stack gap={10} className="timeline-main-copy">
                       <Badge className="timeline-category" radius="xl">
-                        {CATEGORY_LABELS[experience.category] ?? experience.category}
+                        {t(`category.${experience.category}`, { fallback: experience.category })}
                       </Badge>
                       <Title order={2}>{experience.title}</Title>
                       <Text className="timeline-org">
@@ -438,11 +438,11 @@ export default function PortfolioTimeline({ timeline, experiences, performanceMo
                       </Text>
                     </Stack>
                     {experience.currentPosition && (
-                      <Badge className="current-badge">En cours</Badge>
+                      <Badge className="current-badge">{t("timeline.current")}</Badge>
                     )}
                   </Group>
                   <Text className="timeline-period">
-                    {formatPeriod(experience.startDate, experience.endDate, experience.currentPosition)}
+                    {formatPeriod(experience.startDate, experience.endDate, experience.currentPosition, locale)}
                   </Text>
                   {experience.imageUrl && (
                     <PreviewableImage
@@ -450,7 +450,7 @@ export default function PortfolioTimeline({ timeline, experiences, performanceMo
                       alt={experience.title}
                       className="timeline-image-preview-trigger"
                       imageClassName="timeline-image"
-                      modalTitle={`Expérience — ${experience.title}`}
+                      modalTitle={`${t("nav.journey")} — ${experience.title}`}
                     />
                   )}
                   <Text className="timeline-summary">{experience.summary}</Text>
@@ -470,9 +470,10 @@ export default function PortfolioTimeline({ timeline, experiences, performanceMo
                     <Anchor
                       href={normalizeUrl(experience.websiteUrl)}
                       target="_blank"
+                      rel="noreferrer"
                       className="timeline-link"
                     >
-                      Voir la ressource
+                      {t("projects.resources")}
                     </Anchor>
                   )}
                 </Card>

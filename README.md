@@ -114,7 +114,7 @@ docker compose build --no-cache backend
 docker compose up backend
 ```
 
-Cette commande démarre le backend et le service PostgreSQL déclaré dans `docker-compose.yml`. Le backend est exposé sur :
+Cette commande démarre le backend ainsi que PostgreSQL et LibreTranslate déclarés dans `docker-compose.yml`. Le backend est exposé sur :
 
 ```txt
 http://localhost:8080
@@ -222,9 +222,9 @@ server:
   port: ${PORT:8080}
 ```
 
-### Base de données — NeonDB PostgreSQL
+### Base de données — Aiven PostgreSQL
 
-En production, Spring Boot se connecte à NeonDB via les variables :
+En production, Spring Boot se connecte à Aiven via les variables :
 
 ```txt
 SPRING_DATASOURCE_URL
@@ -253,3 +253,31 @@ https://professional-website-hozo.onrender.com/actuator/health
 ```
 
 Cette route est volontairement légère : elle expose uniquement l’état de santé Actuator et ne retourne pas les données métier du portfolio.
+
+## V13 — contenu bilingue servi par le backend
+
+Le dossier local d’overlays `src/i18n` a été supprimé. React ne traduit plus les projets, expériences, profils ou compétences. Le sélecteur `FR | EN` envoie la locale au backend, qui retourne les champs publiés depuis PostgreSQL.
+
+Les seuls textes conservés localement sont les libellés fixes de l’interface dans `src/localization/uiMessages.js`. L’administration dispose d’un onglet **Traductions** pour appeler LibreTranslate, corriger le résultat, enregistrer un brouillon puis le publier.
+
+Le contrat public contient également un slug stable calculé depuis le titre français, afin que les URLs projet restent identiques en français et en anglais. Une entité n’est servie en anglais que lorsque tous ses champs sont publiés et encore synchronisés avec la source.
+
+Documentation complète : [`V13-LIBRETRANSLATE-LOCALIZATION.md`](./V13-LIBRETRANSLATE-LOCALIZATION.md).
+
+
+
+## V13.1 — centre de traduction global
+
+L’onglet **Traductions** est désormais découpé en sous-onglets Projets, Expériences, Timeline, Profil et Compétences. Chaque catégorie affiche sa liste complète et permet une traduction manuelle ou LibreTranslate champ par champ.
+
+Le bouton **Traduire tout le site** traite en une action tout le contenu métier stocké dans PostgreSQL. Par défaut, il ne retraduit que les éléments absents ou obsolètes et les enregistre en brouillon ; une option explicite permet la publication automatique. La progression et les erreurs sont visibles dans l’administration.
+
+La navbar adopte un sélecteur `FR / EN` futuriste avec indicateur coulissant, glow cyan-violet et variante mobile. Documentation : [`V13.1-TRANSLATION-CENTER.md`](./V13.1-TRANSLATION-CENTER.md).
+
+## V13.2 — contrôles clairs
+
+Le bouton Vue recruteur, le sélecteur FR/EN et les sous-onglets du centre de traduction utilisent désormais une palette claire translucide. Les indicateurs circulaires lumineux ont été retirés afin d’harmoniser ces contrôles avec la navbar publique et l’administration.
+
+## V13.3 — Navigation unifiée
+
+Les entrées `Vue recruteur` et `FR / EN` font maintenant partie du flux normal de la navbar. Sur mobile et tablette, elles sont placées dans le menu hamburger afin d'éviter tout débordement. La navigation possède son propre breakpoint compact à 1100 px, indépendant du profil de performances du site. Voir `V13.3-NAV-INTEGRATION.md`.

@@ -9,7 +9,7 @@ import ProfileHero from "./components/ProfileHero";
 import ProjectsShowcase from "./components/ProjectsShowcase";
 import ProvenSkillsSection from "./components/ProvenSkillsSection";
 import SEOHead from "./components/MetadataHead";
-import SiteFooter from "./components/SiteFooter"
+import SiteFooter from "./components/SiteFooter";
 import StatusBanner from "./components/StatusBanner";
 import TopNavigation from "./components/TopNavigation";
 import { ErrorBoundary } from "./components/errors/ErrorBoundary";
@@ -18,6 +18,7 @@ import { loadDemoPortfolio, readCachedPortfolio, refreshPortfolio } from "./serv
 import { getOwnerFullName, sortByDisplayOrder } from "./utils/portfolio";
 
 import useResponsiveProfile from "./hooks/useResponsiveProfile";
+import useLanguage from "./localization/useLanguage";
 
 
 const PortfolioTimeline = lazy(() => import("./components/PortfolioTimeline"));
@@ -26,8 +27,10 @@ const Admin = lazy(() => import("./components/Admin"));
 const CvPage = lazy(() => import("./components/CvPage"));
 const ProjectCaseStudyPage = lazy(() => import("./components/ProjectCaseStudyPage"));
 const NotFoundPage = lazy(() => import("./components/NotFoundPage"));
+const RecruiterPage = lazy(() => import("./components/RecruiterPage"));
 
 function DeferredBeachBall({ performanceMode }) {
+  const { t } = useLanguage();
   const sentinelRef = useRef(null);
   const [shouldLoad, setShouldLoad] = useState(false);
 
@@ -51,7 +54,7 @@ function DeferredBeachBall({ performanceMode }) {
   if (shouldLoad) {
     return (
       <ErrorBoundary
-        title="La scène 3D a été désactivée"
+        title={t("error.threeTitle")}
         fallback={() => (
           <section className="beach-3d-section is-suspended" aria-hidden="true">
             <div className="beach-3d-stage">
@@ -87,7 +90,7 @@ function DeferredBeachBall({ performanceMode }) {
     <section
       ref={sentinelRef}
       className="beach-3d-section is-suspended"
-      aria-label="Animation 3D chargée à l’approche"
+      aria-label={t("app.routeLoading")}
     >
       <div className="beach-3d-stage">
         <div className="beach-3d-suspended-placeholder" aria-hidden="true">
@@ -110,6 +113,7 @@ function Home({
   setSelectedOwnerId,
 }) {
   const responsiveProfile = useResponsiveProfile();
+  const { t } = useLanguage();
   const { isMobile, reducedMotion, performanceMode, isFirefox } = responsiveProfile;
 
   return (
@@ -134,7 +138,7 @@ function Home({
 
         {state.owners.length > 1 && (
           <Select
-            label="Owner affiché"
+            label={t("status.ownerLabel")}
             data={state.owners.map((item) => ({
               value: String(item.ownerId),
               label: getOwnerFullName(item),
@@ -158,7 +162,7 @@ function Home({
         <Suspense
           fallback={
             <div className="section-skeleton">
-              Chargement de la timeline…
+              {t("app.routeLoading")}
             </div>
           }
         >
@@ -181,8 +185,10 @@ function Home({
 }
 
 export default function App() {
+  const { language, t } = useLanguage();
   const [state, setState] = useState({
     loading: true,
+    language: null,
     owners: [],
     owner: null,
     source: "demo",
@@ -194,12 +200,13 @@ export default function App() {
 
   useEffect(() => {
     let mounted = true;
-    const cached = readCachedPortfolio();
+    const cached = readCachedPortfolio(language);
 
     const applyPayload = (payload) => {
       if (!mounted) return;
 
       setState({
+        language,
         owners: payload.owners ?? [],
         owner: payload.owner ?? null,
         source: payload.source ?? "api",
@@ -214,10 +221,10 @@ export default function App() {
     };
 
     if (cached) {
-      applyPayload(cached);
+      queueMicrotask(() => applyPayload(cached));
     }
 
-    refreshPortfolio()
+    refreshPortfolio(language)
       .then((payload) => applyPayload(payload))
       .catch(async (error) => {
         if (!mounted) return;
@@ -227,7 +234,7 @@ export default function App() {
             ...previousState,
             loading: false,
                     source: "cache",
-            error: error?.message ?? "Actualisation de l’API indisponible.",
+            error: error?.message ?? "API unavailable",
           }));
           return;
         }
@@ -239,9 +246,9 @@ export default function App() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [language]);
 
-  const owner = useMemo(() => {
+  const rawOwner = useMemo(() => {
     if (!selectedOwnerId) {
       return state.owner;
     }
@@ -252,15 +259,18 @@ export default function App() {
     );
   }, [selectedOwnerId, state.owner, state.owners]);
 
+  const owner = rawOwner;
   const profile = owner?.prof ?? {};
   const projects = sortByDisplayOrder(owner?.projects ?? []);
   const experiences = sortByDisplayOrder(owner?.timeline?.experiences ?? []);
 
-  if (state.loading) {
+  const isPortfolioLoading = state.loading || state.language !== language;
+
+  if (isPortfolioLoading) {
     return (
       <main className="app-shell loading-shell">
         <Loader size="lg" />
-        <Text>Chargement du portfolio professionnel…</Text>
+        <Text>{t("app.loading")}</Text>
       </main>
     );
   }
@@ -269,7 +279,7 @@ export default function App() {
     <>
       <AnalyticsTracker source={state.source} />
       <Routes>
-      <Route
+        <Route
         path="/"
         element={
           <Home
@@ -287,8 +297,8 @@ export default function App() {
       <Route
         path="/admin"
         element={
-          <ErrorBoundary title="L’administration n’a pas pu être chargée">
-            <Suspense fallback={<div className="route-loading">Chargement…</div>}>
+          <ErrorBoundary title={t("error.adminTitle")}>
+            <Suspense fallback={<div className="route-loading">{t("app.routeLoading")}</div>}>
               <Admin />
             </Suspense>
           </ErrorBoundary>
@@ -297,9 +307,19 @@ export default function App() {
       <Route
         path="/cv"
         element={
-          <ErrorBoundary title="Le CV n’a pas pu être chargé">
-            <Suspense fallback={<div className="route-loading">Chargement…</div>}>
+          <ErrorBoundary title={t("error.cvTitle")}>
+            <Suspense fallback={<div className="route-loading">{t("app.routeLoading")}</div>}>
               <CvPage owner={owner} profile={profile} />
+            </Suspense>
+          </ErrorBoundary>
+        }
+      />
+      <Route
+        path="/recruiter"
+        element={
+          <ErrorBoundary title={t("error.sectionTitle")}>
+            <Suspense fallback={<div className="route-loading">{t("app.routeLoading")}</div>}>
+              <RecruiterPage owner={owner} profile={profile} projects={projects} experiences={experiences} />
             </Suspense>
           </ErrorBoundary>
         }
@@ -307,8 +327,8 @@ export default function App() {
       <Route
         path="/projects/:projectSlug"
         element={
-          <ErrorBoundary title="Cette étude de cas n’a pas pu être chargée">
-            <Suspense fallback={<div className="route-loading">Chargement…</div>}>
+          <ErrorBoundary title={t("error.caseTitle")}>
+            <Suspense fallback={<div className="route-loading">{t("app.routeLoading")}</div>}>
               <ProjectCaseStudyPage owner={owner} projects={projects} />
             </Suspense>
           </ErrorBoundary>
@@ -317,7 +337,7 @@ export default function App() {
       <Route
         path="*"
         element={
-          <Suspense fallback={<div className="route-loading">Chargement…</div>}>
+          <Suspense fallback={<div className="route-loading">{t("app.routeLoading")}</div>}>
             <NotFoundPage />
           </Suspense>
         }

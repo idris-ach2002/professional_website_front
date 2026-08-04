@@ -1,49 +1,51 @@
 import { Button, Card, Group, Stack, Text, Title } from "@mantine/core";
+import MetadataHead from "./MetadataHead";
 import OceanMorphBackground from "./OceanMorphBackground";
 import { PdfPreviewPanel } from "./FilePreview";
+import useLanguage from "../localization/useLanguage";
 import { normalizeFileUrl } from "../utils/filePreview";
 import { getContactHref, getOwnerFullName, getPrimaryContact } from "../utils/portfolio";
 import "../styles/pages/cv-page.css";
 
 export default function CvPage({ owner, profile }) {
+  const { localizedPath, t } = useLanguage();
   const cvUrl = normalizeFileUrl(profile?.cvUrl);
   const email = getPrimaryContact(owner, "EMAIL");
   const fullName = getOwnerFullName(owner);
 
   return (
     <main className="app-shell cv-page-shell">
+      <MetadataHead owner={owner} page="cv" />
       <OceanMorphBackground />
 
       <Stack gap="xl" className="content-shell cv-page-content">
         <div className="cv-page-heading island-card">
-          <Text className="card-kicker">Document professionnel</Text>
+          <Text className="card-kicker">{t("cv.document")}</Text>
           <Title order={1}>CV — {fullName}</Title>
-          <Text c="dimmed" maw={820}>
-            Affichage direct du PDF dans le navigateur. Tu peux aussi ouvrir le document dans un nouvel onglet ou le télécharger.
-          </Text>
+          <Text c="dimmed" maw={820}>{t("cv.description")}</Text>
         </div>
 
         <Group gap="sm" className="cv-page-actions">
           {email && (
             <Button component="a" href={getContactHref(email)} radius="xl">
-              Envoyer un courriel
+              {t("cv.email")}
             </Button>
           )}
 
           {cvUrl && (
             <Button component="a" href={cvUrl} target="_blank" rel="noreferrer" radius="xl" variant="outline">
-              Ouvrir le PDF
+              {t("cv.open")}
             </Button>
           )}
 
           {cvUrl && (
             <Button component="a" href={cvUrl} download radius="xl" variant="light">
-              Télécharger
+              {t("cv.download")}
             </Button>
           )}
 
-          <Button component="a" href="/" radius="xl" variant="subtle">
-            Retour au portfolio
+          <Button component="a" href={localizedPath("/")} radius="xl" variant="subtle">
+            {t("cv.back")}
           </Button>
         </Group>
 
@@ -52,10 +54,8 @@ export default function CvPage({ owner, profile }) {
             <PdfPreviewPanel url={cvUrl} title={`CV — ${fullName}`} />
           ) : (
             <Stack gap="xs">
-              <Title order={2}>Aucun CV renseigné</Title>
-              <Text c="dimmed">
-                Ajoute un PDF depuis le panel admin pour activer l’aperçu du CV.
-              </Text>
+              <Title order={2}>{t("cv.empty")}</Title>
+              <Text c="dimmed">{t("cv.emptyDescription")}</Text>
             </Stack>
           )}
         </Card>

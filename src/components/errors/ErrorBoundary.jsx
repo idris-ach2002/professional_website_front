@@ -1,19 +1,37 @@
 import { Component, Fragment } from "react";
 import { useLocation } from "react-router-dom";
+import useLanguage from "../../localization/useLanguage";
 
-function DefaultErrorFallback({ error, onRetry, title = "Cette section a rencontré une erreur" }) {
+function getFallbackLabels() {
+  const english = typeof document !== "undefined" && document.documentElement.lang === "en";
+  return english
+    ? {
+        title: "This section encountered an error",
+        kicker: "Fallback mode",
+        description: "The rest of the portfolio remains available. You can retry loading this section.",
+        retry: "Retry",
+      }
+    : {
+        title: "Cette section a rencontré une erreur",
+        kicker: "Mode de secours",
+        description: "Le reste du portfolio reste disponible. Tu peux réessayer le chargement de cette section.",
+        retry: "Réessayer",
+      };
+}
+
+function DefaultErrorFallback({ error, onRetry, title }) {
+  const labels = getFallbackLabels();
+
   return (
     <section className="error-boundary-card" role="alert">
-      <p className="error-boundary-kicker">Mode de secours</p>
-      <h2>{title}</h2>
-      <p>
-        Le reste du portfolio reste disponible. Tu peux réessayer le chargement de cette section.
-      </p>
+      <p className="error-boundary-kicker">{labels.kicker}</p>
+      <h2>{title || labels.title}</h2>
+      <p>{labels.description}</p>
       {import.meta.env.DEV && error?.message && (
         <code className="error-boundary-detail">{error.message}</code>
       )}
       <button type="button" className="error-boundary-retry" onClick={onRetry}>
-        Réessayer
+        {labels.retry}
       </button>
     </section>
   );
@@ -73,11 +91,12 @@ export class ErrorBoundary extends Component {
 
 export function AppErrorBoundary({ children }) {
   const location = useLocation();
+  const { t } = useLanguage();
 
   return (
     <ErrorBoundary
       resetKey={`${location.pathname}${location.search}`}
-      title="Le portfolio n’a pas pu terminer son affichage"
+      title={t("error.appTitle")}
       wrapperClassName="app-error-boundary-root"
     >
       {children}

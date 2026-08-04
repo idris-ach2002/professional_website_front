@@ -1,11 +1,12 @@
 import {
+  useEffect,
   useMemo,
   useState,
 } from "react";
 import {
   useLocation,
 } from "react-router-dom";
-import useResponsiveProfile from "../hooks/useResponsiveProfile";
+import useLanguage from "../localization/useLanguage";
 import {
   getOwnerFullName,
   getProjectSlug,
@@ -16,20 +17,44 @@ import {
 } from "../utils/portfolio";
 
 const NAV_LOGO_SRC = "/assets/identity/idris-navbar-logo.png";
+const COMPACT_NAV_QUERY = "(max-width: 1100px)";
 
-const FALLBACK_PROJECT_ITEMS = [
-  { label: "Portfolio full stack", description: "Front React, backend Spring Boot et données PostgreSQL", href: "#projects", icon: "code", badge: "CASE" },
-  { label: "Pipeline AIS", description: "Collecte, stockage et exploitation de données AIS", href: "#projects", icon: "server" },
-  { label: "Huffman dynamique", description: "Compression, bitstream I/O et visualisation", href: "#projects", icon: "algorithm" },
-  { label: "DLP / ILP", description: "Interpréteur Java, ANTLR et compilation vers C", href: "#projects", icon: "compiler" },
-];
+function readCompactNavigation() {
+  return typeof window !== "undefined" && window.matchMedia(COMPACT_NAV_QUERY).matches;
+}
 
-const FALLBACK_SKILL_ITEMS = [
-  { label: "Compétences", description: "Savoir-faire reliés aux projets réels", href: "#skills", icon: "proof" },
-  { label: "Backend", description: "Java, Spring Boot, API REST, PostgreSQL", href: "#skills", icon: "server" },
-  { label: "Frontend", description: "React, Vite, UI produit et interactions", href: "#skills", icon: "frontend" },
-  { label: "Data & pipelines", description: "Flux de données, stockage et exploitation", href: "#skills", icon: "data" },
-];
+function useCompactNavigation() {
+  const [compact, setCompact] = useState(readCompactNavigation);
+
+  useEffect(() => {
+    const media = window.matchMedia(COMPACT_NAV_QUERY);
+    const update = () => setCompact(media.matches);
+
+    media.addEventListener?.("change", update);
+
+    return () => media.removeEventListener?.("change", update);
+  }, []);
+
+  return compact;
+}
+
+function getFallbackProjectItems(t) {
+  return [
+    { label: "Portfolio full stack", description: t("nav.projectShowcaseDescription"), href: "#projects", icon: "code", badge: "CASE" },
+    { label: "Pipeline AIS", description: "AIS collection, storage and processing", href: "#projects", icon: "server" },
+    { label: "Adaptive Huffman", description: "Compression, bitstream I/O and visualization", href: "#projects", icon: "algorithm" },
+    { label: "DLP / ILP", description: "Java interpreter, ANTLR and C compilation", href: "#projects", icon: "compiler" },
+  ];
+}
+
+function getFallbackSkillItems(t) {
+  return [
+    { label: t("nav.skills"), description: t("skills.description"), href: "#skills", icon: "proof" },
+    { label: "Backend", description: "Java, Spring Boot, REST APIs, PostgreSQL", href: "#skills", icon: "server" },
+    { label: "Frontend", description: "React, Vite, product UI and interactions", href: "#skills", icon: "frontend" },
+    { label: "Data & pipelines", description: "Data streams, storage and processing", href: "#skills", icon: "data" },
+  ];
+}
 
 function splitLetters(label) {
   return String(label).split("").map((char, index) => (
@@ -58,7 +83,7 @@ function getProjectIcon(project, index) {
   return index === 0 ? "code" : "case";
 }
 
-function buildMenuGroups(owner) {
+function buildMenuGroups(owner, t, localizedPath) {
   const profile = owner?.prof ?? owner?.profile ?? {};
   const github = getContactValue(owner, "GITHUB");
   const linkedin = getContactValue(owner, "LINKEDIN");
@@ -68,24 +93,24 @@ function buildMenuGroups(owner) {
   const provenSkills = Array.isArray(owner?.provenSkills) ? owner.provenSkills : [];
 
   const experienceItems = experiences.slice(0, 5).map((experience, index) => ({
-    label: experience?.organization || experience?.title || `Expérience ${index + 1}`,
-    description: experience?.title || experience?.summary || "Voir cette expérience dans la timeline",
+    label: experience?.organization || experience?.title || `${t("nav.journey")} ${index + 1}`,
+    description: experience?.title || experience?.summary || t("nav.viewExperience"),
     href: `#${getExperienceAnchor(experience, index)}`,
     icon: String(experience?.category).toUpperCase() === "SCHOOL" ? "school" : String(experience?.category).toUpperCase() === "INTERNSHIP" ? "lab" : "briefcase",
-    badge: experience?.currentPosition ? "ACTUEL" : undefined,
+    badge: experience?.currentPosition ? t("nav.current") : undefined,
   }));
 
   const projectItems = projects.slice(0, 5).map((project, index) => ({
-    label: project?.title || `Projet ${index + 1}`,
-    description: project?.subtitle || project?.shortDescription || project?.description || "Voir l'étude de cas du projet",
-    href: `/projects/${getProjectSlug(project)}`,
+    label: project?.title || `${t("projects.project")} ${index + 1}`,
+    description: project?.subtitle || project?.shortDescription || project?.description || t("nav.viewCaseStudy"),
+    href: localizedPath(`/projects/${getProjectSlug(project)}`),
     icon: getProjectIcon(project, index),
     badge: index === 0 ? "CASE" : undefined,
   }));
 
   const skillItems = provenSkills.slice(0, 4).map((skill, index) => ({
-    label: skill?.label || skill?.title || skill?.name || `Compétence ${index + 1}`,
-    description: skill?.summary || skill?.description || "Compétence reliée à des projets concrets",
+    label: skill?.label || skill?.title || skill?.name || `${t("nav.skills")} ${index + 1}`,
+    description: skill?.summary || skill?.description || t("nav.provenSkill"),
     href: "#skills",
     icon: ["proof", "server", "frontend", "data"][index] ?? "proof",
     badge: index === 0 ? "PROOF" : undefined,
@@ -93,29 +118,29 @@ function buildMenuGroups(owner) {
 
   return [
     {
-      label: "Profil",
+      label: t("nav.profile"),
       href: "#profile",
       layout: "single",
       sections: [
         {
-          eyebrow: "PROFIL PUBLIC",
+          eyebrow: t("nav.publicProfile"),
           items: [
-            { label: "LinkedIn", description: "Parcours, réseau professionnel et profil recruteur", href: linkedin || "linkedin", icon: "linkedin" },
-            { label: "CV", description: "Télécharger la version PDF du CV", href: cvUrl || "cv", icon: "document", badge: "PDF" },
-            { label: "GitHub", description: "Dépôts publics, code et preuves techniques", href: github || "github", icon: "github" },
+            { label: "LinkedIn", description: t("nav.linkedinDescription"), href: linkedin || "linkedin", icon: "linkedin" },
+            { label: "CV", description: t("nav.cvDescription"), href: cvUrl || "cv", icon: "document", badge: "PDF" },
+            { label: "GitHub", description: t("nav.githubDescription"), href: github || "github", icon: "github" },
           ],
         },
       ],
     },
     {
-      label: "Parcours",
+      label: t("nav.journey"),
       href: "#timeline",
       layout: "single",
       sections: [
         {
-          eyebrow: "EXPÉRIENCES",
+          eyebrow: t("nav.experiences"),
           items: [
-            { label: "Timeline complète", description: "Formation, stage et expériences clés", href: "#timeline", icon: "timeline" },
+            { label: t("nav.fullTimeline"), description: t("nav.fullTimelineDescription"), href: "#timeline", icon: "timeline" },
             ...(experienceItems.length > 0 ? experienceItems : [
               { label: "Sorbonne Université", description: "Master Informatique · STL", href: "#timeline", icon: "school" },
               { label: "Stage LITIS", description: "Pipeline AIS, Java, PostgreSQL, Symfony", href: "#timeline", icon: "lab" },
@@ -125,39 +150,39 @@ function buildMenuGroups(owner) {
       ],
     },
     {
-      label: "Projets",
+      label: t("nav.projects"),
       href: "#projects",
       layout: "wide",
       sections: [
         {
-          eyebrow: "ÉTUDES DE CAS",
-          items: projectItems.length > 0 ? projectItems : FALLBACK_PROJECT_ITEMS,
+          eyebrow: t("nav.caseStudies"),
+          items: projectItems.length > 0 ? projectItems : getFallbackProjectItems(t),
         },
         {
-          eyebrow: "EXPLORER",
+          eyebrow: t("nav.explore"),
           items: [
-            { label: "Showcase projets", description: "Vue globale de tous les projets publiés", href: "#projects", icon: "grid" },
-            { label: "Réalisations marquantes", description: "Lien direct entre projets et savoir-faire", href: "#skills", icon: "proof" },
-            { label: "GitHub global", description: "Tous les dépôts publics centralisés", href: github || "github", icon: "github" },
+            { label: t("nav.projectShowcase"), description: t("nav.projectShowcaseDescription"), href: "#projects", icon: "grid" },
+            { label: t("nav.keyWork"), description: t("nav.keyWorkDescription"), href: "#skills", icon: "proof" },
+            { label: t("nav.globalGithub"), description: t("nav.globalGithubDescription"), href: github || "github", icon: "github" },
           ],
         },
       ],
     },
     {
-      label: "Compétences",
+      label: t("nav.skills"),
       href: "#skills",
       layout: "wide align-right",
       sections: [
         {
           eyebrow: "",
-          items: skillItems.length > 0 ? skillItems : FALLBACK_SKILL_ITEMS,
+          items: skillItems.length > 0 ? skillItems : getFallbackSkillItems(t),
         },
         {
-          eyebrow: "AXES TECHNIQUES",
+          eyebrow: t("nav.technicalAxes"),
           items: [
-            { label: "Architecture", description: "Modularité, lisibilité et maintenabilité", icon: "architecture" },
-            { label: "Fiabilité", description: "Tests, contraintes, erreurs et supervision", icon: "quality" },
-            { label: "Produit", description: "Interfaces utiles, claires et orientées usage", icon: "product" },
+            { label: t("nav.architecture"), description: t("nav.architectureDescription"), icon: "architecture" },
+            { label: t("nav.reliability"), description: t("nav.reliabilityDescription"), icon: "quality" },
+            { label: t("nav.product"), description: t("nav.productDescription"), icon: "product" },
           ],
         },
       ],
@@ -209,26 +234,28 @@ function Icon({ type }) {
   );
 }
 
-function resolveItemHref(item, { isHomePath, profile, owner }) {
+function resolveItemHref(item, { isHomePath, profile, owner, localizedPath }) {
   if (item.href === "cv") return normalizeUrl(profile?.cvUrl || owner?.prof?.cvUrl || "#profile");
   if (item.href === "github") return normalizeUrl(getContactValue(owner, "GITHUB") || "#projects");
   if (item.href === "linkedin") return normalizeUrl(getContactValue(owner, "LINKEDIN") || "#profile");
   if (item.href === "email") {
     const email = getContactValue(owner, "EMAIL");
-    return email ? `mailto:${email}` : isHomePath ? "#profile" : "/#profile";
+    return email ? `mailto:${email}` : isHomePath ? "#profile" : localizedPath("/#profile");
   }
-  if (!item.href?.startsWith("#")) return normalizeUrl(item.href);
-  return isHomePath ? item.href : `/${item.href}`;
+  if (!item.href?.startsWith("#")) {
+    return item.href?.startsWith("/") ? localizedPath(item.href) : normalizeUrl(item.href);
+  }
+  return isHomePath ? item.href : localizedPath(`/${item.href}`);
 }
 
-function resolveSectionHref(href, isHomePath) {
-  if (!href) return isHomePath ? "#top" : "/#top";
-  if (!href.startsWith("#")) return href;
-  return isHomePath ? href : `/${href}`;
+function resolveSectionHref(href, isHomePath, localizedPath) {
+  if (!href) return isHomePath ? "#top" : localizedPath("/#top");
+  if (!href.startsWith("#")) return href.startsWith("/") ? localizedPath(href) : href;
+  return isHomePath ? href : localizedPath(`/${href}`);
 }
 
-function MegaMenuItem({ item, isHomePath, profile, owner, onNavigate }) {
-  const href = resolveItemHref(item, { isHomePath, profile, owner });
+function MegaMenuItem({ item, isHomePath, profile, owner, localizedPath, onNavigate }) {
+  const href = resolveItemHref(item, { isHomePath, profile, owner, localizedPath });
   const isExternal = href?.startsWith("http") || href?.startsWith("mailto:") || href?.startsWith("tel:");
 
   return (
@@ -254,7 +281,7 @@ function MegaMenuItem({ item, isHomePath, profile, owner, onNavigate }) {
   );
 }
 
-function DesktopDropdown({ group, active, setActive, isHomePath, owner, profile }) {
+function DesktopDropdown({ group, active, setActive, isHomePath, owner, profile, localizedPath }) {
   const open = active === group.label;
   const className = `nav_menu-dropdown-toggle-v2 w-dropdown ${group.layout ?? "single"}${open ? " is-open" : ""}`;
 
@@ -273,7 +300,7 @@ function DesktopDropdown({ group, active, setActive, isHomePath, owner, profile 
       }}
     >
       <a
-        href={resolveSectionHref(group.href, isHomePath)}
+        href={resolveSectionHref(group.href, isHomePath, localizedPath)}
         className="dropdown1_toggle v2 w-dropdown-toggle"
         aria-expanded={open}
         onClick={() => setActive(null)}
@@ -297,6 +324,7 @@ function DesktopDropdown({ group, active, setActive, isHomePath, owner, profile 
                     isHomePath={isHomePath}
                     owner={owner}
                     profile={profile}
+                    localizedPath={localizedPath}
                     onNavigate={() => setActive(null)}
                   />
                 ))}
@@ -310,7 +338,7 @@ function DesktopDropdown({ group, active, setActive, isHomePath, owner, profile 
   );
 }
 
-function MobileMenu({ opened, groups, isHomePath, owner, profile, onClose }) {
+function MobileMenu({ opened, groups, isHomePath, owner, profile, localizedPath, recruiterHref, language, setLanguage, t, onClose }) {
   return (
     <div className={`nav_mobile-panel${opened ? " is-open" : ""}`}>
       {groups.map((group) => (
@@ -323,41 +351,74 @@ function MobileMenu({ opened, groups, isHomePath, owner, profile, onClose }) {
               isHomePath={isHomePath}
               owner={owner}
               profile={profile}
+              localizedPath={localizedPath}
               onNavigate={onClose}
             />
           ))}
         </div>
       ))}
+      <div className="nav_mobile-utility-group" role="group" aria-label={t("nav.mainLabel")}>
+        <a href={recruiterHref} className="nav_mobile-direct-link" onClick={onClose}>
+          <span>{t("nav.recruiter")}</span>
+        </a>
+        <div className="nav_mobile-language-menu" role="group" aria-label={t("language.selectorLabel", { fallback: "Langue" })}>
+          <button
+            type="button"
+            className={`nav_mobile-language-option${language === "fr" ? " is-active" : ""}`}
+            onClick={() => {
+              setLanguage("fr");
+              onClose();
+            }}
+            aria-pressed={language === "fr"}
+          >
+            FR
+          </button>
+          <span className="nav_mobile-language-separator" aria-hidden="true">/</span>
+          <button
+            type="button"
+            className={`nav_mobile-language-option${language === "en" ? " is-active" : ""}`}
+            onClick={() => {
+              setLanguage("en");
+              onClose();
+            }}
+            aria-pressed={language === "en"}
+          >
+            EN
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
 
 export default function TopNavigation({ owner }) {
-  const { isMobile } = useResponsiveProfile();
+  const compactNavigation = useCompactNavigation();
+  const { language, localizedPath, setLanguage, t } = useLanguage();
   const location = useLocation();
   const [active, setActive] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const isHomePath = location.pathname === "/";
   const ownerName = getOwnerFullName(owner);
   const profile = owner?.prof ?? owner?.profile ?? {};
-  const contactHref = isHomePath ? "#contact" : "/#contact";
+  const contactHref = isHomePath ? "#contact" : localizedPath("/#contact");
+  const recruiterHref = localizedPath("/recruiter");
   const cvHref = normalizeUrl(profile?.cvUrl || "#profile");
 
-  const groups = useMemo(() => buildMenuGroups(owner), [owner]);
+  const groups = useMemo(() => buildMenuGroups(owner, t, localizedPath), [localizedPath, owner, t]);
 
   return (
     <div className="nav_fixed nav_fixed--portfolio">
       <div className="nav_spacer v2 hide" />
       <div data-wf--navbar--variant="base" data-animation="default" data-collapse="medium" data-duration="400" data-easing="ease" data-easing2="ease" role="banner" className="nav_component w-nav">
         <div className="nav_container-v2">
-          <a href={isHomePath ? "#top" : "/"} className="nav_brand w-nav-brand" aria-label={`Accueil portfolio ${ownerName || "Idris ACHABOU"}`}>
+          <a href={isHomePath ? "#top" : localizedPath("/")} className="nav_brand w-nav-brand" aria-label={`${t("notFound.home")} — ${ownerName || "Idris ACHABOU"}`}>
             <picture>
               <source srcSet="/assets/identity/idris-navbar-logo.webp" type="image/webp" />
               <img src={NAV_LOGO_SRC} alt={ownerName || "Idris ACHABOU"} className="nav_personal-logo" loading="eager" decoding="async" />
             </picture>
           </a>
 
-          {!isMobile && <nav role="navigation" className="nav_menu v2 w-nav-menu" aria-label="Navigation principale">
+          {!compactNavigation && <nav role="navigation" className="nav_menu v2 w-nav-menu" aria-label={t("nav.mainLabel")}>
             <div className="nav_menu-wrapper grid v2">
               {groups.map((group) => (
                 <DesktopDropdown
@@ -368,22 +429,51 @@ export default function TopNavigation({ owner }) {
                   isHomePath={isHomePath}
                   owner={owner}
                   profile={profile}
+                  localizedPath={localizedPath}
                 />
               ))}
-              <a href={contactHref} className="nav_direct-link w-inline-block">Contact</a>
+              <a href={contactHref} className="nav_direct-link w-inline-block">{t("nav.contact")}</a>
+              <a href={recruiterHref} className={`nav_direct-link nav_recruiter-menu-link w-inline-block${location.pathname === "/recruiter" ? " is-active" : ""}`}
+                aria-current={location.pathname === "/recruiter" ? "page" : undefined}
+              >
+                {t("nav.recruiter")}
+              </a>
+              <div
+                className="nav_language-menu"
+                role="group"
+                aria-label={t("language.selectorLabel", { fallback: "Langue" })}
+              >
+                <button
+                  type="button"
+                  className={`nav_language-menu-option${language === "fr" ? " is-active" : ""}`}
+                  onClick={() => setLanguage("fr")}
+                  aria-pressed={language === "fr"}
+                >
+                  FR
+                </button>
+                <span className="nav_language-menu-separator" aria-hidden="true">/</span>
+                <button
+                  type="button"
+                  className={`nav_language-menu-option${language === "en" ? " is-active" : ""}`}
+                  onClick={() => setLanguage("en")}
+                  aria-pressed={language === "en"}
+                >
+                  EN
+                </button>
+              </div>
             </div>
           </nav>}
 
-          {!isMobile && <div className="nav_actions-wrap">
+          {!compactNavigation && <div className="nav_actions-wrap">
             <a id="nav-download" href={cvHref} target={cvHref?.startsWith("http") ? "_blank" : undefined} rel={cvHref?.startsWith("http") ? "noreferrer" : undefined} className="nav_big-button button w-inline-block">
-              <span>Télécharger le CV</span>
+              <span>{t("nav.downloadCv")}</span>
             </a>
           </div>}
 
-          {isMobile && <button
+          {compactNavigation && <button
             type="button"
             className={`nav_button w-nav-button${mobileOpen ? " w--open" : ""}`}
-            aria-label="Menu"
+            aria-label={t("nav.mainLabel")}
             aria-expanded={mobileOpen}
             onClick={() => setMobileOpen((value) => !value)}
           >
@@ -391,12 +481,17 @@ export default function TopNavigation({ owner }) {
             <span className="hamburger_12_line" />
           </button>}
 
-          {isMobile && mobileOpen && <MobileMenu
+          {compactNavigation && mobileOpen && <MobileMenu
             opened={mobileOpen}
             groups={groups}
             isHomePath={isHomePath}
             owner={owner}
             profile={profile}
+            localizedPath={localizedPath}
+            recruiterHref={recruiterHref}
+            language={language}
+            setLanguage={setLanguage}
+            t={t}
             onClose={() => setMobileOpen(false)}
           />}
         </div>

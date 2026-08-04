@@ -6,10 +6,9 @@ const API_BASE_URL = SHOULD_USE_DIRECT_BACKEND ? RAW_API_BASE_URL : "";
 const REQUEST_TIMEOUT = 9000;
 const RETRY_REQUEST_TIMEOUT = 4500;
 const REQUEST_RETRY_DELAY = 450;
-const PORTFOLIO_CACHE_KEY = "portfolio:last-known-good:v1";
-const PORTFOLIO_CACHE_VERSION = 1;
+const PORTFOLIO_CACHE_VERSION = 3;
 
-let inFlightPortfolioRequest = null;
+const inFlightPortfolioRequests = new Map();
 
 class PortfolioHttpError extends Error {
   constructor(status, message) {
@@ -17,6 +16,19 @@ class PortfolioHttpError extends Error {
     this.name = "PortfolioHttpError";
     this.status = status;
   }
+}
+
+function normalizeLocale(locale) {
+  return locale === "en" ? "en" : "fr";
+}
+
+function cacheKey(locale) {
+  return `portfolio:last-known-good:v${PORTFOLIO_CACHE_VERSION}:${normalizeLocale(locale)}`;
+}
+
+function withLocale(path, locale) {
+  const separator = path.includes("?") ? "&" : "?";
+  return `${path}${separator}locale=${encodeURIComponent(normalizeLocale(locale))}`;
 }
 
 function sleep(duration) {
@@ -74,11 +86,11 @@ function normalizePayload(owner, source = "api", error = null) {
   };
 }
 
-function readStorage() {
+function readStorage(locale) {
   if (typeof window === "undefined") return null;
 
   try {
-    const raw = window.localStorage.getItem(PORTFOLIO_CACHE_KEY);
+    const raw = window.localStorage.getItem(cacheKey(locale));
     if (!raw) return null;
 
     const cached = JSON.parse(raw);
@@ -94,12 +106,12 @@ function readStorage() {
   }
 }
 
-function writeStorage(owner) {
+function writeStorage(owner, locale) {
   if (typeof window === "undefined" || !isPortfolioOwner(owner)) return;
 
   try {
     window.localStorage.setItem(
-      PORTFOLIO_CACHE_KEY,
+      cacheKey(locale),
       JSON.stringify({
         version: PORTFOLIO_CACHE_VERSION,
         cachedAt: new Date().toISOString(),
@@ -107,70 +119,54 @@ function writeStorage(owner) {
       }),
     );
   } catch {
-    // Une restriction de stockage ne doit jamais empêcher l’affichage du site.
+    // Storage restrictions must never prevent rendering.
   }
 }
 
-export function readCachedPortfolio() {
-  return readStorage();
+export function readCachedPortfolio(locale = "fr") {
+  return readStorage(locale);
 }
 
-export async function fetchWebsite() {
-  const owner = await requestJson("/website/default");
+export async function fetchWebsite(locale = "fr") {
+  const owner = await requestJson(withLocale("/website/default", locale));
   if (!isPortfolioOwner(owner)) {
     throw new Error("Aucun owner valide retourné par l’API.");
   }
   return owner;
 }
 
-export async function fetchDefaultProvenSkills() {
-  return requestJson("/website/default/proven-skills", { retries: 0, timeoutMs: 4500 });
-}
-
-export async function fetchProjectCaseStudy(projectSlug, ownerId) {
-  if (!projectSlug) {
-    throw new Error("Slug projet manquant");
-  }
+export async function fetchProjectCaseStudy(projectSlug, ownerId, locale = "fr") {
+  if (!projectSlug) throw new Error("Slug projet manquant");
 
   const encodedSlug = encodeURIComponent(projectSlug);
   const path = ownerId
     ? `/website/${ownerId}/projects/${encodedSlug}`
     : `/website/default/projects/${encodedSlug}`;
 
-  return requestJson(path);
+  return requestJson(withLocale(path, locale));
 }
 
-async function requestPortfolioFromApi() {
-  const owner = await fetchWebsite();
-  let provenSkills = owner.provenSkills;
-
-  // L’endpoint principal contient normalement les compétences. L’ancien endpoint
-  // n’est appelé qu’en compatibilité avec une ancienne version du backend.
-  if (!Array.isArray(provenSkills)) {
-    try {
-      provenSkills = await fetchDefaultProvenSkills();
-    } catch {
-      provenSkills = [];
-    }
-  }
-
+async function requestPortfolioFromApi(locale) {
+  const owner = await fetchWebsite(locale);
   const enrichedOwner = {
     ...owner,
-    provenSkills,
+    provenSkills: Array.isArray(owner.provenSkills) ? owner.provenSkills : [],
   };
 
-  writeStorage(enrichedOwner);
+  writeStorage(enrichedOwner, locale);
   return normalizePayload(enrichedOwner, "api", null);
 }
 
-export function refreshPortfolio() {
-  if (!inFlightPortfolioRequest) {
-    inFlightPortfolioRequest = requestPortfolioFromApi().finally(() => {
-      inFlightPortfolioRequest = null;
+export function refreshPortfolio(locale = "fr") {
+  const normalizedLocale = normalizeLocale(locale);
+  if (!inFlightPortfolioRequests.has(normalizedLocale)) {
+    const request = requestPortfolioFromApi(normalizedLocale).finally(() => {
+      inFlightPortfolioRequests.delete(normalizedLocale);
     });
+    inFlightPortfolioRequests.set(normalizedLocale, request);
   }
 
-  return inFlightPortfolioRequest;
+  return inFlightPortfolioRequests.get(normalizedLocale);
 }
 
 export async function loadDemoPortfolio(error) {
@@ -184,12 +180,11 @@ export async function loadDemoPortfolio(error) {
   };
 }
 
-// Compatibilité avec les appels existants hors de App.jsx.
-export async function loadPortfolio() {
+export async function loadPortfolio(locale = "fr") {
   try {
-    return await refreshPortfolio();
+    return await refreshPortfolio(locale);
   } catch (error) {
-    const cached = readCachedPortfolio();
+    const cached = readCachedPortfolio(locale);
     if (cached) {
       return {
         ...cached,

@@ -9,6 +9,7 @@ import AdminCvBuilderPanel from "./AdminCvBuilderPanel";
 import AdminProfilePanel from "./AdminProfilePanel";
 import AdminTimelinePanel from "./AdminTimelinePanel";
 import AdminProjectsPanel from "./AdminProjectsPanel";
+import AdminTranslationPanel from "./AdminTranslationPanel";
 
 export default function AdminMainTabs({ controller }) {
   const {
@@ -231,6 +232,7 @@ export default function AdminMainTabs({ controller }) {
           <Tabs.Tab value="safety">Santé & backup</Tabs.Tab>
           <Tabs.Tab value="applications">Candidatures</Tabs.Tab>
           <Tabs.Tab value="analytics">Analytics</Tabs.Tab>
+          <Tabs.Tab value="translations">Traductions</Tabs.Tab>
           <Tabs.Tab value="profile">Profil & fichiers</Tabs.Tab>
           <Tabs.Tab value="cv">CV Builder</Tabs.Tab>
           <Tabs.Tab value="timeline">Timeline</Tabs.Tab>
@@ -274,6 +276,9 @@ export default function AdminMainTabs({ controller }) {
         />
         <Tabs.Panel value="analytics" pt="lg">
           <AdminAnalyticsPanel />
+        </Tabs.Panel>
+        <Tabs.Panel value="translations" pt="lg">
+          <AdminTranslationPanel />
         </Tabs.Panel>
 
         <AdminApplicationsPanel

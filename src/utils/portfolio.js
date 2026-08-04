@@ -40,19 +40,20 @@ export const LINK_LABELS = {
   OTHER: "Lien",
 };
 
-export function formatDate(date) {
-  if (!date) return "Aujourd’hui";
+export function formatDate(date, locale = "fr-FR") {
+  const resolvedLocale = locale?.startsWith?.("en") ? "en-GB" : "fr-FR";
+  if (!date) return resolvedLocale === "en-GB" ? "Present" : "Aujourd’hui";
   const parsed = new Date(date);
   if (Number.isNaN(parsed.getTime())) return date;
-  return new Intl.DateTimeFormat("fr-FR", {
+  return new Intl.DateTimeFormat(resolvedLocale, {
     month: "short",
     year: "numeric",
   }).format(parsed);
 }
 
-export function formatPeriod(startDate, endDate, currentPosition) {
-  const start = formatDate(startDate);
-  const end = currentPosition ? "Aujourd’hui" : formatDate(endDate);
+export function formatPeriod(startDate, endDate, currentPosition, locale = "fr-FR") {
+  const start = formatDate(startDate, locale);
+  const end = currentPosition ? formatDate(null, locale) : formatDate(endDate, locale);
   return `${start} — ${end}`;
 }
 
@@ -356,7 +357,10 @@ export function buildProvenSkills(projects = [], experiences = []) {
     .slice(0, 6);
 }
 
-export function getCaseStudySections(project) {
+export function getCaseStudySections(project, translate) {
+  const t = typeof translate === "function"
+    ? translate
+    : (key, variables = {}) => variables.fallback ?? key;
   const caseStudy = project?.caseStudy ?? {};
   const features = project?.features ?? [];
   const stacks = project?.stacks ?? [];
@@ -365,59 +369,59 @@ export function getCaseStudySections(project) {
   return [
     {
       id: "problem",
-      label: "Problème traité",
-      body: caseStudy.problem || project?.shortDescription || "Clarifier le besoin, structurer le périmètre et construire une solution exploitable.",
+      label: t("case.problem", { fallback: "Problème traité" }),
+      body: caseStudy.problem || project?.shortDescription || t("case.defaultProblem", { fallback: "Clarifier le besoin, structurer le périmètre et construire une solution exploitable." }),
     },
     {
       id: "context",
-      label: "Contexte",
+      label: t("case.context", { fallback: "Contexte" }),
       body: caseStudy.context || project?.description,
     },
     {
       id: "role",
-      label: "Rôle personnel",
-      body: caseStudy.role || "Conception, développement, intégration, documentation et arbitrages techniques sur le périmètre logiciel.",
+      label: t("case.role", { fallback: "Rôle personnel" }),
+      body: caseStudy.role || t("case.defaultRole", { fallback: "Conception, développement, intégration, documentation et arbitrages techniques sur le périmètre logiciel." }),
     },
     {
       id: "architecture",
-      label: "Architecture",
+      label: t("case.architecture", { fallback: "Architecture" }),
       body: caseStudy.architecture || `Architecture construite autour de ${stacks.slice(0, 5).join(", ") || "composants séparés"}, avec une séparation claire entre responsabilité métier, interface et persistance.`,
     },
     {
       id: "choices",
-      label: "Choix techniques",
+      label: t("case.choices", { fallback: "Choix techniques" }),
       items: caseStudy.technicalChoices || features.slice(0, 4),
     },
     {
       id: "challenges",
-      label: "Difficultés résolues",
+      label: t("case.challenges", { fallback: "Difficultés résolues" }),
       items: caseStudy.challenges || [
-        "Maintenir une interface lisible malgré la densité d'information.",
-        "Stabiliser les interactions et les états pour éviter les comportements fragiles.",
+        t("case.defaultChallenge1", { fallback: "Maintenir une interface lisible malgré la densité d'information." }),
+        t("case.defaultChallenge2", { fallback: "Stabiliser les interactions et les états pour éviter les comportements fragiles." }),
       ],
     },
     {
       id: "solutions",
-      label: "Solutions mises en place",
+      label: t("case.solutions", { fallback: "Solutions mises en place" }),
       items: caseStudy.solutions,
     },
     {
       id: "outcomes",
-      label: "Résultats",
+      label: t("case.outcomes", { fallback: "Résultats" }),
       items: outcomes || [
-        "Prototype exploitable et présentable dans un contexte professionnel.",
-        "Base technique claire pour continuer l'évolution du projet.",
+        t("case.defaultOutcome1", { fallback: "Prototype exploitable et présentable dans un contexte professionnel." }),
+        t("case.defaultOutcome2", { fallback: "Base technique claire pour continuer l'évolution du projet." }),
       ],
     },
     {
       id: "limits",
-      label: "Limites assumées",
+      label: t("case.limits", { fallback: "Limites assumées" }),
       items: caseStudy.limits,
     },
     {
       id: "next",
-      label: "Suite possible",
-      body: caseStudy.nextSteps || "Industrialiser les tests, enrichir la documentation et ajouter des scénarios d'usage plus ciblés.",
+      label: t("case.next", { fallback: "Suite possible" }),
+      body: caseStudy.nextSteps || t("case.defaultNext", { fallback: "Industrialiser les tests, enrichir la documentation et ajouter des scénarios d'usage plus ciblés." }),
     },
-  ].filter((section) => section.body || section.items?.length > 0);
+  ].filter((section) => section.body || section.items?.length);
 }

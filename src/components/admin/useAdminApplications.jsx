@@ -77,7 +77,7 @@ export default function useAdminApplications(ctx) {
 
   const selectedSmartCvCommands = useMemo(() => {
     if (!selectedSmartCvProposal?.commands?.length) return [];
-    return selectedSmartCvProposal.commands.filter((command, index) => selectedSmartCommandKeys[getSmartCommandKey(selectedSmartCvProposal.id, index)] !== false);
+    return selectedSmartCvProposal.commands.filter((_command, index) => selectedSmartCommandKeys[getSmartCommandKey(selectedSmartCvProposal.id, index)] !== false);
   }, [selectedSmartCvProposal, selectedSmartCommandKeys]);
 
   function hydrateApplicationForm(application) {

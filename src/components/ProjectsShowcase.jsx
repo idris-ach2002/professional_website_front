@@ -4,12 +4,12 @@ import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { gsapReady, useGsap } from "../animations/useGsap";
 import useResponsiveProfile from "../hooks/useResponsiveProfile";
+import useLanguage from "../localization/useLanguage";
 import SectionTitle from "./SectionTitle";
 import { FilePreviewButton, PreviewableImage } from "./FilePreview";
 import { isPreviewableFile } from "../utils/filePreview";
 import {
   LINK_LABELS,
-  STATUS_LABELS,
   downloadText,
   formatPeriod,
   getAvailableStacks,
@@ -20,6 +20,7 @@ import {
 } from "../utils/portfolio";
 
 function ProjectVisual({ project, index, active = false }) {
+  const { t } = useLanguage();
   if (project.imageUrl) {
     return (
       <PreviewableImage
@@ -27,7 +28,7 @@ function ProjectVisual({ project, index, active = false }) {
         alt={project.title}
         className="project-visual project-image-preview-trigger"
         imageClassName="project-image"
-        modalTitle={`Projet — ${project.title}`}
+        modalTitle={t("projects.modalTitle", { title: project.title })}
         showOverlay={false}
         loading={active ? "eager" : "lazy"}
         fetchPriority={active ? "high" : "low"}
@@ -37,7 +38,7 @@ function ProjectVisual({ project, index, active = false }) {
 
   return (
     <div className="project-visual project-visual-static" aria-hidden="true">
-      <span>Projet {String(index + 1).padStart(2, "0")}</span>
+      <span>{t("projects.project")} {String(index + 1).padStart(2, "0")}</span>
       <strong>{project.title?.slice(0, 2)?.toUpperCase()}</strong>
     </div>
   );
@@ -125,6 +126,7 @@ function ProjectLinks({ project }) {
             key={key}
             href={normalizeUrl(link.url)}
             target="_blank"
+            rel="noreferrer"
             className="project-link"
           >
             {link.label}
@@ -206,6 +208,7 @@ function useCardOverflowSignal(project, active) {
 }
 
 function ProjectDetailsModal({ project, opened, onClose }) {
+  const { locale, localizedPath, t } = useLanguage();
   const links = getProjectLinks(project ?? {});
 
   useEffect(() => {
@@ -243,8 +246,8 @@ function ProjectDetailsModal({ project, opened, onClose }) {
       <div className="project-detail-modal-inner">
         <div className="project-detail-modal" onMouseDown={(event) => event.stopPropagation()}>
           <header className="project-detail-modal-header">
-            <h2 id="project-detail-modal-title" className="project-detail-modal-title">Projet — {project.title}</h2>
-            <button type="button" className="project-detail-modal-close" aria-label="Fermer les détails du projet" onClick={onClose}>
+            <h2 id="project-detail-modal-title" className="project-detail-modal-title">{t("projects.modalTitle", { title: project.title })}</h2>
+            <button type="button" className="project-detail-modal-close" aria-label={t("projects.closeDetails")} onClick={onClose}>
               ×
             </button>
           </header>
@@ -253,12 +256,12 @@ function ProjectDetailsModal({ project, opened, onClose }) {
             <div className="project-detail-scroll">
               <div className="project-detail-hero">
                 <div>
-                  <Badge className="project-status">{STATUS_LABELS[project.status] ?? project.status}</Badge>
+                  <Badge className="project-status">{t(`status.${project.status}`, { fallback: project.status })}</Badge>
                   <Title order={2}>{project.title}</Title>
                   {project.subtitle && <Text className="project-detail-subtitle">{project.subtitle}</Text>}
                 </div>
                 <Text className="project-detail-period">
-                  {formatPeriod(project.startDate, project.endDate, project.status === "IN_PROGRESS" || project.status === "MAINTAINED")}
+                  {formatPeriod(project.startDate, project.endDate, project.status === "IN_PROGRESS" || project.status === "MAINTAINED", locale)}
                 </Text>
               </div>
 
@@ -268,14 +271,14 @@ function ProjectDetailsModal({ project, opened, onClose }) {
                   alt={project.title}
                   className="project-detail-image-preview-trigger"
                   imageClassName="project-detail-image"
-                  modalTitle={`Projet — ${project.title}`}
+                  modalTitle={t("projects.modalTitle", { title: project.title })}
                   showOverlay={false}
                 />
               )}
 
               {(project.shortDescription || project.description) && (
                 <section className="project-detail-section">
-                  <h3>Présentation</h3>
+                  <h3>{t("projects.presentation")}</h3>
                   {project.shortDescription && <Text className="project-detail-lead">{project.shortDescription}</Text>}
                   {project.description && project.description !== project.shortDescription && (
                     <Text className="project-detail-text">{project.description}</Text>
@@ -285,7 +288,7 @@ function ProjectDetailsModal({ project, opened, onClose }) {
 
               {project.features?.length > 0 && (
                 <section className="project-detail-section">
-                  <h3>Fonctionnalités</h3>
+                  <h3>{t("projects.features")}</h3>
                   <ul className="project-detail-list">
                     {project.features.map((feature, featureIndex) => (
                       <li key={`${project.id ?? project.title}-detail-feature-${featureIndex}-${feature}`}>{feature}</li>
@@ -296,7 +299,7 @@ function ProjectDetailsModal({ project, opened, onClose }) {
 
               {project.stacks?.length > 0 && (
                 <section className="project-detail-section">
-                  <h3>Stack technique</h3>
+                  <h3>{t("projects.stack")}</h3>
                   <Group gap={8} className="project-detail-stack">
                     {project.stacks.map((stack, stackIndex) => (
                       <Badge key={`${project.id ?? project.title}-detail-stack-${stackIndex}-${stack}`} variant="outline" className="stack-badge">
@@ -308,10 +311,10 @@ function ProjectDetailsModal({ project, opened, onClose }) {
               )}
 
               <section className="project-detail-section project-detail-links-section">
-                <h3>Ressources</h3>
+                <h3>{t("projects.resources")}</h3>
                 <Group gap="xs" className="project-detail-resource-actions">
-                  <Link to={`/projects/${getProjectSlug(project)}`} className="project-link project-case-study-link" onClick={onClose}>
-                    Étude de cas
+                  <Link to={localizedPath(`/projects/${getProjectSlug(project)}`)} className="project-link project-case-study-link" onClick={onClose}>
+                    {t("projects.caseStudy")}
                   </Link>
                   {links.length > 0 && <ProjectLinks project={project} />}
                 </Group>
@@ -327,6 +330,7 @@ function ProjectDetailsModal({ project, opened, onClose }) {
 
 
 function ProjectIsland({ project, index, featured, total, active, onOpenDetails }) {
+  const { locale, localizedPath, t } = useLanguage();
   const { cardRef, contentRef, hasOverflow } = useCardOverflowSignal(project, active);
   const showDetails = shouldShowProjectDetails(project) || hasOverflow;
 
@@ -342,7 +346,7 @@ function ProjectIsland({ project, index, featured, total, active, onOpenDetails 
 
             <Stack ref={contentRef} gap="sm" className="project-content">
               <Text className="project-period">
-                {formatPeriod(project.startDate, project.endDate, project.status === "IN_PROGRESS" || project.status === "MAINTAINED")}
+                {formatPeriod(project.startDate, project.endDate, project.status === "IN_PROGRESS" || project.status === "MAINTAINED", locale)}
               </Text>
               <Title order={3}>{project.title}</Title>
               {project.subtitle && <Text className="project-subtitle">{project.subtitle}</Text>}
@@ -351,12 +355,12 @@ function ProjectIsland({ project, index, featured, total, active, onOpenDetails 
               <Group gap="xs" className="project-card-actions">
                 <ProjectLinks project={project} />
                 <Link
-                  to={`/projects/${getProjectSlug(project)}`}
+                  to={localizedPath(`/projects/${getProjectSlug(project)}`)}
                   className="project-read-more project-case-study-link"
                   onPointerDown={(event) => event.stopPropagation()}
                   onClick={(event) => event.stopPropagation()}
                 >
-                  <span>Étude de cas</span>
+                  <span>{t("projects.caseStudy")}</span>
                 </Link>
                 {showDetails && (
                   <button
@@ -378,7 +382,7 @@ function ProjectIsland({ project, index, featured, total, active, onOpenDetails 
                       onOpenDetails(project);
                     }}
                   >
-                    <span>Détails</span>
+                    <span>{t("projects.details")}</span>
                   </button>
                 )}
               </Group>
@@ -400,25 +404,27 @@ const ProjectToolbar = memo(function ProjectToolbar({
   statuses,
   stacks,
 }) {
+  const { t } = useLanguage();
+
   return (
     <div className="project-toolbar island-card project-toolbar-sticky">
       <TextInput
         value={query}
         onChange={(event) => setQuery(event.currentTarget.value)}
-        placeholder="Rechercher un projet, une stack, une feature…"
+        placeholder={t("projects.searchPlaceholder")}
         radius="xl"
         className="project-search"
-        aria-label="Rechercher dans les projets"
+        aria-label={t("projects.searchPlaceholder")}
       />
       <MultiSelect
-        data={[{ value: "ALL", label: "Tous les statuts" }, ...statuses.map((item) => ({ value: item, label: STATUS_LABELS[item] ?? item }))]}
+        data={[{ value: "ALL", label: t("projects.allStatuses") }, ...statuses.map((item) => ({ value: item, label: t(`status.${item}`, { fallback: item }) }))]}
         value={[status]}
         onChange={(values) => setStatus(values.at(-1) ?? "ALL")}
         radius="xl"
         className="status-select"
         maxValues={1}
         searchable={false}
-        aria-label="Filtrer par statut"
+        aria-label={t("projects.filterStatus")}
       />
       <MultiSelect
         data={stacks}
@@ -426,10 +432,10 @@ const ProjectToolbar = memo(function ProjectToolbar({
         onChange={setSelectedStacks}
         radius="xl"
         className="stack-filter"
-        placeholder="Stacks"
+        placeholder={t("projects.stacks")}
         searchable
         clearable
-        aria-label="Filtrer par stack"
+        aria-label={t("projects.filterStack")}
       />
     </div>
   );
@@ -568,6 +574,7 @@ function GalleryNavButton({ direction, label, onNavigate }) {
 
 function ProjectGallery({ projects }) {
   const { isMobile } = useResponsiveProfile();
+  const { t } = useLanguage();
   const galleryRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [detailsProject, setDetailsProject] = useState(null);
@@ -673,8 +680,8 @@ function ProjectGallery({ projects }) {
 
   return (
     <>
-    <div ref={galleryRef} className="project-gallery-shell" aria-roledescription="carousel" aria-label="Galerie 3D des projets">
-      {projects.length > 1 && <GalleryNavButton direction="prev" label="Projet précédent" onNavigate={handlePrev} />}
+    <div ref={galleryRef} className="project-gallery-shell" aria-roledescription="carousel" aria-label={t("projects.galleryLabel")}>
+      {projects.length > 1 && <GalleryNavButton direction="prev" label={t("projects.previous")} onNavigate={handlePrev} />}
 
       <div
         className="project-gallery-viewport"
@@ -699,7 +706,7 @@ function ProjectGallery({ projects }) {
                 key={key}
                 className={`gallery-panel ${isActive ? "is-active" : ""} ${isVisible ? "is-visible" : "is-hidden"}`}
                 style={getPanelStyle(offset)}
-                aria-label={isActive ? `Projet actif : ${project.title}` : `Projet en arrière-plan : ${project.title}`}
+                aria-label={isActive ? t("projects.active", { title: project.title }) : t("projects.background", { title: project.title })}
                 aria-current={isActive ? "true" : undefined}
                 aria-hidden={!isActive}
               >
@@ -710,16 +717,16 @@ function ProjectGallery({ projects }) {
         </div>
       </div>
 
-      {projects.length > 1 && <GalleryNavButton direction="next" label="Projet suivant" onNavigate={handleNext} />}
+      {projects.length > 1 && <GalleryNavButton direction="next" label={t("projects.next")} onNavigate={handleNext} />}
 
-      <Group gap="xs" justify="center" className="gallery-dots" aria-label="Navigation des projets">
+      <Group gap="xs" justify="center" className="gallery-dots" aria-label={t("projects.navigation")}>
         {projects.map((project, index) => (
           <button
             key={project.id ?? `${project.title}-dot-${index}`}
             type="button"
             className={`gallery-dot ${index === safeActiveIndex ? "is-active" : ""}`}
             onClick={() => goTo(index, index > safeActiveIndex ? 1 : -1)}
-            aria-label={`Aller au projet ${index + 1}`}
+            aria-label={t("projects.goTo", { index: index + 1 })}
             aria-current={index === safeActiveIndex ? "true" : undefined}
           />
         ))}
@@ -735,6 +742,7 @@ function ProjectGallery({ projects }) {
 }
 
 export default function ProjectsShowcase({ projects }) {
+  const { t } = useLanguage();
   const rootRef = useRef(null);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("ALL");
@@ -794,10 +802,12 @@ export default function ProjectsShowcase({ projects }) {
     <section ref={rootRef} id="projects" className="page-section projects-section">
       <SectionTitle
         reveal="soft"
-        title="Mes projets"
+        eyebrow={t("projects.eyebrow")}
+        title={t("projects.title")}
+        description={t("projects.description")}
         rightSlot={
           <Button onClick={exportProjects} radius="xl" variant="light">
-            Exporter JSON
+            {t("projects.exportJson")}
           </Button>
         }
       />
@@ -815,7 +825,7 @@ export default function ProjectsShowcase({ projects }) {
 
       <Group gap="xs" className="result-line" mb="xl">
         <Badge className="executive-badge">
-          {filteredProjects.length} projet{filteredProjects.length > 1 ? "s" : ""}
+          {t(filteredProjects.length > 1 ? "projects.countMany" : "projects.countOne", { count: filteredProjects.length })}
         </Badge>
         {selectedStacks.map((stack) => (
           <Badge key={stack} className="filter-chip">
@@ -828,8 +838,8 @@ export default function ProjectsShowcase({ projects }) {
         <ProjectGallery projects={filteredProjects} />
       ) : (
         <Card className="empty-card island-card" radius="xl">
-          <Title order={3}>Aucun projet ne correspond aux filtres.</Title>
-          <Text>Réduis la recherche ou retire une stack pour retrouver les projets disponibles.</Text>
+          <Title order={3}>{t("projects.noResultTitle")}</Title>
+          <Text>{t("projects.noResultText")}</Text>
         </Card>
       )}
     </section>

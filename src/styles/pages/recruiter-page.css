@@ -1,0 +1,498 @@
+/* Recruiter view — medium ocean/glass palette aligned with the public portfolio. */
+.recruiter-page-shell {
+  min-height: 100vh;
+  color: #0b3447;
+  background: #75bfd2 !important;
+}
+
+/* A medium-depth ocean: neither the original navy nor the almost-white variant. */
+.recruiter-page-shell .ocean-background {
+  opacity: 1 !important;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(244, 253, 255, .72), transparent 27%),
+    radial-gradient(circle at 86% 18%, rgba(129, 230, 235, .32), transparent 30%),
+    linear-gradient(180deg,
+      #d9f5fa 0%,
+      #b9e7ef 18%,
+      #8fd0de 40%,
+      #6bb7ca 66%,
+      #4f9eb6 100%) !important;
+}
+
+.recruiter-page-shell .ocean-background::after {
+  opacity: 1 !important;
+  background:
+    linear-gradient(180deg,
+      rgba(255, 255, 255, .13) 0%,
+      rgba(194, 238, 245, .12) 44%,
+      rgba(7, 89, 116, .15) 100%) !important;
+}
+
+.recruiter-page-shell::before {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  content: "";
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 14% 18%, rgba(255, 255, 255, .24), transparent 28%),
+    radial-gradient(circle at 88% 22%, rgba(165, 180, 252, .16), transparent 27%),
+    linear-gradient(180deg, rgba(255, 255, 255, .02), rgba(8, 92, 117, .09));
+}
+
+.recruiter-page-content {
+  position: relative;
+  z-index: 4;
+  padding-top: 138px;
+  padding-bottom: 64px;
+}
+
+.recruiter-hero,
+.recruiter-section,
+.recruiter-contact-footer {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(24px, 4vw, 52px);
+  border: 1px solid rgba(5, 91, 119, .23);
+  background:
+    radial-gradient(circle at 92% 10%, rgba(128, 222, 232, .22), transparent 28%),
+    radial-gradient(circle at 7% 100%, rgba(45, 212, 191, .12), transparent 30%),
+    linear-gradient(145deg, rgba(226, 247, 250, .80), rgba(151, 207, 220, .62));
+  box-shadow:
+    0 24px 68px rgba(4, 74, 99, .17),
+    inset 0 1px 0 rgba(255, 255, 255, .68);
+  backdrop-filter: blur(22px) saturate(1.08);
+}
+
+.recruiter-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 32px;
+  align-items: end;
+}
+
+.recruiter-hero::before {
+  position: absolute;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  background:
+    linear-gradient(112deg, rgba(255, 255, 255, .34), transparent 40%),
+    linear-gradient(90deg, rgba(14, 165, 233, .08), transparent 45%);
+}
+
+.recruiter-hero::after {
+  position: absolute;
+  inset: auto -9% -70% 46%;
+  height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(34, 211, 238, .19), transparent 68%);
+  content: "";
+  pointer-events: none;
+}
+
+.recruiter-hero-copy,
+.recruiter-hero-actions {
+  position: relative;
+  z-index: 1;
+}
+
+.recruiter-eyebrow,
+.recruiter-card-kicker {
+  margin: 0 0 8px;
+  color: #075f82;
+  font-size: .76rem;
+  font-weight: 900;
+  letter-spacing: .17em;
+  text-transform: uppercase;
+}
+
+.recruiter-hero h1 {
+  color: #082f49;
+  font-size: clamp(2.4rem, 7vw, 5.4rem);
+  line-height: .94;
+  text-shadow: 0 10px 32px rgba(3, 105, 161, .11);
+}
+
+.recruiter-role {
+  margin-top: 12px;
+  color: #075f82;
+  font-size: clamp(1rem, 2vw, 1.35rem);
+  font-weight: 850;
+}
+
+.recruiter-main-title {
+  margin-top: 26px;
+  color: #0b4761;
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.recruiter-intro {
+  max-width: 760px;
+  margin-top: 12px;
+  color: #315f70;
+  font-size: 1.04rem;
+  line-height: 1.75;
+}
+
+.recruiter-hero-actions {
+  max-width: 390px;
+  justify-content: flex-end;
+}
+
+.recruiter-page-shell .recruiter-hero-actions .mantine-Button-root:not(.primary-action) {
+  border-color: rgba(4, 94, 124, .26);
+  color: #07536f;
+  background: rgba(226, 247, 250, .56);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .58);
+}
+
+.recruiter-page-shell .recruiter-hero-actions .mantine-Button-root:not(.primary-action):hover {
+  border-color: rgba(4, 94, 124, .38);
+  color: #062f40;
+  background: rgba(211, 240, 245, .78);
+}
+
+.recruiter-facts-grid .mantine-Card-root,
+.recruiter-fact-card {
+  min-height: 148px;
+  padding: 22px;
+  border: 1px solid rgba(5, 91, 119, .21);
+  background:
+    radial-gradient(circle at 90% 10%, rgba(125, 211, 252, .18), transparent 34%),
+    linear-gradient(145deg, rgba(220, 244, 248, .77), rgba(139, 198, 211, .58));
+  box-shadow:
+    0 18px 48px rgba(4, 74, 99, .14),
+    inset 0 1px 0 rgba(255, 255, 255, .58);
+  backdrop-filter: blur(18px);
+  transition: transform .24s ease, border-color .24s ease, box-shadow .24s ease;
+}
+
+.recruiter-fact-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(3, 105, 161, .36);
+  box-shadow: 0 24px 58px rgba(4, 74, 99, .20);
+}
+
+.recruiter-fact-card p {
+  margin: 0 0 12px;
+  color: #075f82;
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.recruiter-fact-card strong {
+  color: #082f49;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.recruiter-section-heading {
+  display: flex;
+  gap: 18px;
+  align-items: baseline;
+  margin-bottom: 28px;
+}
+
+.recruiter-section-heading h2 {
+  color: #082f49;
+  font-size: clamp(1.6rem, 3vw, 2.5rem);
+}
+
+.recruiter-skill-card,
+.recruiter-project-card,
+.recruiter-experience-item {
+  border: 1px solid rgba(5, 91, 119, .20);
+  background:
+    radial-gradient(circle at 88% 8%, rgba(125, 211, 252, .16), transparent 30%),
+    linear-gradient(145deg, rgba(218, 243, 247, .73), rgba(133, 194, 208, .54));
+  box-shadow:
+    0 16px 42px rgba(4, 74, 99, .13),
+    inset 0 1px 0 rgba(255, 255, 255, .55);
+  backdrop-filter: blur(16px);
+  transition: transform .24s ease, border-color .24s ease, box-shadow .24s ease;
+}
+
+.recruiter-skill-card:hover,
+.recruiter-project-card:hover,
+.recruiter-experience-item:hover {
+  transform: translateY(-3px);
+  border-color: rgba(3, 105, 161, .36);
+  box-shadow: 0 24px 60px rgba(4, 74, 99, .20);
+}
+
+.recruiter-skill-card {
+  min-height: 150px;
+  padding: 20px;
+  border-radius: 22px;
+}
+
+.recruiter-skill-card strong,
+.recruiter-project-card h3,
+.recruiter-experience-item h3 {
+  color: #082f49;
+}
+
+.recruiter-skill-card p {
+  margin: 14px 0 0;
+  color: #315f70;
+  line-height: 1.65;
+}
+
+.recruiter-page-shell .recruiter-skill-card .mantine-Badge-root,
+.recruiter-page-shell .recruiter-project-card .mantine-Badge-root {
+  border-color: rgba(5, 91, 119, .22);
+  color: #07536f;
+  background: rgba(210, 240, 245, .78);
+}
+
+.recruiter-experience-item {
+  display: grid;
+  grid-template-columns: minmax(230px, .75fr) minmax(0, 1.25fr);
+  gap: 24px;
+  padding: 22px;
+  border-radius: 24px;
+}
+
+.recruiter-experience-category {
+  color: #075f82;
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.recruiter-experience-item p,
+.recruiter-project-description,
+.recruiter-project-subtitle {
+  color: #315f70;
+}
+
+.recruiter-experience-summary small {
+  display: block;
+  margin-top: 12px;
+  color: #08779f;
+  font-weight: 800;
+}
+
+.recruiter-project-card {
+  display: flex;
+  min-height: 390px;
+  flex-direction: column;
+  padding: 24px;
+}
+
+.recruiter-project-subtitle {
+  margin-top: 10px;
+  font-weight: 700;
+}
+
+.recruiter-project-description {
+  flex: 1;
+  margin-top: 16px;
+  line-height: 1.65;
+}
+
+.recruiter-stack-row {
+  margin: 18px 0;
+}
+
+.recruiter-project-link {
+  align-self: flex-start;
+  color: #07536f !important;
+  background: rgba(207, 239, 245, .84) !important;
+}
+
+.recruiter-project-link:hover {
+  background: rgba(179, 224, 233, .92) !important;
+}
+
+/* The contact block is the only footer on the recruiter page. */
+.recruiter-contact-footer {
+  display: grid;
+  grid-template-columns: minmax(220px, .8fr) minmax(0, 1.2fr);
+  gap: 28px 40px;
+  align-items: center;
+}
+
+.recruiter-contact-footer::after {
+  position: absolute;
+  right: -90px;
+  bottom: -120px;
+  width: 320px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(56, 189, 248, .20), transparent 68%);
+  content: "";
+  pointer-events: none;
+}
+
+.recruiter-contact-footer__identity,
+.recruiter-contact-footer__links,
+.recruiter-contact-footer__copyright {
+  position: relative;
+  z-index: 1;
+}
+
+.recruiter-contact-footer__identity h2 {
+  color: #082f49;
+}
+
+.recruiter-contact-footer__identity > p:last-child {
+  margin-top: 7px;
+  color: #315f70;
+  font-weight: 700;
+}
+
+.recruiter-contact-footer__links {
+  justify-content: flex-end;
+}
+
+.recruiter-contact-footer__links a {
+  color: #075f82;
+  font-weight: 800;
+}
+
+.recruiter-contact-footer__links a:hover {
+  color: #0f766e;
+}
+
+.recruiter-contact-footer__links .mantine-Button-root {
+  color: #07536f;
+  background: rgba(210, 240, 245, .76);
+}
+
+.recruiter-contact-footer__copyright {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(5, 91, 119, .18);
+  color: rgba(8, 47, 73, .66);
+  font-size: .82rem;
+}
+
+@media (max-width: 960px) {
+  .recruiter-hero,
+  .recruiter-experience-item,
+  .recruiter-contact-footer {
+    grid-template-columns: 1fr;
+  }
+
+  .recruiter-hero-actions {
+    max-width: none;
+    justify-content: flex-start;
+  }
+
+  .recruiter-contact-footer__links {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .recruiter-page-content {
+    padding-top: 108px;
+  }
+
+  .recruiter-hero,
+  .recruiter-section,
+  .recruiter-contact-footer {
+    padding: 22px;
+    border-radius: 28px;
+  }
+
+  .recruiter-hero-actions .mantine-Button-root {
+    width: 100%;
+  }
+
+  .recruiter-fact-card,
+  .recruiter-skill-card,
+  .recruiter-experience-item,
+  .recruiter-project-card {
+    border-radius: 22px;
+  }
+
+  .recruiter-contact-footer__links {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .recruiter-contact-footer__links .mantine-Button-root {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .recruiter-fact-card,
+  .recruiter-skill-card,
+  .recruiter-project-card,
+  .recruiter-experience-item {
+    transition: none;
+  }
+
+  .recruiter-fact-card:hover,
+  .recruiter-skill-card:hover,
+  .recruiter-project-card:hover,
+  .recruiter-experience-item:hover {
+    transform: none;
+  }
+}
+
+@media print {
+  @page {
+    margin: 12mm;
+    size: A4;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  .recruiter-page-shell {
+    background: #fff !important;
+    color: #111827 !important;
+  }
+
+  .recruiter-page-shell::before,
+  .recruiter-page-shell .nav_fixed,
+  .recruiter-page-shell .ocean-background,
+  .recruiter-hero-actions,
+  .recruiter-project-link {
+    display: none !important;
+  }
+
+  .recruiter-page-content {
+    width: 100%;
+    max-width: none;
+    padding: 0;
+  }
+
+  .recruiter-hero,
+  .recruiter-section,
+  .recruiter-contact-footer,
+  .recruiter-fact-card,
+  .recruiter-skill-card,
+  .recruiter-project-card,
+  .recruiter-experience-item {
+    break-inside: avoid;
+    border: 1px solid #cbd5e1 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    color: #111827 !important;
+  }
+
+  .recruiter-page-shell h1,
+  .recruiter-page-shell h2,
+  .recruiter-page-shell h3,
+  .recruiter-page-shell strong,
+  .recruiter-page-shell p,
+  .recruiter-page-shell a {
+    color: #111827 !important;
+  }
+
+  .recruiter-facts-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}

@@ -1,9 +1,9 @@
 import { Anchor, Button, Card, Group, RingProgress, Stack, Text, Title } from "@mantine/core";
 import { useRef } from "react";
 import { useGsap } from "../animations/useGsap";
+import useLanguage from "../localization/useLanguage";
 import { PreviewableImage } from "./FilePreview";
 import {
-  CONTACT_LABELS,
   getContactHref,
   getInitials,
   getOwnerFullName,
@@ -18,7 +18,7 @@ function AnimatedTitle({ title }) {
   );
 }
 
-function ProfilePortrait({ owner, profile }) {
+function ProfilePortrait({ owner, profile, t }) {
   const fullName = getOwnerFullName(owner);
 
   return (
@@ -29,23 +29,30 @@ function ProfilePortrait({ owner, profile }) {
           alt={fullName}
           className="portrait-preview-trigger"
           imageClassName="portrait-image"
-          modalTitle={`Portrait — ${fullName}`}
+          modalTitle={`${t("nav.profile")} — ${fullName}`}
         />
       ) : (
         <div className="portrait-placeholder">{getInitials(owner)}</div>
       )}
       <Stack gap={4} align="center" className="portrait-content">
         <Text className="portrait-name">{fullName}</Text>
-        <Text className="portrait-role">{profile?.subtitle ?? "Portfolio professionnel"}</Text>
+        <Text className="portrait-role">{profile?.subtitle ?? t("hero.professionalPortfolio")}</Text>
       </Stack>
     </Card>
   );
 }
 
-function ContactPill({ contact }) {
-  const label = CONTACT_LABELS[contact.type] ?? contact.type;
+function ContactPill({ contact, t }) {
+  const label = t(`contact.${contact.type}`, { fallback: contact.type });
+  const external = contact.type !== "EMAIL" && contact.type !== "PHONE_NUMBER";
+
   return (
-    <Anchor href={getContactHref(contact)} target={contact.type === "EMAIL" || contact.type === "PHONE_NUMBER" ? undefined : "_blank"} className="contact-pill">
+    <Anchor
+      href={getContactHref(contact)}
+      target={external ? "_blank" : undefined}
+      rel={external ? "noreferrer" : undefined}
+      className="contact-pill"
+    >
       <span>{label}</span>
       <strong>{contact.value}</strong>
     </Anchor>
@@ -54,6 +61,7 @@ function ContactPill({ contact }) {
 
 export default function ProfileHero({ owner, profile }) {
   const rootRef = useRef(null);
+  const { localizedPath, t } = useLanguage();
   const fullName = getOwnerFullName(owner);
   const contacts = owner?.contacts ?? [];
   const email = getPrimaryContact(owner, "EMAIL");
@@ -98,7 +106,7 @@ export default function ProfileHero({ owner, profile }) {
 
         {profile?.headline && (
           <article className="profile-sub-card profile-headline-card">
-            <span className="profile-sub-card-label">Positionnement</span>
+            <span className="profile-sub-card-label">{t("hero.positioning")}</span>
             <p className="profile-sub-card-text">{profile.headline}</p>
           </article>
         )}
@@ -120,38 +128,41 @@ export default function ProfileHero({ owner, profile }) {
           {profile?.cvUrl && profile.cvUrl !== "#" && (
             <Button
               component="a"
-              href="/cv"
+              href={localizedPath("/cv")}
               target="_blank"
               rel="noreferrer"
               radius="xl"
               className="primary-action"
             >
-              Voir le CV
+              {t("hero.viewCv")}
             </Button>
           )}
           {email && (
             <Button component="a" href={getContactHref(email)} radius="xl" className="primary-action">
-              Me contacter
+              {t("hero.contact")}
             </Button>
           )}
           {linkedin && (
-            <Button component="a" href={getContactHref(linkedin)} target="_blank" radius="xl" variant="outline" className="secondary-action">
+            <Button component="a" href={getContactHref(linkedin)} target="_blank" rel="noreferrer" radius="xl" variant="outline" className="secondary-action">
               LinkedIn
             </Button>
           )}
+          <Button component="a" href={localizedPath("/recruiter")} radius="xl" variant="outline" className="secondary-action">
+            {t("hero.recruiterView")}
+          </Button>
           <Button component="a" href="#projects" radius="xl" variant="subtle" className="ghost-action">
-            Explorer les projets
+            {t("hero.exploreProjects")}
           </Button>
         </Group>
       </div>
 
       <aside className="hero-panel">
-        <ProfilePortrait owner={owner} profile={profile} />
+        <ProfilePortrait owner={owner} profile={profile} t={t} />
         <Card className="availability-card island-card" radius="xl">
           <Group justify="space-between" align="center" wrap="nowrap">
             <Stack gap={0} className="availability-copy">
-              <Text className="availability-label">Disponibilité</Text>
-              <Text className="availability-value">{profile?.availability ?? "Ouvert aux opportunités"}</Text>
+              <Text className="availability-label">{t("hero.availability")}</Text>
+              <Text className="availability-value">{profile?.availability ?? t("hero.openOpportunities")}</Text>
               <Text className="availability-location">{profile?.location ?? owner?.address}</Text>
             </Stack>
             <RingProgress
@@ -165,10 +176,10 @@ export default function ProfileHero({ owner, profile }) {
         </Card>
         {contacts.length > 0 && (
           <Card id="contact" className="contact-card island-card" radius="xl">
-            <Text className="card-kicker">Coordonnées</Text>
+            <Text className="card-kicker">{t("hero.contacts")}</Text>
             <Stack gap="xs">
               {contacts.map((contact) => (
-                <ContactPill key={`${contact.type}-${contact.value}`} contact={contact} />
+                <ContactPill key={`${contact.type}-${contact.value}`} contact={contact} t={t} />
               ))}
             </Stack>
           </Card>
