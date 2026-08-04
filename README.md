@@ -4,7 +4,7 @@
 
 [![Frontend](https://img.shields.io/badge/frontend-Cloudflare%20Workers-orange)](#déploiement)
 [![Backend](https://img.shields.io/badge/backend-Render%20Docker-purple)](#déploiement)
-[![Database](https://img.shields.io/badge/database-Neon%20PostgreSQL-0ea5e9)](#déploiement)
+[![Database](https://img.shields.io/badge/database-Aiven%20PostgreSQL-0ea5e9)](#déploiement)
 [![Storage](https://img.shields.io/badge/storage-Cloudinary-3448c5)](#déploiement)
 [![Java](https://img.shields.io/badge/Java-21-b07219)](#stack-technique)
 [![React](https://img.shields.io/badge/React-19-61dafb)](#stack-technique)
@@ -14,7 +14,7 @@
 | Document | Rôle |
 |---|---|
 | [`README.md`](./README.md) | Vue d’ensemble du portfolio, architecture globale, lancement local, déploiement et liens entre les deux projets. |
-| [`README-BACKEND.md`](./README-BACKEND.md) | Documentation détaillée du backend Spring Boot : API, sécurité, modèle de données, stockage, CV Builder, Docker, variables d’environnement. |
+| [`README-BACKEND.md`](./README-BACKEND.md) | Documentation détaillée du backend Spring Boot : API, sécurité, modèle de données, stockage, traduction, Docker et variables d’environnement. |
 | [`README-FRONTEND.md`](./README-FRONTEND.md) | Documentation détaillée du frontend React : routes, composants, intégration API, admin panel, animations, build Vite, déploiement Cloudflare. |
 
 ## Vue d’ensemble
@@ -22,9 +22,9 @@
 Ce portfolio est une application full stack structurée en deux projets indépendants :
 
 - un **frontend React** qui affiche le portfolio public, le CV et une interface d’administration ;
-- un **backend Spring Boot** qui expose les API publiques et protégées, persiste les données dans PostgreSQL, gère les fichiers, les versions du site, la génération de CV LaTeX et le suivi des candidatures.
+- un **backend Spring Boot** qui expose les API publiques et protégées, persiste les données dans PostgreSQL, gère les fichiers, les versions du site, les analytics et les traductions persistées.
 
-Le site n’est pas un portfolio statique. Il repose sur une donnée métier administrable : propriétaire du portfolio, profil, expériences, projets, versions de site, documents, CV et candidatures. Le frontend consomme l’API publique pour afficher la version publiée et consomme l’API protégée pour l’administration.
+Le site n’est pas un portfolio statique. Il repose sur une donnée métier administrable : propriétaire du portfolio, profil, expériences, projets, versions de site, documents et traductions. Le frontend consomme l’API publique pour afficher la version publiée et consomme l’API protégée pour l’administration.
 
 ## Liens de production
 
@@ -33,7 +33,7 @@ Le site n’est pas un portfolio statique. Il repose sur une donnée métier adm
 | Portfolio public | `https://professional-website-front.achabou02idris.workers.dev` |
 | Frontend | Cloudflare Workers Assets |
 | Backend | Render, déploiement Docker |
-| Base de données | NeonDB, PostgreSQL managé |
+| Base de données | Aiven, PostgreSQL managé |
 | Stockage fichiers | Cloudinary |
 | Ping de maintien Render | `https://professional-website-hozo.onrender.com/actuator/health` via cron-job.org |
 
@@ -52,10 +52,10 @@ Render
 Backend Spring Boot / Docker
    │
    ├── NeonDB PostgreSQL
-   │      └── données relationnelles : owners, versions, profils, timelines, projets, candidatures
+   │      └── données relationnelles : owners, versions, profils, timelines, projets, analytics et traductions
    │
    ├── Cloudinary
-   │      └── fichiers publics ou administrés : images, PDF, CV, exports ZIP
+   │      └── fichiers publics ou administrés : images, PDF et CV
    │
    └── Actuator health
           └── route de ping cron-job.org pour limiter la mise en sommeil du service gratuit Render
@@ -87,7 +87,6 @@ Backend Spring Boot / Docker
 - Actuator health ;
 - Cloudinary SDK ;
 - Docker multi-stage ;
-- LaTeX / latexmk / TeX Live dans l’image Docker pour la génération PDF.
 
 ## Fonctionnalités principales
 
@@ -97,8 +96,6 @@ Backend Spring Boot / Docker
 | Administration | Création et modification d’un owner, profil, timeline, expériences, projets et contacts. |
 | Versioning | Gestion de plusieurs versions du portfolio, duplication d’une version, activation d’une version unique, validation avant publication. |
 | Fichiers | Upload protégé, stockage local en développement ou Cloudinary en production, preview d’images et de PDF. |
-| CV Builder | Construction d’un CV LaTeX, preview PDF, sauvegarde, export ZIP, contrôle qualité et compilation asynchrone avec SSE. |
-| Candidatures | Suivi des candidatures, statuts, analyse d’offre, génération de lettres, variantes CV et smart pack. |
 | Sécurité | API manager protégée, rôle `ADMIN`, CSRF sur les méthodes mutantes, CORS restrictif, redirections frontend contrôlées. |
 | Déploiement | Front Cloudflare, back Render Docker, base NeonDB, fichiers Cloudinary, health ping cron-job.org. |
 
@@ -211,7 +208,6 @@ npm run cf:deploy
 Le backend est construit depuis le `Dockerfile`. L’image :
 
 1. compile l’application Maven avec Java 21 ;
-2. installe les dépendances LaTeX nécessaires à la génération de CV ;
 3. expose le port applicatif Spring Boot ;
 4. lance `app.jar`.
 
@@ -281,3 +277,7 @@ Le bouton Vue recruteur, le sélecteur FR/EN et les sous-onglets du centre de tr
 ## V13.3 — Navigation unifiée
 
 Les entrées `Vue recruteur` et `FR / EN` font maintenant partie du flux normal de la navbar. Sur mobile et tablette, elles sont placées dans le menu hamburger afin d'éviter tout débordement. La navigation possède son propre breakpoint compact à 1100 px, indépendant du profil de performances du site. Voir `V13.3-NAV-INTEGRATION.md`.
+
+## V14 — administration et déploiement recentrés
+
+Les fonctionnalités de suivi de candidatures, lecture/analyse d’offres et génération de CV LaTeX ont été supprimées du frontend et du backend déployés. Elles sont maintenues dans un outil local séparé. L’administration web conserve le profil, l’upload d’un CV PDF existant, la timeline, les projets, les versions, les backups, les analytics et les traductions.

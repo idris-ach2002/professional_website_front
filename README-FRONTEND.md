@@ -17,7 +17,6 @@
 - [Intégration API](#intégration-api)
 - [Interface publique](#interface-publique)
 - [Admin panel](#admin-panel)
-- [CV Studio](#cv-studio)
 - [Animations et 3D](#animations-et-3d)
 - [Lancement local](#lancement-local)
 - [Variables d’environnement](#variables-denvironnement)
@@ -29,7 +28,7 @@
 Le frontend assure deux rôles :
 
 1. **portfolio public** : affichage du profil, des expériences, des projets, du CV et des liens de contact ;
-2. **back-office** : administration complète du contenu, des versions, des fichiers, des CV et des candidatures.
+2. **back-office** : administration du contenu, des versions, des fichiers, des analytics et des traductions.
 
 L’application est une SPA React servie par Cloudflare Workers Assets en production. Elle consomme le backend Spring Boot déployé sur Render.
 
@@ -44,7 +43,7 @@ L’application est une SPA React servie par Cloudflare Workers Assets en produc
 | Routing | React Router DOM 7 |
 | 3D | Three.js, React Three Fiber, Drei |
 | Physique | React Three Rapier / Rapier |
-| Animations DOM/SVG | GSAP 3.13 et ScrollTrigger via dépendance npm |
+| Animations DOM/SVG | GSAP 3.13 et ScrollTrigger via CDN |
 | Déploiement | Wrangler, Cloudflare Workers Assets |
 | Outillage | ESLint 9, React Compiler Babel plugin |
 
@@ -67,18 +66,9 @@ Le routeur est initialisé dans `main.jsx` avec `BrowserRouter`.
 src/
 ├── App.jsx                         # orchestration des routes et chargement du portfolio
 ├── main.jsx                        # bootstrap React, MantineProvider, BrowserRouter
-├── index.css                       # façade CSS globale (imports uniquement)
-├── styles/                         # règles réparties par responsabilité
-│   ├── core/                       # tokens, reset et document
-│   ├── components/                 # composants publics partagés
-│   ├── sections/                   # timeline, compétences, études de cas
-│   ├── effects/                    # Rapier, océan, aquarium
-│   ├── navigation/                 # navigation et couches historiques
-│   ├── pages/                      # administration, CV, analytics
-│   ├── overrides/                  # raffinements tardifs de la cascade
-│   └── profiles/                   # mobile et Firefox
+├── index.css                       # style global, responsive, thème visuel
 ├── services/
-│   ├── portfolioApi.js             # API publique, cache local et fallback dynamique
+│   ├── portfolioApi.js             # API publique, fallback demo
 │   └── authApi.js                  # API protégée, CSRF, cookies, upload, logout
 ├── components/
 │   ├── Admin.jsx                   # back-office complet
@@ -205,7 +195,7 @@ Le portfolio public est composé de plusieurs blocs :
 | `MetadataHead` | Injecte les métadonnées SEO dynamiques. |
 | `OceanMorphBackground` | Fond visuel animé. |
 | `TopNavigation` | Navigation principale. |
-| `StatusBanner` | Indique si les données viennent de l’API, du cache local ou du fallback de démonstration. |
+| `StatusBanner` | Indique si les données viennent de l’API ou du fallback demo. |
 | `ProfileHero` | Présente l’identité, le titre, les contacts et les indicateurs clés. |
 | `PortfolioTimeline` | Affiche le parcours et les expériences. |
 | `BeachBallField` | Ajoute une scène 3D interactive. |
@@ -234,41 +224,23 @@ Fonctions principales :
 - preview des fichiers ;
 - import / export JSON ;
 - health report d’une version ;
-- suivi des candidatures ;
-- analyse d’offres ;
 - génération de variantes CV et lettres ;
 - export de packs de candidature.
 
 L’admin ne contourne pas la sécurité : il appelle les routes protégées du backend avec cookies de session et CSRF.
 
-## CV Studio
-
-Le frontend contient un éditeur CV avancé intégré dans `Admin.jsx`.
-
-Fonctionnalités côté front :
-
-- document CV normalisé en JSON ;
-- sections activables / désactivables ;
-- drag & drop logique par déplacement d’items ;
-- réglages de typographie ;
-- réglages de densité, colonnes, couleurs et layout ;
-- génération locale de source LaTeX ;
-- édition manuelle de la source ;
-- rapport qualité local ;
-- analyse d’offre pour adapter le CV ;
-- variantes CV ;
-- assets photo et logos d’écoles ;
-- export ZIP reproductible via backend ;
-- compilation asynchrone via backend.
-
-Le backend reste responsable de la compilation PDF réelle, car l’image Docker contient LaTeX.
-
 ## Animations et 3D
 
 ### GSAP
 
-GSAP et ScrollTrigger sont installés par npm puis importés en ESM depuis `src/animations/useGsap.js`.
-Le helper enregistre ScrollTrigger une seule fois, scope les animations avec `gsap.context()` et nettoie les timelines au démontage. Aucun script CDN ni polling global n’est nécessaire.
+GSAP et ScrollTrigger sont chargés via CDN dans `index.html` :
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+```
+
+Le helper `src/animations/useGsap.js` attend la disponibilité de `window.gsap`, scope les animations et nettoie les timelines au démontage.
 
 ### Three.js / React Three Fiber / Rapier
 
@@ -293,10 +265,18 @@ Le code tient compte de `prefers-reduced-motion` sur les animations lourdes. Les
 
 ### Installation
 
-Le projet utilise npm, `package-lock.json` et `packageManager: npm@10.9.2`.
+Le projet contient `package-lock.json`, `pnpm-lock.yaml` et `packageManager: pnpm@10.11.1`. Si l’équipe utilise npm, rester cohérent avec npm. Si elle utilise pnpm, rester cohérent avec pnpm.
+
+Avec npm :
 
 ```bash
 npm install
+```
+
+Avec pnpm :
+
+```bash
+pnpm install
 ```
 
 ### Mode production local demandé
@@ -435,44 +415,25 @@ Le backend utilise une session cookie et le frontend appelle l’API protégée 
 
 ### Render peut dormir
 
-Si Render met le backend en sommeil, le front affiche immédiatement la dernière réponse API valide enregistrée dans le navigateur, puis actualise les données en arrière-plan. Le fallback de démonstration n’est chargé que si aucune réponse API ni version enregistrée n’est disponible.
+Si Render met le backend en sommeil, le premier chargement API peut échouer ou être lent. Le front bascule alors sur le fallback demo. Le ping cron-job.org sur `/actuator/health` réduit ce risque, sans charger les données métier.
 
-### GSAP local
+### GSAP via CDN
 
-GSAP 3.13.0 est déclaré dans les dépendances du projet. Le build Vite l’intègre aux chunks JavaScript et Cloudflare peut le mettre en cache avec le reste de l’application.
+GSAP n’est pas installé par npm dans cette version. Si une politique de sécurité stricte interdit les scripts CDN, il faudra :
 
-### Gestionnaire de paquets
+```bash
+npm install gsap
+```
 
-Le projet est standardisé sur npm. Utiliser `npm ci` en CI/CD pour respecter exactement le lockfile.
+puis remplacer l’accès global `window.gsap` par des imports ESM.
+
+### Cohérence npm / pnpm
+
+Le projet contient deux lockfiles. Pour une CI/CD propre, choisir un seul gestionnaire de paquets et supprimer l’autre lockfile afin d’éviter des installations divergentes.
 
 ### Variables publiques Vite
 
 Toute variable préfixée `VITE_` est exposée au navigateur après build. Ne jamais y mettre de secret.
-
-## Internationalisation et vue recruteur
-
-La V12 expose une version anglaise via le bouton `FR/EN` ou le paramètre `?lang=en`.
-
-Routes publiques principales :
-
-```text
-/
-/recruiter
-/cv
-/projects/:projectSlug
-```
-
-Pour générer les pages HTML enrichies et un sitemap absolu, configurer :
-
-```env
-VITE_PUBLIC_SITE_URL=https://votre-domaine.fr
-```
-
-Puis lancer :
-
-```bash
-npm run build
-```
 
 ## Localisation V13
 
@@ -509,13 +470,6 @@ Le bouton **Traduire tout le site** traite en une action tout le contenu métier
 
 La navbar adopte un sélecteur `FR / EN` futuriste avec indicateur coulissant, glow cyan-violet et variante mobile. Documentation : [`V13.1-TRANSLATION-CENTER.md`](./V13.1-TRANSLATION-CENTER.md).
 
-## V13.2 — Light controls
+## V14 — administration recentrée
 
-The recruiter action, FR/EN selector and translation-center tabs now use light translucent surfaces. Decorative status dots were removed from the markup to keep the controls consistent with the public navbar and Admin interface.
-
-## Navigation V13.3
-
-- `Vue recruteur` est rendu comme un lien direct de navigation.
-- `FR / EN` est un sélecteur textuel aligné sur les autres entrées.
-- Le bouton CV reste séparé comme CTA principal.
-- Sous 1100 px, le logo et le hamburger restent seuls dans l'en-tête ; les contrôles recruteur et langue sont accessibles dans le panneau mobile.
+Les onglets Candidatures et CV Builder ainsi que leurs services ont été retirés. L’administration web gère désormais uniquement le contenu du portfolio, les fichiers publics, les versions, les analytics, les sauvegardes et les traductions. La route publique `/cv` reste disponible pour consulter le document déjà publié.

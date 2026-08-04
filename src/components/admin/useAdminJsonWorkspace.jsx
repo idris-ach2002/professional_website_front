@@ -63,7 +63,6 @@ export default function useAdminJsonWorkspace(ctx) {
     setJsonEditorText,
     jsonEditorError,
     setJsonEditorError,
-    resetCvEditorFromData,
     runAction,
     fetchOwners,
     fetchVersions,
@@ -105,13 +104,6 @@ export default function useAdminJsonWorkspace(ctx) {
     setProjectFiles(emptyProjectFiles);
     setProfileFiles(emptyProfileFiles);
     setJsonImportSummary(normalized.summary);
-    resetCvEditorFromData({
-      owner: normalized.ownerForm,
-      profile: normalized.profileForm,
-      experiences: normalizedExperiences,
-      projects: normalizedProjects,
-      label: "CV synchronisé avec l’import JSON",
-    });
 
     if (notify) {
       setMessage(

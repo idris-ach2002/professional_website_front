@@ -256,8 +256,8 @@ export const demoOwner = {
     {
       "title": "Portfolio professionnel — Backend Spring Boot",
       "subtitle": "Java 21 / Spring Boot / PostgreSQL",
-      "shortDescription": "Backend Spring Boot qui centralise profil, timeline, projets, versions du site, fichiers, sécurité, génération de CV et modules candidature.",
-      "description": "Étude de cas backend du portfolio professionnel. Le projet expose une API Spring Boot pour stocker et publier un portfolio versionné : owner, profil, timeline, projets, contacts et versions actives. Il intègre PostgreSQL/Flyway, sécurité admin, upload local ou Cloudinary, génération de CV LaTeX, suivi de candidatures et déploiement Docker/Render.",
+      "shortDescription": "Backend Spring Boot qui centralise profil, timeline, projets, versions du site, fichiers, sécurité, analytics et traductions.",
+      "description": "Étude de cas backend du portfolio professionnel. Le projet expose une API Spring Boot pour stocker et publier un portfolio versionné : owner, profil, timeline, projets, contacts et versions actives. Il intègre PostgreSQL/Flyway, sécurité admin, upload local ou Cloudinary, analytics, traductions persistées et déploiement Docker/Render.",
       "status": "IN_PROGRESS",
       "startDate": "2026-01-01",
       "endDate": null,
@@ -283,7 +283,7 @@ export const demoOwner = {
         "Persistance PostgreSQL avec JPA/Hibernate et migrations Flyway.",
         "Sécurité admin avec Spring Security, CSRF, CORS et redirections contrôlées.",
         "Upload local ou Cloudinary pour images, PDF, CV et documents liés au portfolio.",
-        "Modules CV Builder et candidatures avec génération LaTeX/PDF, export ZIP et analyse d’offre."
+        "Centre de traduction FR/EN avec LibreTranslate, brouillons, publication et détection des sources obsolètes."
       ],
       "links": [
         {
@@ -312,27 +312,27 @@ export const demoOwner = {
         "Docker",
         "Versioning",
         "Security",
-        "CV Builder"
+        "Traductions FR/EN"
       ],
       "caseStudy": {
         "problem": "Passer d’un portfolio statique à une plateforme de contenu administrable, versionnée et déployable.",
-        "role": "Conception du modèle, API REST, services métier, sécurité, stockage fichiers, versioning, génération CV et préparation déploiement Docker.",
+        "role": "Conception du modèle, API REST, services métier, sécurité, stockage fichiers, versioning, analytics, traduction et préparation du déploiement Docker.",
         "architecture": "Backend Spring Boot organisé autour des entités Owner, Profile, Timeline, Experience, Project et WebsiteVersion, avec DTO, mappers, repositories JPA et services métier.",
         "technicalChoices": [
           "Java 21/Spring Boot pour structurer une API backend maintenable.",
           "PostgreSQL/Flyway pour persister les versions et garder un schéma maîtrisé.",
           "Cloudinary en production pour éviter la perte de fichiers sur Render free.",
-          "Docker multi-stage pour packager le backend et les dépendances LaTeX."
+          "Docker multi-stage pour produire une image Java 21 légère et reproductible."
         ],
         "challenges": [
           "Garantir une seule version active malgré les duplications.",
           "Séparer routes publiques et routes d’administration.",
           "Gérer des fichiers persistants dans un environnement cloud gratuit.",
-          "Intégrer une chaîne CV LaTeX sans bloquer l’API."
+          "Intégrer la traduction automatique sans l’exécuter pendant les visites publiques."
         ],
         "outcomes": [
           "Backend robuste pour publier et maintenir plusieurs versions du portfolio.",
-          "Socle extensible vers recruiter pack, matching d’offre et pages publiques enrichies.",
+          "Socle extensible vers des pages publiques enrichies, du cache HTTP et des tests automatisés.",
           "Architecture suffisamment documentée pour être présentée comme projet full stack."
         ],
         "nextSteps": "Ajouter des champs publics dédiés aux études de cas ou une table ProjectCaseStudy si l’on veut persister ces contenus côté backend."

@@ -44,7 +44,6 @@ export default function useAdminPortfolioCore(ctx) {
     setSelectedProjectId,
     setProjectMode,
     setCloneSourceVersionId,
-    ownerForm,
     setOwnerForm,
     setVersionForm,
     setProfileForm,
@@ -56,8 +55,7 @@ export default function useAdminPortfolioCore(ctx) {
     setSelectedExperienceIndex,
     setProjectForm,
     setExperienceFiles,
-    setProjectFiles,
-    resetCvEditorFromData
+    setProjectFiles
   } = ctx;
 
   function updateOwnerForm(field, value) {
@@ -135,7 +133,7 @@ export default function useAdminPortfolioCore(ctx) {
     setProjectForm((current) => ({ ...current, [field]: value }));
   }
 
-  function hydrateVersionForms(version, sourceOwner = ownerForm) {
+  function hydrateVersionForms(version) {
     if (!version) {
       setVersionForm({ ...emptyVersionForm });
       setProfileForm({ ...emptyProfileForm });
@@ -144,13 +142,6 @@ export default function useAdminPortfolioCore(ctx) {
       resetExperienceForm([]);
       setProjects([]);
       resetProjectForm();
-      resetCvEditorFromData({
-        owner: sourceOwner,
-        profile: emptyProfileForm,
-        experiences: [],
-        projects: [],
-        label: "CV réinitialisé",
-      });
       return;
     }
 
@@ -174,13 +165,6 @@ export default function useAdminPortfolioCore(ctx) {
     setProjects(nextProjects);
     setCloneSourceVersionId(String(getEntityId(version)));
     resetProjectForm(nextProjects);
-    resetCvEditorFromData({
-      owner: sourceOwner,
-      profile: nextProfile,
-      experiences: nextExperiences,
-      projects: nextProjects,
-      label: "CV synchronisé avec la version sélectionnée",
-    });
   }
 
   function resetProjectForm(sourceProjects = projects) {

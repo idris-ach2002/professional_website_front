@@ -1,5 +1,4 @@
 import { Stack } from "@mantine/core";
-import AdminCommandTraceModal from "./AdminCommandTraceModal";
 import AdminContextCard from "./AdminContextCard";
 import AdminFeedbackAlerts from "./AdminFeedbackAlerts";
 import AdminGuidedWorkflow from "./AdminGuidedWorkflow";
@@ -37,7 +36,6 @@ export default function AdminLayout({ controller }) {
       <div className="admin-orb admin-orb-two" />
       <div className="admin-orb admin-orb-three" />
 
-      <AdminCommandTraceModal controller={controller} />
 
       <Stack gap="xl" className="admin-shell">
         <AdminHeroHeader controller={controller} />

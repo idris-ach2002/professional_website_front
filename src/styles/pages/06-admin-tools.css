@@ -1,0 +1,46 @@
+/* Shared admin editing and safety surfaces. */
+.admin-page .mantine-Textarea-input {
+  min-height: 112px;
+  resize: vertical !important;
+  transition:
+    min-height 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease,
+    background 180ms ease;
+  transform-origin: center top;
+}
+
+.admin-page .mantine-Textarea-input:focus,
+.admin-page .mantine-Textarea-input:focus-within {
+  min-height: 148px;
+  transform: scale(1.006);
+  z-index: 2;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15), 0 18px 38px rgba(15, 23, 42, 0.12);
+}
+
+.admin-page .json-editor-textarea {
+  resize: vertical !important;
+}
+
+.admin-safety-panel {
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-safety-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at top right, rgba(69, 107, 96, 0.13), transparent 35%);
+}
+
+.admin-health-check {
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.admin-health-check:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 34px rgba(12, 23, 30, 0.08);
+}

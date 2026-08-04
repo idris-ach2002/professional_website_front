@@ -2,10 +2,8 @@ import { Card, Tabs } from "@mantine/core";
 import AdminImportPanel from "./AdminImportPanel";
 import AdminOwnerPanel from "./AdminOwnerPanel";
 import AdminVersionsPanel from "./AdminVersionsPanel";
-import AdminApplicationsPanel from "./AdminApplicationsPanel";
 import AdminAnalyticsPanel from "./AdminAnalyticsPanel";
 import AdminSafetyPanel from "./AdminSafetyPanel";
-import AdminCvBuilderPanel from "./AdminCvBuilderPanel";
 import AdminProfilePanel from "./AdminProfilePanel";
 import AdminTimelinePanel from "./AdminTimelinePanel";
 import AdminProjectsPanel from "./AdminProjectsPanel";
@@ -42,49 +40,6 @@ export default function AdminMainTabs({ controller }) {
     selectedVersionId,
     selectVersion,
     activateVersionWithValidation,
-    applicationsDashboard,
-    offerAnalysis,
-    applyOfferCommandsToCv,
-    smartAnalysis,
-    selectedLetterVariantId,
-    selectedSmartCvProposal,
-    selectedSmartCvCommands,
-    loadLetterTemplates,
-    runSmartApplicationAnalysis,
-    exportSmartApplicationPack,
-    selectedApplicationId,
-    setCommandTraceOpened,
-    smartPackUrl,
-    letterTemplates,
-    selectedSmartCommandKeys,
-    getSmartCommandKey,
-    formatCvCommand,
-    setSelectedSmartCommandKeys,
-    setProposalCommandsSelection,
-    countSelectedProposalCommands,
-    applySmartCvProposal,
-    selectedCvProposalId,
-    setSelectedCvProposalId,
-    setSelectedLetterVariantId,
-    useSmartLetterVariant,
-    loadApplications,
-    resetApplicationForm,
-    applications,
-    selectApplication,
-    applicationForm,
-    updateApplicationForm,
-    cvVariants,
-    analyzeCurrentOffer,
-    saveApplication,
-    deleteApplication,
-    markApplicationStatus,
-    previewCoverLetter,
-    saveCoverLetter,
-    exportApplicationPackage,
-    coverLetterPreviewUrl,
-    coverLetterLogs,
-    coverLetterWarnings,
-    applicationZipUrl,
     portfolioHealthReport,
     publishValidationReport,
     runPortfolioHealthCheck,
@@ -99,83 +54,6 @@ export default function AdminMainTabs({ controller }) {
     restorePortfolioBackup,
     portfolioRestoreText,
     setPortfolioRestoreText,
-    cvDocument,
-    cvSelectedItems,
-    updateCvProfileField,
-    importCvProfilePhoto,
-    getCvDragProps,
-    toggleCvItem,
-    moveCvEditorItem,
-    moveCvEditorItemTo,
-    duplicateCvItem,
-    removeCvItem,
-    updateCvItem,
-    updateCvItemCsv,
-    importCvEducationLogo,
-    cvSelectedSection,
-    setCvSelectedSection,
-    addCvItem,
-    sortCvItems,
-    cvActiveEditorTab,
-    setCvActiveEditorTab,
-    toggleCvSection,
-    updateCvSettingsField,
-    cvQualitySummary,
-    cvTemplateLocked,
-    updateTemplateLock,
-    toggleReduceCvDescriptions,
-    updateCvSectionColumn,
-    runCvQualityCheck,
-    runBackendCvQualityCheck,
-    cvVariantName,
-    setCvVariantName,
-    selectedCvVariantId,
-    setSelectedCvVariantId,
-    createCvVariantSnapshot,
-    saveCurrentCvVariant,
-    loadCvVariant,
-    deleteCvVariant,
-    compareCvVariant,
-    cvDiffReport,
-    cvPresetName,
-    setCvPresetName,
-    saveCvCommandPreset,
-    cvCommandPresets,
-    applyCvCommandPreset,
-    cvOfferText,
-    setCvOfferText,
-    analyzeCvOffer,
-    cvOfferAnalysis,
-    applyCvTargetPreset,
-    applyOfferRecommendations,
-    compactCvOnOnePage,
-    adjustCvSpacing,
-    resetCvEditorFromData,
-    smartCompactAndPreview,
-    startAsyncCvPreview,
-    exportCvReproducibleZip,
-    generateLatexFromCvDocument,
-    generateCvLatexSource,
-    previewGeneratedCv,
-    saveGeneratedCvToVersion,
-    cvLatexSource,
-    setCvLatexSource,
-    cvManualLatexDirty,
-    setCvManualLatexDirty,
-    cvCompileStatusLabel,
-    cvCompileStatusColor,
-    cvCompileWarnings,
-    cvAsyncJob,
-    cvCurrentPdfUrl,
-    cvExportZipUrl,
-    cvRegressionReport,
-    setCvRegressionReport,
-    cvCanUndo,
-    undoCvCommand,
-    cvCanRedo,
-    redoCvCommand,
-    cvEditorState,
-    cvCompileLogs,
     profileFiles,
     setProfileFiles,
     profileForm,
@@ -230,11 +108,9 @@ export default function AdminMainTabs({ controller }) {
           <Tabs.Tab value="owner">Profil principal</Tabs.Tab>
           <Tabs.Tab value="version">Versions</Tabs.Tab>
           <Tabs.Tab value="safety">Santé & backup</Tabs.Tab>
-          <Tabs.Tab value="applications">Candidatures</Tabs.Tab>
           <Tabs.Tab value="analytics">Analytics</Tabs.Tab>
           <Tabs.Tab value="translations">Traductions</Tabs.Tab>
           <Tabs.Tab value="profile">Profil & fichiers</Tabs.Tab>
-          <Tabs.Tab value="cv">CV Builder</Tabs.Tab>
           <Tabs.Tab value="timeline">Timeline</Tabs.Tab>
           <Tabs.Tab value="project">Projets</Tabs.Tab>
         </Tabs.List>
@@ -274,61 +150,6 @@ export default function AdminMainTabs({ controller }) {
           selectVersion={selectVersion}
           activateVersionWithValidation={activateVersionWithValidation}
         />
-        <Tabs.Panel value="analytics" pt="lg">
-          <AdminAnalyticsPanel />
-        </Tabs.Panel>
-        <Tabs.Panel value="translations" pt="lg">
-          <AdminTranslationPanel />
-        </Tabs.Panel>
-
-        <AdminApplicationsPanel
-          applicationsDashboard={applicationsDashboard}
-          offerAnalysis={offerAnalysis}
-          applyOfferCommandsToCv={applyOfferCommandsToCv}
-          smartAnalysis={smartAnalysis}
-          selectedLetterVariantId={selectedLetterVariantId}
-          selectedSmartCvProposal={selectedSmartCvProposal}
-          selectedSmartCvCommands={selectedSmartCvCommands}
-          loadLetterTemplates={loadLetterTemplates}
-          runSmartApplicationAnalysis={runSmartApplicationAnalysis}
-          exportSmartApplicationPack={exportSmartApplicationPack}
-          selectedOwnerId={selectedOwnerId}
-          selectedApplicationId={selectedApplicationId}
-          setCommandTraceOpened={setCommandTraceOpened}
-          smartPackUrl={smartPackUrl}
-          letterTemplates={letterTemplates}
-          selectedSmartCommandKeys={selectedSmartCommandKeys}
-          getSmartCommandKey={getSmartCommandKey}
-          formatCvCommand={formatCvCommand}
-          setSelectedSmartCommandKeys={setSelectedSmartCommandKeys}
-          setProposalCommandsSelection={setProposalCommandsSelection}
-          countSelectedProposalCommands={countSelectedProposalCommands}
-          applySmartCvProposal={applySmartCvProposal}
-          selectedCvProposalId={selectedCvProposalId}
-          setSelectedCvProposalId={setSelectedCvProposalId}
-          setSelectedLetterVariantId={setSelectedLetterVariantId}
-          applySmartLetterVariant={useSmartLetterVariant}
-          loadApplications={loadApplications}
-          resetApplicationForm={resetApplicationForm}
-          applications={applications}
-          selectApplication={selectApplication}
-          applicationForm={applicationForm}
-          updateApplicationForm={updateApplicationForm}
-          versions={versions}
-          selectedVersionId={selectedVersionId}
-          cvVariants={cvVariants}
-          analyzeCurrentOffer={analyzeCurrentOffer}
-          saveApplication={saveApplication}
-          deleteApplication={deleteApplication}
-          markApplicationStatus={markApplicationStatus}
-          previewCoverLetter={previewCoverLetter}
-          saveCoverLetter={saveCoverLetter}
-          exportApplicationPackage={exportApplicationPackage}
-          coverLetterPreviewUrl={coverLetterPreviewUrl}
-          coverLetterLogs={coverLetterLogs}
-          coverLetterWarnings={coverLetterWarnings}
-          applicationZipUrl={applicationZipUrl}
-        />
         <AdminSafetyPanel
           portfolioHealthReport={portfolioHealthReport}
           publishValidationReport={publishValidationReport}
@@ -348,88 +169,8 @@ export default function AdminMainTabs({ controller }) {
           portfolioRestoreText={portfolioRestoreText}
           setPortfolioRestoreText={setPortfolioRestoreText}
         />
-        <AdminCvBuilderPanel
-          cvDocument={cvDocument}
-          cvSelectedItems={cvSelectedItems}
-          updateCvProfileField={updateCvProfileField}
-          importCvProfilePhoto={importCvProfilePhoto}
-          getCvDragProps={getCvDragProps}
-          toggleCvItem={toggleCvItem}
-          moveCvEditorItem={moveCvEditorItem}
-          moveCvEditorItemTo={moveCvEditorItemTo}
-          duplicateCvItem={duplicateCvItem}
-          removeCvItem={removeCvItem}
-          updateCvItem={updateCvItem}
-          updateCvItemCsv={updateCvItemCsv}
-          importCvEducationLogo={importCvEducationLogo}
-          cvSelectedSection={cvSelectedSection}
-          setCvSelectedSection={setCvSelectedSection}
-          addCvItem={addCvItem}
-          sortCvItems={sortCvItems}
-          cvActiveEditorTab={cvActiveEditorTab}
-          setCvActiveEditorTab={setCvActiveEditorTab}
-          toggleCvSection={toggleCvSection}
-          updateCvSettingsField={updateCvSettingsField}
-          cvQualitySummary={cvQualitySummary}
-          cvTemplateLocked={cvTemplateLocked}
-          updateTemplateLock={updateTemplateLock}
-          toggleReduceCvDescriptions={toggleReduceCvDescriptions}
-          updateCvSectionColumn={updateCvSectionColumn}
-          runCvQualityCheck={runCvQualityCheck}
-          runBackendCvQualityCheck={runBackendCvQualityCheck}
-          cvVariantName={cvVariantName}
-          setCvVariantName={setCvVariantName}
-          cvVariants={cvVariants}
-          selectedCvVariantId={selectedCvVariantId}
-          setSelectedCvVariantId={setSelectedCvVariantId}
-          createCvVariantSnapshot={createCvVariantSnapshot}
-          saveCurrentCvVariant={saveCurrentCvVariant}
-          loadCvVariant={loadCvVariant}
-          deleteCvVariant={deleteCvVariant}
-          compareCvVariant={compareCvVariant}
-          cvDiffReport={cvDiffReport}
-          cvPresetName={cvPresetName}
-          setCvPresetName={setCvPresetName}
-          saveCvCommandPreset={saveCvCommandPreset}
-          cvCommandPresets={cvCommandPresets}
-          applyCvCommandPreset={applyCvCommandPreset}
-          cvOfferText={cvOfferText}
-          setCvOfferText={setCvOfferText}
-          analyzeCvOffer={analyzeCvOffer}
-          cvOfferAnalysis={cvOfferAnalysis}
-          applyCvTargetPreset={applyCvTargetPreset}
-          applyOfferRecommendations={applyOfferRecommendations}
-          compactCvOnOnePage={compactCvOnOnePage}
-          adjustCvSpacing={adjustCvSpacing}
-          resetCvEditorFromData={resetCvEditorFromData}
-          smartCompactAndPreview={smartCompactAndPreview}
-          startAsyncCvPreview={startAsyncCvPreview}
-          exportCvReproducibleZip={exportCvReproducibleZip}
-          generateLatexFromCvDocument={generateLatexFromCvDocument}
-          generateCvLatexSource={generateCvLatexSource}
-          previewGeneratedCv={previewGeneratedCv}
-          saveGeneratedCvToVersion={saveGeneratedCvToVersion}
-          selectedOwnerId={selectedOwnerId}
-          selectedVersionId={selectedVersionId}
-          cvLatexSource={cvLatexSource}
-          setCvLatexSource={setCvLatexSource}
-          cvManualLatexDirty={cvManualLatexDirty}
-          setCvManualLatexDirty={setCvManualLatexDirty}
-          cvCompileStatusLabel={cvCompileStatusLabel}
-          cvCompileStatusColor={cvCompileStatusColor}
-          cvCompileWarnings={cvCompileWarnings}
-          cvAsyncJob={cvAsyncJob}
-          cvCurrentPdfUrl={cvCurrentPdfUrl}
-          cvExportZipUrl={cvExportZipUrl}
-          cvRegressionReport={cvRegressionReport}
-          setCvRegressionReport={setCvRegressionReport}
-          cvCanUndo={cvCanUndo}
-          undoCvCommand={undoCvCommand}
-          cvCanRedo={cvCanRedo}
-          redoCvCommand={redoCvCommand}
-          cvEditorState={cvEditorState}
-          cvCompileLogs={cvCompileLogs}
-        />
+        <Tabs.Panel value="analytics" pt="lg"><AdminAnalyticsPanel /></Tabs.Panel>
+        <Tabs.Panel value="translations" pt="lg"><AdminTranslationPanel /></Tabs.Panel>
         <Tabs.Panel value="profile" pt="lg">
           <AdminProfilePanel
             profileFiles={profileFiles}
@@ -441,7 +182,6 @@ export default function AdminMainTabs({ controller }) {
             selectedVersionId={selectedVersionId}
           />
         </Tabs.Panel>
-
         <Tabs.Panel value="timeline" pt="lg">
           <AdminTimelinePanel
             timelineForm={timelineForm}
@@ -466,7 +206,6 @@ export default function AdminMainTabs({ controller }) {
             saveTimeline={saveTimeline}
           />
         </Tabs.Panel>
-
         <Tabs.Panel value="project" pt="lg">
           <AdminProjectsPanel
             projects={projects}

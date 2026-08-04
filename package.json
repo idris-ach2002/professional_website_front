@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run check:css && npm run check:localization && vite build && npm run generate:static",
+    "build": "npm run check:retired && npm run check:css && npm run check:localization && vite build && npm run generate:static",
     "lint": "eslint .",
     "preview": "vite preview",
     "clean": "rm -rf .cache .tmp lib build node_modules",
     "cf:deploy": "npx --yes wrangler@latest deploy",
+    "check:retired": "node scripts/check-retired-modules.mjs",
     "check:css": "node scripts/check-css-architecture.mjs",
     "generate:static": "node scripts/generate-static-pages.mjs",
     "check:localization": "node scripts/check-localization.mjs"
