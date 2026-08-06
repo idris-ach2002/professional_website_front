@@ -13,6 +13,7 @@ import SiteFooter from "./components/SiteFooter";
 import StatusBanner from "./components/StatusBanner";
 import TopNavigation from "./components/TopNavigation";
 import { ErrorBoundary } from "./components/errors/ErrorBoundary";
+import { RouteFocusManager, SkipToContent } from "./components/RouteAccessibility";
 
 import { loadDemoPortfolio, readCachedPortfolio, refreshPortfolio } from "./services/portfolioApi";
 import { getOwnerFullName, sortByDisplayOrder } from "./utils/portfolio";
@@ -117,7 +118,7 @@ function Home({
   const { isMobile, reducedMotion, performanceMode, isFirefox } = responsiveProfile;
 
   return (
-    <main id="top" className="app-shell">
+    <main id="main-content" className="app-shell" tabIndex={-1}>
       <SEOHead owner={owner} projects={projects} experiences={experiences} />
 
       <OceanMorphBackground
@@ -268,7 +269,7 @@ export default function App() {
 
   if (isPortfolioLoading) {
     return (
-      <main className="app-shell loading-shell">
+      <main id="main-content" className="app-shell loading-shell" tabIndex={-1}>
         <Loader size="lg" />
         <Text>{t("app.loading")}</Text>
       </main>
@@ -277,6 +278,8 @@ export default function App() {
 
   return (
     <>
+      <SkipToContent />
+      <RouteFocusManager />
       <AnalyticsTracker source={state.source} />
       <Routes>
         <Route

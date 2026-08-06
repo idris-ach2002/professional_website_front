@@ -123,7 +123,7 @@ export default function ProjectCaseStudyPage({ owner, projects = [] }) {
 
   if (!project && loadingProject) {
     return (
-      <main className="app-shell loading-shell">
+      <main id="main-content" className="app-shell loading-shell" tabIndex={-1}>
         <Loader size="lg" />
         <Text>{t("case.loading")}</Text>
       </main>
@@ -165,7 +165,7 @@ export default function ProjectCaseStudyPage({ owner, projects = [] }) {
   };
 
   return (
-    <main id="top" className="app-shell project-case-page-shell">
+    <main id="main-content" className="app-shell project-case-page-shell" tabIndex={-1}>
       <MetadataHead
         owner={owner}
         projects={projects}

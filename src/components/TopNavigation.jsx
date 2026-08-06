@@ -249,7 +249,7 @@ function resolveItemHref(item, { isHomePath, profile, owner, localizedPath }) {
 }
 
 function resolveSectionHref(href, isHomePath, localizedPath) {
-  if (!href) return isHomePath ? "#top" : localizedPath("/#top");
+  if (!href) return isHomePath ? "#main-content" : localizedPath("/#main-content");
   if (!href.startsWith("#")) return href.startsWith("/") ? localizedPath(href) : href;
   return isHomePath ? href : localizedPath(`/${href}`);
 }
@@ -411,7 +411,7 @@ export default function TopNavigation({ owner }) {
       <div className="nav_spacer v2 hide" />
       <div data-wf--navbar--variant="base" data-animation="default" data-collapse="medium" data-duration="400" data-easing="ease" data-easing2="ease" role="banner" className="nav_component w-nav">
         <div className="nav_container-v2">
-          <a href={isHomePath ? "#top" : localizedPath("/")} className="nav_brand w-nav-brand" aria-label={`${t("notFound.home")} — ${ownerName || "Idris ACHABOU"}`}>
+          <a href={isHomePath ? "#main-content" : localizedPath("/")} className="nav_brand w-nav-brand" aria-label={`${t("notFound.home")} — ${ownerName || "Idris ACHABOU"}`}>
             <picture>
               <source srcSet="/assets/identity/idris-navbar-logo.webp" type="image/webp" />
               <img src={NAV_LOGO_SRC} alt={ownerName || "Idris ACHABOU"} className="nav_personal-logo" loading="eager" decoding="async" />

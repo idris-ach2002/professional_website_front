@@ -18,7 +18,7 @@ function readInitialLanguage() {
   } catch {
     // The language preference is optional.
   }
-  return window.navigator.language?.toLowerCase().startsWith("en") ? "en" : "fr";
+  return "fr";
 }
 
 function interpolate(message, variables = {}) {

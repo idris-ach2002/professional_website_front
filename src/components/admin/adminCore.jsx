@@ -80,7 +80,7 @@ export function FileLink({ label, url, mode = "modal" }) {
 
 export function AdminAuthShell({ children }) {
   return (
-    <main className="admin-page admin-auth-page">
+    <main id="main-content" className="admin-page admin-auth-page" tabIndex={-1}>
       <div className="admin-orb admin-orb-one" />
       <div className="admin-orb admin-orb-two" />
       <div className="admin-orb admin-orb-three" />

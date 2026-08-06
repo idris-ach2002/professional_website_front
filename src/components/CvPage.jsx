@@ -14,7 +14,7 @@ export default function CvPage({ owner, profile }) {
   const fullName = getOwnerFullName(owner);
 
   return (
-    <main className="app-shell cv-page-shell">
+    <main id="main-content" className="app-shell cv-page-shell" tabIndex={-1}>
       <MetadataHead owner={owner} page="cv" />
       <OceanMorphBackground />
 

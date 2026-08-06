@@ -40,6 +40,32 @@ export default defineConfig(({ mode }) => {
         '/logout': backendProxy,
       },
     },
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      environmentOptions: {
+        jsdom: {
+          url: 'http://localhost/',
+        },
+      },
+      setupFiles: './src/test/setup.js',
+      include: ['src/**/*.{test,spec}.{js,jsx}'],
+      exclude: ['e2e/**', 'node_modules/**', 'dist/**'],
+      restoreMocks: true,
+      clearMocks: true,
+      mockReset: true,
+      coverage: {
+        provider: 'v8',
+        reporter: ['text', 'json-summary', 'html'],
+        reportsDirectory: './coverage',
+        include: [
+          'src/services/portfolioApi.js',
+          'src/localization/LanguageProvider.jsx',
+          'src/components/NotFoundPage.jsx',
+        ],
+        exclude: ['src/test/**', 'e2e/**'],
+      },
+    },
     build: {
       chunkSizeWarningLimit: 700,
       rollupOptions: {

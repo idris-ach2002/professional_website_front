@@ -50,3 +50,7 @@ Thumbs.db
 ehthumbs.db
 
 .npm-cache
+# Automated tests
+coverage/
+playwright-report/
+test-results/

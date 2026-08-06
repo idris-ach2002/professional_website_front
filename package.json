@@ -13,7 +13,15 @@
     "check:retired": "node scripts/check-retired-modules.mjs",
     "check:css": "node scripts/check-css-architecture.mjs",
     "generate:static": "node scripts/generate-static-pages.mjs",
-    "check:localization": "node scripts/check-localization.mjs"
+    "check:localization": "node scripts/check-localization.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:ui": "playwright test --ui",
+    "ci:quality": "npm run lint && npm run test:coverage && npm run build",
+    "ci:verify": "npm run ci:quality && npm run test:e2e"
   },
   "dependencies": {
     "@mantine/core": "^9.0.0",
@@ -43,7 +51,19 @@
     "globals": "^17.4.0",
     "postcss": "^8.5.15",
     "tailwindcss": "^4.3.0",
-    "vite": "^8.0.0"
+    "vite": "^8.0.0",
+    "@playwright/test": "^1.62.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@vitest/coverage-v8": "^4.1.10",
+    "jsdom": "^29.1.1",
+    "vitest": "^4.1.10"
   },
-  "packageManager": "npm@10.9.2"
+  "packageManager": "npm@10.9.2",
+  "engines": {
+    "node": ">=22.12 <25",
+    "npm": ">=10 <12"
+  }
 }

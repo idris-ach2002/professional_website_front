@@ -31,7 +31,7 @@ export default function AdminLayout({ controller }) {
   }
 
   return (
-    <main ref={rootRef} className="admin-page">
+    <main id="main-content" ref={rootRef} className="admin-page" tabIndex={-1}>
       <div className="admin-orb admin-orb-one" />
       <div className="admin-orb admin-orb-two" />
       <div className="admin-orb admin-orb-three" />

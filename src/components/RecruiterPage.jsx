@@ -104,7 +104,7 @@ export default function RecruiterPage({ owner, profile, projects = [], experienc
   };
 
   return (
-    <main id="top" className="app-shell recruiter-page-shell">
+    <main id="main-content" className="app-shell recruiter-page-shell" tabIndex={-1}>
       <MetadataHead owner={owner} projects={projects} experiences={experiences} page="recruiter" />
       <OceanMorphBackground staticMode />
       <TopNavigation owner={owner} />

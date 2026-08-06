@@ -1,7 +1,8 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { extname, join, relative, resolve } from "node:path";
+import { extname, join, relative, resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const projectRoot = resolve(new URL("..", import.meta.url).pathname);
+const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 const forbiddenFiles = [
   "src/components/admin/AdminApplicationsPanel.jsx",
