@@ -207,44 +207,117 @@ function useCardOverflowSignal(project, active) {
   return { cardRef, contentRef, hasOverflow };
 }
 
+const DIALOG_FOCUSABLE_SELECTOR = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "[tabindex]:not([tabindex=\"-1\"])"
+].join(",");
+
 function ProjectDetailsModal({ project, opened, onClose }) {
   const { locale, localizedPath, t } = useLanguage();
   const links = getProjectLinks(project ?? {});
+  const dialogRef = useRef(null);
+  const previousFocusRef = useRef(null);
+  const hasDescription = Boolean(project?.shortDescription || project?.description);
 
   useEffect(() => {
     if (!opened) return undefined;
 
     const previousOverflow = document.body.style.overflow;
     const previousTouchAction = document.body.style.touchAction;
+    const appRoot = document.getElementById("root");
+    const previousRootInert = appRoot?.inert ?? false;
+    const previousRootAriaHidden = appRoot?.getAttribute("aria-hidden");
+    previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
     document.body.style.overflow = "hidden";
     document.body.style.touchAction = "none";
 
-    const handleKeyDown = (event) => {
-      if (event.key !== "Escape") return;
+    const focusDialog = window.requestAnimationFrame(() => {
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const initialTarget = dialog.querySelector(".project-detail-modal-close") ?? dialog;
+      initialTarget.focus({ preventScroll: true });
+      if (appRoot) {
+        appRoot.inert = true;
+        appRoot.setAttribute("aria-hidden", "true");
+      }
+    });
 
+    const handleKeyDown = (event) => {
       const previewModalIsOpen = Boolean(document.querySelector(".file-preview-modal"));
       if (previewModalIsOpen) return;
 
-      onClose();
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusableElements = [...dialog.querySelectorAll(DIALOG_FOCUSABLE_SELECTOR)]
+        .filter((element) => element instanceof HTMLElement && !element.hidden && element.getAttribute("aria-hidden") !== "true");
+
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+
+      const first = focusableElements[0];
+      const last = focusableElements.at(-1);
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
+      window.cancelAnimationFrame(focusDialog);
       document.body.style.overflow = previousOverflow;
       document.body.style.touchAction = previousTouchAction;
       window.removeEventListener("keydown", handleKeyDown);
+
+      if (appRoot) {
+        appRoot.inert = previousRootInert;
+        if (previousRootAriaHidden === null) appRoot.removeAttribute("aria-hidden");
+        else appRoot.setAttribute("aria-hidden", previousRootAriaHidden);
+      }
+
+      const previousFocus = previousFocusRef.current;
+      if (previousFocus?.isConnected) {
+        window.requestAnimationFrame(() => previousFocus.focus({ preventScroll: true }));
+      }
     };
   }, [opened, onClose]);
 
   if (!project || !opened || typeof document === "undefined") return null;
 
   return createPortal(
-    <div className="project-detail-modal-root" role="dialog" aria-modal="true" aria-labelledby="project-detail-modal-title" onMouseDown={onClose}>
+    <div className="project-detail-modal-root" onMouseDown={onClose}>
       <div className="project-detail-modal-overlay" aria-hidden="true" />
       <div className="project-detail-modal-inner">
-        <div className="project-detail-modal" onMouseDown={(event) => event.stopPropagation()}>
+        <div
+          ref={dialogRef}
+          className="project-detail-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="project-detail-modal-title"
+          aria-describedby={hasDescription ? "project-detail-modal-summary" : undefined}
+          tabIndex={-1}
+          onMouseDown={(event) => event.stopPropagation()}
+        >
           <header className="project-detail-modal-header">
             <h2 id="project-detail-modal-title" className="project-detail-modal-title">{t("projects.modalTitle", { title: project.title })}</h2>
             <button type="button" className="project-detail-modal-close" aria-label={t("projects.closeDetails")} onClick={onClose}>
@@ -279,9 +352,9 @@ function ProjectDetailsModal({ project, opened, onClose }) {
               {(project.shortDescription || project.description) && (
                 <section className="project-detail-section">
                   <h3>{t("projects.presentation")}</h3>
-                  {project.shortDescription && <Text className="project-detail-lead">{project.shortDescription}</Text>}
+                  {project.shortDescription && <Text id="project-detail-modal-summary" className="project-detail-lead">{project.shortDescription}</Text>}
                   {project.description && project.description !== project.shortDescription && (
-                    <Text className="project-detail-text">{project.description}</Text>
+                    <Text id={project.shortDescription ? undefined : "project-detail-modal-summary"} className="project-detail-text">{project.description}</Text>
                   )}
                 </section>
               )}
@@ -578,6 +651,7 @@ function ProjectGallery({ projects }) {
   const galleryRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [detailsProject, setDetailsProject] = useState(null);
+  const closeDetails = useCallback(() => setDetailsProject(null), []);
   const safeActiveIndex = projects.length === 0 ? 0 : Math.min(activeIndex, projects.length - 1);
 
   const goTo = useCallback(
@@ -736,7 +810,7 @@ function ProjectGallery({ projects }) {
         {String(safeActiveIndex + 1).padStart(2, "0")} — {activeProject.title}
       </Text>
     </div>
-    <ProjectDetailsModal project={detailsProject} opened={detailsOpened} onClose={() => setDetailsProject(null)} />
+    <ProjectDetailsModal project={detailsProject} opened={detailsOpened} onClose={closeDetails} />
     </>
   );
 }

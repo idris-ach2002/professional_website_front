@@ -18,7 +18,21 @@ npm test
 npm run test:coverage
 npm run test:e2e
 npm run ci:quality
+npm run ci:verify
 ```
+
+## Validation SEO statique
+
+Un build local peut être exécuté sans `VITE_PUBLIC_SITE_URL`. Dans ce cas, le
+générateur produit les pages FR/EN mais ne peut pas finaliser les URL absolues
+`canonical`, `hreflang` et le sitemap ; le contrôle SEO valide alors uniquement
+les éléments indépendants du domaine public.
+
+Dès que `PUBLIC_SITE_URL` ou `VITE_PUBLIC_SITE_URL` est défini — directement ou
+dans un fichier `.env*` — `check:static-seo` exige les URL absolues `canonical`,
+les variantes `fr`, `en`, `x-default` et les autres métadonnées de production.
+Le workflow GitHub reste donc strict, tandis que `npm run ci:verify` reste
+exécutable localement avant de connaître ou de configurer le domaine public.
 
 ## Périmètre initial
 

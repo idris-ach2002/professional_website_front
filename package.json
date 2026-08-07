@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run check:retired && npm run check:css && npm run check:localization && vite build && npm run generate:static",
+    "build": "npm run check:retired && npm run check:css && npm run check:localization && vite build && npm run generate:static && npm run check:static-seo",
     "lint": "eslint .",
     "preview": "vite preview",
     "clean": "rm -rf .cache .tmp lib build node_modules",
@@ -21,7 +21,8 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
     "ci:quality": "npm run lint && npm run test:coverage && npm run build",
-    "ci:verify": "npm run ci:quality && npm run test:e2e"
+    "ci:verify": "npm run ci:quality && npm run test:e2e",
+    "check:static-seo": "node scripts/check-static-seo.mjs"
   },
   "dependencies": {
     "@mantine/core": "^9.0.0",

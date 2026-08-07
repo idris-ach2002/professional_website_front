@@ -54,3 +54,6 @@ ehthumbs.db
 coverage/
 playwright-report/
 test-results/
+
+# Generated public snapshots
+.cache/

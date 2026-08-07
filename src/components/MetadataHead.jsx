@@ -56,8 +56,10 @@ export default function MetadataHead({ owner, projects = [], experiences = [], p
     const profile = owner.prof ?? owner.profile ?? {};
     const baseUrl = absoluteUrl(profile.portfolioUrl || window.location.origin, window.location.origin) || window.location.origin;
     const pagePath = buildPagePath(page, project);
-    const canonicalUrl = new URL(pagePath, baseUrl);
-    if (language === "en") canonicalUrl.searchParams.set("lang", "en");
+    const localizedPagePath = language === "en"
+      ? (pagePath === "/" ? "/en" : `/en${pagePath}`)
+      : pagePath;
+    const canonicalUrl = new URL(localizedPagePath, baseUrl);
 
     const homeDescription = profile.shortDescription || profile.description || t("hero.professionalPortfolio");
     const pageTitle = page === "project" && project
@@ -107,8 +109,7 @@ export default function MetadataHead({ owner, projects = [], experiences = [], p
     upsertLink('link[rel="canonical"]', { rel: "canonical", href: canonical });
 
     const frUrl = new URL(pagePath, baseUrl);
-    const enUrl = new URL(pagePath, baseUrl);
-    enUrl.searchParams.set("lang", "en");
+    const enUrl = new URL(pagePath === "/" ? "/en" : `/en${pagePath}`, baseUrl);
     upsertLink('link[rel="alternate"][hreflang="fr"]', { rel: "alternate", hreflang: "fr", href: frUrl.toString() });
     upsertLink('link[rel="alternate"][hreflang="en"]', { rel: "alternate", hreflang: "en", href: enUrl.toString() });
     upsertLink('link[rel="alternate"][hreflang="x-default"]', { rel: "alternate", hreflang: "x-default", href: frUrl.toString() });
@@ -145,7 +146,12 @@ export default function MetadataHead({ owner, projects = [], experiences = [], p
             "@type": "CreativeWork",
             name: item.title,
             description: item.shortDescription || item.description,
-            url: new URL(`/projects/${getProjectSlug(item)}`, baseUrl).toString(),
+            url: new URL(
+              language === "en"
+                ? `/en/projects/${getProjectSlug(item)}`
+                : `/projects/${getProjectSlug(item)}`,
+              baseUrl,
+            ).toString(),
             keywords: (item.stacks ?? []).join(", "),
           })),
         };

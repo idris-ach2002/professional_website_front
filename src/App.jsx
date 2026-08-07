@@ -276,75 +276,74 @@ export default function App() {
     );
   }
 
+  const homeElement = (
+    <Home
+      owner={owner}
+      profile={profile}
+      projects={projects}
+      experiences={experiences}
+      state={state}
+      selectedOwnerId={selectedOwnerId}
+      setSelectedOwnerId={setSelectedOwnerId}
+    />
+  );
+
+  const adminElement = (
+    <ErrorBoundary title={t("error.adminTitle")}>
+      <Suspense fallback={<div className="route-loading">{t("app.routeLoading")}</div>}>
+        <Admin />
+      </Suspense>
+    </ErrorBoundary>
+  );
+
+  const cvElement = (
+    <ErrorBoundary title={t("error.cvTitle")}>
+      <Suspense fallback={<div className="route-loading">{t("app.routeLoading")}</div>}>
+        <CvPage owner={owner} profile={profile} />
+      </Suspense>
+    </ErrorBoundary>
+  );
+
+  const recruiterElement = (
+    <ErrorBoundary title={t("error.sectionTitle")}>
+      <Suspense fallback={<div className="route-loading">{t("app.routeLoading")}</div>}>
+        <RecruiterPage owner={owner} profile={profile} projects={projects} experiences={experiences} />
+      </Suspense>
+    </ErrorBoundary>
+  );
+
+  const projectElement = (
+    <ErrorBoundary title={t("error.caseTitle")}>
+      <Suspense fallback={<div className="route-loading">{t("app.routeLoading")}</div>}>
+        <ProjectCaseStudyPage owner={owner} projects={projects} />
+      </Suspense>
+    </ErrorBoundary>
+  );
+
   return (
     <>
       <SkipToContent />
       <RouteFocusManager />
       <AnalyticsTracker source={state.source} />
       <Routes>
+        <Route path="/" element={homeElement} />
+        <Route path="/en" element={homeElement} />
+        <Route path="/admin" element={adminElement} />
+        <Route path="/en/admin" element={adminElement} />
+        <Route path="/cv" element={cvElement} />
+        <Route path="/en/cv" element={cvElement} />
+        <Route path="/recruiter" element={recruiterElement} />
+        <Route path="/en/recruiter" element={recruiterElement} />
+        <Route path="/projects/:projectSlug" element={projectElement} />
+        <Route path="/en/projects/:projectSlug" element={projectElement} />
         <Route
-        path="/"
-        element={
-          <Home
-            owner={owner}
-            profile={profile}
-            projects={projects}
-            experiences={experiences}
-            state={state}
-            selectedOwnerId={selectedOwnerId}
-            setSelectedOwnerId={setSelectedOwnerId}
-          />
-        }
-      />
-
-      <Route
-        path="/admin"
-        element={
-          <ErrorBoundary title={t("error.adminTitle")}>
+          path="*"
+          element={
             <Suspense fallback={<div className="route-loading">{t("app.routeLoading")}</div>}>
-              <Admin />
+              <NotFoundPage />
             </Suspense>
-          </ErrorBoundary>
-        }
-      />
-      <Route
-        path="/cv"
-        element={
-          <ErrorBoundary title={t("error.cvTitle")}>
-            <Suspense fallback={<div className="route-loading">{t("app.routeLoading")}</div>}>
-              <CvPage owner={owner} profile={profile} />
-            </Suspense>
-          </ErrorBoundary>
-        }
-      />
-      <Route
-        path="/recruiter"
-        element={
-          <ErrorBoundary title={t("error.sectionTitle")}>
-            <Suspense fallback={<div className="route-loading">{t("app.routeLoading")}</div>}>
-              <RecruiterPage owner={owner} profile={profile} projects={projects} experiences={experiences} />
-            </Suspense>
-          </ErrorBoundary>
-        }
-      />
-      <Route
-        path="/projects/:projectSlug"
-        element={
-          <ErrorBoundary title={t("error.caseTitle")}>
-            <Suspense fallback={<div className="route-loading">{t("app.routeLoading")}</div>}>
-              <ProjectCaseStudyPage owner={owner} projects={projects} />
-            </Suspense>
-          </ErrorBoundary>
-        }
-      />
-      <Route
-        path="*"
-        element={
-          <Suspense fallback={<div className="route-loading">{t("app.routeLoading")}</div>}>
-            <NotFoundPage />
-          </Suspense>
-        }
-      />
+          }
+        />
       </Routes>
     </>
   );

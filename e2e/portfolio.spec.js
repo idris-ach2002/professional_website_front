@@ -32,7 +32,7 @@ async function openPortfolio(page, locale = "fr") {
     (response) => isPublicWebsiteRequest(response.url(), locale) && response.status() === 200,
   );
 
-  await page.goto(`/?lang=${locale}`, { waitUntil: "domcontentloaded" });
+  await page.goto(locale === "en" ? "/en" : "/", { waitUntil: "domcontentloaded" });
   await publicResponse;
   await expect(page.locator("main#main-content")).toBeVisible();
 }
@@ -49,6 +49,17 @@ test("charge l'accueil depuis l'API publique", async ({ page }) => {
   await expect(page.locator("html")).toHaveAttribute("lang", "fr");
 });
 
+test("rend le lien d’évitement accessible au clavier", async ({ page }) => {
+  await openPortfolio(page, "fr");
+
+  await page.keyboard.press("Tab");
+  const skipLink = page.getByRole("link", { name: "Aller au contenu principal" });
+  await expect(skipLink).toBeFocused();
+
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/#main-content$/);
+});
+
 test("bascule du français vers l'anglais", async ({ page }) => {
   await openPortfolio(page, "fr");
   await expect(page.getByRole("heading", { level: 1, name: "Développeur Java Full Stack" })).toBeVisible();
@@ -60,9 +71,40 @@ test("bascule du français vers l'anglais", async ({ page }) => {
   await languageGroup.getByRole("button", { name: "EN" }).click();
   await englishResponse;
 
-  await expect(page).toHaveURL(/\?lang=en$/);
+  await expect(page).toHaveURL(/\/en$/);
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page.getByRole("heading", { level: 1, name: "Full Stack Java Developer" })).toBeVisible();
+});
+
+
+test("expose une route anglaise indexable", async ({ page }) => {
+  await openPortfolio(page, "en");
+
+  await expect(page).toHaveURL(/\/en$/);
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await expect(page.getByRole("heading", { level: 1, name: "Full Stack Java Developer" })).toBeVisible();
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/en$/);
+});
+
+test("piège le focus dans la modale projet et le restaure", async ({ page }) => {
+  await openPortfolio(page, "fr");
+
+  const trigger = page.getByRole("button", { name: "Détails" }).first();
+  await trigger.scrollIntoViewIfNeeded();
+  await trigger.click();
+
+  const dialog = page.getByRole("dialog", { name: /Projet.*Portfolio fiable/i });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("heading", { level: 2, name: "Projet — Portfolio fiable" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Fermer les détails du projet" })).toBeFocused();
+
+  for (let index = 0; index < 8; index += 1) await page.keyboard.press("Tab");
+  await expect(dialog).toContainText("Portfolio fiable");
+  await expect(dialog.locator(":focus")).toHaveCount(1);
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(trigger).toBeFocused();
 });
 
 test("affiche la route 404", async ({ page }) => {

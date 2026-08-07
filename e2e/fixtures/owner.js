@@ -30,7 +30,36 @@ export function portfolioOwner(locale = "fr") {
       description: "",
       experiences: [],
     },
-    projects: [],
+    projects: [
+      {
+        id: 101,
+        title: english ? "Reliable Portfolio" : "Portfolio fiable",
+        subtitle: "Spring Boot / React",
+        shortDescription: english
+          ? "A tested, accessible and multilingual portfolio."
+          : "Un portfolio testé, accessible et multilingue.",
+        description: english
+          ? "Public content comes from the backend and the interface is validated in Chromium and Firefox."
+          : "Le contenu public vient du backend et l’interface est validée sous Chromium et Firefox.",
+        status: "MAINTAINED",
+        startDate: "2026-01-01",
+        endDate: null,
+        imageUrl: "",
+        demoUrl: "",
+        githubUrl: "https://github.com/example/portfolio",
+        documentationUrl: "",
+        stacks: ["Java 21", "Spring Boot", "React"],
+        features: [
+          english ? "Automated tests" : "Tests automatisés",
+          english ? "Accessible dialogs" : "Modales accessibles",
+        ],
+        links: [],
+        featured: true,
+        published: true,
+        displayOrder: 1,
+        slug: "portfolio-fiable",
+      },
+    ],
     websiteVersions: [],
     locale,
     provenSkills: [],

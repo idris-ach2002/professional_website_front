@@ -24,7 +24,7 @@ export default function StatusBanner({ source, error, cachedAt }) {
     const syncLabel = lastSync ? t("status.syncedAt", { date: lastSync }) : "";
 
     return (
-      <Alert className="status-banner" radius="xl" title={t("status.cacheTitle")}>
+      <Alert className="status-banner" radius="xl" title={t("status.cacheTitle")} role="status" aria-live="polite">
         {t("status.cacheMessage", {
           lastSync: syncLabel,
           error: error ?? t("status.apiUnavailable"),
@@ -34,7 +34,7 @@ export default function StatusBanner({ source, error, cachedAt }) {
   }
 
   return (
-    <Alert className="status-banner" radius="xl" title={t("status.demoTitle")}>
+    <Alert className="status-banner" radius="xl" title={t("status.demoTitle")} role="alert" aria-live="assertive">
       {t("status.demoMessage", { error: error ?? t("status.apiMissing") })}
     </Alert>
   );

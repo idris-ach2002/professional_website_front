@@ -35,11 +35,11 @@ describe("NotFoundPage", () => {
   });
 
   it("conserve la langue anglaise dans les liens", () => {
-    window.history.replaceState({}, "", "/missing?lang=en");
-    renderPage("/missing?lang=en");
+    window.history.replaceState({}, "", "/en/missing");
+    renderPage("/en/missing");
 
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("This depth does not exist.");
-    expect(screen.getByRole("link", { name: "Back to home" })).toHaveAttribute("href", "/?lang=en");
-    expect(screen.getByRole("link", { name: "View résumé" })).toHaveAttribute("href", "/cv?lang=en");
+    expect(screen.getByRole("link", { name: "Back to home" })).toHaveAttribute("href", "/en");
+    expect(screen.getByRole("link", { name: "View résumé" })).toHaveAttribute("href", "/en/cv");
   });
 });

@@ -3,15 +3,37 @@ import { LanguageContext } from "./languageContext";
 import { UI_MESSAGES, SUPPORTED_LANGUAGES } from "./uiMessages";
 
 const LANGUAGE_STORAGE_KEY = "portfolio-language";
+const ENGLISH_PREFIX = "/en";
 
 function normalizeLanguage(value) {
   return SUPPORTED_LANGUAGES.includes(value) ? value : "fr";
 }
 
+function languageFromPath(pathname = "/") {
+  return pathname === ENGLISH_PREFIX || pathname.startsWith(`${ENGLISH_PREFIX}/`) ? "en" : null;
+}
+
+function stripLanguagePrefix(pathname = "/") {
+  if (pathname === ENGLISH_PREFIX) return "/";
+  if (pathname.startsWith(`${ENGLISH_PREFIX}/`)) return pathname.slice(ENGLISH_PREFIX.length) || "/";
+  return pathname || "/";
+}
+
+function prefixPath(pathname, language) {
+  const normalizedPath = stripLanguagePrefix(pathname);
+  if (language !== "en") return normalizedPath;
+  return normalizedPath === "/" ? ENGLISH_PREFIX : `${ENGLISH_PREFIX}${normalizedPath}`;
+}
+
 function readInitialLanguage() {
   if (typeof window === "undefined") return "fr";
+
+  const pathLanguage = languageFromPath(window.location.pathname);
+  if (pathLanguage) return pathLanguage;
+
   const urlLanguage = new URLSearchParams(window.location.search).get("lang");
   if (SUPPORTED_LANGUAGES.includes(urlLanguage)) return urlLanguage;
+
   try {
     const saved = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
     if (SUPPORTED_LANGUAGES.includes(saved)) return saved;
@@ -29,18 +51,24 @@ function interpolate(message, variables = {}) {
 
 function updateLanguageInUrl(language) {
   if (typeof window === "undefined") return;
+
   const url = new URL(window.location.href);
-  if (language === "fr") url.searchParams.delete("lang");
-  else url.searchParams.set("lang", language);
+  url.pathname = prefixPath(url.pathname, language);
+  url.searchParams.delete("lang");
   window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+  window.dispatchEvent(new PopStateEvent("popstate", { state: window.history.state }));
 }
 
 function localizePath(path, language) {
   if (!path || /^(https?:|mailto:|tel:|blob:|data:)/i.test(path)) return path;
+
   const base = typeof window === "undefined" ? "https://portfolio.local" : window.location.origin;
   const url = new URL(path, base);
-  if (language === "fr") url.searchParams.delete("lang");
-  else url.searchParams.set("lang", language);
+  const legacyLanguage = url.searchParams.get("lang");
+  const resolvedLanguage = legacyLanguage === "en" ? "en" : language;
+
+  url.pathname = prefixPath(url.pathname, resolvedLanguage);
+  url.searchParams.delete("lang");
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
@@ -64,8 +92,9 @@ export default function LanguageProvider({ children }) {
 
   useEffect(() => {
     const handlePopState = () => {
-      const value = new URLSearchParams(window.location.search).get("lang");
-      setLanguageState(SUPPORTED_LANGUAGES.includes(value) ? value : "fr");
+      const pathLanguage = languageFromPath(window.location.pathname);
+      const queryLanguage = new URLSearchParams(window.location.search).get("lang");
+      setLanguageState(pathLanguage ?? (SUPPORTED_LANGUAGES.includes(queryLanguage) ? queryLanguage : "fr"));
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
