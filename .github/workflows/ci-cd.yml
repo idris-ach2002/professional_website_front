@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  VITE_PUBLIC_SITE_URL: https://professional-website-front.achabou02idris.workers.dev
+  VITE_PUBLIC_SITE_URL: ${{ vars.PUBLIC_SITE_URL }}
   VITE_ANALYTICS_DISABLED: "true"
 
 jobs:
