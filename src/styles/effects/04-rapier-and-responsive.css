@@ -42,11 +42,7 @@
   outline-offset: -12px;
 }
 
-.beach-3d-grid,
-.beach-3d-halo,
-.beach-3d-orbit {
-  display: none !important;
-}
+
 
 .beach-3d-canvas {
   position: absolute !important;
@@ -184,19 +180,9 @@ body::before {
   box-shadow: none !important;
 }
 
-.hero-title-char {
-  color: #06253b !important;
-}
 
-.hero-keyword {
-  display: inline-block;
-  padding: .16em .44em .2em;
-  border-radius: 999px;
-  font-style: normal;
-  color: #083344 !important;
-  background: rgba(255, 255, 255, .76);
-  border: 1px solid rgba(6, 182, 212, .22);
-}
+
+
 
 .hero-lead {
   font-size: clamp(1.15rem, 1.8vw, 1.55rem) !important;
@@ -1391,13 +1377,9 @@ main,
 }
 
 @media (max-width: 1180px) {
-  .desktop-nav {
-    display: none !important;
-  }
+  
 
-  .top-nav {
-    grid-template-columns: auto 1fr auto;
-  }
+  
 
   .mobile-burger {
     display: block;
@@ -1502,15 +1484,9 @@ main,
     padding-top: 112px;
   }
 
-  .top-nav-shell {
-    width: min(100% - 24px, 1500px);
-    top: 12px;
-    margin-top: 12px;
-  }
+  
 
-  .brand-lockup {
-    min-width: 0;
-  }
+  
 
   .section-title {
     display: block;
@@ -1529,9 +1505,7 @@ main,
     font-size: clamp(3rem, 18vw, 5.2rem) !important;
   }
 
-  .hero-title-current {
-    font-size: 1.08rem;
-  }
+  
 
   .featured-project-island {
     grid-column: auto;
@@ -1778,21 +1752,11 @@ main,
 }
 
 @media (max-width: 520px) {
-  .top-nav {
-    padding: 10px;
-  }
+  
 
-  .brand-mark {
-    width: 40px;
-    height: 40px;
-  }
+  
 
-  .brand-name {
-    max-width: 170px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
+  
 
   .hero-actions .mantine-Button-root {
     width: 100%;

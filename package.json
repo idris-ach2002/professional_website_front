@@ -5,13 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run check:retired && npm run check:css && npm run check:localization && vite build && npm run generate:static && npm run check:static-seo",
+    "prebuild": "node scripts/clean-public-legacy.mjs",
+    "build": "npm run check:retired && npm run check:css && npm run check:localization && vite build && npm run generate:static && npm run check:static-seo && npm run check:performance",
     "lint": "eslint .",
     "preview": "vite preview",
     "clean": "rm -rf .cache .tmp lib build node_modules",
     "cf:deploy": "npx --yes wrangler@latest deploy",
     "check:retired": "node scripts/check-retired-modules.mjs",
-    "check:css": "node scripts/check-css-architecture.mjs",
+    "check:css": "node scripts/check-css-architecture.mjs && node scripts/check-css-orphans.mjs",
     "generate:static": "node scripts/generate-static-pages.mjs",
     "check:localization": "node scripts/check-localization.mjs",
     "test": "vitest run",
@@ -22,7 +23,8 @@
     "test:e2e:ui": "playwright test --ui",
     "ci:quality": "npm run lint && npm run test:coverage && npm run build",
     "ci:verify": "npm run ci:quality && npm run test:e2e",
-    "check:static-seo": "node scripts/check-static-seo.mjs"
+    "check:static-seo": "node scripts/check-static-seo.mjs",
+    "check:performance": "node scripts/check-performance-budgets.mjs"
   },
   "dependencies": {
     "@mantine/core": "^9.0.0",

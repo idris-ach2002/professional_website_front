@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import { getPublicSiteUrl, loadPublicPortfolioSnapshot } from "./public-snapshot.mjs";
 import { getProjectSlug, getPublicProjects, sortByDisplayOrder } from "../src/utils/portfolio.js";
+import { buildCloudinaryImageUrl } from "../src/utils/responsiveImage.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dist = path.join(root, "dist");
@@ -94,7 +95,8 @@ function renderHtml({ owner, locale, title, description, logicalPath, image, typ
   const canonical = absolute(pathname);
   const frCanonical = absolute(logicalPath);
   const enCanonical = absolute(localizedPath(logicalPath, "en"));
-  const absoluteImage = image && baseUrl ? new URL(image, `${baseUrl}/`).toString() : image || "";
+  const optimizedImage = buildCloudinaryImageUrl(image, { width: 1200 });
+  const absoluteImage = optimizedImage && baseUrl ? new URL(optimizedImage, `${baseUrl}/`).toString() : optimizedImage || "";
   const metadata = [
     `<meta name="description" content="${escapeHtml(description)}" />`,
     `<meta name="robots" content="${escapeHtml(robots)}" />`,

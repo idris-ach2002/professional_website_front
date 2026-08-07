@@ -26,7 +26,7 @@
 
 .nav_fixed.nav_fixed--portfolio .nav_component {
   position: relative;
-  width: min(1036px, calc(100vw - 42px));
+  
   pointer-events: auto;
   transform: none;
   animation: none;
@@ -36,12 +36,12 @@
 .nav_fixed.nav_fixed--portfolio .nav_container-v2 {
   position: relative;
   display: grid;
-  grid-template-columns: 132px minmax(530px, 1fr) 284px auto;
+  
   align-items: stretch;
   gap: 0;
-  min-height: 70px;
+  
   width: 100%;
-  padding: 8px 8px 8px 16px;
+  
   color: #171717;
   background: rgba(255, 253, 249, .94);
   border: 1px solid #dfdfcf;
@@ -67,14 +67,14 @@
 
 .nav_fixed.nav_fixed--portfolio .nav_brand {
   display: inline-flex;
-  align-items: center;
+  
   gap: 9px;
-  min-width: 0;
+  
   height: 100%;
-  padding-right: 16px;
+  
   color: #171717;
   text-decoration: none;
-  overflow: hidden;
+  
   white-space: nowrap;
 }
 
@@ -89,8 +89,8 @@
 
 .nav_fixed.nav_fixed--portfolio .nav_menu-wrapper.grid.v2 {
   display: flex;
-  align-items: stretch;
-  justify-content: flex-start;
+  
+  
   gap: 0;
   min-width: 0;
   height: 100%;
@@ -115,8 +115,8 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 52px;
-  padding: 0 15px;
+  
+  
   border: 1px solid transparent;
   border-radius: 12px;
   appearance: none;
@@ -171,7 +171,7 @@
 
 .nav_fixed.nav_fixed--portfolio .dropdown-list-v2 {
   position: absolute;
-  top: calc(100% - 1px);
+  
   left: 0;
   display: block;
   width: 392px;
@@ -181,17 +181,17 @@
   visibility: hidden;
   transform: none;
   transform-origin: top left;
-  transition: opacity .14s ease, visibility .14s ease;
+  
   pointer-events: none;
 }
 
 .nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2.wide .dropdown-list-v2 {
-  width: 628px;
+  
 }
 
 .nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2.align-right .dropdown-list-v2 {
   left: auto;
-  right: 0;
+  
 }
 
 .nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2.is-open .dropdown-list-v2,
@@ -212,7 +212,7 @@
   box-shadow: 0 18px 46px rgba(21, 21, 17, .08);
   overflow: hidden;
   transform: none;
-  animation: wisprDropdownFade .14s ease both;
+  
 }
 
 .nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2.align-right .dropdown-inside-wrap {
@@ -343,7 +343,7 @@
 }
 
 .nav_fixed.nav_fixed--portfolio .dropdown-link-description {
-  display: block;
+  
   max-width: 100%;
   color: rgba(23, 23, 23, .58);
   font-size: .82rem;
@@ -373,9 +373,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 0;
+  
   height: 100%;
-  padding-left: 28px;
+  
   border-left: 1px solid #e4e4d0;
 }
 
@@ -383,8 +383,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 52px;
-  min-width: 188px;
+  
+  
   padding: 0 23px;
   border: 2px solid #171717;
   border-radius: 10px;
@@ -445,11 +445,11 @@
 
 @media (max-width: 1100px) {
   .nav_fixed.nav_fixed--portfolio .nav_component {
-    width: min(760px, calc(100vw - 24px));
+    
   }
 
   .nav_fixed.nav_fixed--portfolio .nav_container-v2 {
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    
     min-height: 68px;
     padding: 8px;
   }
@@ -553,7 +553,7 @@
   }
 
   .nav_fixed.nav_fixed--portfolio .nav_container-v2 {
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    
   }
 
   
@@ -578,11 +578,11 @@
    and one-dropdown-at-a-time behaviour.
 ---------------------------------------------------------------------------- */
 .nav_fixed.nav_fixed--portfolio .nav_component {
-  width: min(1228px, calc(100vw - 44px));
+  
 }
 
 .nav_fixed.nav_fixed--portfolio .nav_container-v2 {
-  grid-template-columns: 244px minmax(645px, 1fr) 236px auto;
+  
   min-height: 76px;
   padding: 8px 8px 8px 14px;
 }
@@ -621,7 +621,7 @@
 }
 
 .nav_fixed.nav_fixed--portfolio .nav_actions-wrap {
-  padding-left: 24px;
+  
 }
 
 .nav_fixed.nav_fixed--portfolio .nav_big-button.button {
@@ -721,7 +721,7 @@
   }
 
   .nav_fixed.nav_fixed--portfolio .nav_container-v2 {
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    
   }
 
   .nav_fixed.nav_fixed--portfolio .nav_personal-logo {

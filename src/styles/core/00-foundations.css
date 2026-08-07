@@ -49,19 +49,7 @@ button {
   min-height: 100vh;
 }
 
-.footer-shell {
-  position: relative;
-  z-index: 3;
-  width: min(1500px, calc(100vw - 36px));
-  margin: 0 auto 30px;
-  padding: 22px 28px;
-  border: 1px solid var(--stroke);
-  border-radius: 28px;
-  background: rgba(255, 255, 255, .54);
-  backdrop-filter: blur(18px);
-  color: var(--muted);
-  text-align: center;
-}
+
 
 .ocean-deep-glow,
 .ocean-sky-glow {

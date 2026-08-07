@@ -1,204 +1,37 @@
 /* Public shell: base navigation, hero, project, card and shared component rules. */
-.top-nav {
-  position: relative;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 18px;
-  padding: 13px 15px 13px 14px;
-  border: 1px solid rgba(14,116,144,.16);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, .72);
-  backdrop-filter: blur(22px) saturate(1.2);
-  box-shadow: 0 8px 30px rgba(14, 116, 144, .08);
-  overflow: hidden;
-}
 
-.scroll-current {
-  position: absolute;
-  left: 20px;
-  right: 20px;
-  bottom: 0;
-  height: 3px;
-  border-radius: 999px;
-  transform: scaleX(0);
-  transform-origin: left center;
-  background: linear-gradient(90deg, var(--lagoon), var(--reef), var(--volcano));
-}
 
-.brand-lockup {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  width: max-content;
-  min-width: min(360px, 34vw);
-  max-width: 460px;
-  padding: 6px 16px 6px 7px;
-  border-radius: 999px;
-  text-decoration: none;
-  color: inherit;
-  overflow: hidden;
-  isolation: isolate;
-  transition: transform .28s ease, background .28s ease, box-shadow .28s ease;
-}
 
-.brand-lockup::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background:
-    linear-gradient(115deg, rgba(255,255,255,.88), rgba(219,247,255,.38) 42%, rgba(255,255,255,.16));
-  opacity: 0;
-  transform: translateX(-18%);
-  transition: opacity .28s ease, transform .45s ease;
-  z-index: -1;
-}
 
-.brand-lockup:hover {
-  transform: translateY(-1px);
-  background: rgba(255,255,255,.38);
-  box-shadow: inset 0 0 0 1px rgba(14,116,144,.08), 0 14px 34px rgba(14,116,144,.12);
-}
 
-.brand-lockup:hover::before {
-  opacity: 1;
-  transform: translateX(0);
-}
 
-.brand-mark {
-  position: relative;
-  display: grid;
-  flex: 0 0 auto;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 50% 42% 49% 47%;
-  color: white;
-  font-weight: 900;
-  letter-spacing: .02em;
-  background: linear-gradient(135deg, #0e7490, #14b8a6 62%, #f97316 180%);
-  box-shadow: 0 14px 34px rgba(14,116,144,.28);
-}
 
-.brand-mark--logo {
-  --brand-logo-scale: 1.72;
-  width: 58px;
-  height: 58px;
-  padding: 0;
-  border-radius: 20px;
-  overflow: hidden;
-  isolation: isolate;
-  background:
-    radial-gradient(circle at 30% 18%, rgba(255,255,255,.98) 0 24%, rgba(224,247,255,.92) 48%, rgba(14,165,233,.24) 100%);
-  border: 1px solid rgba(8, 145, 178, .28);
-  box-shadow:
-    0 16px 38px rgba(14,116,144,.26),
-    inset 0 0 0 1px rgba(255,255,255,.72),
-    inset 0 -14px 30px rgba(14,165,233,.14);
-  transform: translateZ(0);
-  transition: transform .34s ease, box-shadow .34s ease, border-color .34s ease;
-}
 
-.brand-mark--logo::before {
-  content: "";
-  position: absolute;
-  inset: -55%;
-  z-index: 0;
-  background: conic-gradient(
-    from 120deg,
-    rgba(255,255,255,0),
-    rgba(125,211,252,.9),
-    rgba(20,184,166,.52),
-    rgba(255,255,255,.95),
-    rgba(255,255,255,0)
-  );
-  opacity: .72;
-  animation: brandAuraSpin 7.5s linear infinite;
-}
 
-.brand-mark--logo::after {
-  content: "";
-  position: absolute;
-  inset: 4px;
-  z-index: 3;
-  pointer-events: none;
-  border-radius: 16px;
-  border: 1px solid rgba(255,255,255,.72);
-  background:
-    linear-gradient(135deg, rgba(255,255,255,.76), rgba(255,255,255,0) 42%),
-    radial-gradient(circle at 34% 22%, rgba(255,255,255,.58), rgba(255,255,255,0) 34%);
-  mix-blend-mode: screen;
-}
 
-.brand-logo-aura {
-  position: absolute;
-  inset: 6px;
-  z-index: 1;
-  border-radius: 15px;
-  background: radial-gradient(circle, rgba(255,255,255,.92), rgba(191,239,255,.36) 58%, rgba(14,116,144,.08));
-  filter: blur(.2px);
-}
 
-.brand-logo {
-  position: absolute;
-  inset: 4px;
-  z-index: 2;
-  display: block;
-  width: calc(100% - 8px);
-  height: calc(100% - 8px);
-  max-width: calc(100% - 8px);
-  max-height: calc(100% - 8px);
-  object-fit: cover;
-  object-position: 43% 39%;
-  border-radius: 16px;
-  scale: var(--brand-logo-scale);
-  translate: 0 0;
-  rotate: 0deg;
-  filter: saturate(1.18) contrast(1.08) drop-shadow(0 5px 8px rgba(8, 47, 73, .18));
-  transition: scale .34s ease, filter .34s ease;
-  animation: brandDragonFloat 6.8s ease-in-out infinite;
-}
 
-.brand-lockup:hover .brand-mark--logo {
-  --brand-logo-scale: 1.92;
-  transform: translateY(-2px) rotate(-2deg);
-  border-color: rgba(14,165,233,.48);
-  box-shadow:
-    0 20px 48px rgba(14,116,144,.34),
-    0 0 0 5px rgba(125,211,252,.16),
-    inset 0 0 0 1px rgba(255,255,255,.86),
-    inset 0 -16px 34px rgba(14,165,233,.18);
-}
 
-.brand-lockup:hover .brand-logo {
-  filter: saturate(1.28) contrast(1.12) drop-shadow(0 8px 12px rgba(8, 47, 73, .22));
-}
 
-.brand-copy {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
 
-.brand-name {
-  margin: 0;
-  color: var(--ink);
-  font-weight: 950;
-  line-height: 1.02;
-  letter-spacing: -.025em;
-  text-shadow: 0 1px 0 rgba(255,255,255,.72);
-}
 
-.brand-subtitle {
-  color: rgba(14, 116, 144, .66);
-  font-size: .68rem;
-  font-weight: 850;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  line-height: 1;
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @keyframes brandAuraSpin {
   to {
@@ -222,15 +55,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .brand-mark--logo::before,
-  .brand-logo {
-    animation: none;
-  }
+  
 }
 
-.desktop-nav {
-  justify-content: center;
-}
+
 
 .nav-link {
   position: relative;
@@ -288,13 +116,9 @@
   justify-self: end;
 }
 
-.drawer-content {
-  background: #f0fdfa !important;
-}
 
-.drawer-header {
-  color: var(--ink);
-}
+
+
 
 .page-section {
   position: relative;
@@ -373,15 +197,7 @@
   display: block;
 }
 
-.hero-title-current {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .14em .24em;
-  margin-top: .18em;
-  font-size: clamp(1.35rem, 2.7vw, 2.6rem);
-  letter-spacing: -.045em;
-  line-height: 1.05;
-}
+
 
 .hero-actions {
   margin: 26px 0 24px;
@@ -440,13 +256,13 @@
 
 .portrait-name {
   color: var(--ink) !important;
-  font-size: 1.25rem !important;
+  
   font-weight: 900 !important;
 }
 
 .portrait-role {
-  color: var(--muted) !important;
-  font-weight: 700 !important;
+  
+  
 }
 
 .contact-card,
@@ -469,7 +285,7 @@
 }
 
 .availability-location {
-  color: var(--muted) !important;
+  
 }
 
 .ring-label {
@@ -480,19 +296,19 @@
 }
 
 .contact-pill {
-  display: grid;
-  gap: 4px;
-  padding: 12px 14px;
-  color: var(--ink);
+  
+  
+  
+  
   text-decoration: none;
-  border: 1px solid rgba(14,116,144,.12);
-  border-radius: 18px;
-  background: rgba(255,255,255,.42);
+  
+  
+  
 }
 
 .contact-pill span {
-  color: var(--muted);
-  font-size: .75rem;
+  
+  
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: .08em;
@@ -500,7 +316,7 @@
 
 .contact-pill strong {
   overflow-wrap: anywhere;
-  font-size: .9rem;
+  
 }
 
 .current-badge,
@@ -693,13 +509,7 @@
   border-color: var(--ocean) !important;
 }
 
-.top-nav-shell {
-  position: sticky;
-  top: 18px;
-  width: min(1500px, calc(100vw - 36px));
-  margin: 18px auto -104px;
-  z-index: 80;
-}
+
 
 .project-toolbar {
   display: grid;

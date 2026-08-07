@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const CACHE_KEY_FR = "portfolio:last-known-good:v3:fr";
-const CACHE_KEY_EN = "portfolio:last-known-good:v3:en";
+const CACHE_KEY_FR = "portfolio:last-known-good:v4:fr";
+const CACHE_KEY_EN = "portfolio:last-known-good:v4:en";
 
 function owner(overrides = {}) {
   return {
@@ -65,7 +65,7 @@ describe("portfolioApi", () => {
     expect(payload.source).toBe("api");
     expect(payload.owner.provenSkills).toEqual([]);
     expect(cached.owner.provenSkills).toEqual([]);
-    expect(JSON.parse(window.localStorage.getItem(CACHE_KEY_FR)).version).toBe(3);
+    expect(JSON.parse(window.localStorage.getItem(CACHE_KEY_FR)).version).toBe(4);
   });
 
   it("déduplique deux requêtes simultanées pour la même locale", async () => {
@@ -89,7 +89,7 @@ describe("portfolioApi", () => {
 
   it("retourne le cache après l'échec de l'API", async () => {
     window.localStorage.setItem(CACHE_KEY_FR, JSON.stringify({
-      version: 3,
+      version: 4,
       cachedAt: "2026-08-06T18:00:00.000Z",
       owner: owner(),
     }));
@@ -101,6 +101,18 @@ describe("portfolioApi", () => {
     expect(payload.source).toBe("cache");
     expect(payload.owner.ownerId).toBe(1);
     expect(payload.error).toBe("HTTP 400");
+  });
+
+  it("supprime un cache expiré de plus de sept jours", async () => {
+    window.localStorage.setItem(CACHE_KEY_FR, JSON.stringify({
+      version: 4,
+      cachedAt: "2020-01-01T00:00:00.000Z",
+      owner: owner(),
+    }));
+    const { readCachedPortfolio } = await import("./portfolioApi");
+
+    expect(readCachedPortfolio("fr")).toBeNull();
+    expect(window.localStorage.getItem(CACHE_KEY_FR)).toBeNull();
   });
 
   it("ignore un cache invalide", async () => {

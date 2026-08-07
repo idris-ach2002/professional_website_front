@@ -39,8 +39,8 @@ exécutable localement avant de connaître ou de configurer le domaine public.
 - API publique et cache local du portfolio ;
 - choix FR/EN et persistance de la langue ;
 - page 404 ;
-- accueil E2E ;
-- changement de langue E2E ;
+- accueil;
+- changement de langue;
 - fallback lorsque le backend est indisponible ;
 - contrôle du débordement horizontal mobile ;
 - exécution dans Chromium et Firefox.
@@ -51,3 +51,16 @@ exécutable localement avant de connaître ou de configurer le domaine public.
 - `CLOUDFLARE_ACCOUNT_ID`
 
 Sans ces secrets, les jobs de contrôle restent utilisables et le déploiement est ignoré.
+
+## budgets de performance
+
+`npm run build` exécute désormais `npm run check:performance` après le build statique.
+
+Budgets durs :
+- JS initial Brotli <= 420 KiB, avec objectif visible à 350 KiB ;
+- chunk 3D Brotli <= 700 KiB ;
+- dossier `public/` <= 1 MiB ;
+- chaque image publique <= 400 KiB ;
+- aucun mock sous `public/assets/mock`.
+
+Les images Cloudinary de type `image/upload` reçoivent automatiquement des variantes 320/640/960/1280 px avec `f_auto,q_auto,c_limit`. Les anciennes URLs `raw/upload` restent inchangées et continuent de fonctionner ; les nouveaux uploads backend utilisent `resource_type=auto` afin que les images futures soient transformables.

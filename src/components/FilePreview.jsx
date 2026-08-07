@@ -8,6 +8,7 @@ import {
   normalizeFileUrl,
 } from "../utils/filePreview";
 import { normalizeUrl } from "../utils/portfolio";
+import { buildCloudinaryImageUrl, buildResponsiveImageProps } from "../utils/responsiveImage";
 
 export function PreviewableImage({
   src,
@@ -20,11 +21,13 @@ export function PreviewableImage({
   modalZIndex = 12050,
   loading = "lazy",
   fetchPriority = "auto",
+  sizes,
 }) {
   const [opened, setOpened] = useState(false);
   const fileUrl = normalizeFileUrl(src);
 
   if (!fileUrl) return null;
+  const responsive = buildResponsiveImageProps(fileUrl, { sizes });
 
   return (
     <>
@@ -35,7 +38,9 @@ export function PreviewableImage({
         aria-label={`Agrandir ${alt}`}
       >
         <Image
-          src={fileUrl}
+          src={responsive.src ?? fileUrl}
+          srcSet={responsive.srcSet}
+          sizes={responsive.sizes}
           alt={alt}
           radius={radius}
           className={imageClassName}
@@ -56,7 +61,13 @@ export function PreviewableImage({
         zIndex={modalZIndex}
         classNames={{ content: "file-preview-modal", body: "file-preview-modal-body" }}
       >
-        <Image src={fileUrl} alt={alt} fit="contain" className="file-preview-full-image" />
+        <Image
+          src={buildCloudinaryImageUrl(fileUrl, { width: 1600 })}
+          alt={alt}
+          fit="contain"
+          className="file-preview-full-image"
+          decoding="async"
+        />
       </Modal>
     </>
   );
@@ -132,7 +143,7 @@ export function FilePreviewButton({
           classNames={{ content: "file-preview-modal", body: "file-preview-modal-body" }}
         >
           <Image
-            src={fileUrl}
+            src={buildCloudinaryImageUrl(fileUrl, { width: 1600 })}
             alt={title ?? label}
             fit="contain"
             className="file-preview-full-image"

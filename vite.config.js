@@ -67,14 +67,17 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
+      manifest: true,
       chunkSizeWarningLimit: 700,
       rollupOptions: {
         output: {
           manualChunks(id) {
             if (!id.includes('node_modules')) return undefined
+            if (id.includes('/gsap/')) return 'vendor-gsap'
             if (id.includes('@mantine')) return 'vendor-mantine'
-            if (id.includes('@react-three') || id.includes('three') || id.includes('@dimforge') || id.includes('@react-spring') || id.includes('postprocessing') || id.includes('rapier')) return 'vendor-three'
-            if (id.includes('react') || id.includes('scheduler')) return 'vendor-react'
+            if (id.includes('@react-three') || id.includes('/three/') || id.includes('@dimforge') || id.includes('@react-spring') || id.includes('postprocessing') || id.includes('rapier') || id.includes('/zustand/') || id.includes('/suspend-react/') || id.includes('/tunnel-rat/') || id.includes('/maath/')) return 'vendor-three'
+            if (id.includes('react-router')) return 'vendor-router'
+            if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/scheduler/')) return 'vendor-react'
             return 'vendor'
           },
         },

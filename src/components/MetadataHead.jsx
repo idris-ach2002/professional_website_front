@@ -8,6 +8,7 @@ import {
   getPublicProjects,
   normalizeUrl,
 } from "../utils/portfolio";
+import { buildCloudinaryImageUrl } from "../utils/responsiveImage";
 
 function upsertMeta(selector, attributes) {
   let element = document.head.querySelector(selector);
@@ -85,7 +86,8 @@ export default function MetadataHead({ owner, projects = [], experiences = [], p
       .filter((contact) => ["LINKEDIN", "GITHUB", "PORTFOLIO", "WEBSITE"].includes(contact.type))
       .map((contact) => absoluteUrl(contact.value, baseUrl))
       .filter(Boolean);
-    const image = absoluteUrl(project?.imageUrl || profile.profileImageUrl, baseUrl);
+    const imageSource = buildCloudinaryImageUrl(project?.imageUrl || profile.profileImageUrl, { width: 1200 });
+    const image = absoluteUrl(imageSource, baseUrl);
     const canonical = canonicalUrl.toString();
 
     document.documentElement.lang = language;

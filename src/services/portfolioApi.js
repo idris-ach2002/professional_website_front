@@ -6,7 +6,8 @@ const API_BASE_URL = SHOULD_USE_DIRECT_BACKEND ? RAW_API_BASE_URL : "";
 const REQUEST_TIMEOUT = 9000;
 const RETRY_REQUEST_TIMEOUT = 4500;
 const REQUEST_RETRY_DELAY = 450;
-const PORTFOLIO_CACHE_VERSION = 3;
+const PORTFOLIO_CACHE_VERSION = 4;
+const PORTFOLIO_CACHE_MAX_STALE_MS = 7 * 24 * 60 * 60 * 1000;
 
 const inFlightPortfolioRequests = new Map();
 
@@ -96,6 +97,11 @@ function readStorage(locale) {
     const cached = JSON.parse(raw);
     if (cached?.version !== PORTFOLIO_CACHE_VERSION) return null;
     if (!isPortfolioOwner(cached.owner)) return null;
+    const cachedAtMs = Date.parse(cached.cachedAt ?? "");
+    if (!Number.isFinite(cachedAtMs) || Date.now() - cachedAtMs > PORTFOLIO_CACHE_MAX_STALE_MS) {
+      window.localStorage.removeItem(cacheKey(locale));
+      return null;
+    }
 
     return {
       ...normalizePayload(cached.owner, "cache", null),

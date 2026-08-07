@@ -135,3 +135,81 @@ test("utilise le fallback français quand l'API est indisponible", async ({ page
 
   await expect(page.getByRole("heading", { level: 1, name: "Développeur Java Full Stack" })).toBeVisible({ timeout: 20_000 });
 });
+
+test("respecte les budgets Web Vitals sur mobile", async ({ page, browserName }, testInfo) => {
+  test.skip(browserName !== "chromium", "Les métriques PerformanceObserver sont contrôlées dans Chromium.");
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    const supportedEntryTypes = PerformanceObserver.supportedEntryTypes ?? [];
+    window.__portfolioPerformance = {
+      lcp: 0,
+      cls: 0,
+      inp: 0,
+      lcpSupported: supportedEntryTypes.includes("largest-contentful-paint"),
+      lcpSamples: 0,
+    };
+
+    if (window.__portfolioPerformance.lcpSupported) {
+      new PerformanceObserver((list) => {
+        const entries = list.getEntries();
+        const last = entries.at(-1);
+        if (last) {
+          window.__portfolioPerformance.lcp = last.startTime;
+          window.__portfolioPerformance.lcpSamples += entries.length;
+        }
+      }).observe({ type: "largest-contentful-paint", buffered: true });
+    }
+
+    if (PerformanceObserver.supportedEntryTypes?.includes("layout-shift")) {
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          if (!entry.hadRecentInput) window.__portfolioPerformance.cls += entry.value;
+        }
+      }).observe({ type: "layout-shift", buffered: true });
+    }
+
+    if (PerformanceObserver.supportedEntryTypes?.includes("event")) {
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          window.__portfolioPerformance.inp = Math.max(window.__portfolioPerformance.inp, entry.duration ?? 0);
+        }
+      }).observe({ type: "event", durationThreshold: 16, buffered: true });
+    }
+  });
+
+  await openPortfolio(page, "fr");
+  await expect(page.getByRole("heading", { level: 1, name: "Développeur Java Full Stack" })).toBeVisible();
+  await page.evaluate(async () => {
+    await document.fonts?.ready;
+  });
+
+  // LCP stops being updated after the first user interaction. Wait for an
+  // actual paint candidate before generating the interaction used for INP.
+  await page.waitForFunction(
+    () => window.__portfolioPerformance?.lcp > 0,
+    undefined,
+    { timeout: 10_000 },
+  );
+
+  await page.keyboard.press("Tab");
+  await page.waitForTimeout(250);
+
+  const metrics = await page.evaluate(() => ({
+    ...window.__portfolioPerformance,
+    resources: performance.getEntriesByType("resource").length,
+  }));
+
+  await testInfo.attach("performance-metrics.json", {
+    body: JSON.stringify(metrics, null, 2),
+    contentType: "application/json",
+  });
+
+  expect(metrics.lcpSupported).toBe(true);
+  expect(metrics.lcpSamples).toBeGreaterThan(0);
+  expect(metrics.lcp).toBeGreaterThan(0);
+  expect(metrics.lcp).toBeLessThanOrEqual(2500);
+  expect(metrics.cls).toBeLessThanOrEqual(0.1);
+  expect(metrics.inp).toBeLessThanOrEqual(200);
+  expect(metrics.resources).toBeLessThanOrEqual(50);
+});

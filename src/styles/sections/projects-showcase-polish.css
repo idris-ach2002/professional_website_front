@@ -12,39 +12,26 @@
 }
 
 .profile-island {
-  perspective: 1400px;
-  --hero-mx: 56%;
-  --hero-my: 26%;
-  --profile-light-opacity: .48;
+  
+  
+  
+  
 }
 
 .profile-island .hero-copy {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  padding: clamp(34px, 5vw, 76px) clamp(26px, 4.8vw, 68px) clamp(32px, 4vw, 58px) !important;
-  border: 1px solid rgba(186, 230, 253, .30) !important;
-  border-radius: 0 !important;
-  clip-path: polygon(0 9%, 7% 0, 84% 0, 100% 16%, 97% 75%, 86% 100%, 10% 96%, 0 78%);
-  background:
-    radial-gradient(520px 320px at var(--hero-mx) var(--hero-my), rgba(255, 255, 255, var(--profile-light-opacity)), transparent 64%),
-    radial-gradient(420px 240px at 4% 12%, rgba(125, 211, 252, .22), transparent 70%),
-    linear-gradient(145deg, rgba(255, 255, 255, .78), rgba(224, 251, 255, .58) 44%, rgba(125, 211, 252, .28) 100%) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .92),
-    inset 0 -1px 0 rgba(8, 47, 73, .14),
-    inset 28px 0 58px rgba(125, 211, 252, .10),
-    inset -42px -46px 74px rgba(8, 47, 73, .10),
-    0 46px 130px rgba(8, 47, 73, .22),
-    0 14px 38px rgba(3, 105, 161, .13) !important;
-  filter: drop-shadow(0 30px 58px rgba(8, 47, 73, .16));
-  transform-style: preserve-3d;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   transform-origin: 50% 50%;
-  transition:
-    transform .55s cubic-bezier(.19, 1, .22, 1),
-    filter .55s ease,
-    border-color .35s ease,
-    box-shadow .55s ease !important;
+  
 }
 
 .profile-island .hero-copy::before,
@@ -58,50 +45,42 @@
 }
 
 .profile-island .hero-copy::before {
-  background:
-    linear-gradient(115deg, transparent 0 11%, rgba(255,255,255,.34) 11.4%, transparent 12.2% 64%, rgba(8,47,73,.08) 64.6%, transparent 65.2%),
-    linear-gradient(172deg, rgba(255,255,255,.38), transparent 19%),
-    repeating-linear-gradient(90deg, rgba(8,47,73,.035) 0 1px, transparent 1px 68px),
-    repeating-linear-gradient(0deg, rgba(125,211,252,.055) 0 1px, transparent 1px 54px);
-  mix-blend-mode: soft-light;
-  opacity: .78;
+  
+  
+  
 }
 
 .profile-island .hero-copy::after {
-  inset: 1px;
-  background:
-    linear-gradient(92deg, transparent 0%, rgba(255,255,255,.0) 34%, rgba(255,255,255,.52) 48%, rgba(125,211,252,.18) 52%, transparent 68%) -45% 0 / 52% 100% no-repeat,
-    radial-gradient(180px 18px at 74% 0%, rgba(236, 253, 255, .55), transparent 70%),
-    linear-gradient(180deg, rgba(255,255,255,.34), transparent 16%, transparent 82%, rgba(8,47,73,.08));
-  opacity: .50;
-  animation: profileDeckScan 9.8s cubic-bezier(.19, 1, .22, 1) infinite;
+  
+  
+  
+  
 }
 
 .profile-island .hero-copy > * {
-  position: relative;
-  z-index: 2;
+  
+  
 }
 
 .profile-island .hero-map-line {
   z-index: 1;
-  opacity: .7;
+  
   filter: drop-shadow(0 0 14px rgba(125, 211, 252, .22));
 }
 
 .profile-island .hero-title {
-  text-shadow: 0 2px 0 rgba(255,255,255,.26), 0 18px 54px rgba(8,47,73,.12);
+  
 }
 
 .profile-island .hero-lead {
   position: relative;
-  width: fit-content;
-  max-width: 96%;
-  padding: clamp(14px, 1.7vw, 24px) clamp(18px, 2.5vw, 34px) !important;
+  
+  
+  
   border: 1px solid rgba(255, 255, 255, .46);
-  clip-path: polygon(0 22%, 6% 0, 86% 0, 100% 42%, 92% 100%, 7% 100%, 0 72%);
-  background:
-    linear-gradient(135deg, rgba(236,253,255,.78), rgba(255,255,255,.46) 54%, rgba(125,211,252,.16));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.80), 0 18px 44px rgba(8,47,73,.08);
+  
+  
+  
 }
 
 .profile-island .hero-description {
@@ -111,8 +90,8 @@
 }
 
 .profile-island .hero-copy:hover {
-  transform: translateY(-4px) rotateX(.8deg) rotateY(-.6deg) translateZ(0);
-  border-color: rgba(125, 211, 252, .46) !important;
+  
+  
   filter: drop-shadow(0 36px 70px rgba(8, 47, 73, .20));
 }
 
@@ -123,94 +102,79 @@
 .portrait-card.island-card,
 .availability-card.island-card,
 .contact-card.island-card {
-  overflow: hidden;
-  border: 1px solid rgba(186, 230, 253, .32) !important;
-  background:
-    radial-gradient(240px 160px at 28% 0%, rgba(255,255,255,.82), transparent 62%),
-    radial-gradient(260px 180px at 100% 100%, rgba(125,211,252,.16), transparent 74%),
-    linear-gradient(145deg, rgba(255,255,255,.78), rgba(236,253,255,.62) 52%, rgba(224,251,255,.42)) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.86),
-    inset 0 -1px 0 rgba(8,47,73,.08),
-    0 28px 80px rgba(8,47,73,.16) !important;
-  transform-style: preserve-3d;
-  transition:
-    transform .48s cubic-bezier(.19, 1, .22, 1),
-    border-color .35s ease,
-    box-shadow .48s ease,
-    filter .48s ease !important;
+  
+  
+  
+  
+  
+  
 }
 
 .portrait-card.island-card {
-  clip-path: polygon(10% 0, 100% 4%, 94% 82%, 78% 100%, 8% 96%, 0 18%);
+  
   border-radius: 0 !important;
 }
 
 .availability-card.island-card {
-  clip-path: polygon(0 16%, 8% 0, 92% 4%, 100% 32%, 94% 100%, 7% 94%);
+  
   border-radius: 0 !important;
 }
 
 .contact-card.island-card {
-  clip-path: polygon(5% 0, 100% 5%, 95% 100%, 0 92%, 0 18%);
+  
   border-radius: 0 !important;
 }
 
 .portrait-card.island-card::before,
 .availability-card.island-card::before,
 .contact-card.island-card::before {
-  content: "";
-  position: absolute;
-  inset: 1px;
-  z-index: 0;
-  background:
-    linear-gradient(130deg, rgba(255,255,255,.48), transparent 24%, transparent 72%, rgba(8,47,73,.055)),
-    repeating-linear-gradient(100deg, rgba(8,47,73,.035) 0 1px, transparent 1px 36px);
-  opacity: .62;
-  pointer-events: none;
+  
+  
+  
+  
+  
+  
+  
 }
 
 .portrait-card.island-card::after,
 .availability-card.island-card::after,
 .contact-card.island-card::after {
-  content: "";
-  position: absolute;
-  right: -48px;
+  
+  
+  
   top: -42px;
-  z-index: 1;
+  
   width: 136px;
-  height: 136px;
+  
   border: 1px solid rgba(236,253,255,.58);
   border-radius: 999px;
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.88), rgba(125,211,252,.12) 45%, transparent 70%);
-  opacity: .56;
+  
+  
   pointer-events: none;
-  animation: premiumOrbDrift 7.2s ease-in-out infinite;
+  
 }
 
 .portrait-card.island-card > *,
 .availability-card.island-card > *,
 .contact-card.island-card > * {
-  position: relative;
-  z-index: 2;
+  
+  
 }
 
 .portrait-preview-trigger,
 .portrait-placeholder,
 .portrait-image {
-  border-radius: 36% 64% 54% 46% !important;
-  box-shadow:
-    0 0 0 10px rgba(236,253,255,.44),
-    0 0 0 1px rgba(125,211,252,.28),
-    0 28px 72px rgba(8,47,73,.20) !important;
+  
+  
 }
 
 .portrait-content {
   padding: 12px 18px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, rgba(255,255,255,.52), rgba(236,253,255,.20));
-  border: 1px solid rgba(255,255,255,.34);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.64);
+  
+  
+  
+  
 }
 
 .availability-card.island-card::before {
@@ -222,13 +186,12 @@
 }
 
 .contact-pill {
-  position: relative;
-  overflow: hidden;
-  border-radius: 18px 12px 20px 14px !important;
-  clip-path: polygon(0 0, 96% 0, 100% 32%, 96% 100%, 4% 100%, 0 72%);
-  background:
-    linear-gradient(135deg, rgba(255,255,255,.54), rgba(236,253,255,.28)) !important;
-  transition: transform .28s ease, border-color .28s ease, background .28s ease !important;
+  
+  
+  
+  
+  
+  
 }
 
 .contact-pill:hover {
@@ -250,10 +213,8 @@
   height: 4px !important;
   width: clamp(86px, 8vw, 132px) !important;
   border-radius: 999px;
-  background:
-    linear-gradient(90deg, transparent, rgba(125,211,252,.22), rgba(236,253,255,.90), rgba(125,211,252,.20), transparent),
-    repeating-linear-gradient(90deg, transparent 0 9px, rgba(236,253,255,.36) 9px 11px, transparent 11px 22px) !important;
-  box-shadow: 0 0 24px rgba(125,211,252,.34), 0 0 0 1px rgba(255,255,255,.12);
+  
+  
   clip-path: polygon(0 50%, 8% 0, 92% 0, 100% 50%, 92% 100%, 8% 100%);
   animation: timelineCableFlow 4.8s linear infinite;
 }
@@ -269,27 +230,23 @@
 .timeline-row::after {
   width: 16px !important;
   height: 16px !important;
-  background:
-    radial-gradient(circle at 35% 28%, rgba(255,255,255,.98), rgba(236,253,255,.64) 28%, rgba(125,211,252,.54) 56%, rgba(3,105,161,.66));
-  box-shadow:
-    0 0 0 7px rgba(125,211,252,.10),
-    0 0 28px rgba(125,211,252,.62),
-    inset 0 1px 0 rgba(255,255,255,.80) !important;
+  
+  
   animation: timelineNodePulse 3.8s ease-in-out infinite;
 }
 
 .timeline-card.island-card {
   position: relative;
-  width: min(620px, 100%);
-  overflow: visible;
+  
+  
   isolation: isolate;
-  padding: clamp(26px, 3.2vw, 40px) !important;
-  border: 0 !important;
+  
+  
   border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  filter: drop-shadow(0 38px 82px rgba(8,47,73,.18));
-  transform-style: preserve-3d;
+  
+  
+  
+  
   transition:
     transform .55s cubic-bezier(.19, 1, .22, 1),
     filter .55s ease !important;
@@ -304,24 +261,17 @@
 }
 
 .timeline-card.island-card::before {
-  content: "" !important;
-  position: absolute !important;
-  inset: 0 !important;
+  
+  
+  
   z-index: 0 !important;
   width: auto !important;
   height: auto !important;
-  border: 1px solid rgba(186,230,253,.34);
-  background:
-    radial-gradient(360px 190px at 12% 4%, rgba(255,255,255,.86), transparent 64%),
-    radial-gradient(310px 220px at 100% 100%, rgba(125,211,252,.22), transparent 74%),
-    linear-gradient(135deg, rgba(255,255,255,.78), rgba(224,251,255,.58) 52%, rgba(125,211,252,.24)) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.92),
-    inset 0 -1px 0 rgba(8,47,73,.10),
-    inset 28px 0 60px rgba(125,211,252,.08),
-    0 28px 78px rgba(8,47,73,.13) !important;
-  opacity: 1 !important;
-  pointer-events: none;
+  
+  
+  
+  
+  
 }
 
 .timeline-row.is-left .timeline-card.island-card::before {
@@ -333,16 +283,13 @@
 }
 
 .timeline-card.island-card::after {
-  content: "";
-  position: absolute;
-  inset: 1px;
+  
+  
+  
   z-index: 1;
-  background:
-    linear-gradient(120deg, rgba(255,255,255,.40), transparent 18%, transparent 76%, rgba(8,47,73,.07)),
-    linear-gradient(90deg, transparent 0%, rgba(125,211,252,.13) 16%, transparent 32%, transparent 72%, rgba(236,253,255,.20) 84%, transparent 100%),
-    repeating-linear-gradient(100deg, rgba(8,47,73,.032) 0 1px, transparent 1px 42px);
-  opacity: .78;
-  pointer-events: none;
+  
+  
+  
 }
 
 .timeline-row.is-left .timeline-card.island-card::after {
@@ -354,25 +301,23 @@
 }
 
 .timeline-card.island-card > * {
-  position: relative;
-  z-index: 3;
+  
+  
 }
 
 .timeline-card-watermark {
   right: 20px !important;
   top: 18px !important;
-  width: 92px !important;
-  height: 92px !important;
-  border-radius: 36% 64% 58% 42% !important;
-  background:
-    conic-gradient(from 180deg, rgba(125,211,252,.32), transparent 28%, rgba(255,255,255,.52), transparent 72%, rgba(125,211,252,.22)),
-    radial-gradient(circle at 35% 30%, rgba(255,255,255,.92), transparent 32%) !important;
-  opacity: .48 !important;
-  animation: premiumWatermarkOrbit 9s linear infinite;
+  
+  
+  
+  
+  
+  
 }
 
 .timeline-card .timeline-main-copy {
-  padding-right: clamp(0px, 8vw, 72px);
+  
 }
 
 .timeline-category {
@@ -383,7 +328,7 @@
 
 .timeline-card h2 {
   text-wrap: balance;
-  text-shadow: 0 1px 0 rgba(255,255,255,.50), 0 14px 34px rgba(8,47,73,.10);
+  
 }
 
 .timeline-period {
@@ -402,7 +347,7 @@
 .timeline-row:hover::before {
   opacity: 1 !important;
   transform: translateY(-1px) scaleX(1.08);
-  box-shadow: 0 0 36px rgba(125,211,252,.58), 0 0 0 1px rgba(255,255,255,.24) !important;
+  
 }
 
 .timeline-row:hover::after {
