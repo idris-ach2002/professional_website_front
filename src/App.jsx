@@ -12,6 +12,7 @@ import SEOHead from "./components/MetadataHead";
 import SiteFooter from "./components/SiteFooter";
 import StatusBanner from "./components/StatusBanner";
 import TopNavigation from "./components/TopNavigation";
+import ViewportStability from "./components/ViewportStability";
 import { ErrorBoundary } from "./components/errors/ErrorBoundary";
 import { RouteFocusManager, SkipToContent } from "./components/RouteAccessibility";
 
@@ -323,6 +324,7 @@ export default function App() {
 
   return (
     <>
+      <ViewportStability />
       <SkipToContent />
       <RouteFocusManager />
       <AnalyticsTracker source={state.source} />

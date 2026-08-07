@@ -43,7 +43,6 @@
 }
 
 
-
 .beach-3d-canvas {
   position: absolute !important;
   inset: 0;
@@ -179,9 +178,6 @@ body::before {
   border: 0 !important;
   box-shadow: none !important;
 }
-
-
-
 
 
 .hero-lead {
@@ -1896,9 +1892,9 @@ main,
   }
 
   .project-detail-modal-close {
-    flex-basis: 34px !important;
-    width: 34px !important;
-    height: 34px !important;
+    flex-basis: 44px !important;
+    width: 44px !important;
+    height: 44px !important;
   }
 
 }
@@ -2089,5 +2085,3 @@ main,
   }
 
 }
-
-

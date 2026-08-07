@@ -64,3 +64,12 @@ Budgets durs :
 - aucun mock sous `public/assets/mock`.
 
 Les images Cloudinary de type `image/upload` reçoivent automatiquement des variantes 320/640/960/1280 px avec `f_auto,q_auto,c_limit`. Les anciennes URLs `raw/upload` restent inchangées et continuent de fonctionner ; les nouveaux uploads backend utilisent `resource_type=auto` afin que les images futures soient transformables.
+
+## V18 — responsive industriel
+
+```bash
+npm run check:responsive
+npm run test:e2e:responsive
+```
+
+`npm run ci:verify` exécute désormais trois phases E2E séparées : fonctionnel, matrice responsive Chromium, puis Web Vitals Chromium isolés. La matrice V18 couvre 9 tailles de 360×800 à 1920×1080 et bloque tout débordement horizontal connu.

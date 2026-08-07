@@ -415,7 +415,11 @@ function LanguageDropdown({ active, setActive, language, setLanguage, t }) {
 
 function MobileMenu({ opened, groups, isHomePath, owner, profile, localizedPath, recruiterHref, language, setLanguage, t, onClose }) {
   return (
-    <div className={`nav_mobile-panel${opened ? " is-open" : ""}`}>
+    <nav
+      id="portfolio-mobile-menu"
+      className={`nav_mobile-panel${opened ? " is-open" : ""}`}
+      aria-label={t("nav.mainLabel")}
+    >
       {groups.map((group) => (
         <div className="nav_mobile-group" key={`mobile-${group.label}`}>
           <div className="nav_mobile-heading">{group.label}</div>
@@ -463,7 +467,7 @@ function MobileMenu({ opened, groups, isHomePath, owner, profile, localizedPath,
         </div>
         <AnimationPreferences mobile />
       </div>
-    </div>
+    </nav>
   );
 }
 
@@ -481,6 +485,25 @@ export default function TopNavigation({ owner }) {
   const cvHref = normalizeUrl(profile?.cvUrl || "#profile");
 
   const groups = useMemo(() => buildMenuGroups(owner, t, localizedPath), [localizedPath, owner, t]);
+
+  useEffect(() => {
+    if (!compactNavigation || !mobileOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setMobileOpen(false);
+    };
+
+    document.body.style.overflow = "hidden";
+    document.documentElement.dataset.mobileMenu = "open";
+    window.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      delete document.documentElement.dataset.mobileMenu;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [compactNavigation, mobileOpen]);
 
   return (
     <div className="nav_fixed nav_fixed--portfolio">
@@ -536,6 +559,7 @@ export default function TopNavigation({ owner }) {
             className={`nav_button w-nav-button${mobileOpen ? " w--open" : ""}`}
             aria-label={t("nav.mainLabel")}
             aria-expanded={mobileOpen}
+            aria-controls="portfolio-mobile-menu"
             onClick={() => setMobileOpen((value) => !value)}
           >
             <span className="hamburger_12_line" />

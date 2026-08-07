@@ -185,9 +185,6 @@
   pointer-events: none;
 }
 
-.nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2.wide .dropdown-list-v2 {
-  
-}
 
 .nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2.align-right .dropdown-list-v2 {
   left: auto;
@@ -444,9 +441,7 @@
 }
 
 @media (max-width: 1100px) {
-  .nav_fixed.nav_fixed--portfolio .nav_component {
-    
-  }
+
 
   .nav_fixed.nav_fixed--portfolio .nav_container-v2 {
     
@@ -552,9 +547,6 @@
     width: min(100%, calc(100vw - 16px));
   }
 
-  .nav_fixed.nav_fixed--portfolio .nav_container-v2 {
-    
-  }
 
   
 
@@ -577,9 +569,7 @@
    This layer keeps the Wispr-like shell but fixes logo visibility, real links
    and one-dropdown-at-a-time behaviour.
 ---------------------------------------------------------------------------- */
-.nav_fixed.nav_fixed--portfolio .nav_component {
-  
-}
+
 
 .nav_fixed.nav_fixed--portfolio .nav_container-v2 {
   
@@ -620,9 +610,6 @@
   padding: 0 17px;
 }
 
-.nav_fixed.nav_fixed--portfolio .nav_actions-wrap {
-  
-}
 
 .nav_fixed.nav_fixed--portfolio .nav_big-button.button {
   min-height: 58px;
@@ -720,9 +707,6 @@
     width: min(800px, calc(100vw - 24px));
   }
 
-  .nav_fixed.nav_fixed--portfolio .nav_container-v2 {
-    
-  }
 
   .nav_fixed.nav_fixed--portfolio .nav_personal-logo {
     width: min(230px, 54vw);
@@ -749,11 +733,7 @@
 
 
 /* Responsive brand rules moved out of the lazy Admin bundle. */
-@media (max-width: 820px) {
-  
 
-  
-}
 
 /* V13.3 recruiter and language controls integrated into the navigation flow. */
 .nav_fixed.nav_fixed--portfolio .nav_component {

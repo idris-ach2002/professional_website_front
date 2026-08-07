@@ -11,12 +11,6 @@
   --premium-card-deep: 2 6 23;
 }
 
-.profile-island {
-  
-  
-  
-  
-}
 
 .profile-island .hero-copy {
   
@@ -44,23 +38,6 @@
   border-radius: inherit;
 }
 
-.profile-island .hero-copy::before {
-  
-  
-  
-}
-
-.profile-island .hero-copy::after {
-  
-  
-  
-  
-}
-
-.profile-island .hero-copy > * {
-  
-  
-}
 
 .profile-island .hero-map-line {
   z-index: 1;
@@ -68,9 +45,6 @@
   filter: drop-shadow(0 0 14px rgba(125, 211, 252, .22));
 }
 
-.profile-island .hero-title {
-  
-}
 
 .profile-island .hero-lead {
   position: relative;
@@ -101,14 +75,7 @@
 
 .portrait-card.island-card,
 .availability-card.island-card,
-.contact-card.island-card {
-  
-  
-  
-  
-  
-  
-}
+
 
 .portrait-card.island-card {
   
@@ -127,15 +94,7 @@
 
 .portrait-card.island-card::before,
 .availability-card.island-card::before,
-.contact-card.island-card::before {
-  
-  
-  
-  
-  
-  
-  
-}
+
 
 .portrait-card.island-card::after,
 .availability-card.island-card::after,
@@ -157,17 +116,11 @@
 
 .portrait-card.island-card > *,
 .availability-card.island-card > *,
-.contact-card.island-card > * {
-  
-  
-}
+
 
 .portrait-preview-trigger,
 .portrait-placeholder,
-.portrait-image {
-  
-  
-}
+
 
 .portrait-content {
   padding: 12px 18px;
@@ -185,14 +138,6 @@
   animation: statusSignalSweep 5.6s cubic-bezier(.19, 1, .22, 1) infinite;
 }
 
-.contact-pill {
-  
-  
-  
-  
-  
-  
-}
 
 .contact-pill:hover {
   transform: translateX(5px);
@@ -300,10 +245,6 @@
   clip-path: polygon(12% 0, 100% 8%, 100% 74%, 91% 100%, 10% 96%, 0 82%, 4% 18%);
 }
 
-.timeline-card.island-card > * {
-  
-  
-}
 
 .timeline-card-watermark {
   right: 20px !important;
@@ -316,9 +257,6 @@
   
 }
 
-.timeline-card .timeline-main-copy {
-  
-}
 
 .timeline-category {
   border-radius: 999px 999px 999px 8px !important;
@@ -442,4 +380,3 @@
     padding-right: 0;
   }
 }
-

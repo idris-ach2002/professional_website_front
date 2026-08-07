@@ -3,14 +3,7 @@
    Premium profile + timeline cards polish
    Keeps data, layout logic and navbar unchanged. Pure visual refinement.
 ────────────────────────────────────────────────────────────────────────── */
-.profile-island .hero-copy {
-  
-  
-  
-  
-  
-  
-}
+
 
 .profile-island .hero-copy::before {
   
@@ -36,10 +29,6 @@
   
 }
 
-.profile-island .hero-panel {
-  
-  
-}
 
 .portrait-card.island-card,
 .availability-card.island-card,
@@ -183,9 +172,6 @@
   font-weight: 650 !important;
 }
 
-.availability-card .mantine-RingProgress-root {
-  
-}
 
 .contact-card .mantine-Stack-root {
   margin-top: 12px;
@@ -216,12 +202,7 @@
 }
 
 .contact-pill:hover,
-.contact-pill:focus-visible {
-  
-  
-  
-  
-}
+
 
 .contact-pill span {
   color: rgba(3, 105, 161, .74) !important;
@@ -236,11 +217,7 @@
 
 .portrait-card.island-card:hover,
 .availability-card.island-card:hover,
-.contact-card.island-card:hover {
-  
-  
-  
-}
+
 
 .timeline-subsea-track {
   width: min(1320px, 100%);
@@ -296,23 +273,12 @@
   pointer-events: none;
 }
 
-.timeline-row.is-left::before {
-  
-}
 
 .timeline-row.is-right::before {
   
   background: linear-gradient(90deg, rgba(125, 211, 252, .28), rgba(226, 250, 255, .72), transparent);
 }
 
-.timeline-card.island-card {
-  
-  
-  
-  
-  
-  
-}
 
 .timeline-row.is-left .timeline-card.island-card {
   border-radius: 42px 30px 56px 34px !important;
@@ -324,13 +290,6 @@
   
 }
 
-.timeline-card.island-card::before {
-  
-  
-  
-  
-  
-}
 
 .timeline-card.island-card::after {
   
@@ -342,10 +301,6 @@
   
 }
 
-.timeline-card.island-card > * {
-  
-  
-}
 
 .timeline-card-watermark {
   
@@ -435,10 +390,6 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .70);
 }
 
-.timeline-row:hover::before {
-  
-  
-}
 
 .timeline-row:hover::after {
   box-shadow: 0 0 24px rgba(125, 211, 252, .62), 0 0 0 6px rgba(125, 211, 252, .10);
@@ -502,5 +453,3 @@
     max-width: 100%;
   }
 }
-
-

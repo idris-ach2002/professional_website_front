@@ -46,6 +46,9 @@ jobs:
       - name: Exécuter les tests E2E fonctionnels
         run: npm run test:e2e:functional
 
+      - name: Vérifier la matrice responsive Chromium
+        run: npm run test:e2e:responsive
+
       - name: Mesurer les Web Vitals en isolation
         run: npm run test:e2e:vitals
 
