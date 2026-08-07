@@ -161,7 +161,7 @@ test("mémorise les préférences d’animation et active le mode ultra-léger",
   await openPortfolio(page, "fr");
 
   const desktopControl = page.locator(".animation-preferences-control");
-  const animationNavItem = desktopControl.getByRole("button", { name: "Animations" });
+  const animationNavItem = desktopControl.getByTestId("animation-preferences-trigger");
   await expect(animationNavItem).toHaveAccessibleName("Animations");
   await expect(animationNavItem).toContainText("Animations");
   await expect(animationNavItem).not.toContainText("FX");
@@ -179,7 +179,7 @@ test("mémorise les préférences d’animation et active le mode ultra-léger",
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.locator("html")).toHaveAttribute("data-animation-preference", "reduced");
   const reloadedAnimationControl = page.locator(".animation-preferences-control");
-  await reloadedAnimationControl.getByRole("button", { name: "Animations" }).hover();
+  await reloadedAnimationControl.getByTestId("animation-preferences-trigger").hover();
   await reloadedAnimationControl.getByRole("group", { name: "Niveau d’animations" }).getByRole("button", { name: /Désactivées/ }).click();
   await expect(page.locator("html")).toHaveAttribute("data-performance-profile", "ultra-lite");
   await expect(page.locator("html")).toHaveAttribute("data-animation-state", "off");
@@ -190,7 +190,7 @@ test("garde le poisson du Parcours hors du titre en modes réduites et désactiv
   await openPortfolio(page, "fr");
 
   const control = page.locator(".animation-preferences-control");
-  const trigger = control.getByRole("button", { name: "Animations" });
+  const trigger = control.getByTestId("animation-preferences-trigger");
   const heading = page.locator(".timeline-section .section-heading", { hasText: "Parcours" }).first();
   const fish = page.locator(".timeline-section .section-title-fish .section-reveal-fish").first();
 
@@ -217,7 +217,7 @@ test("garde le poisson du Parcours hors du titre en modes réduites et désactiv
   await expectNoOverlap();
 });
 
-test("respecte les budgets Web Vitals sur mobile", async ({ page, browserName }, testInfo) => {
+test("@vitals respecte les budgets Web Vitals sur mobile", async ({ page, browserName }, testInfo) => {
   test.skip(browserName !== "chromium", "Les métriques PerformanceObserver sont contrôlées dans Chromium.");
 
   await page.setViewportSize({ width: 390, height: 844 });
@@ -229,6 +229,7 @@ test("respecte les budgets Web Vitals sur mobile", async ({ page, browserName },
       inp: 0,
       lcpSupported: supportedEntryTypes.includes("largest-contentful-paint"),
       lcpSamples: 0,
+      interactions: {},
     };
 
     if (window.__portfolioPerformance.lcpSupported) {
@@ -253,7 +254,16 @@ test("respecte les budgets Web Vitals sur mobile", async ({ page, browserName },
     if (PerformanceObserver.supportedEntryTypes?.includes("event")) {
       new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
-          window.__portfolioPerformance.inp = Math.max(window.__portfolioPerformance.inp, entry.duration ?? 0);
+          if (!entry.interactionId || !entry.duration) continue;
+          const key = String(entry.interactionId);
+          window.__portfolioPerformance.interactions[key] = Math.max(
+            window.__portfolioPerformance.interactions[key] ?? 0,
+            entry.duration,
+          );
+          window.__portfolioPerformance.inp = Math.max(
+            window.__portfolioPerformance.inp,
+            window.__portfolioPerformance.interactions[key],
+          );
         }
       }).observe({ type: "event", durationThreshold: 16, buffered: true });
     }
@@ -273,11 +283,22 @@ test("respecte les budgets Web Vitals sur mobile", async ({ page, browserName },
     { timeout: 10_000 },
   );
 
-  await page.keyboard.press("Tab");
+  // Warm the interaction path before starting the isolated INP sample.
+  const navigationButton = page.getByRole("button", { name: "Navigation principale" });
+  await navigationButton.click();
+  await navigationButton.click();
+  await page.waitForTimeout(150);
+  await page.evaluate(() => {
+    window.__portfolioPerformance.inp = 0;
+    window.__portfolioPerformance.interactions = {};
+  });
+
+  await navigationButton.click();
   await page.waitForTimeout(250);
 
   const metrics = await page.evaluate(() => ({
     ...window.__portfolioPerformance,
+    interactionSamples: Object.keys(window.__portfolioPerformance.interactions ?? {}).length,
     resources: performance.getEntriesByType("resource").length,
   }));
 
@@ -291,6 +312,7 @@ test("respecte les budgets Web Vitals sur mobile", async ({ page, browserName },
   expect(metrics.lcp).toBeGreaterThan(0);
   expect(metrics.lcp).toBeLessThanOrEqual(2500);
   expect(metrics.cls).toBeLessThanOrEqual(0.1);
+  expect(metrics.interactionSamples).toBeGreaterThan(0);
   expect(metrics.inp).toBeLessThanOrEqual(200);
   expect(metrics.resources).toBeLessThanOrEqual(50);
 });

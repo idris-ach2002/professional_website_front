@@ -117,6 +117,7 @@ export default function AnimationPreferences({ mobile = false, active = null, se
     >
       <button
         type="button"
+        data-testid="animation-preferences-trigger"
         className="animation-preferences-trigger dropdown1_toggle v2 w-dropdown-toggle"
         aria-label={t("animations.title")}
         aria-expanded={open}

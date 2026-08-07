@@ -43,8 +43,11 @@ jobs:
       - name: Vérifier lint, tests unitaires et build
         run: npm run ci:quality
 
-      - name: Exécuter les tests E2E
-        run: npm run test:e2e
+      - name: Exécuter les tests E2E fonctionnels
+        run: npm run test:e2e:functional
+
+      - name: Mesurer les Web Vitals en isolation
+        run: npm run test:e2e:vitals
 
       - name: Publier la couverture Vitest
         if: always()
