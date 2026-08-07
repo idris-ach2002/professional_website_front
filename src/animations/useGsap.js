@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import useAnimationPreferences from "../contexts/useAnimationPreferences";
 
 const MOBILE_QUERY = "(max-width: 820px)";
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
@@ -19,11 +20,15 @@ async function getGsapRuntime() {
 }
 
 export function useGsap(rootRef, setup, deps = [], options = {}) {
+  const { animationsEnabled, animationsPaused, performanceMode } = useAnimationPreferences();
+
   useEffect(() => {
     const isMobile = typeof window !== "undefined" && window.matchMedia?.(MOBILE_QUERY).matches;
+    if (!animationsEnabled || animationsPaused) return undefined;
+    if (performanceMode === "lite" && !options.allowOnLite) return undefined;
     const reducedMotion = typeof window !== "undefined" && window.matchMedia?.(REDUCED_MOTION_QUERY).matches;
 
-    if (isMobile && !options.allowOnMobile) return undefined;
+    if (isMobile && performanceMode !== "full" && !options.allowOnMobile) return undefined;
     if (reducedMotion && !options.allowOnReducedMotion) return undefined;
 
     let cancelled = false;
@@ -46,7 +51,7 @@ export function useGsap(rootRef, setup, deps = [], options = {}) {
       context?.revert();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+  }, [animationsEnabled, animationsPaused, performanceMode, ...deps]);
 }
 
 export function gsapReady() {

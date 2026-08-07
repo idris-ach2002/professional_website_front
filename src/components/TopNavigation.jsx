@@ -7,6 +7,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import useLanguage from "../localization/useLanguage";
+import AnimationPreferences from "./AnimationPreferences";
 import {
   getOwnerFullName,
   getProjectSlug,
@@ -204,6 +205,7 @@ function Icon({ type }) {
     status: <path d="M5 12.4 9.2 16 19 6.8" />,
     email: <path d="M4.5 7.5h15v9h-15v-9Zm0 0 7.5 5.2 7.5-5.2" />,
     contact: <path d="M4.5 7.5h15v9h-15v-9Zm0 0 7.5 5.2 7.5-5.2" />,
+    language: <path d="M12 4.2a7.8 7.8 0 1 0 0 15.6 7.8 7.8 0 0 0 0-15.6Zm0 0c2 2.1 3.05 4.7 3.05 7.8S14 17.7 12 19.8M12 4.2C10 6.3 8.95 8.9 8.95 12S10 17.7 12 19.8M4.6 9.4h14.8M4.6 14.6h14.8" />,
     document: <path d="M7 3.8h6.6L18 8.2v12H7V3.8Zm6.4 0v4.6H18M9.8 12.2h5.1M9.8 15.7h5.1" />,
     timeline: <path d="M12 4v16M7 7.2h10M7 12h10M7 16.8h10" />,
     school: <path d="M3.5 9 12 4.8 20.5 9 12 13.2 3.5 9Zm4 2.2v4.1c1.52 1.25 3 1.87 4.5 1.87s2.98-.62 4.5-1.87v-4.1" />,
@@ -338,6 +340,79 @@ function DesktopDropdown({ group, active, setActive, isHomePath, owner, profile,
   );
 }
 
+function LanguageDropdown({ active, setActive, language, setLanguage, t }) {
+  const menuKey = "__language";
+  const open = active === menuKey;
+  const options = [
+    {
+      code: "fr",
+      label: t("language.french"),
+      description: t("language.frenchDescription"),
+    },
+    {
+      code: "en",
+      label: t("language.english"),
+      description: t("language.englishDescription"),
+    },
+  ];
+
+  return (
+    <div
+      className={`nav_language-dropdown nav_menu-dropdown-toggle-v2 w-dropdown single align-right${open ? " is-open" : ""}`}
+      onMouseEnter={() => setActive(menuKey)}
+      onMouseLeave={() => setActive(null)}
+      onFocus={() => setActive(menuKey)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setActive(null);
+      }}
+    >
+      <button
+        type="button"
+        className="dropdown1_toggle v2 w-dropdown-toggle"
+        aria-label={t("language.title")}
+        aria-expanded={open}
+        onClick={() => setActive(open ? null : menuKey)}
+      >
+        <span>{t("language.title")}</span>
+        <svg viewBox="0 0 16 16" className="nav_menu-dropdown-arrow" aria-hidden="true">
+          <path d="M4.4 6.2 8 9.8l3.6-3.6" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      <nav className="dropdown-list-v2 w-dropdown-list" aria-label={t("language.title")}>
+        <div className="dropdown-inside-wrap">
+          <div className="dropdown-wrap">
+            <div className="dropdown-column">
+              <div className="dropdown-list-heading hide-tablet">{t("language.selectorLabel")}</div>
+              {options.map((option) => (
+                <button
+                  key={option.code}
+                  type="button"
+                  className="dropdown-link nav_language-dropdown-option"
+                  aria-pressed={language === option.code}
+                  onClick={() => {
+                    setLanguage(option.code);
+                    setActive(null);
+                  }}
+                >
+                  <span className="dropdown-link-icon"><Icon type="language" /></span>
+                  <span className="dropdown-link-copy">
+                    <span className="dropdown-link-title-row">
+                      <span className="dropdown-link-text">{option.label}</span>
+                      {language === option.code ? <span className="dropdown-link-badge">{t("nav.current")}</span> : null}
+                    </span>
+                    <span className="dropdown-link-description">{option.description}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </nav>
+    </div>
+  );
+}
+
 function MobileMenu({ opened, groups, isHomePath, owner, profile, localizedPath, recruiterHref, language, setLanguage, t, onClose }) {
   return (
     <div className={`nav_mobile-panel${opened ? " is-open" : ""}`}>
@@ -386,6 +461,7 @@ function MobileMenu({ opened, groups, isHomePath, owner, profile, localizedPath,
             EN
           </button>
         </div>
+        <AnimationPreferences mobile />
       </div>
     </div>
   );
@@ -438,29 +514,14 @@ export default function TopNavigation({ owner }) {
               >
                 {t("nav.recruiter")}
               </a>
-              <div
-                className="nav_language-menu"
-                role="group"
-                aria-label={t("language.selectorLabel", { fallback: "Langue" })}
-              >
-                <button
-                  type="button"
-                  className={`nav_language-menu-option${language === "fr" ? " is-active" : ""}`}
-                  onClick={() => setLanguage("fr")}
-                  aria-pressed={language === "fr"}
-                >
-                  FR
-                </button>
-                <span className="nav_language-menu-separator" aria-hidden="true">/</span>
-                <button
-                  type="button"
-                  className={`nav_language-menu-option${language === "en" ? " is-active" : ""}`}
-                  onClick={() => setLanguage("en")}
-                  aria-pressed={language === "en"}
-                >
-                  EN
-                </button>
-              </div>
+              <AnimationPreferences active={active} setActive={setActive} />
+              <LanguageDropdown
+                active={active}
+                setActive={setActive}
+                language={language}
+                setLanguage={setLanguage}
+                t={t}
+              />
             </div>
           </nav>}
 

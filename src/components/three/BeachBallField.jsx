@@ -316,7 +316,7 @@ function AbstractSingularityScene({
   );
 }
 
-export default function BeachBallField({ performanceMode = "full" }) {
+export default function BeachBallField({ performanceMode = "full", paused = false }) {
   const rootRef = useRef(null);
   const stageRef = useRef(null);
   const unmountTimerRef = useRef(0);
@@ -328,7 +328,7 @@ export default function BeachBallField({ performanceMode = "full" }) {
   const [colorSchemeIndex, setColorSchemeIndex] = useState(0);
   const [clickTick, setClickTick] = useState(0);
   const balancedMode = performanceMode === "balanced";
-  const active = shouldMountCanvas && insideActiveZone && pageVisible;
+  const active = shouldMountCanvas && insideActiveZone && pageVisible && !paused;
 
   const shiftPalette = useCallback(() => {
     if (!shouldMountCanvas) return;
@@ -388,6 +388,8 @@ export default function BeachBallField({ performanceMode = "full" }) {
     let disposed = false;
     let cleanup = () => {};
 
+    if (paused) return undefined;
+
     gsapReady().then((runtime) => {
       if (disposed || !runtime?.gsap || !rootRef.current || !stageRef.current) return;
       const { gsap, ScrollTrigger } = runtime;
@@ -420,7 +422,7 @@ export default function BeachBallField({ performanceMode = "full" }) {
       disposed = true;
       cleanup();
     };
-  }, [balancedMode]);
+  }, [balancedMode, paused]);
 
   return (
     <section

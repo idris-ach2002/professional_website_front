@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { gsapReady, useGsap } from "../animations/useGsap";
 import useResponsiveProfile from "../hooks/useResponsiveProfile";
+import useAnimationPreferences from "../contexts/useAnimationPreferences";
 import useLanguage from "../localization/useLanguage";
 import SectionTitle from "./SectionTitle";
 import { FilePreviewButton, PreviewableImage } from "./FilePreview";
@@ -548,8 +549,11 @@ function getPanelStyle(offset) {
 }
 function GalleryNavButton({ direction, label, onNavigate }) {
   const visualRef = useRef(null);
+  const { animationsEnabled, animationsPaused, performanceMode } = useAnimationPreferences();
+  const animateFeedback = animationsEnabled && !animationsPaused && performanceMode !== "lite";
 
   const handlePointerEnter = useCallback(() => {
+    if (!animateFeedback) return;
     gsapReady().then(({ gsap }) => {
       if (!visualRef.current) return;
       gsap.to(visualRef.current, {
@@ -560,9 +564,10 @@ function GalleryNavButton({ direction, label, onNavigate }) {
         overwrite: "auto", // Écrase les animations précédentes pour éviter les conflits
       });
     });
-  }, []);
+  }, [animateFeedback]);
 
   const handlePointerLeave = useCallback(() => {
+    if (!animateFeedback) return;
     gsapReady().then(({ gsap }) => {
       if (!visualRef.current) return;
       gsap.to(visualRef.current, {
@@ -573,7 +578,7 @@ function GalleryNavButton({ direction, label, onNavigate }) {
         overwrite: "auto",
       });
     });
-  }, []);
+  }, [animateFeedback]);
 
   // Animation au clic (bouton qui s'enfonce)
   const handlePointerDown = useCallback(
@@ -582,7 +587,7 @@ function GalleryNavButton({ direction, label, onNavigate }) {
       event.preventDefault();
       event.stopPropagation();
 
-      gsapReady().then(({ gsap }) => {
+      if (animateFeedback) gsapReady().then(({ gsap }) => {
         if (!visualRef.current) return;
         gsap.to(visualRef.current, {
           scale: 0.9,
@@ -594,7 +599,7 @@ function GalleryNavButton({ direction, label, onNavigate }) {
 
       onNavigate();
     },
-    [onNavigate]
+    [animateFeedback, onNavigate]
   );
 
   // Relâchement du clic (retour à l'état de survol)
@@ -608,9 +613,9 @@ function GalleryNavButton({ direction, label, onNavigate }) {
       if (event.key !== "Enter" && event.key !== " ") return;
       event.preventDefault();
       event.stopPropagation();
-      
+
       // Petit feedback visuel rapide au clavier
-      gsapReady().then(({ gsap }) => {
+      if (animateFeedback) gsapReady().then(({ gsap }) => {
         if (!visualRef.current) return;
         gsap.fromTo(
           visualRef.current,
@@ -621,7 +626,7 @@ function GalleryNavButton({ direction, label, onNavigate }) {
 
       onNavigate();
     },
-    [onNavigate]
+    [animateFeedback, onNavigate]
   );
 
   return (
@@ -898,9 +903,6 @@ export default function ProjectsShowcase({ projects }) {
       />
 
       <Group gap="xs" className="result-line" mb="xl">
-        <Badge className="executive-badge">
-          {t(filteredProjects.length > 1 ? "projects.countMany" : "projects.countOne", { count: filteredProjects.length })}
-        </Badge>
         {selectedStacks.map((stack) => (
           <Badge key={stack} className="filter-chip">
             {stack}

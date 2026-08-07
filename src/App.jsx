@@ -30,7 +30,7 @@ const ProjectCaseStudyPage = lazy(() => import("./components/ProjectCaseStudyPag
 const NotFoundPage = lazy(() => import("./components/NotFoundPage"));
 const RecruiterPage = lazy(() => import("./components/RecruiterPage"));
 
-function DeferredBeachBall({ performanceMode }) {
+function DeferredBeachBall({ performanceMode, animationsPaused }) {
   const { t } = useLanguage();
   const sentinelRef = useRef(null);
   const [shouldLoad, setShouldLoad] = useState(false);
@@ -81,7 +81,7 @@ function DeferredBeachBall({ performanceMode }) {
             </section>
           }
         >
-          <BeachBallField performanceMode={performanceMode} />
+          <BeachBallField performanceMode={performanceMode} paused={animationsPaused} />
         </Suspense>
       </ErrorBoundary>
     );
@@ -115,14 +115,14 @@ function Home({
 }) {
   const responsiveProfile = useResponsiveProfile();
   const { t } = useLanguage();
-  const { isMobile, reducedMotion, performanceMode, isFirefox } = responsiveProfile;
+  const { isMobile, reducedMotion, performanceMode, isFirefox, animationsEnabled, animationsPaused } = responsiveProfile;
 
   return (
     <main id="main-content" className="app-shell" tabIndex={-1}>
       <SEOHead owner={owner} projects={projects} experiences={experiences} />
 
       <OceanMorphBackground
-        staticMode={performanceMode === "lite"}
+        staticMode={performanceMode === "lite" || performanceMode === "ultra-lite"}
         performanceMode={performanceMode}
       />
       <GlobalAquarium
@@ -130,6 +130,7 @@ function Home({
         reducedMotion={reducedMotion}
         performanceMode={performanceMode}
         isFirefox={isFirefox}
+        paused={animationsPaused}
       />
 
       <TopNavigation owner={owner} source={state.source} />
@@ -174,8 +175,8 @@ function Home({
           />
         </Suspense>
 
-        {!isMobile && !reducedMotion && (
-          <DeferredBeachBall performanceMode={performanceMode} />
+        {!isMobile && !reducedMotion && animationsEnabled && !["lite", "ultra-lite"].includes(performanceMode) && (
+          <DeferredBeachBall performanceMode={performanceMode} animationsPaused={animationsPaused} />
         )}
 
         <ProjectsShowcase projects={projects} />

@@ -67,8 +67,15 @@ test("bascule du français vers l'anglais", async ({ page }) => {
   const englishResponse = page.waitForResponse(
     (response) => isPublicWebsiteRequest(response.url(), "en") && response.status() === 200,
   );
-  const languageGroup = page.getByRole("group", { name: /langue/i }).first();
-  await languageGroup.getByRole("button", { name: "EN" }).click();
+  const languageMenu = page.locator(".nav_language-dropdown");
+  const languageTrigger = languageMenu.getByRole("button", { name: "Langue" });
+  await expect(languageTrigger).toBeVisible();
+  await expect(languageTrigger).not.toContainText("FR");
+  await expect(languageTrigger).not.toContainText("EN");
+  await languageTrigger.hover();
+  const languagePanel = languageMenu.getByRole("navigation", { name: "Langue" });
+  await expect(languagePanel).toBeVisible();
+  await languagePanel.getByRole("button", { name: /English/ }).click();
   await englishResponse;
 
   await expect(page).toHaveURL(/\/en$/);
@@ -134,6 +141,80 @@ test("utilise le fallback français quand l'API est indisponible", async ({ page
   await page.goto("/?lang=fr", { waitUntil: "domcontentloaded" });
 
   await expect(page.getByRole("heading", { level: 1, name: "Développeur Java Full Stack" })).toBeVisible({ timeout: 20_000 });
+});
+
+test("expose les réglages d’animation dans le menu mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await openPortfolio(page, "fr");
+
+  await page.getByRole("button", { name: "Navigation principale" }).click();
+  const mobileSettings = page.locator(".animation-preferences-mobile");
+  await expect(mobileSettings).toBeVisible();
+  await mobileSettings.getByRole("button", { name: "Désactivées" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-animation-preference", "off");
+  await expect(page.locator("html")).toHaveAttribute("data-performance-profile", "ultra-lite");
+});
+
+test("mémorise les préférences d’animation et active le mode ultra-léger", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await openPortfolio(page, "fr");
+
+  const desktopControl = page.locator(".animation-preferences-control");
+  const animationNavItem = desktopControl.getByRole("button", { name: "Animations" });
+  await expect(animationNavItem).toHaveAccessibleName("Animations");
+  await expect(animationNavItem).toContainText("Animations");
+  await expect(animationNavItem).not.toContainText("FX");
+  await animationNavItem.hover();
+  const settings = desktopControl.getByRole("group", { name: "Niveau d’animations" });
+  await expect(settings).toBeVisible();
+  await settings.getByRole("button", { name: /Réduites/ }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-performance-profile", "lite");
+  await expect(page.locator("html")).toHaveAttribute("data-animation-preference", "reduced");
+  await page.getByRole("button", { name: "Mettre en pause" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-animation-state", "paused");
+  await page.getByRole("button", { name: "Reprendre" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-animation-state", "running");
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.locator("html")).toHaveAttribute("data-animation-preference", "reduced");
+  const reloadedAnimationControl = page.locator(".animation-preferences-control");
+  await reloadedAnimationControl.getByRole("button", { name: "Animations" }).hover();
+  await reloadedAnimationControl.getByRole("group", { name: "Niveau d’animations" }).getByRole("button", { name: /Désactivées/ }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-performance-profile", "ultra-lite");
+  await expect(page.locator("html")).toHaveAttribute("data-animation-state", "off");
+});
+
+test("garde le poisson du Parcours hors du titre en modes réduites et désactivées", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await openPortfolio(page, "fr");
+
+  const control = page.locator(".animation-preferences-control");
+  const trigger = control.getByRole("button", { name: "Animations" });
+  const heading = page.locator(".timeline-section .section-heading", { hasText: "Parcours" }).first();
+  const fish = page.locator(".timeline-section .section-title-fish .section-reveal-fish").first();
+
+  const expectNoOverlap = async () => {
+    await heading.scrollIntoViewIfNeeded();
+    await expect(heading).toBeVisible();
+    await expect(fish).toBeVisible();
+    const [headingBox, fishBox] = await Promise.all([heading.boundingBox(), fish.boundingBox()]);
+    expect(headingBox).not.toBeNull();
+    expect(fishBox).not.toBeNull();
+    const overlapX = Math.max(0, Math.min(headingBox.x + headingBox.width, fishBox.x + fishBox.width) - Math.max(headingBox.x, fishBox.x));
+    const overlapY = Math.max(0, Math.min(headingBox.y + headingBox.height, fishBox.y + fishBox.height) - Math.max(headingBox.y, fishBox.y));
+    expect(overlapX * overlapY).toBe(0);
+  };
+
+  await trigger.hover();
+  await control.getByRole("group", { name: "Niveau d’animations" }).getByRole("button", { name: /Réduites/ }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-performance-profile", "lite");
+  await expectNoOverlap();
+
+  await trigger.hover();
+  await control.getByRole("group", { name: "Niveau d’animations" }).getByRole("button", { name: /Désactivées/ }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-performance-profile", "ultra-lite");
+  await expectNoOverlap();
 });
 
 test("respecte les budgets Web Vitals sur mobile", async ({ page, browserName }, testInfo) => {

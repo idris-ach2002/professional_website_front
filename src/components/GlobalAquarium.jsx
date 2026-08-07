@@ -133,6 +133,7 @@ export default function GlobalAquarium({
   reducedMotion = false,
   performanceMode = "full",
   isFirefox = false,
+  paused = false,
 }) {
   const [isPageHidden, setIsPageHidden] = useState(() =>
     typeof document !== "undefined" ? document.hidden : false,
@@ -173,13 +174,14 @@ export default function GlobalAquarium({
   const fish = useMemo(() => {
     if (reducedMotion) return [MOBILE_FISH[0]];
     if (isMobile) return isScrolling && isFirefox ? [MOBILE_FISH[0]] : MOBILE_FISH;
+    if (performanceMode === "lite") return MOBILE_FISH;
     if (performanceMode === "balanced") return BALANCED_FISH;
     return DESKTOP_FISH;
   }, [isFirefox, isMobile, isScrolling, performanceMode, reducedMotion]);
 
   return (
     <div
-      className={`global-aquarium${isPageHidden ? " is-paused" : ""}${
+      className={`global-aquarium${isPageHidden || paused ? " is-paused" : ""}${
         reducedMotion ? " is-reduced-motion" : ""
       }${performanceMode === "balanced" ? " is-balanced" : ""}${
         isScrolling ? " is-scrolling" : ""

@@ -1,0 +1,127 @@
+.animation-preferences-control {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.nav_fixed.nav_fixed--portfolio .animation-preferences-trigger {
+  appearance: none;
+}
+
+.nav_fixed.nav_fixed--portfolio .animation-preferences-control .dropdown-list-v2 {
+  right: -6px;
+  left: auto;
+}
+
+.nav_fixed.nav_fixed--portfolio .animation-preferences-control .dropdown-inside-wrap {
+  border-radius: 14px 0 14px 14px;
+}
+
+.animation-dropdown-options {
+  display: grid;
+}
+
+.nav_fixed.nav_fixed--portfolio .animation-dropdown-option {
+  width: 100%;
+  border: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nav_fixed.nav_fixed--portfolio .animation-dropdown-option[aria-pressed="true"] {
+  color: #034f46;
+}
+
+.nav_fixed.nav_fixed--portfolio .animation-dropdown-pause {
+  margin-top: 4px;
+  border-top: 1px solid rgba(228, 228, 208, .68);
+}
+
+.nav_fixed.nav_fixed--portfolio .animation-dropdown-pause:disabled {
+  cursor: not-allowed;
+  opacity: .48;
+}
+
+.animation-dropdown-status {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+  padding-top: 11px;
+  border-top: 1px solid rgba(228, 228, 208, .68);
+  color: rgba(23, 23, 23, .58);
+  font-size: .72rem;
+  line-height: 1.35;
+}
+
+.animation-dropdown-status strong {
+  color: #123744;
+  font-size: .74rem;
+}
+
+.animation-preferences-panel {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  padding: 16px;
+  border: 1px solid rgba(15,118,110,.16);
+  border-radius: 18px;
+  background: rgba(255,255,255,.7);
+  color: #123744;
+}
+
+.animation-preferences-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: .78rem; }
+.animation-preferences-heading span { color: #52717a; font-size: .7rem; }
+.animation-preferences-options { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; }
+.animation-preference-option, .animation-pause-button {
+  min-height: 38px; border: 1px solid rgba(15,118,110,.18); border-radius: 12px; background: #fff; color: #194b58;
+  cursor: pointer; font-weight: 750; font-size: .75rem;
+}
+.animation-preference-option.is-active { background: #d7f7f4; border-color: #2b9c94; color: #0b5d58; }
+.animation-pause-button { background: #effbfc; }
+.animation-pause-button:disabled { cursor: not-allowed; opacity: .5; }
+.animation-preferences-status { color: #617c84; font-size: .68rem; line-height: 1.35; }
+.animation-preferences-mobile { margin-top: 12px; }
+
+html[data-animation-state="paused"] * { animation-play-state: paused !important; }
+html[data-animation-state="off"] { scroll-behavior: auto; }
+html[data-animation-state="off"] *,
+html[data-animation-state="off"] *::before,
+html[data-animation-state="off"] *::after { animation: none !important; transition-duration: .01ms !important; }
+html[data-performance-profile="ultra-lite"] .global-aquarium,
+html[data-performance-profile="ultra-lite"] .ocean-depth-particles,
+html[data-performance-profile="ultra-lite"] .ocean-map { display: none; }
+html[data-performance-profile="ultra-lite"] .ocean-background { background: linear-gradient(180deg,#effbff 0%,#d9f3fb 42%,#a7dce7 100%); opacity: 1; }
+
+.nav_fixed.nav_fixed--portfolio .nav_mobile-utility-group .animation-preferences-mobile { grid-column: 1 / -1; width: 100%; }
+
+/* V17.3 — In lite/ultra-lite profiles the fish reveal no longer crosses the title,
+   because GSAP is intentionally disabled in those modes. Keep it decorative and
+   parked outside the copy instead of leaving it centered over the heading. */
+html[data-performance-profile="lite"] .section-title-fish .section-title-copy,
+html[data-performance-profile="ultra-lite"] .section-title-fish .section-title-copy {
+  position: relative;
+  z-index: 2;
+}
+
+html[data-performance-profile="lite"] .section-title-fish .section-reveal-fish,
+html[data-performance-profile="ultra-lite"] .section-title-fish .section-reveal-fish {
+  left: auto;
+  right: clamp(-56px, -3vw, -28px);
+  top: clamp(14px, 7%, 28px);
+  transform: none;
+  width: clamp(120px, 14vw, 190px) !important;
+  opacity: .68;
+  z-index: 1;
+  filter: drop-shadow(0 10px 18px rgba(2, 6, 23, .14))
+    drop-shadow(0 0 18px rgba(125, 211, 252, .24));
+}
+
+@media (max-width: 820px) {
+  html[data-performance-profile="lite"] .section-title-fish .section-reveal-fish,
+  html[data-performance-profile="ultra-lite"] .section-title-fish .section-reveal-fish {
+    right: -58px;
+    top: 8px;
+    width: 104px !important;
+    opacity: .56;
+  }
+}

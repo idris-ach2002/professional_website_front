@@ -7,6 +7,7 @@ import "./index.css";
 import App from "./App";
 import { AppErrorBoundary } from "./components/errors/ErrorBoundary";
 import LanguageProvider from "./localization/LanguageProvider";
+import AnimationPreferencesProvider from "./contexts/AnimationPreferencesContext";
 
 const theme = createTheme({
   fontFamily: "Inter, Arial, Helvetica, sans-serif",
@@ -22,11 +23,13 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <MantineProvider theme={theme} defaultColorScheme="light">
       <LanguageProvider>
-        <BrowserRouter>
+        <AnimationPreferencesProvider>
+          <BrowserRouter>
           <AppErrorBoundary>
             <App />
           </AppErrorBoundary>
-        </BrowserRouter>
+          </BrowserRouter>
+        </AnimationPreferencesProvider>
       </LanguageProvider>
     </MantineProvider>
   </React.StrictMode>,

@@ -5,6 +5,7 @@
 @import "./styles/components/01-public-shell.css";
 @import "./styles/components/02-file-preview.css";
 @import "./styles/components/error-boundary.css";
+@import "./styles/components/animation-preferences.css";
 @import "./styles/sections/03-ocean-timeline-base.css";
 @import "./styles/effects/04-rapier-and-responsive.css";
 @import "./styles/effects/05-ocean-drops.css";
