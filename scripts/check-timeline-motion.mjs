@@ -60,6 +60,9 @@ if (!component.includes("createInspectionPilot") || !component.includes("request
 if (!inspection.includes("const VANISH_DURATION = 0.075") || !inspection.includes("const APPEAR_DURATION = 0.095")) {
   errors.push("Vehicle facing swaps must use the V20.8 ultra-fast vanish/appear timings.");
 }
+if (!inspection.includes("0.26 + distance * (mobile ? 0.44 : 0.52)") || !inspection.includes("0.34, mobile ? 0.62 : 0.72")) {
+  errors.push("Vehicle transit must keep the approved V20.9/V21 faster inspection timing envelope.");
+}
 if (!inspection.includes("0.92") || !inspection.includes("torch: 1.48") || !inspection.includes("1.64")) {
   errors.push("Vehicle transit and torch must keep the V20.8 faster/high-intensity envelope.");
 }

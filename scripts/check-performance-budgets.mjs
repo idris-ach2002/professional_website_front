@@ -4,11 +4,11 @@ import { join, relative } from "node:path";
 
 const DIST = "dist";
 const PUBLIC = "public";
-const HARD_INITIAL_JS_BROTLI = 420 * 1024;
+const HARD_INITIAL_JS_BROTLI = 360 * 1024;
 const TARGET_INITIAL_JS_BROTLI = 350 * 1024;
 const THREE_CHUNK_BROTLI = 700 * 1024;
 const MAX_PUBLIC_IMAGE = 400 * 1024;
-const MAX_PUBLIC_TOTAL = 1024 * 1024;
+const MAX_PUBLIC_TOTAL = 700 * 1024;
 
 let hasFailure = false;
 

@@ -85,7 +85,7 @@ for (const relativePath of obsoleteFiles) {
 }
 
 const totalBytes = importedFiles.reduce((sum, filename) => sum + fs.statSync(filename).size, 0);
-const maxGlobalCssBytes = 212_000;
+const maxGlobalCssBytes = 205_000;
 if (totalBytes > maxGlobalCssBytes) {
   errors.push(`Global CSS budget exceeded: ${totalBytes} bytes > ${maxGlobalCssBytes} bytes`);
 }
@@ -94,7 +94,7 @@ const importantCount = importedFiles.reduce((sum, filename) => {
   const matches = fs.readFileSync(filename, "utf8").match(/!important\b/g);
   return sum + (matches?.length ?? 0);
 }, 0);
-const maxImportantCount = 1_200;
+const maxImportantCount = 1_150;
 if (importantCount > maxImportantCount) {
   errors.push(`!important budget exceeded: ${importantCount} > ${maxImportantCount}`);
 }

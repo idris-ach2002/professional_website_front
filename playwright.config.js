@@ -1,17 +1,17 @@
 import { defineConfig, devices } from "@playwright/test";
+import { detectTestWorkerPolicy, formatTestWorkerPolicy } from "./scripts/test-worker-policy.mjs";
 
 const port = 4173;
-const configuredWorkers = Number.parseInt(process.env.PLAYWRIGHT_WORKERS ?? "2", 10);
-const workers = Number.isFinite(configuredWorkers) && configuredWorkers > 0
-  ? configuredWorkers
-  : 2;
+const workerPolicy = detectTestWorkerPolicy();
+
+console.log(`[playwright] ${formatTestWorkerPolicy(workerPolicy)}`);
 
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
-  workers,
+  workers: workerPolicy.workers,
   expect: {
     timeout: 10_000,
   },

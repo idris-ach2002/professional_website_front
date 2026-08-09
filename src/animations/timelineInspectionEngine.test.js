@@ -39,6 +39,8 @@ describe("timeline inspection engine", () => {
     state = advance(state, 0.16);
     expect(state.phase).toBe(INSPECTION_PHASES.TRANSIT);
     expect(state.torch).toBeGreaterThan(0.7);
+    expect(state.transitDuration).toBeLessThanOrEqual(0.72);
+    expect(state.transitDuration).toBeGreaterThanOrEqual(0.34);
 
     state = advance(state, 0.95);
     expect(state.phase).toBe(INSPECTION_PHASES.INSPECT);

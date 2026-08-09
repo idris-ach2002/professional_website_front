@@ -42,11 +42,8 @@ function dockingPoint(index, side, mobile, requestedY) {
 function startTransit(state, target, mobile) {
   const dock = dockingPoint(target.index, target.side, mobile, target.y);
   const distance = Math.hypot(dock.x - state.x, dock.y - state.y);
-  const duration = clamp(
-    0.26 + distance * (mobile ? 0.44 : 0.52),
-    0.34,
-    mobile ? 0.62 : 0.72,
-  );
+  const duration = clamp(0.26 + distance * (mobile ? 0.44 : 0.52), 0.34, mobile ? 0.62 : 0.72);
+
   return {
     ...state,
     phase: INSPECTION_PHASES.TRANSIT,

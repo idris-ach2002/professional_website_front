@@ -28,7 +28,59 @@ export function portfolioOwner(locale = "fr") {
       id: 20,
       title: english ? "Experience" : "Parcours",
       description: "",
-      experiences: [],
+      experiences: [
+        {
+          id: 201,
+          category: "SCHOOL",
+          title: english ? "Master Computer Science STL" : "Master Informatique STL",
+          organization: "Sorbonne Université",
+          location: "Paris",
+          startDate: "2025-09-01",
+          endDate: null,
+          currentPosition: true,
+          summary: english ? "Software engineering studies." : "Formation en ingénierie logicielle.",
+          description: english
+            ? "Advanced software engineering, reliability and application architecture."
+            : "Ingénierie logicielle avancée, fiabilité et architecture applicative.",
+          skills: ["JAVA 21", "SPRING BOOT", "REACT"],
+          websiteUrl: "",
+          imageUrl: "",
+        },
+        {
+          id: 202,
+          category: "INTERNSHIP",
+          title: english ? "Software / Data Development Internship" : "Stage développement logiciel / data",
+          organization: "LITIS — Université Le Havre Normandie",
+          location: "Le Havre",
+          startDate: "2025-04-01",
+          endDate: "2025-06-30",
+          currentPosition: false,
+          summary: english ? "AIS data architecture redesign." : "Refonte d'une architecture de données AIS.",
+          description: english
+            ? "Reliable ingestion, storage and exploitation pipeline for AIS data."
+            : "Pipeline fiable de récupération, stockage et exploitation de données AIS.",
+          skills: ["JAVA 21", "POSTGRESQL", "PYTHON", "SYMFONY"],
+          websiteUrl: "",
+          imageUrl: "",
+        },
+        {
+          id: 203,
+          category: "CDI",
+          title: english ? "Logistics Assistant" : "Assistant logistique",
+          organization: "La Belle Vie / Deleev",
+          location: "Île-de-France",
+          startDate: "2025-11-01",
+          endDate: null,
+          currentPosition: true,
+          summary: english ? "Operational logistics." : "Logistique opérationnelle.",
+          description: english
+            ? "Execution reliability, organization and prioritization in an operational environment."
+            : "Fiabilité d'exécution, organisation et priorisation dans un environnement opérationnel.",
+          skills: ["RIGUEUR", "ORGANISATION", "PRIORISATION"],
+          websiteUrl: "",
+          imageUrl: "",
+        },
+      ],
     },
     projects: [
       {
