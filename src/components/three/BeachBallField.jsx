@@ -19,11 +19,13 @@ import {
   useState,
 } from "react";
 import { gsapReady } from "../../animations/useGsap";
+import { scheduleBackgroundTask, scheduleUserVisibleTask } from "../../performance/runtimeScheduler";
 
 const MODEL_PATH = "/models/ABSTRACT_SHAPES.glb";
 
 const FULL_SHAPE_COUNT = 15;
 const BALANCED_SHAPE_COUNT = 12;
+const CONSTRAINED_SHAPE_COUNT = 8;
 const SPAWN_SPREAD_X = 34;
 const SPAWN_SPREAD_Y = 19;
 const SPAWN_SPREAD_Z = 16;
@@ -149,6 +151,7 @@ function KineticShape({
   materials,
   active,
   balancedMode,
+  constrainedMode,
 }) {
   const bodyRef = useRef(null);
   const modelRef = useRef(null);
@@ -156,7 +159,7 @@ function KineticShape({
   const { clickTick } = useContext(InteractionContext);
   const previousClickTickRef = useRef(clickTick);
   const material = materials[materialIndex * 4 + colorIndex];
-  const castShadow = !balancedMode || id < 8;
+  const castShadow = !constrainedMode && (!balancedMode || id < 8);
 
   useEffect(() => {
     const body = bodyRef.current;
@@ -218,7 +221,7 @@ function KineticShape({
       angularDamping={0.16}
       friction={0.18}
       restitution={0.68}
-      ccd={!balancedMode}
+      ccd={!balancedMode && !constrainedMode}
       canSleep
     >
       <BallCollider args={[scale * 0.92]} />
@@ -273,8 +276,13 @@ function AbstractSingularityScene({
   colorSchemeIndex,
   clickTick,
   balancedMode,
+  constrainedMode,
 }) {
-  const shapeCount = balancedMode ? BALANCED_SHAPE_COUNT : FULL_SHAPE_COUNT;
+  const shapeCount = constrainedMode
+    ? CONSTRAINED_SHAPE_COUNT
+    : balancedMode
+      ? BALANCED_SHAPE_COUNT
+      : FULL_SHAPE_COUNT;
   const shapes = useMemo(() => createShapeData(shapeCount), [shapeCount]);
   const colorScheme = COLOR_SCHEMES[colorSchemeIndex];
   const materials = useMemo(() => createSharedMaterials(colorScheme), [colorScheme]);
@@ -294,6 +302,7 @@ function AbstractSingularityScene({
             materials={materials}
             active={active}
             balancedMode={balancedMode}
+            constrainedMode={constrainedMode}
           />
         ))}
       </Physics>
@@ -304,19 +313,23 @@ function AbstractSingularityScene({
         penumbra={0.9}
         angle={0.23}
         color="white"
-        intensity={balancedMode ? 2.25 : 2.75}
-        castShadow
-        shadow-mapSize={[balancedMode ? 512 : 1024, balancedMode ? 512 : 1024]}
+        intensity={constrainedMode ? 1.9 : balancedMode ? 2.25 : 2.75}
+        castShadow={!constrainedMode}
+        shadow-mapSize={[constrainedMode ? 256 : balancedMode ? 512 : 1024, constrainedMode ? 256 : balancedMode ? 512 : 1024]}
       />
       <directionalLight position={[-10, 9, 10]} intensity={1.35} color="#ecfeff" />
       <directionalLight position={[8, -4, 7]} intensity={0.7} color="#8ab4ff" />
       <pointLight position={[0, 5, 12]} intensity={1.45} color="#ffffff" />
-      <Environment preset="city" environmentIntensity={balancedMode ? 0.5 : 0.64} />
+      <Environment preset="city" environmentIntensity={constrainedMode ? 0.38 : balancedMode ? 0.5 : 0.64} />
     </InteractionContext.Provider>
   );
 }
 
-export default function BeachBallField({ performanceMode = "full", paused = false }) {
+export default function BeachBallField({
+  performanceMode = "full",
+  paused = false,
+  runtimeQuality = "high",
+}) {
   const rootRef = useRef(null);
   const stageRef = useRef(null);
   const unmountTimerRef = useRef(0);
@@ -327,7 +340,8 @@ export default function BeachBallField({ performanceMode = "full", paused = fals
   );
   const [colorSchemeIndex, setColorSchemeIndex] = useState(0);
   const [clickTick, setClickTick] = useState(0);
-  const balancedMode = performanceMode === "balanced";
+  const runtimeConstrained = runtimeQuality === "constrained";
+  const balancedMode = performanceMode === "balanced" || runtimeQuality === "balanced" || runtimeConstrained;
   const active = shouldMountCanvas && insideActiveZone && pageVisible && !paused;
 
   const shiftPalette = useCallback(() => {
@@ -357,8 +371,8 @@ export default function BeachBallField({ performanceMode = "full", paused = fals
       ([entry]) => {
         window.clearTimeout(unmountTimerRef.current);
         if (entry.isIntersecting) {
-          useGLTF.preload(MODEL_PATH);
-          setShouldMountCanvas(true);
+          scheduleBackgroundTask(() => useGLTF.preload(MODEL_PATH)).catch(() => {});
+          scheduleUserVisibleTask(() => setShouldMountCanvas(true)).catch(() => {});
           return;
         }
 
@@ -453,9 +467,9 @@ export default function BeachBallField({ performanceMode = "full", paused = fals
 
         {shouldMountCanvas && (
           <Canvas
-            shadows
+            shadows={!runtimeConstrained}
             frameloop={active ? "always" : "demand"}
-            dpr={balancedMode ? [1, 1.16] : [1, 1.38]}
+            dpr={runtimeConstrained ? [1, 1.08] : balancedMode ? [1, 1.16] : [1, 1.38]}
             gl={{
               alpha: true,
               antialias: true,
@@ -472,6 +486,7 @@ export default function BeachBallField({ performanceMode = "full", paused = fals
                 colorSchemeIndex={colorSchemeIndex}
                 clickTick={clickTick}
                 balancedMode={balancedMode}
+                constrainedMode={runtimeConstrained}
               />
             </Suspense>
           </Canvas>

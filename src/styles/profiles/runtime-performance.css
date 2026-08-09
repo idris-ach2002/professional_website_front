@@ -1,0 +1,37 @@
+/* Runtime governor profile.
+   These rules only activate after sustained jank is detected. User-selected
+   animation preferences remain the primary policy; the governor sheds only
+   non-essential paint/compositing cost. */
+
+html[data-runtime-quality="balanced"] .ocean-depth-particle:nth-child(n+7),
+html[data-runtime-quality="constrained"] .ocean-depth-particle:nth-child(n+5) {
+  display: none;
+}
+
+html[data-runtime-quality="constrained"] :is(
+  .nav_component,
+  .nav_mobile_component,
+  .project-toolbar,
+  .project-toolbar-sticky,
+  .project-detail-modal-content,
+  .project-detail-modal-overlay,
+  .proven-skill-detail-card,
+  .owner-select,
+  .status-banner,
+  .site-footer
+) {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+html[data-runtime-quality="constrained"] :is(
+  .project-slide-card,
+  .gallery-panel,
+  .timeline-expedition-card
+) {
+  filter: none !important;
+}
+
+html[data-runtime-quality="constrained"] .ocean-glow {
+  filter: none !important;
+}

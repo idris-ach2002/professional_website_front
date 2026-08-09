@@ -19,6 +19,7 @@ const errors = [];
 const requiredScripts = [
   "check:source-tree",
   "check:stability-freeze",
+  "check:runtime-performance",
   "test:e2e:functional",
   "test:e2e:responsive",
   "test:e2e:stability",
@@ -31,8 +32,8 @@ for (const script of requiredScripts) {
   if (!packageJson.scripts?.[script]) errors.push(`Missing npm script ${script}.`);
 }
 
-if (!packageJson.scripts?.build?.includes("check:source-tree") || !packageJson.scripts?.build?.includes("check:stability-freeze")) {
-  errors.push("The production build must execute source-tree and stability-freeze checks.");
+if (!packageJson.scripts?.build?.includes("check:source-tree") || !packageJson.scripts?.build?.includes("check:stability-freeze") || !packageJson.scripts?.build?.includes("check:runtime-performance")) {
+  errors.push("The production build must execute source-tree, stability-freeze and runtime-performance checks.");
 }
 if (!packageJson.scripts?.["test:e2e"]?.includes("test:e2e:stability")) {
   errors.push("The E2E chain must include the dedicated stability suite.");
@@ -140,6 +141,6 @@ if (errors.length > 0) {
 }
 
 console.log(
-  "V21 stability freeze OK: vehicle timing frozen, coverage thresholds active, source/build budgets tightened, "
+  "V21 stability freeze OK: vehicle timing frozen, runtime governor enforced, coverage thresholds active, source/build budgets tightened, "
   + `${stabilityCount} stability E2E scenarios enforced.`,
 );

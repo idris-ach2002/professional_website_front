@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { inferClickEvent, trackPortfolioEvent } from "../services/analyticsApi";
+import { scheduleBackgroundTask } from "../performance/runtimeScheduler";
 
 function projectSlugFromPath(pathname) {
   const match = pathname.match(/^\/projects\/([^/?#]+)/);
@@ -21,13 +22,14 @@ export default function AnalyticsTracker({ source }) {
 
     const projectSlug = projectSlugFromPath(location.pathname);
 
-    window.setTimeout(() => {
-      trackPortfolioEvent({
-        eventType: projectSlug ? "project_view" : "page_view",
-        pagePath: key,
-        projectSlug,
-      });
-    }, 300);
+    const controller = new AbortController();
+    scheduleBackgroundTask(() => trackPortfolioEvent({
+      eventType: projectSlug ? "project_view" : "page_view",
+      pagePath: key,
+      projectSlug,
+    }), { delay: 300, signal: controller.signal }).catch(() => {});
+
+    return () => controller.abort();
   }, [location.pathname, location.search, source]);
 
   useEffect(() => {
@@ -35,7 +37,7 @@ export default function AnalyticsTracker({ source }) {
       const anchor = event.target?.closest?.("a[href]");
       const inferredEvent = inferClickEvent(anchor);
       if (!inferredEvent) return;
-      trackPortfolioEvent(inferredEvent);
+      scheduleBackgroundTask(() => trackPortfolioEvent(inferredEvent)).catch(() => {});
     }
 
     document.addEventListener("click", handleDocumentClick, { capture: true });

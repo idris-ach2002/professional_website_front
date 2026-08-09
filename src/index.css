@@ -18,5 +18,6 @@
 @import "./styles/profiles/mobile-performance.css";
 @import "./styles/effects/global-aquarium.css";
 @import "./styles/profiles/firefox-performance.css";
+@import "./styles/profiles/runtime-performance.css";
 @import "./styles/overrides/timeline-abyss.css";
 @import "./styles/responsive/company-responsive.css";

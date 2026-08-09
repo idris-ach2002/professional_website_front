@@ -12,6 +12,10 @@ const DEEP_FULL_MORPH_FPS = 45;
 const DEEP_BALANCED_MORPH_FPS = 30;
 const FULL_DEPTH_PAINT_FPS = 90;
 const BALANCED_DEPTH_PAINT_FPS = 60;
+const CONSTRAINED_DEPTH_PAINT_FPS = 45;
+const RUNTIME_BALANCED_MORPH_FPS = 45;
+const RUNTIME_CONSTRAINED_MORPH_FPS = 30;
+const RUNTIME_CONSTRAINED_DEEP_MORPH_FPS = 24;
 const GLOBAL_DEPTH_PAINT_FPS = 45;
 const FULL_PARTICLE_COUNT = 10;
 const BALANCED_PARTICLE_COUNT = 7;
@@ -46,14 +50,24 @@ function renderPath(path, points) {
   path.setAttribute("d", d);
 }
 
-export default function OceanMorphBackground({ staticMode = false, depthOnly = false, performanceMode = "full" }) {
+export default function OceanMorphBackground({
+  staticMode = false,
+  depthOnly = false,
+  performanceMode = "full",
+  runtimeQuality = "high",
+}) {
   const rootRef = useRef(null);
   const balancedMode = performanceMode === "balanced";
+  const runtimeBalanced = runtimeQuality === "balanced";
+  const runtimeConstrained = runtimeQuality === "constrained";
+  const adaptiveBalanced = balancedMode || runtimeBalanced || runtimeConstrained;
   const particleCount = staticMode || depthOnly
     ? 0
-    : balancedMode
-      ? BALANCED_PARTICLE_COUNT
-      : FULL_PARTICLE_COUNT;
+    : runtimeConstrained
+      ? 4
+      : adaptiveBalanced
+        ? BALANCED_PARTICLE_COUNT
+        : FULL_PARTICLE_COUNT;
 
   useGsap(rootRef, (gsap, ScrollTrigger) => {
     if (staticMode) return undefined;
@@ -67,7 +81,7 @@ export default function OceanMorphBackground({ staticMode = false, depthOnly = f
     const initialPoints = paths.map((_, pathIndex) => (
       Array.from(
         { length: POINT_COUNT },
-        (_, pointIndex) => getWavePoint(pathIndex, pointIndex, balancedMode ? pathIndex * 0.44 : 0),
+        (_, pointIndex) => getWavePoint(pathIndex, pointIndex, adaptiveBalanced ? pathIndex * 0.44 : 0),
       )
     ));
     paths.forEach((path, pathIndex) => renderPath(path, initialPoints[pathIndex]));
@@ -80,8 +94,8 @@ export default function OceanMorphBackground({ staticMode = false, depthOnly = f
       gsap.to(glows, {
         xPercent: (index) => (index % 2 === 0 ? 3 : -3),
         yPercent: (index) => (index % 2 === 0 ? -2 : 2),
-        scale: balancedMode ? 1.025 : 1.06,
-        duration: balancedMode ? 11 : 7,
+        scale: adaptiveBalanced ? 1.025 : 1.06,
+        duration: adaptiveBalanced ? 11 : 7,
         repeat: -1,
         yoyo: true,
         ease: "sine.inOut",
@@ -91,14 +105,14 @@ export default function OceanMorphBackground({ staticMode = false, depthOnly = f
 
     if (!depthOnly && particles.length > 0 && !reducedMotion) {
       gsap.to(particles, {
-        y: (index) => -42 - (index % 5) * (balancedMode ? 12 : 22),
+        y: (index) => -42 - (index % 5) * (adaptiveBalanced ? 12 : 22),
         x: (index) => (index % 2 === 0 ? 12 : -10),
         autoAlpha: (index) => 0.28 + (index % 4) * 0.08,
-        duration: (index) => (balancedMode ? 10 : 7) + (index % 6) * 1.4,
+        duration: (index) => (adaptiveBalanced ? 10 : 7) + (index % 6) * 1.4,
         ease: "sine.inOut",
         repeat: -1,
         yoyo: true,
-        stagger: balancedMode ? 0.18 : 0.09,
+        stagger: adaptiveBalanced ? 0.18 : 0.09,
         force3D: true,
       });
     }
@@ -110,10 +124,12 @@ export default function OceanMorphBackground({ staticMode = false, depthOnly = f
     let lastGlobalDepthPaint = 0;
     let lastPaintedDepth = Number.NaN;
     let lastGlobalDepth = Number.NaN;
-    const depthResponse = depthOnly ? 13 : balancedMode ? 11 : 9.5;
-    const depthPaintFps = balancedMode || depthOnly
-      ? BALANCED_DEPTH_PAINT_FPS
-      : FULL_DEPTH_PAINT_FPS;
+    const depthResponse = depthOnly ? 13 : adaptiveBalanced ? 11 : 9.5;
+    const depthPaintFps = runtimeConstrained
+      ? CONSTRAINED_DEPTH_PAINT_FPS
+      : adaptiveBalanced || depthOnly
+        ? BALANCED_DEPTH_PAINT_FPS
+        : FULL_DEPTH_PAINT_FPS;
     const depthPaintInterval = 1000 / depthPaintFps;
     const globalDepthPaintInterval = 1000 / GLOBAL_DEPTH_PAINT_FPS;
 
@@ -166,17 +182,24 @@ export default function OceanMorphBackground({ staticMode = false, depthOnly = f
 
     let phase = 0;
     let lastMorphFrame = 0;
-    const morphPaths = balancedMode
+    const morphPaths = adaptiveBalanced
       ? paths.slice(0, BALANCED_MORPH_PATH_COUNT)
       : paths;
-    const morphPointCount = balancedMode ? BALANCED_POINT_COUNT : POINT_COUNT;
+    const morphPointCount = adaptiveBalanced ? BALANCED_POINT_COUNT : POINT_COUNT;
     const pointBuffers = morphPaths.map(() => new Float32Array(morphPointCount));
-    const phasePerSecond = balancedMode ? 1.15 : 0.72;
+    const phasePerSecond = adaptiveBalanced ? 1.15 : 0.72;
     const resolveMorphInterval = (depth) => {
       const deep = depth >= 0.62;
-      const fps = balancedMode
-        ? (deep ? DEEP_BALANCED_MORPH_FPS : BALANCED_MORPH_FPS)
-        : (deep ? DEEP_FULL_MORPH_FPS : FULL_MORPH_FPS);
+      let fps;
+      if (runtimeConstrained) {
+        fps = deep ? RUNTIME_CONSTRAINED_DEEP_MORPH_FPS : RUNTIME_CONSTRAINED_MORPH_FPS;
+      } else if (runtimeBalanced && !balancedMode) {
+        fps = deep ? DEEP_BALANCED_MORPH_FPS : RUNTIME_BALANCED_MORPH_FPS;
+      } else if (balancedMode) {
+        fps = deep ? DEEP_BALANCED_MORPH_FPS : BALANCED_MORPH_FPS;
+      } else {
+        fps = deep ? DEEP_FULL_MORPH_FPS : FULL_MORPH_FPS;
+      }
       return 1000 / fps;
     };
 
@@ -228,7 +251,7 @@ export default function OceanMorphBackground({ staticMode = false, depthOnly = f
       depthTrigger?.kill();
       document.documentElement.style.removeProperty("--global-ocean-depth");
     };
-  }, [staticMode, depthOnly, performanceMode], {
+  }, [staticMode, depthOnly, performanceMode, runtimeQuality], {
     allowOnMobile: depthOnly,
     allowOnLite: depthOnly,
   });
@@ -236,7 +259,7 @@ export default function OceanMorphBackground({ staticMode = false, depthOnly = f
   return (
     <div
       ref={rootRef}
-      className={`ocean-background${staticMode || depthOnly ? " is-static" : ""}${depthOnly ? " is-depth-only" : ""}${balancedMode ? " is-balanced" : ""}`}
+      className={`ocean-background${staticMode || depthOnly ? " is-static" : ""}${depthOnly ? " is-depth-only" : ""}${adaptiveBalanced ? " is-balanced" : ""}${runtimeConstrained ? " is-runtime-constrained" : ""}`}
       aria-hidden="true"
     >
       <div className="ocean-depth-gradient" />

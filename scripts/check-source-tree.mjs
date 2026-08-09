@@ -45,6 +45,7 @@ function importedSpecifiers(content) {
     /\bimport\s+(?:[^"']+?\s+from\s+)?["']([^"']+)["']/g,
     /\bexport\s+[^"']*?\s+from\s+["']([^"']+)["']/g,
     /\bimport\(\s*["']([^"']+)["']\s*\)/g,
+    /new\s+URL\(\s*["']([^"']+)["']\s*,\s*import\.meta\.url\s*\)/g,
   ];
   for (const pattern of patterns) {
     for (const match of content.matchAll(pattern)) matches.add(match[1]);

@@ -21,6 +21,7 @@ import { getOwnerFullName, sortByDisplayOrder } from "./utils/portfolio";
 
 import useResponsiveProfile from "./hooks/useResponsiveProfile";
 import useLanguage from "./localization/useLanguage";
+import usePerformanceRuntime from "./performance/usePerformanceRuntime";
 
 
 const PortfolioTimeline = lazy(() => import("./components/PortfolioTimeline"));
@@ -31,7 +32,7 @@ const ProjectCaseStudyPage = lazy(() => import("./components/ProjectCaseStudyPag
 const NotFoundPage = lazy(() => import("./components/NotFoundPage"));
 const RecruiterPage = lazy(() => import("./components/RecruiterPage"));
 
-function DeferredBeachBall({ performanceMode, animationsPaused }) {
+function DeferredBeachBall({ performanceMode, animationsPaused, runtimeQuality }) {
   const { t } = useLanguage();
   const sentinelRef = useRef(null);
   const [shouldLoad, setShouldLoad] = useState(false);
@@ -82,7 +83,7 @@ function DeferredBeachBall({ performanceMode, animationsPaused }) {
             </section>
           }
         >
-          <BeachBallField performanceMode={performanceMode} paused={animationsPaused} />
+          <BeachBallField performanceMode={performanceMode} paused={animationsPaused} runtimeQuality={runtimeQuality} />
         </Suspense>
       </ErrorBoundary>
     );
@@ -116,6 +117,7 @@ function Home({
 }) {
   const responsiveProfile = useResponsiveProfile();
   const { t } = useLanguage();
+  const { runtimeQuality } = usePerformanceRuntime();
   const { isMobile, reducedMotion, performanceMode, preference, isFirefox, animationsEnabled, animationsPaused } = responsiveProfile;
 
   return (
@@ -126,6 +128,7 @@ function Home({
         staticMode={performanceMode === "ultra-lite" || preference === "reduced"}
         depthOnly={performanceMode === "lite" && preference === "auto"}
         performanceMode={performanceMode}
+        runtimeQuality={runtimeQuality}
       />
       <GlobalAquarium
         isMobile={isMobile}
@@ -133,6 +136,7 @@ function Home({
         performanceMode={performanceMode}
         isFirefox={isFirefox}
         paused={animationsPaused}
+        runtimeQuality={runtimeQuality}
       />
 
       <TopNavigation owner={owner} source={state.source} />
@@ -178,7 +182,7 @@ function Home({
         </Suspense>
 
         {!isMobile && !reducedMotion && animationsEnabled && !["lite", "ultra-lite"].includes(performanceMode) && (
-          <DeferredBeachBall performanceMode={performanceMode} animationsPaused={animationsPaused} />
+          <DeferredBeachBall performanceMode={performanceMode} animationsPaused={animationsPaused} runtimeQuality={runtimeQuality} />
         )}
 
         <ProjectsShowcase projects={projects} />

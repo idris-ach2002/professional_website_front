@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "prebuild": "node scripts/clean-public-legacy.mjs",
-    "build": "npm run check:retired && npm run check:source-tree && npm run check:css && npm run check:responsive && npm run check:timeline-motion && npm run check:high-refresh && npm run check:localization && npm run check:stability-freeze && vite build && npm run generate:static && npm run check:static-seo && npm run check:performance",
+    "build": "npm run check:retired && npm run check:source-tree && npm run check:css && npm run check:responsive && npm run check:timeline-motion && npm run check:high-refresh && npm run check:runtime-performance && npm run check:localization && npm run check:stability-freeze && vite build && npm run generate:static && npm run check:static-seo && npm run check:performance",
     "lint": "eslint .",
     "preview": "vite preview",
     "clean": "rm -rf .cache .tmp lib build node_modules",
@@ -35,7 +35,8 @@
     "check:source-tree": "node scripts/check-source-tree.mjs",
     "check:stability-freeze": "node scripts/check-stability-freeze.mjs",
     "ci:freeze": "npm run ci:verify",
-    "test:workers": "node scripts/test-worker-policy.mjs"
+    "test:workers": "node scripts/test-worker-policy.mjs",
+    "check:runtime-performance": "node scripts/check-runtime-performance.mjs"
   },
   "dependencies": {
     "@mantine/core": "^9.0.0",

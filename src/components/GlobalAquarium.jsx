@@ -70,6 +70,7 @@ const DESKTOP_FISH = [
 ];
 
 const BALANCED_FISH = [DESKTOP_FISH[0], DESKTOP_FISH[1], DESKTOP_FISH[3], DESKTOP_FISH[4]];
+const CONSTRAINED_FISH = [DESKTOP_FISH[0], DESKTOP_FISH[3]];
 
 const MOBILE_FISH = [
   {
@@ -133,6 +134,7 @@ export default function GlobalAquarium({
   reducedMotion = false,
   performanceMode = "full",
   paused = false,
+  runtimeQuality = "high",
 }) {
   const [isPageHidden, setIsPageHidden] = useState(() =>
     typeof document !== "undefined" ? document.hidden : false,
@@ -145,11 +147,12 @@ export default function GlobalAquarium({
   }, []);
   const fish = useMemo(() => {
     if (reducedMotion) return [MOBILE_FISH[0]];
+    if (runtimeQuality === "constrained") return isMobile ? [MOBILE_FISH[0]] : CONSTRAINED_FISH;
     if (isMobile) return MOBILE_FISH;
     if (performanceMode === "lite") return MOBILE_FISH;
-    if (performanceMode === "balanced") return BALANCED_FISH;
+    if (performanceMode === "balanced" || runtimeQuality === "balanced") return BALANCED_FISH;
     return DESKTOP_FISH;
-  }, [isMobile, performanceMode, reducedMotion]);
+  }, [isMobile, performanceMode, reducedMotion, runtimeQuality]);
 
   return (
     <div
