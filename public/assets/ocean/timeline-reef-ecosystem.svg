@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 560" role="img" aria-label="">
+  <defs>
+    <linearGradient id="rockA" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#244a57"/>
+      <stop offset="0.52" stop-color="#102e39"/>
+      <stop offset="1" stop-color="#071923"/>
+    </linearGradient>
+    <linearGradient id="rockB" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#315c62"/>
+      <stop offset="0.5" stop-color="#183640"/>
+      <stop offset="1" stop-color="#081821"/>
+    </linearGradient>
+    <linearGradient id="kelp" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#0d3b32"/>
+      <stop offset="0.48" stop-color="#14604b"/>
+      <stop offset="1" stop-color="#2b8a68"/>
+    </linearGradient>
+    <linearGradient id="coralWarm" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#6c2f3a"/>
+      <stop offset="0.55" stop-color="#c15e68"/>
+      <stop offset="1" stop-color="#ef9c83"/>
+    </linearGradient>
+    <linearGradient id="coralCool" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#154e57"/>
+      <stop offset="0.55" stop-color="#238c8c"/>
+      <stop offset="1" stop-color="#63c9bc"/>
+    </linearGradient>
+    <radialGradient id="sand" cx="50%" cy="0" r="90%">
+      <stop offset="0" stop-color="#244654" stop-opacity=".7"/>
+      <stop offset="1" stop-color="#06131b" stop-opacity=".98"/>
+    </radialGradient>
+  </defs>
+
+  <path d="M0 470C128 442 249 460 363 481C504 506 646 464 790 474C924 483 1058 523 1200 493C1338 463 1461 457 1600 486V560H0Z" fill="url(#sand)"/>
+
+  <g opacity=".98">
+    <path d="M-60 510C10 412 116 395 196 435C237 456 254 490 280 560H-60Z" fill="url(#rockA)"/>
+    <path d="M116 510C139 448 199 414 257 429C304 442 338 485 355 560H80Z" fill="url(#rockB)"/>
+    <path d="M1210 560C1230 473 1294 426 1374 433C1450 440 1519 477 1660 540V560Z" fill="url(#rockA)"/>
+    <path d="M1040 560C1055 502 1103 462 1160 468C1213 474 1249 511 1270 560Z" fill="url(#rockB)"/>
+    <path d="M650 560C667 513 706 487 752 489C800 491 833 518 850 560Z" fill="url(#rockA)"/>
+  </g>
+
+  <g fill="none" stroke="url(#kelp)" stroke-linecap="round">
+    <path d="M188 526C167 459 216 421 194 354C180 312 193 279 219 244" stroke-width="18"/>
+    <path d="M220 531C241 469 206 423 244 369C270 331 264 293 248 260" stroke-width="13"/>
+    <path d="M1301 529C1275 474 1314 432 1290 381C1271 341 1294 306 1327 279" stroke-width="17"/>
+    <path d="M1350 535C1370 482 1342 445 1372 399C1395 364 1391 327 1377 294" stroke-width="12"/>
+    <path d="M745 531C725 487 757 455 741 415C729 384 741 356 764 332" stroke-width="10"/>
+  </g>
+
+  <g fill="url(#kelp)" opacity=".9">
+    <path d="M207 399C160 384 149 357 177 341C209 348 224 366 207 399Z"/>
+    <path d="M202 326C165 307 163 281 187 270C215 279 225 298 202 326Z"/>
+    <path d="M238 409C277 392 291 367 270 351C241 356 226 376 238 409Z"/>
+    <path d="M1302 420C1263 404 1254 381 1276 367C1304 373 1318 390 1302 420Z"/>
+    <path d="M1303 350C1268 331 1268 309 1288 298C1315 307 1325 325 1303 350Z"/>
+    <path d="M1363 437C1400 421 1411 398 1391 383C1363 389 1350 407 1363 437Z"/>
+  </g>
+
+  <g fill="none" stroke="url(#coralWarm)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M420 531V451M420 478L386 445M420 493L454 456M398 458L383 423M443 466L466 434M420 451L433 417" stroke-width="11"/>
+    <path d="M1008 535V466M1008 488L980 459M1008 501L1039 472M989 468L973 439M1028 480L1051 451" stroke-width="10"/>
+  </g>
+
+  <g fill="none" stroke="url(#coralCool)" stroke-linecap="round">
+    <path d="M550 538V472M550 498L523 471M550 512L581 481M531 478L520 449M571 490L592 463" stroke-width="12"/>
+    <path d="M1450 546V486M1450 508L1426 482M1450 519L1478 493M1434 489L1423 464M1469 501L1488 476" stroke-width="10"/>
+  </g>
+
+  <g opacity=".82">
+    <ellipse cx="333" cy="516" rx="48" ry="22" fill="#1d5051"/>
+    <ellipse cx="338" cy="507" rx="28" ry="13" fill="#3d8279"/>
+    <ellipse cx="918" cy="529" rx="54" ry="24" fill="#173d46"/>
+    <ellipse cx="920" cy="519" rx="32" ry="14" fill="#2f6b6b"/>
+    <ellipse cx="1510" cy="531" rx="45" ry="20" fill="#213f4b"/>
+  </g>
+
+  <g fill="#7dd3c7" opacity=".42">
+    <circle cx="406" cy="428" r="4"/><circle cx="441" cy="425" r="3"/><circle cx="982" cy="444" r="3"/>
+    <circle cx="1048" cy="435" r="4"/><circle cx="1441" cy="454" r="3"/>
+  </g>
+</svg>

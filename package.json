@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "prebuild": "node scripts/clean-public-legacy.mjs",
-    "build": "npm run check:retired && npm run check:css && npm run check:responsive && npm run check:localization && vite build && npm run generate:static && npm run check:static-seo && npm run check:performance",
+    "build": "npm run check:retired && npm run check:css && npm run check:responsive && npm run check:timeline-motion && npm run check:high-refresh && npm run check:localization && vite build && npm run generate:static && npm run check:static-seo && npm run check:performance",
     "lint": "eslint .",
     "preview": "vite preview",
     "clean": "rm -rf .cache .tmp lib build node_modules",
@@ -28,7 +28,9 @@
     "test:e2e:functional": "playwright test --grep-invert \"@vitals|@responsive\"",
     "test:e2e:vitals": "playwright test --project=chromium --grep @vitals --workers=1",
     "check:responsive": "node scripts/check-responsive-contract.mjs",
-    "test:e2e:responsive": "playwright test --project=chromium --grep @responsive --workers=1"
+    "test:e2e:responsive": "playwright test --project=chromium --grep @responsive --workers=1",
+    "check:timeline-motion": "node scripts/check-timeline-motion.mjs",
+    "check:high-refresh": "node scripts/check-high-refresh.mjs"
   },
   "dependencies": {
     "@mantine/core": "^9.0.0",

@@ -39,8 +39,8 @@ exécutable localement avant de connaître ou de configurer le domaine public.
 - API publique et cache local du portfolio ;
 - choix FR/EN et persistance de la langue ;
 - page 404 ;
-- accueil;
-- changement de langue;
+- accueil E2E ;
+- changement de langue E2E ;
 - fallback lorsque le backend est indisponible ;
 - contrôle du débordement horizontal mobile ;
 - exécution dans Chromium et Firefox.
@@ -52,7 +52,7 @@ exécutable localement avant de connaître ou de configurer le domaine public.
 
 Sans ces secrets, les jobs de contrôle restent utilisables et le déploiement est ignoré.
 
-## budgets de performance
+## V16 — budgets de performance
 
 `npm run build` exécute désormais `npm run check:performance` après le build statique.
 

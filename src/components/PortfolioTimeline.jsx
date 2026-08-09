@@ -1,11 +1,18 @@
 import { Anchor, Badge, Card, Group, Stack, Text, Title } from "@mantine/core";
-import { useRef } from "react";
-import { useGsap } from "../animations/useGsap";
+import { useEffect, useRef } from "react";
 import SectionTitle from "./SectionTitle";
 import useLanguage from "../localization/useLanguage";
 import ExplorationDrone from "./ExplorationDrone";
 import { PreviewableImage } from "./FilePreview";
 import { formatPeriod, normalizeUrl, slugify } from "../utils/portfolio";
+import useAnimationPreferences from "../contexts/useAnimationPreferences";
+import { clamp, pingPongState, progressForStep } from "../animations/timelineMotion";
+import {
+  createInspectionPilot,
+  INSPECTION_PHASES,
+  requestInspectionTarget,
+  stepInspectionPilot,
+} from "../animations/timelineInspectionEngine";
 
 const categoryClasses = {
   SCHOOL: "timeline-school",
@@ -18,468 +25,593 @@ const categoryClasses = {
   VOLUNTEERING: "timeline-volunteering",
 };
 
+const SCENOGRAPHIC_DEPTHS = [180, 420, 760, 1_150, 1_580, 2_080, 2_700, 3_400, 4_150];
+
 function getExperienceAnchor(experience, index) {
-  const source = [experience?.title, experience?.organization].filter(Boolean).join(" ") || `experience-${index + 1}`;
+  const source = [experience?.title, experience?.organization]
+    .filter(Boolean)
+    .join(" ") || `experience-${index + 1}`;
+
   return `experience-${slugify(source)}-${index}`;
+}
+
+function getScenographicDepth(index) {
+  if (index < SCENOGRAPHIC_DEPTHS.length) return SCENOGRAPHIC_DEPTHS[index];
+  return SCENOGRAPHIC_DEPTHS.at(-1) + (index - SCENOGRAPHIC_DEPTHS.length + 1) * 820;
+}
+
+function formatDepth(depth, locale) {
+  const language = locale === "en" ? "en-US" : "fr-FR";
+  return `−${new Intl.NumberFormat(language).format(depth)} m`;
+}
+
+function getCardSide(card, isMobile) {
+  if (isMobile) return "right";
+  return card?.classList.contains("is-right") ? "right" : "left";
+}
+
+function TimelineCardReef({ variant = 0 }) {
+  return (
+    <div
+      className="timeline-card-reef-field"
+      data-reef-variant={variant % 3}
+      aria-hidden="true"
+    />
+  );
 }
 
 export default function PortfolioTimeline({ timeline, experiences, performanceMode = "full" }) {
   const rootRef = useRef(null);
   const { locale, t } = useLanguage();
+  const {
+    preference: animationPreference,
+    animationsEnabled,
+    animationsPaused,
+  } = useAnimationPreferences();
 
-  useGsap(rootRef, (gsap, ScrollTrigger) => {
+  const autonomousEnabled = animationsEnabled
+    && !animationsPaused
+    && !(performanceMode === "lite" && animationPreference !== "auto");
+
+  useEffect(() => {
     const root = rootRef.current;
-    if (!ScrollTrigger || !root) return undefined;
+    if (!root) return undefined;
 
-    const track = root.querySelector(".timeline-subsea-track");
+    const stage = root.querySelector(".timeline-autonomous-stage");
     const lineProgress = root.querySelector(".timeline-straight-line-progress");
     const submarine = root.querySelector(".timeline-submarine");
     const explorationDrone = root.querySelector(".timeline-exploration-drone");
-    const cards = gsap.utils.toArray(root.querySelectorAll(".timeline-card"));
+    const cards = Array.from(root.querySelectorAll(".timeline-row"));
+    const exitSentinel = root.querySelector(".timeline-exit-sentinel");
+
+    if (!stage || !lineProgress) return undefined;
+
+    const revealAllCards = () => {
+      cards.forEach((card) => {
+        card.dataset.timelineCardState = "revealed";
+      });
+      lineProgress.style.transform = "scaleY(1)";
+      root.dataset.timelineReveal = "complete";
+    };
+
+    const clearInspection = () => {
+      cards.forEach((card) => {
+        card.dataset.timelineInspection = "idle";
+      });
+      root.dataset.timelineInspection = "idle";
+      delete root.dataset.timelineInspectionCard;
+    };
+
+    if (!autonomousEnabled) {
+      root.dataset.timelineScene = animationsPaused ? "paused" : "static";
+      root.dataset.timelineEntry = "none";
+      revealAllCards();
+      clearInspection();
+      if (explorationDrone) explorationDrone.style.opacity = "0";
+      if (submarine) submarine.style.opacity = "0";
+      return undefined;
+    }
+
     const isMobile = window.matchMedia?.("(max-width: 820px)").matches;
-    const balancedMode = performanceMode === "balanced";
+    let sceneInRange = false;
+    let exitZoneActive = false;
+    let pageVisible = !document.hidden;
+    let frame = 0;
+    let lastTimestamp = 0;
+    let elapsedMs = 0;
+    let metrics = null;
+    let resizeFrame = 0;
+    let revealTimers = [];
+    let requestedTargetIndex = -1;
+    let renderedInspectionIndex = -2;
+    let renderedInspectionPhase = "";
+    const visibleCards = new Map();
 
-    if (lineProgress && track) {
-      gsap.fromTo(
-        lineProgress,
-        { scaleY: 0 },
+    let pilot = createInspectionPilot({
+      x: isMobile ? 0.10 : 0.72,
+      y: isMobile ? 0.22 : 0.18,
+      facing: "left",
+    });
+
+    root.dataset.timelineScene = "idle";
+    root.dataset.timelineEntry = "none";
+    root.dataset.timelineReveal = "ready";
+    root.dataset.timelineInspection = "idle";
+    cards.forEach((card) => {
+      card.dataset.timelineCardState = "revealed";
+      card.dataset.timelineInspection = "idle";
+    });
+
+    const clearRevealTimers = () => {
+      revealTimers.forEach((timer) => window.clearTimeout(timer));
+      revealTimers = [];
+    };
+
+    const measure = () => {
+      const width = stage.clientWidth || root.clientWidth || window.innerWidth || 1024;
+      const height = stage.clientHeight || Math.min(window.innerHeight * 0.66, 680);
+      const droneWidth = explorationDrone?.offsetWidth ?? 0;
+      const droneHeight = explorationDrone?.offsetHeight ?? 0;
+      const submarineWidth = submarine?.offsetWidth ?? 0;
+      const submarineHeight = submarine?.offsetHeight ?? 0;
+      const sideMargin = isMobile
+        ? clamp(width * 0.02, 6, 14)
+        : clamp(width * 0.04, 24, 64);
+
+      return {
+        width,
+        height,
+        droneWidth,
+        droneHeight,
+        submarineWidth,
+        submarineHeight,
+        droneRangeX: Math.max(0, width - droneWidth - sideMargin * 2),
+        droneRangeY: Math.max(0, height - droneHeight - 18),
+        sideMargin,
+      };
+    };
+
+    const applyTarget = (index) => {
+      const card = cards[index];
+      if (!card || card.dataset.timelineCardState !== "revealed") return;
+      requestedTargetIndex = index;
+      pilot = requestInspectionTarget(
+        pilot,
         {
-          scaleY: 1,
-          ease: "none",
-          scrollTrigger: {
-            trigger: track,
-            start: "top 66%",
-            end: "bottom 42%",
-            scrub: balancedMode ? 0.28 : 1.05,
-          },
+          index,
+          side: getCardSide(card, isMobile),
+          y: visibleCards.get(index)?.stageY,
         },
+        { mobile: isMobile },
       );
-    }
+    };
 
-    if (submarine && track) {
-      gsap.set(submarine, { autoAlpha: 1 });
-
-      gsap.fromTo(
-        submarine,
-        { y: 0, rotate: -2 },
-        {
-          y: () => Math.max(0, track.offsetHeight - submarine.offsetHeight - 8),
-          rotate: 4,
-          ease: "none",
-          scrollTrigger: {
-            trigger: track,
-            start: "top 66%",
-            end: "bottom 42%",
-            scrub: balancedMode ? 0.34 : 1.15,
-            invalidateOnRefresh: true,
-            onLeave: () => gsap.set(submarine, { autoAlpha: 0 }),
-            onEnterBack: () => gsap.set(submarine, { autoAlpha: 1 }),
-          },
-        },
-      );
-
-      gsap.to(submarine, {
-        autoAlpha: 0,
-        ease: "none",
-        scrollTrigger: {
-          trigger: track,
-          start: "bottom 56%",
-          end: "bottom 42%",
-          scrub: balancedMode ? 0.24 : 0.7,
-          invalidateOnRefresh: true,
-        },
-      });
-    }
-
-    let cleanupDroneRoute = () => {};
-
-    if (explorationDrone && track && !isMobile) {
-      let lastScanLevel = 0;
-      let lastFacing = 1;
-      let routeMetrics = null;
-      let resizeFrame = 0;
-
-      const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
-
-      const updateDroneState = (progress) => {
-        const scanLevel = Math.min(4, Math.max(1, Math.floor(progress * 4) + 1));
-
-        if (scanLevel !== lastScanLevel) {
-          explorationDrone.dataset.scanLevel = String(scanLevel);
-          lastScanLevel = scanLevel;
-        }
-      };
-
-      const measureDroneRoute = () => {
-        const trackWidth = track.clientWidth;
-        const droneWidth = explorationDrone.offsetWidth;
-        const droneHeight = explorationDrone.offsetHeight;
-        const originLeft = explorationDrone.offsetLeft;
-        const safeMargin = clamp(trackWidth * 0.035, 24, 52);
-        const minimumLeft = safeMargin;
-        const maximumLeft = Math.max(minimumLeft, trackWidth - droneWidth - safeMargin);
-        const horizontalRange = Math.max(0, maximumLeft - minimumLeft);
-        const verticalTravel = Math.max(0, track.offsetHeight - droneHeight - 62);
-
-        return {
-          originLeft,
-          minimumLeft,
-          horizontalRange,
-          verticalTravel,
-        };
-      };
-
-      const routeNodes = [
-        { x: 0.82, y: 0 },
-        { x: 0.67, y: 0.09 },
-        { x: 0.31, y: 0.22 },
-        { x: 0.18, y: 0.34 },
-        { x: 0.47, y: 0.46 },
-        { x: 0.78, y: 0.58 },
-        { x: 0.69, y: 0.69 },
-        { x: 0.29, y: 0.81 },
-        { x: 0.43, y: 0.91 },
-        { x: 0.74, y: 1 },
-      ];
-
-      const interpolateCatmullRom = (p0, p1, p2, p3, amount) => {
-        const amount2 = amount * amount;
-        const amount3 = amount2 * amount;
-
-        return 0.5 * (
-          (2 * p1)
-          + (-p0 + p2) * amount
-          + (2 * p0 - 5 * p1 + 4 * p2 - p3) * amount2
-          + (-p0 + 3 * p1 - 3 * p2 + p3) * amount3
-        );
-      };
-
-      const sampleDroneRoute = (progress) => {
-        const metrics = routeMetrics ?? measureDroneRoute();
-        const safeProgress = clamp(progress, 0, 1);
-        const segmentCount = routeNodes.length - 1;
-        const scaledProgress = safeProgress * segmentCount;
-        const segmentIndex = Math.min(segmentCount - 1, Math.floor(scaledProgress));
-        const localProgress = scaledProgress - segmentIndex;
-
-        const p0 = routeNodes[Math.max(0, segmentIndex - 1)];
-        const p1 = routeNodes[segmentIndex];
-        const p2 = routeNodes[Math.min(routeNodes.length - 1, segmentIndex + 1)];
-        const p3 = routeNodes[Math.min(routeNodes.length - 1, segmentIndex + 2)];
-
-        const normalizedX = clamp(
-          interpolateCatmullRom(p0.x, p1.x, p2.x, p3.x, localProgress),
-          0,
-          1,
-        );
-        const normalizedY = clamp(
-          interpolateCatmullRom(p0.y, p1.y, p2.y, p3.y, localProgress),
-          0,
-          1,
-        );
-
-        const absoluteLeft = metrics.minimumLeft + metrics.horizontalRange * normalizedX;
-
-        return {
-          x: absoluteLeft - metrics.originLeft,
-          y: metrics.verticalTravel * normalizedY,
-        };
-      };
-
-      routeMetrics = measureDroneRoute();
-      const initialPoint = sampleDroneRoute(0);
-      const motionState = { progress: 0 };
-      let latestDirection = 1;
-
-      gsap.set(explorationDrone, {
-        autoAlpha: 0,
-        x: initialPoint.x,
-        y: initialPoint.y,
-        rotate: -2,
-        scaleX: 1,
-        transformOrigin: "50% 50%",
-      });
-
-      const renderDroneAtProgress = (progress, direction = 1) => {
-        const currentPoint = sampleDroneRoute(progress);
-        const probeDistance = 0.006;
-        const previousPoint = sampleDroneRoute(clamp(progress - probeDistance, 0, 1));
-        const nextPoint = sampleDroneRoute(clamp(progress + probeDistance, 0, 1));
-        const horizontalDirection = (nextPoint.x - previousPoint.x) * direction;
-        const verticalDirection = (nextPoint.y - previousPoint.y) * direction;
-        const curveStrength = clamp(horizontalDirection * 0.095, -9, 9);
-        const pitchCorrection = clamp(verticalDirection * 0.006, -1.8, 1.8);
-        const desiredFacing = horizontalDirection > 0.9
-          ? -1
-          : horizontalDirection < -0.9
-            ? 1
-            : lastFacing;
-
-        lastFacing = desiredFacing;
-        gsap.set(explorationDrone, {
-          x: currentPoint.x,
-          y: currentPoint.y,
-          rotation: curveStrength + pitchCorrection,
-          scaleX: desiredFacing,
-          force3D: true,
+    const selectBestVisibleCard = () => {
+      if (exitZoneActive) return;
+      const candidates = [...visibleCards.entries()]
+        .filter(([index, info]) => (
+          info.ratio >= 0.05
+          && cards[index]?.dataset.timelineCardState === "revealed"
+        ))
+        .sort((a, b) => {
+          const centerDelta = a[1].centerDistance - b[1].centerDistance;
+          if (Math.abs(centerDelta) > 24) return centerDelta;
+          return b[1].ratio - a[1].ratio;
         });
-      };
 
-      const smoothProgress = gsap.quickTo(motionState, "progress", {
-        duration: balancedMode ? 0.38 : 1.12,
-        ease: balancedMode ? "power2.out" : "power3.out",
-        onUpdate: () => renderDroneAtProgress(motionState.progress, latestDirection),
+      if (!candidates.length) return;
+      const nextIndex = Number(candidates[0][0]);
+      if (nextIndex === requestedTargetIndex) return;
+
+      const currentInfo = visibleCards.get(requestedTargetIndex);
+      const nextInfo = candidates[0][1];
+      if (
+        currentInfo
+        && cards[requestedTargetIndex]?.dataset.timelineCardState === "revealed"
+        && currentInfo.centerDistance <= nextInfo.centerDistance + 28
+      ) {
+        return;
+      }
+
+      applyTarget(nextIndex);
+    };
+
+    const playCardReveal = () => {
+      clearRevealTimers();
+      root.dataset.timelineReveal = "playing";
+      lineProgress.style.transform = "scaleY(0)";
+      cards.forEach((card) => {
+        card.dataset.timelineCardState = "pending";
+        card.dataset.timelineInspection = "idle";
       });
 
-      const applyDronePosition = (progress, direction = 1, immediate = false) => {
-        latestDirection = direction;
-        if (immediate) {
-          smoothProgress.tween?.pause();
-          motionState.progress = progress;
-          renderDroneAtProgress(progress, direction);
+      const total = Math.max(1, cards.length);
+      const interval = clamp(3_100 / total, 300, 560);
+      const lead = isMobile ? 170 : 220;
+
+      cards.forEach((card, index) => {
+        const timer = window.setTimeout(() => {
+          card.dataset.timelineCardState = "revealed";
+          lineProgress.style.transform = `scaleY(${progressForStep(index, total)})`;
+          if (index === total - 1) root.dataset.timelineReveal = "complete";
+          selectBestVisibleCard();
+        }, lead + index * interval);
+        revealTimers.push(timer);
+      });
+    };
+
+    const updateInspectionUI = () => {
+      if (
+        renderedInspectionIndex === pilot.targetIndex
+        && renderedInspectionPhase === pilot.phase
+      ) return;
+
+      renderedInspectionIndex = pilot.targetIndex;
+      renderedInspectionPhase = pilot.phase;
+      const isInspecting = pilot.phase === INSPECTION_PHASES.INSPECT;
+      const isApproaching = pilot.phase === INSPECTION_PHASES.TRANSIT
+        || pilot.phase === INSPECTION_PHASES.APPEAR;
+
+      cards.forEach((card, index) => {
+        card.dataset.timelineInspection = index === pilot.targetIndex
+          ? isInspecting ? "active" : isApproaching ? "approaching" : "idle"
+          : "idle";
+      });
+
+      root.dataset.timelineInspection = isInspecting
+        ? "active"
+        : isApproaching ? "approaching" : "idle";
+
+      if (pilot.targetIndex >= 0) root.dataset.timelineInspectionCard = String(pilot.targetIndex);
+      else delete root.dataset.timelineInspectionCard;
+    };
+
+    const renderFrame = (timestamp) => {
+      frame = 0;
+      if (!sceneInRange || exitZoneActive || !pageVisible || !autonomousEnabled) return;
+
+      if (!lastTimestamp) lastTimestamp = timestamp;
+      const deltaSeconds = clamp((timestamp - lastTimestamp) / 1000, 0, 0.05);
+      lastTimestamp = timestamp;
+      elapsedMs += deltaSeconds * 1000;
+      const activeMetrics = metrics ?? measure();
+
+      if (explorationDrone) {
+        pilot = stepInspectionPilot(pilot, deltaSeconds, { mobile: isMobile });
+
+        const x = activeMetrics.sideMargin + activeMetrics.droneRangeX * pilot.x;
+        const y = activeMetrics.droneRangeY * pilot.y;
+        explorationDrone.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0)`;
+        explorationDrone.style.opacity = String(pilot.opacity * (isMobile ? 0.72 : performanceMode === "balanced" ? 0.84 : 0.96));
+        explorationDrone.style.setProperty("--torch-strength", pilot.torch.toFixed(3));
+        explorationDrone.dataset.facing = pilot.facing;
+        explorationDrone.dataset.inspectionPhase = pilot.phase;
+        explorationDrone.dataset.torch = pilot.torch > 0.32 ? "on" : "off";
+        updateInspectionUI();
+      }
+
+      if (submarine) {
+        const subMotion = pingPongState(elapsedMs + 4_200, isMobile ? 18_800 : 23_500);
+        const verticalRange = Math.max(0, activeMetrics.height - activeMetrics.submarineHeight - 24);
+        const centerX = activeMetrics.width * (isMobile ? 0.50 : 0.51) - activeMetrics.submarineWidth / 2;
+        const sway = Math.sin((elapsedMs / 1000) * 0.36) * (isMobile ? 3 : 6);
+        const y = 12 + verticalRange * subMotion.progress;
+        submarine.style.transform = `translate3d(${(centerX + sway).toFixed(2)}px, ${y.toFixed(2)}px, 0)`;
+        submarine.style.opacity = isMobile ? "0.32" : "0.42";
+      }
+
+      frame = window.requestAnimationFrame(renderFrame);
+    };
+
+    const startLoop = () => {
+      if (frame || !sceneInRange || exitZoneActive || !pageVisible || !autonomousEnabled) return;
+      lastTimestamp = 0;
+      root.dataset.timelineScene = "active";
+      frame = window.requestAnimationFrame(renderFrame);
+    };
+
+    const stopLoop = (state = "idle") => {
+      if (frame) window.cancelAnimationFrame(frame);
+      frame = 0;
+      lastTimestamp = 0;
+      root.dataset.timelineScene = state;
+    };
+
+    const sceneObserver = new IntersectionObserver(
+      ([entry]) => {
+        const wasInRange = sceneInRange;
+        sceneInRange = Boolean(entry?.isIntersecting);
+
+        if (sceneInRange && !wasInRange) {
+          const enteringFromBelow = (entry?.boundingClientRect?.top ?? 0) >= 0;
+          root.dataset.timelineEntry = enteringFromBelow ? "down" : "up";
+          root.dataset.timelineExit = "clear";
+          requestedTargetIndex = -1;
+          pilot = createInspectionPilot({
+            x: isMobile ? 0.10 : 0.72,
+            y: isMobile ? 0.22 : 0.18,
+            facing: "left",
+          });
+          if (enteringFromBelow) playCardReveal();
+          else revealAllCards();
+          startLoop();
+          window.requestAnimationFrame(selectBestVisibleCard);
           return;
         }
-        smoothProgress(progress);
-      };
 
-      const droneScrollTrigger = ScrollTrigger.create({
-        trigger: track,
-        start: "top 72%",
-        end: "bottom 38%",
-        invalidateOnRefresh: true,
-        onEnter: () => gsap.to(explorationDrone, {
-          autoAlpha: 0.82,
-          duration: balancedMode ? 0.28 : 0.45,
-          overwrite: "auto",
-        }),
-        onEnterBack: () => gsap.to(explorationDrone, {
-          autoAlpha: 0.82,
-          duration: balancedMode ? 0.24 : 0.35,
-          overwrite: "auto",
-        }),
-        onLeave: () => gsap.to(explorationDrone, {
-          autoAlpha: 0.24,
-          duration: balancedMode ? 0.42 : 0.7,
-          overwrite: "auto",
-        }),
-        onLeaveBack: () => gsap.to(explorationDrone, {
-          autoAlpha: 0,
-          duration: 0.3,
-          overwrite: "auto",
-        }),
-        onRefresh: (self) => {
-          routeMetrics = measureDroneRoute();
-          updateDroneState(self.progress);
-          applyDronePosition(self.progress, self.direction || 1, true);
-        },
-        onUpdate: (self) => {
-          updateDroneState(self.progress);
-          applyDronePosition(self.progress, self.direction || 1);
-        },
-      });
+        if (!sceneInRange && wasInRange) {
+          clearRevealTimers();
+          revealAllCards();
+          root.dataset.timelineEntry = "none";
+          visibleCards.clear();
+          requestedTargetIndex = -1;
+          clearInspection();
+          if (explorationDrone) explorationDrone.style.opacity = "0";
+          stopLoop("idle");
+        }
+      },
+      { root: null, rootMargin: "6% 0px 0px 0px", threshold: [0, 0.01] },
+    );
 
-      const resizeObserver = typeof ResizeObserver !== "undefined"
-        ? new ResizeObserver(() => {
-          window.cancelAnimationFrame(resizeFrame);
-          resizeFrame = window.requestAnimationFrame(() => {
-            routeMetrics = measureDroneRoute();
-            applyDronePosition(
-              droneScrollTrigger.progress,
-              droneScrollTrigger.direction || 1,
-              true,
-            );
-          });
-        })
-        : null;
-
-      resizeObserver?.observe(track);
-
-      cleanupDroneRoute = () => {
-        window.cancelAnimationFrame(resizeFrame);
-        resizeObserver?.disconnect();
-        smoothProgress.tween?.kill();
-        droneScrollTrigger.kill();
-      };
-    }
-
-    let cleanupCardReveals = () => {};
-
-    if (isMobile || balancedMode) {
-      gsap.set(cards, { autoAlpha: 0, y: 24, x: 0, scale: 0.985 });
-      const batchedTriggers = ScrollTrigger.batch(cards, {
-        start: isMobile ? "top 94%" : "top 92%",
-        interval: 0.08,
-        batchMax: 3,
-        onEnter: (batch) => gsap.to(batch, {
-          autoAlpha: 1,
-          y: 0,
-          scale: 1,
-          duration: balancedMode ? 0.42 : 0.38,
-          stagger: 0.06,
-          ease: "power2.out",
-          overwrite: true,
-          force3D: true,
-        }),
-        onEnterBack: (batch) => gsap.to(batch, {
-          autoAlpha: 1,
-          y: 0,
-          scale: 1,
-          duration: 0.3,
-          stagger: 0.04,
-          ease: "power2.out",
-          overwrite: true,
-          force3D: true,
-        }),
-        onLeaveBack: (batch) => gsap.to(batch, {
-          autoAlpha: 0,
-          y: 18,
-          scale: 0.99,
-          duration: 0.24,
-          stagger: 0.03,
-          overwrite: true,
-          force3D: true,
-        }),
-      });
-
-      cleanupCardReveals = () => batchedTriggers.forEach((trigger) => trigger.kill());
-    } else {
-      cards.forEach((card) => {
-        const row = card.closest(".timeline-row");
-        const isLeft = row?.classList.contains("is-left");
-        const startX = isLeft ? -92 : 92;
-        const startRotateY = isLeft ? 18 : -18;
-        const startRotateZ = isLeft ? -3.5 : 3.5;
-
-        gsap.fromTo(
-          card,
-          {
-            autoAlpha: 0,
-            x: startX,
-            y: 54,
-            rotateY: startRotateY,
-            rotateZ: startRotateZ,
-            scale: 0.84,
-            clipPath: isLeft
-              ? "polygon(0 42%, 32% 32%, 78% 38%, 100% 50%, 80% 62%, 28% 68%, 0 58%)"
-              : "polygon(100% 42%, 68% 32%, 22% 38%, 0 50%, 20% 62%, 72% 68%, 100% 58%)",
-            filter: "blur(9px) saturate(1.16) brightness(1.04)",
-          },
-          {
-            autoAlpha: 1,
-            x: 0,
-            y: 0,
-            rotateY: 0,
-            rotateZ: 0,
-            scale: 1,
-            clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)",
-            filter: "blur(0px) saturate(1) brightness(1)",
-            duration: 0.68,
-            ease: "expo.out",
-            scrollTrigger: {
-              trigger: card,
-              start: "top 92%",
-              toggleActions: "play none none reverse",
-            },
-          },
+    const exitObserver = exitSentinel ? new IntersectionObserver(
+      ([entry]) => {
+        const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+        const nextExitZone = Boolean(
+          entry?.isIntersecting
+          && (entry.boundingClientRect?.top ?? viewportHeight) <= viewportHeight * 0.78
         );
+
+        if (nextExitZone === exitZoneActive) return;
+        exitZoneActive = nextExitZone;
+        root.dataset.timelineExit = exitZoneActive ? "approaching" : "clear";
+
+        if (exitZoneActive) {
+          clearInspection();
+          if (explorationDrone) {
+            explorationDrone.style.opacity = "0";
+            explorationDrone.style.setProperty("--torch-strength", "0");
+          }
+          if (submarine) submarine.style.opacity = "0";
+          stopLoop("exiting");
+          return;
+        }
+
+        if (sceneInRange && pageVisible) {
+          startLoop();
+          window.requestAnimationFrame(selectBestVisibleCard);
+        }
+      },
+      { root: null, rootMargin: "0px 0px -8% 0px", threshold: [0, 0.01] },
+    ) : null;
+
+    const cardObserver = new IntersectionObserver(
+      (entries) => {
+        const viewportCenter = (window.visualViewport?.height ?? window.innerHeight) / 2;
+        const stageRect = stage.getBoundingClientRect();
+        entries.forEach((entry) => {
+          const index = Number(entry.target.dataset.timelineCardIndex);
+          if (!entry.isIntersecting) {
+            visibleCards.delete(index);
+            return;
+          }
+          const cardCenter = entry.boundingClientRect.top + entry.boundingClientRect.height / 2;
+          visibleCards.set(index, {
+            ratio: entry.intersectionRatio,
+            centerDistance: Math.abs(cardCenter - viewportCenter),
+            stageY: stageRect.height
+              ? clamp((cardCenter - stageRect.top) / stageRect.height, 0.14, 0.82)
+              : undefined,
+          });
+        });
+        selectBestVisibleCard();
+      },
+      { root: null, rootMargin: "-2% 0px -2% 0px", threshold: [0, 0.05, 0.15, 0.3, 0.5, 0.7] },
+    );
+
+    sceneObserver.observe(root);
+    if (exitSentinel) exitObserver?.observe(exitSentinel);
+    cards.forEach((card) => cardObserver.observe(card));
+
+    const handleVisibility = () => {
+      pageVisible = !document.hidden;
+      if (pageVisible && sceneInRange) startLoop();
+      else stopLoop(document.hidden ? "sleeping" : "idle");
+    };
+
+    const scheduleMeasure = () => {
+      window.cancelAnimationFrame(resizeFrame);
+      resizeFrame = window.requestAnimationFrame(() => {
+        metrics = measure();
       });
-    }
+    };
+
+    const resizeObserver = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(scheduleMeasure)
+      : null;
+
+    metrics = measure();
+    resizeObserver?.observe(stage);
+    window.visualViewport?.addEventListener("resize", scheduleMeasure, { passive: true });
+    document.addEventListener("visibilitychange", handleVisibility);
 
     return () => {
-      cleanupCardReveals();
-      cleanupDroneRoute();
+      clearRevealTimers();
+      stopLoop("idle");
+      sceneObserver.disconnect();
+      exitObserver?.disconnect();
+      cardObserver.disconnect();
+      resizeObserver?.disconnect();
+      window.cancelAnimationFrame(resizeFrame);
+      window.visualViewport?.removeEventListener("resize", scheduleMeasure);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      delete root.dataset.timelineEntry;
+      delete root.dataset.timelineReveal;
+      delete root.dataset.timelineInspection;
+      delete root.dataset.timelineInspectionCard;
+      delete root.dataset.timelineExit;
+      cards.forEach((card) => {
+        delete card.dataset.timelineCardState;
+        delete card.dataset.timelineInspection;
+      });
     };
-  }, [experiences.length, performanceMode], { allowOnMobile: true });
+  }, [autonomousEnabled, experiences.length, performanceMode, animationsPaused]);
 
   return (
-    <section ref={rootRef} id="timeline" className="page-section timeline-section island-section route-island">
-      <SectionTitle
-        reveal="fish"
-        eyebrow={t("timeline.eyebrow")}
-        title={timeline?.title ?? t("timeline.defaultTitle")}
-        description={timeline?.description ?? t("timeline.defaultDescription")}
-      />
+    <section
+      ref={rootRef}
+      id="timeline"
+      className="page-section timeline-section is-autonomous-timeline"
+      data-motion-engine="abyss-expedition-inspection-v20-9"
+      data-motion-source="time-and-intersection-state"
+      data-timeline-scene={autonomousEnabled ? "idle" : animationsPaused ? "paused" : "static"}
+      data-timeline-entry="none"
+      data-timeline-reveal={autonomousEnabled ? "ready" : "complete"}
+      data-timeline-inspection="idle"
+      data-timeline-exit="clear"
+    >
+      <div className="timeline-abyss-atmosphere" aria-hidden="true">
+        <span className="timeline-abyss-glow timeline-abyss-glow--one" />
+        <span className="timeline-abyss-glow timeline-abyss-glow--two" />
+        <span className="timeline-abyss-seabed" />
+      </div>
 
-      <div className="timeline-subsea-track">
-        <div className="timeline-straight-line" aria-hidden="true">
-          <span className="timeline-straight-line-progress" />
-        </div>
-        <ExplorationDrone />
-        <img
-          src="/assets/ocean/submarine-scroll.svg"
-          alt=""
-          aria-hidden="true"
-          className="timeline-submarine"
-          loading="lazy"
-        />
+      <div className="timeline-dive-viewport">
+        <div className="timeline-dive-content">
+          <SectionTitle
+            reveal="fish"
+            managedMotion
+            eyebrow={t("timeline.eyebrow")}
+            title={timeline?.title ?? t("timeline.defaultTitle")}
+            description={timeline?.description ?? t("timeline.defaultDescription")}
+          />
 
-        <div className="timeline-list">
-          {experiences.map((experience, index) => {
-            const side = index % 2 === 0 ? "left" : "right";
+          <div className="timeline-subsea-track">
+            <div className="timeline-straight-line" aria-hidden="true">
+              <span className="timeline-straight-line-progress" />
+            </div>
 
-            return (
-              <article
-                id={getExperienceAnchor(experience, index)}
-                key={experience.id ?? `${experience.title}-${index}`}
-                className={`timeline-row is-${side} ${categoryClasses[experience.category] ?? ""}`}
-              >
-                <Card className="timeline-card island-card" radius="xl">
-                  <span className="timeline-card-watermark" aria-hidden="true" />
-                  <Group justify="space-between" align="flex-start" gap="md">
-                    <Stack gap={10} className="timeline-main-copy">
-                      <Badge className="timeline-category" radius="xl">
-                        {t(`category.${experience.category}`, { fallback: experience.category })}
-                      </Badge>
-                      <Title order={2}>{experience.title}</Title>
-                      <Text className="timeline-org">
-                        {[experience.organization, experience.location]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </Text>
-                    </Stack>
-                    {experience.currentPosition && (
-                      <Badge className="current-badge">{t("timeline.current")}</Badge>
-                    )}
-                  </Group>
-                  <Text className="timeline-period">
-                    {formatPeriod(experience.startDate, experience.endDate, experience.currentPosition, locale)}
-                  </Text>
-                  {experience.imageUrl && (
-                    <PreviewableImage
-                      src={experience.imageUrl}
-                      alt={experience.title}
-                      className="timeline-image-preview-trigger"
-                      imageClassName="timeline-image"
-                      modalTitle={`${t("nav.journey")} — ${experience.title}`}
-                    />
-                  )}
-                  <Text className="timeline-summary">{experience.summary}</Text>
-                  {experience.description && (
-                    <Text className="timeline-description">{experience.description}</Text>
-                  )}
-                  {experience.skills?.length > 0 && (
-                    <Group gap={10} className="skill-row">
-                      {experience.skills.map((skill) => (
-                        <Badge key={skill} variant="outline" className="skill-badge">
-                          {skill}
-                        </Badge>
-                      ))}
-                    </Group>
-                  )}
-                  {experience.websiteUrl && (
-                    <Anchor
-                      href={normalizeUrl(experience.websiteUrl)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="timeline-link"
-                    >
-                      {t("projects.resources")}
-                    </Anchor>
-                  )}
-                </Card>
-              </article>
-            );
-          })}
+            <div className="timeline-autonomous-stage" aria-hidden="true">
+              <ExplorationDrone />
+              <img
+                src="/assets/ocean/submarine-scroll.svg"
+                alt=""
+                aria-hidden="true"
+                className="timeline-submarine"
+                loading="lazy"
+              />
+            </div>
+
+            <div className="timeline-list">
+              {experiences.map((experience, index) => {
+                const side = index % 2 === 0 ? "left" : "right";
+                const missionNumber = String(index + 1).padStart(2, "0");
+                const depth = formatDepth(getScenographicDepth(index), locale);
+                const period = formatPeriod(
+                  experience.startDate,
+                  experience.endDate,
+                  experience.currentPosition,
+                  locale,
+                );
+
+                return (
+                  <article
+                    id={getExperienceAnchor(experience, index)}
+                    key={experience.id ?? `${experience.title}-${index}`}
+                    className={`timeline-row timeline-expedition-row is-${side} ${categoryClasses[experience.category] ?? ""}`}
+                    data-timeline-card-index={index}
+                    data-timeline-card-state="revealed"
+                    data-timeline-inspection="idle"
+                  >
+                    <Card className="timeline-card island-card timeline-expedition-card" radius="xl">
+                      <TimelineCardReef variant={index} />
+                      <div className="timeline-expedition-topline">
+                        <div className="timeline-mission-id">
+                          <Text component="span" className="timeline-log-label">
+                            {t("timeline.expeditionLog")}
+                          </Text>
+                          <Text component="strong" className="timeline-mission-number">
+                            {t("timeline.mission")} {missionNumber}
+                          </Text>
+                        </div>
+                        <Text className="timeline-expedition-date">{period}</Text>
+                      </div>
+
+                      <div className="timeline-expedition-rule" aria-hidden="true" />
+
+                      <Group justify="space-between" align="flex-start" gap="md" className="timeline-expedition-heading">
+                        <Stack gap={8} className="timeline-main-copy">
+                          <Group gap={8} className="timeline-expedition-statuses">
+                            <Badge className="timeline-category" radius="xl">
+                              {t(`category.${experience.category}`, { fallback: experience.category })}
+                            </Badge>
+                            {experience.currentPosition && (
+                              <Badge className="current-badge">{t("timeline.current")}</Badge>
+                            )}
+                          </Group>
+                          <Title order={2}>{experience.title}</Title>
+                          <Text className="timeline-org">
+                            {[experience.organization, experience.location]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </Text>
+                        </Stack>
+                      </Group>
+
+                      {experience.imageUrl && (
+                        <PreviewableImage
+                          src={experience.imageUrl}
+                          alt={experience.title}
+                          className="timeline-image-preview-trigger"
+                          imageClassName="timeline-image"
+                          modalTitle={`${t("nav.journey")} — ${experience.title}`}
+                        />
+                      )}
+
+                      <Text className="timeline-summary">{experience.summary}</Text>
+                      {experience.description && (
+                        <Text className="timeline-description">{experience.description}</Text>
+                      )}
+
+                      <div className="timeline-expedition-footer">
+                        <div className="timeline-systems-block">
+                          {experience.skills?.length > 0 && (
+                            <>
+                              <Text component="span" className="timeline-systems-label">
+                                {t("timeline.systems")}
+                              </Text>
+                              <Group gap={8} className="skill-row">
+                                {experience.skills.map((skill) => (
+                                  <Badge key={skill} variant="outline" className="skill-badge">
+                                    {skill}
+                                  </Badge>
+                                ))}
+                              </Group>
+                            </>
+                          )}
+                          {experience.websiteUrl && (
+                            <Anchor
+                              href={normalizeUrl(experience.websiteUrl)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="timeline-link"
+                            >
+                              {t("projects.resources")}
+                            </Anchor>
+                          )}
+                        </div>
+
+                        <div className="timeline-depth-readout" aria-label={`${t("timeline.depth")} ${depth}`}>
+                          <Text component="span">{t("timeline.depth")}</Text>
+                          <Text component="strong">{depth}</Text>
+                        </div>
+                      </div>
+                    </Card>
+                  </article>
+                );
+              })}
+            </div>
+            <div className="timeline-exit-sentinel" aria-hidden="true" />
+          </div>
         </div>
       </div>
     </section>

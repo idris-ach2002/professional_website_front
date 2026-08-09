@@ -7,12 +7,12 @@ function animateIfPresent(timeline, target, vars, position) {
   return timeline.to(target, vars, position);
 }
 
-export default function SectionTitle({ eyebrow, title, description, rightSlot, reveal = "soft" }) {
+export default function SectionTitle({ eyebrow, title, description, rightSlot, reveal = "soft", managedMotion = false }) {
   const rootRef = useRef(null);
 
   useGsap(rootRef, (gsap, ScrollTrigger) => {
     const root = rootRef.current;
-    if (!root) return undefined;
+    if (!root || managedMotion) return undefined;
 
     const copy = root.querySelector(".section-title-copy");
     const eyebrowNode = root.querySelector(".section-eyebrow");
@@ -63,7 +63,7 @@ export default function SectionTitle({ eyebrow, title, description, rightSlot, r
           trigger: root,
           start: "top 88%",
           end: () => getFishMetrics().scrollEnd,
-          scrub: window.innerWidth < 760 ? 0.48 : 0.82,
+          scrub: true,
           invalidateOnRefresh: true,
         },
       });
@@ -134,10 +134,10 @@ export default function SectionTitle({ eyebrow, title, description, rightSlot, r
     animateIfPresent(timeline, action, { y: 0, autoAlpha: 1, duration: 0.62 }, reveal === "bubbles" ? 0.78 : 0.72);
 
     return undefined;
-  }, [title, description, reveal], { allowOnMobile: reveal === "fish" });
+  }, [title, description, reveal, managedMotion], { allowOnMobile: reveal === "fish" });
 
   return (
-    <div ref={rootRef} className={`section-title section-title-${reveal}`}>
+    <div ref={rootRef} className={`section-title section-title-${reveal}${managedMotion ? " is-managed-motion" : ""}`}>
       {reveal === "fish" && (
         <img
           src="/assets/ocean/fish-reveal.svg"

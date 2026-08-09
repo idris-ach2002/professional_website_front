@@ -27,21 +27,8 @@
   .ocean-background.is-static .ocean-surface-waves {
     display: block;
     filter: none !important;
-    transform-origin: 50% 38%;
-    animation: mobile-ocean-sheet-drift 16s ease-in-out infinite alternate;
+    animation: mobile-ocean-sheet-drift 20s linear infinite;
     will-change: transform;
-  }
-
-  .ocean-background.is-static .ocean-surface-wave-a {
-    animation: mobile-ocean-wave-a 12s ease-in-out infinite alternate;
-  }
-
-  .ocean-background.is-static .ocean-surface-wave-b {
-    animation: mobile-ocean-wave-b 15s ease-in-out infinite alternate-reverse;
-  }
-
-  .ocean-background.is-static .ocean-surface-wave-c {
-    animation: mobile-ocean-wave-c 10s ease-in-out infinite alternate;
   }
 
   .ocean-background.is-static .ocean-glow {
@@ -50,23 +37,8 @@
   }
 
   @keyframes mobile-ocean-sheet-drift {
-    from { transform: translate3d(-1.8%, 0, 0) scaleY(1); }
-    to { transform: translate3d(1.8%, 4px, 0) scaleY(1.025); }
-  }
-
-  @keyframes mobile-ocean-wave-a {
-    from { transform: translate3d(-1.2%, 1px, 0) scaleY(.99); }
-    to { transform: translate3d(1.2%, -3px, 0) scaleY(1.035); }
-  }
-
-  @keyframes mobile-ocean-wave-b {
-    from { transform: translate3d(1.4%, -1px, 0) scaleY(1.025); }
-    to { transform: translate3d(-1.4%, 4px, 0) scaleY(.985); }
-  }
-
-  @keyframes mobile-ocean-wave-c {
-    from { transform: translate3d(-.8%, 0, 0); }
-    to { transform: translate3d(.8%, 3px, 0); }
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(-50%, 0, 0); }
   }
 
   .page-section,

@@ -125,3 +125,11 @@ html[data-performance-profile="ultra-lite"] .section-title-fish .section-reveal-
     opacity: .56;
   }
 }
+
+/* Timeline V20.7: the entry fish is narrative motion only. In reduced/disabled
+   profiles it must be fully removed, not parked near the heading. */
+html[data-performance-profile="lite"] .timeline-section .section-title-fish .section-reveal-fish,
+html[data-performance-profile="ultra-lite"] .timeline-section .section-title-fish .section-reveal-fish {
+  display: none !important;
+  visibility: hidden !important;
+}

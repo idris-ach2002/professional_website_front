@@ -108,9 +108,6 @@ html.is-firefox.is-mobile-profile :is(
   filter: none !important;
 }
 
-html.is-firefox.is-mobile-profile .global-aquarium.is-scrolling {
-  opacity: .72;
-}
 
 .beach-3d-suspended-placeholder {
   position: absolute;

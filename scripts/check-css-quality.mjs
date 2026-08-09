@@ -36,6 +36,16 @@ for (const filename of absoluteFiles) {
   const transitionAll = source.match(/transition(?:-property)?\s*:\s*all\b/g) ?? [];
   transitionAllCount += transitionAll.length;
   if (transitionAll.length) errors.push(`${relative}: avoid transition: all (${transitionAll.length}).`);
+
+  // V18 regression guard: deleting an empty rule must never leave its selector
+  // attached to the next non-empty rule. Those selector leaks are valid CSS,
+  // so a parser/build can pass while an unrelated visual layer is applied.
+  if (/\.contact-pill:hover strong,\s*\.timeline-row::before\s*\{/.test(source)) {
+    errors.push(`${relative}: leaked profile/contact selectors into .timeline-row::before.`);
+  }
+  if (/\.profile-island \.hero-lead,\s*\.timeline-card\.island-card\s*\{/.test(source)) {
+    errors.push(`${relative}: leaked profile selector into .timeline-card.island-card.`);
+  }
 }
 
 const limits = {

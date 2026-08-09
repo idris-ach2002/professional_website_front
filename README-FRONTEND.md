@@ -83,8 +83,7 @@ src/
 │   ├── StatusBanner.jsx            # source API/demo/erreur
 │   ├── TopNavigation.jsx           # navigation sticky
 │   └── three/
-│       ├── BeachBallField.jsx      # scène 3D interactive avec physique
-│       └── OceanBubbleField.jsx    # animation canvas/Three.js de gouttes/bulles
+│       └── BeachBallField.jsx      # scène 3D interactive avec physique
 ├── utils/
 │   ├── adminJsonImport.js          # normalisation d’import JSON admin
 │   ├── filePreview.js              # normalisation et détection fichiers
@@ -255,8 +254,6 @@ Le helper `src/animations/useGsap.js` attend la disponibilité de `window.gsap`,
 - interaction pointeur ;
 - rendu responsive.
 
-`OceanBubbleField.jsx` génère des textures canvas et anime des gouttes/bulles avec Three.js et scroll progress.
-
 ### Accessibilité performance
 
 Le code tient compte de `prefers-reduced-motion` sur les animations lourdes. Les composants visuels sont chargés progressivement et le build sépare plusieurs chunks vendors.
@@ -265,7 +262,7 @@ Le code tient compte de `prefers-reduced-motion` sur les animations lourdes. Les
 
 ### Installation
 
-Le projet contient `package-lock.json`, `pnpm-lock.yaml` et `packageManager: pnpm@10.11.1`. Si l’équipe utilise npm, rester cohérent avec npm. Si elle utilise pnpm, rester cohérent avec pnpm.
+Le projet est verrouillé avec `package-lock.json` et `packageManager: npm@10.9.2`. Utiliser npm afin de conserver des installations et une CI reproductibles.
 
 Avec npm :
 

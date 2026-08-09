@@ -185,36 +185,23 @@ test("mémorise les préférences d’animation et active le mode ultra-léger",
   await expect(page.locator("html")).toHaveAttribute("data-animation-state", "off");
 });
 
-test("garde le poisson du Parcours hors du titre en modes réduites et désactivées", async ({ page }) => {
+test("réserve le poisson du Parcours à l’entrée descendante et le masque en modes réduites", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await openPortfolio(page, "fr");
 
   const control = page.locator(".animation-preferences-control");
   const trigger = control.getByTestId("animation-preferences-trigger");
-  const heading = page.locator(".timeline-section .section-heading", { hasText: "Parcours" }).first();
   const fish = page.locator(".timeline-section .section-title-fish .section-reveal-fish").first();
-
-  const expectNoOverlap = async () => {
-    await heading.scrollIntoViewIfNeeded();
-    await expect(heading).toBeVisible();
-    await expect(fish).toBeVisible();
-    const [headingBox, fishBox] = await Promise.all([heading.boundingBox(), fish.boundingBox()]);
-    expect(headingBox).not.toBeNull();
-    expect(fishBox).not.toBeNull();
-    const overlapX = Math.max(0, Math.min(headingBox.x + headingBox.width, fishBox.x + fishBox.width) - Math.max(headingBox.x, fishBox.x));
-    const overlapY = Math.max(0, Math.min(headingBox.y + headingBox.height, fishBox.y + fishBox.height) - Math.max(headingBox.y, fishBox.y));
-    expect(overlapX * overlapY).toBe(0);
-  };
 
   await trigger.hover();
   await control.getByRole("group", { name: "Niveau d’animations" }).getByRole("button", { name: /Réduites/ }).click();
   await expect(page.locator("html")).toHaveAttribute("data-performance-profile", "lite");
-  await expectNoOverlap();
+  await expect(fish).toBeHidden();
 
   await trigger.hover();
   await control.getByRole("group", { name: "Niveau d’animations" }).getByRole("button", { name: /Désactivées/ }).click();
   await expect(page.locator("html")).toHaveAttribute("data-performance-profile", "ultra-lite");
-  await expectNoOverlap();
+  await expect(fish).toBeHidden();
 });
 
 test("@vitals respecte les budgets Web Vitals sur mobile", async ({ page, browserName }, testInfo) => {

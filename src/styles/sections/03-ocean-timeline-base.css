@@ -8,19 +8,8 @@
   pointer-events: none;
 }
 
-.ocean-surface-wave-a {
-  fill: rgba(224, 251, 255, .72);
-}
-
-.ocean-surface-wave-b {
-  fill: rgba(125, 211, 252, .42);
-}
-
-.ocean-surface-wave-c {
-  fill: none;
-  stroke: rgba(255, 255, 255, .82);
-  stroke-width: 12;
-  stroke-linecap: round;
+.ocean-surface-wave-main {
+  fill: rgba(197, 241, 252, .58);
 }
 
 .ocean-depth-particles {
@@ -255,18 +244,6 @@
   background: radial-gradient(circle, rgba(125, 211, 252, .32), rgba(6, 182, 212, .08) 55%, transparent 72%);
 }
 
-.timeline-card-watermark {
-  position: absolute;
-  
-  
-  
-  
-  
-  border: 1px solid rgba(236,253,255,.72);
-  
-  
-  pointer-events: none;
-}
 
 .timeline-card h2 {
   

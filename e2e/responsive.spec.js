@@ -130,17 +130,6 @@ for (const viewport of VIEWPORTS) {
       await mockPublicApi(page);
       await openPortfolio(page);
 
-      /*
-       * Le layout général devient "compact" à <= 820 px.
-       *
-       * Attention :
-       * la navbar utilise un breakpoint différent (<= 1100 px).
-       *
-       * Ainsi :
-       * 820 px  => viewport compact + navbar compacte
-       * 1024 px => viewport wide    + navbar compacte
-       * 1366 px => viewport wide    + navbar desktop
-       */
       await expect(page.locator("html")).toHaveAttribute(
         "data-viewport",
         viewport.compact ? "compact" : "wide",
@@ -164,10 +153,6 @@ for (const viewport of VIEWPORTS) {
         `${viewport.name} initial`,
       );
 
-      /*
-       * Le breakpoint de navigation est volontairement indépendant
-       * du breakpoint responsive général.
-       */
       const compactNavigation = viewport.width <= 1100;
 
       if (compactNavigation) {
@@ -219,9 +204,6 @@ for (const viewport of VIEWPORTS) {
         ).toBeVisible();
       }
 
-      /*
-       * Vérification des principales sections.
-       */
       for (const selector of [
         "#skills",
         "#timeline",
@@ -240,9 +222,6 @@ for (const viewport of VIEWPORTS) {
         }
       }
 
-      /*
-       * Contrôles supplémentaires sur petits mobiles.
-       */
       if (viewport.width <= 430) {
         const actions = page.locator(
           ".hero-actions .mantine-Button-root:visible",
@@ -301,9 +280,6 @@ for (const viewport of VIEWPORTS) {
         await page.keyboard.press("Escape");
       }
 
-      /*
-       * Vérification finale tout en bas de la page.
-       */
       await page.evaluate(() => {
         window.scrollTo(
           0,

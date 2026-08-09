@@ -116,14 +116,15 @@ function Home({
 }) {
   const responsiveProfile = useResponsiveProfile();
   const { t } = useLanguage();
-  const { isMobile, reducedMotion, performanceMode, isFirefox, animationsEnabled, animationsPaused } = responsiveProfile;
+  const { isMobile, reducedMotion, performanceMode, preference, isFirefox, animationsEnabled, animationsPaused } = responsiveProfile;
 
   return (
     <main id="main-content" className="app-shell" tabIndex={-1}>
       <SEOHead owner={owner} projects={projects} experiences={experiences} />
 
       <OceanMorphBackground
-        staticMode={performanceMode === "lite" || performanceMode === "ultra-lite"}
+        staticMode={performanceMode === "ultra-lite" || preference === "reduced"}
+        depthOnly={performanceMode === "lite" && preference === "auto"}
         performanceMode={performanceMode}
       />
       <GlobalAquarium

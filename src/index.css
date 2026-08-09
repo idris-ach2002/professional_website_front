@@ -8,7 +8,6 @@
 @import "./styles/components/animation-preferences.css";
 @import "./styles/sections/03-ocean-timeline-base.css";
 @import "./styles/effects/04-rapier-and-responsive.css";
-@import "./styles/effects/05-ocean-drops.css";
 @import "./styles/sections/10-proven-skills-case-study.css";
 @import "./styles/sections/profile-timeline-foundation.css";
 @import "./styles/sections/projects-showcase-polish.css";
@@ -19,4 +18,5 @@
 @import "./styles/profiles/mobile-performance.css";
 @import "./styles/effects/global-aquarium.css";
 @import "./styles/profiles/firefox-performance.css";
+@import "./styles/overrides/timeline-abyss.css";
 @import "./styles/responsive/company-responsive.css";

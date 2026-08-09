@@ -12,6 +12,21 @@ const forbiddenFiles = [
   "src/components/admin/useAdminCvStudio.jsx",
   "src/styles/pages/02-admin-cv-base.css",
   "src/styles/pages/06-admin-cv-tools.css",
+  "src/animations/autonomousNavigationEngine.js",
+  "src/animations/autonomousNavigationEngine.test.js",
+  "src/animations/orientationEngine.js",
+  "src/animations/orientationEngine.test.js",
+  "src/components/ScrollPerformanceGuard.jsx",
+  "src/components/ExpertisePanel.jsx",
+  "src/components/navigation/useReducedMotion.js",
+  "src/components/three/OceanBubbleField.jsx",
+  "src/styles/overrides/v19-cinematic-fixes.css",
+  "src/assets/identity/code-map.svg",
+  "src/assets/identity/orbit-grid.svg",
+  "src/assets/identity/signal-card.svg",
+  "public/icons.svg",
+  "public/textures/beach-ball-panel-texture.svg",
+  "src/styles/effects/05-ocean-drops.css",
 ];
 
 const forbiddenTokens = [
@@ -20,6 +35,8 @@ const forbiddenTokens = [
   "AdminCommandTraceModal",
   "useAdminApplications",
   "useAdminCvStudio",
+  "autonomousNavigationEngine",
+  "orientationEngine",
 ];
 
 const sourceExtensions = new Set([".js", ".jsx", ".mjs", ".css"]);
@@ -55,4 +72,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log("Retired admin modules OK: no candidature/CV Builder files or imports remain.");
+console.log("Retired modules OK: legacy admin, scroll, bubble, expertise and identity artifacts are absent.");

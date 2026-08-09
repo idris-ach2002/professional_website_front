@@ -144,172 +144,6 @@
   border-color: rgba(125,211,252,.34);
 }
 
-.timeline-subsea-track {
-  perspective: 1500px;
-}
-
-.timeline-row {
-  position: relative;
-  transform-style: preserve-3d;
-}
-
-.timeline-row::before {
-  top: calc(50% - 2px) !important;
-  height: 4px !important;
-  width: clamp(86px, 8vw, 132px) !important;
-  border-radius: 999px;
-  
-  
-  clip-path: polygon(0 50%, 8% 0, 92% 0, 100% 50%, 92% 100%, 8% 100%);
-  animation: timelineCableFlow 4.8s linear infinite;
-}
-
-.timeline-row.is-left::before {
-  left: calc(50% - clamp(130px, 10vw, 172px)) !important;
-}
-
-.timeline-row.is-right::before {
-  left: calc(50% + 10px) !important;
-}
-
-.timeline-row::after {
-  width: 16px !important;
-  height: 16px !important;
-  
-  
-  animation: timelineNodePulse 3.8s ease-in-out infinite;
-}
-
-.timeline-card.island-card {
-  position: relative;
-  
-  
-  isolation: isolate;
-  
-  
-  border-radius: 0 !important;
-  
-  
-  
-  
-  transition:
-    transform .55s cubic-bezier(.19, 1, .22, 1),
-    filter .55s ease !important;
-}
-
-.timeline-row.is-left .timeline-card.island-card {
-  transform: rotate(-.65deg) rotateY(1.2deg) translateZ(0);
-}
-
-.timeline-row.is-right .timeline-card.island-card {
-  transform: rotate(.65deg) rotateY(-1.2deg) translateZ(0);
-}
-
-.timeline-card.island-card::before {
-  
-  
-  
-  z-index: 0 !important;
-  width: auto !important;
-  height: auto !important;
-  
-  
-  
-  
-  
-}
-
-.timeline-row.is-left .timeline-card.island-card::before {
-  clip-path: polygon(0 12%, 9% 0, 88% 0, 100% 20%, 96% 82%, 82% 100%, 6% 94%, 0 72%);
-}
-
-.timeline-row.is-right .timeline-card.island-card::before {
-  clip-path: polygon(12% 0, 100% 8%, 100% 74%, 91% 100%, 10% 96%, 0 82%, 4% 18%);
-}
-
-.timeline-card.island-card::after {
-  
-  
-  
-  z-index: 1;
-  
-  
-  
-}
-
-.timeline-row.is-left .timeline-card.island-card::after {
-  clip-path: polygon(0 12%, 9% 0, 88% 0, 100% 20%, 96% 82%, 82% 100%, 6% 94%, 0 72%);
-}
-
-.timeline-row.is-right .timeline-card.island-card::after {
-  clip-path: polygon(12% 0, 100% 8%, 100% 74%, 91% 100%, 10% 96%, 0 82%, 4% 18%);
-}
-
-
-.timeline-card-watermark {
-  right: 20px !important;
-  top: 18px !important;
-  
-  
-  
-  
-  
-  
-}
-
-
-.timeline-category {
-  border-radius: 999px 999px 999px 8px !important;
-  background: rgba(236,253,255,.52) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.76), 0 10px 24px rgba(8,47,73,.08) !important;
-}
-
-.timeline-card h2 {
-  text-wrap: balance;
-  
-}
-
-.timeline-period {
-  clip-path: polygon(0 0, 93% 0, 100% 50%, 93% 100%, 0 100%, 6% 50%);
-  border-radius: 0 !important;
-  padding-inline: 18px 20px !important;
-}
-
-.skill-badge {
-  min-height: 22px !important;
-  border-radius: 999px !important;
-  background: rgba(255,255,255,.34) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.56);
-}
-
-.timeline-row:hover::before {
-  opacity: 1 !important;
-  transform: translateY(-1px) scaleX(1.08);
-  
-}
-
-.timeline-row:hover::after {
-  transform: translate(-50%, -50%) scale(1.18) !important;
-}
-
-.timeline-row.is-left:hover .timeline-card.island-card {
-  transform: translateY(-12px) rotate(-1.15deg) rotateY(-5deg) translateZ(18px) !important;
-  filter: drop-shadow(0 48px 96px rgba(8,47,73,.24));
-}
-
-.timeline-row.is-right:hover .timeline-card.island-card {
-  transform: translateY(-12px) rotate(1.15deg) rotateY(5deg) translateZ(18px) !important;
-  filter: drop-shadow(0 48px 96px rgba(8,47,73,.24));
-}
-
-.timeline-row:hover .timeline-card.island-card::before {
-  border-color: rgba(125,211,252,.52);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.96),
-    inset 0 -1px 0 rgba(8,47,73,.10),
-    inset 34px 0 70px rgba(125,211,252,.12),
-    0 34px 98px rgba(8,47,73,.18) !important;
-}
 
 @keyframes profileDeckScan {
   0%, 28% { background-position: -55% 0, center, center; opacity: .35; }
@@ -327,28 +161,12 @@
   70%, 100% { background-position: 160% 88%, center, center; }
 }
 
-@keyframes timelineCableFlow {
-  0% { background-position: 0 0, 0 0; }
-  100% { background-position: 0 0, 88px 0; }
-}
-
-@keyframes timelineNodePulse {
-  0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.18); }
-}
-
-@keyframes premiumWatermarkOrbit {
-  to { transform: rotate(360deg); }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .profile-island .hero-copy::after,
   .portrait-card.island-card::after,
   .availability-card.island-card::after,
-  .contact-card.island-card::after,
-  .timeline-row::before,
-  .timeline-row::after,
-  .timeline-card-watermark {
+  .contact-card.island-card::after {
     animation: none !important;
   }
 }
@@ -357,18 +175,12 @@
   .profile-island .hero-copy,
   .portrait-card.island-card,
   .availability-card.island-card,
-  .contact-card.island-card,
-  .timeline-card.island-card,
-  .timeline-card.island-card::before,
-  .timeline-card.island-card::after {
+  .contact-card.island-card {
     clip-path: none !important;
     border-radius: 34px !important;
     transform: none !important;
   }
 
-  .timeline-card.island-card {
-    filter: drop-shadow(0 22px 52px rgba(8,47,73,.14));
-  }
 }
 
 @media (max-width: 640px) {
@@ -376,7 +188,4 @@
     padding: 28px 22px !important;
   }
 
-  .timeline-card .timeline-main-copy {
-    padding-right: 0;
-  }
 }

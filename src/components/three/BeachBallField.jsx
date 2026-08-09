@@ -285,7 +285,7 @@ function AbstractSingularityScene({
 
   return (
     <InteractionContext.Provider value={{ clickTick }}>
-      <Physics gravity={[0, 0, 0]} updateLoop="follow">
+      <Physics gravity={[0, 0, 0]} timeStep={1 / 60} interpolate updateLoop="follow">
         <Pointer active={active} />
         {shapes.map((shape) => (
           <KineticShape
@@ -455,7 +455,7 @@ export default function BeachBallField({ performanceMode = "full", paused = fals
           <Canvas
             shadows
             frameloop={active ? "always" : "demand"}
-            dpr={balancedMode ? [1, 1.18] : [1, 1.55]}
+            dpr={balancedMode ? [1, 1.16] : [1, 1.38]}
             gl={{
               alpha: true,
               antialias: true,

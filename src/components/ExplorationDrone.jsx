@@ -1,23 +1,15 @@
-import { useEffect, useState } from "react";
-
 export default function ExplorationDrone() {
-  const [isPaused, setIsPaused] = useState(
-    () => typeof document !== "undefined" && document.hidden,
-  );
-
-  useEffect(() => {
-    const handleVisibilityChange = () => setIsPaused(document.hidden);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, []);
-
   return (
     <div
-      className={`timeline-exploration-drone${isPaused ? " is-paused" : ""}`}
-      data-scan-level="1"
+      className="timeline-exploration-drone"
+      data-facing="left"
+      data-inspection-phase="idle"
+      data-torch="off"
       aria-hidden="true"
     >
-      <div className="timeline-exploration-drone-float">
+      <div className="timeline-exploration-drone-direction">
+        <div className="timeline-inspection-torch" />
+        <div className="timeline-exploration-drone-float">
         <svg
           viewBox="0 0 360 220"
           role="presentation"
@@ -128,6 +120,7 @@ export default function ExplorationDrone() {
             <circle cx="334" cy="54" r="3.5" />
           </g>
         </svg>
+        </div>
       </div>
     </div>
   );

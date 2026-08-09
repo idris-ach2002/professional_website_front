@@ -5,6 +5,7 @@ const MOBILE_QUERY = "(max-width: 820px)";
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
 let runtimePromise = null;
+let runtimeConfigured = false;
 
 async function getGsapRuntime() {
   if (!runtimePromise) {
@@ -12,6 +13,12 @@ async function getGsapRuntime() {
       const gsap = gsapModule.gsap ?? gsapModule.default;
       const ScrollTrigger = scrollModule.ScrollTrigger ?? scrollModule.default;
       gsap.registerPlugin(ScrollTrigger);
+      if (!runtimeConfigured) {
+        // Keep GSAP attached to the browser's native requestAnimationFrame cadence.
+        // Do not call ticker.fps(): that would only cap/skip ticks on high-refresh displays.
+        gsap.ticker.lagSmoothing(240, 16);
+        runtimeConfigured = true;
+      }
       return { gsap, ScrollTrigger };
     });
   }
