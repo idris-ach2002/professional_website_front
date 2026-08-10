@@ -185,23 +185,12 @@ test("mémorise les préférences d’animation et active le mode ultra-léger",
   await expect(page.locator("html")).toHaveAttribute("data-animation-state", "off");
 });
 
-test("réserve le poisson du Parcours à l’entrée descendante et le masque en modes réduites", async ({ page }) => {
+test("ne réintroduit pas le poisson de révélation dans le Parcours", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await openPortfolio(page, "fr");
 
-  const control = page.locator(".animation-preferences-control");
-  const trigger = control.getByTestId("animation-preferences-trigger");
-  const fish = page.locator(".timeline-section .section-title-fish .section-reveal-fish").first();
-
-  await trigger.hover();
-  await control.getByRole("group", { name: "Niveau d’animations" }).getByRole("button", { name: /Réduites/ }).click();
-  await expect(page.locator("html")).toHaveAttribute("data-performance-profile", "lite");
-  await expect(fish).toBeHidden();
-
-  await trigger.hover();
-  await control.getByRole("group", { name: "Niveau d’animations" }).getByRole("button", { name: /Désactivées/ }).click();
-  await expect(page.locator("html")).toHaveAttribute("data-performance-profile", "ultra-lite");
-  await expect(fish).toBeHidden();
+  await expect(page.locator(".timeline-section .section-reveal-fish")).toHaveCount(0);
+  await expect(page.locator(".ocean-transition-stage")).toHaveAttribute("data-reveal-engine", "cinematic-world-reveal-v21-25");
 });
 
 test("@vitals respecte les budgets Web Vitals sur mobile", async ({ page, browserName }, testInfo) => {

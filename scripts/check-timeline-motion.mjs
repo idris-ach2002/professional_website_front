@@ -34,10 +34,10 @@ if (/\bpin\s*:\s*true|\bscrub\s*:/.test(component)) {
   errors.push("Timeline component must not reintroduce pinned/scrubbed motion.");
 }
 if (!component.includes("managedMotion") || !sectionTitle.includes("managedMotion")) {
-  errors.push("Timeline fish must bypass SectionTitle's ScrollTrigger reveal and use managed state motion.");
+  errors.push("Timeline heading must remain outside SectionTitle scroll-scrub motion.");
 }
-if (!visualCss.includes("timeline-fish-entry-pass") || !visualCss.includes('data-timeline-entry="down"')) {
-  errors.push("Fish must perform one autonomous left-to-right pass only on downward entry.");
+if (component.includes('reveal="fish"') || visualCss.includes("timeline-fish-entry-pass") || visualCss.includes("section-reveal-fish")) {
+  errors.push("Timeline world entry must not use the old left-to-right fish reveal.");
 }
 if (!component.includes("playCardReveal") || !component.includes("progressForStep")) {
   errors.push("Timeline cards and line must reveal progressively from entry state using time, not scroll pixels.");
@@ -103,6 +103,12 @@ if (!visualCss.includes('data-timeline-scene="exiting"') || !visualCss.includes(
 if (!visualCss.includes("mask-image:linear-gradient") || !visualCss.includes("transparent 100%")) {
   errors.push("Abyss atmosphere must fade back to the global ocean before the next section.");
 }
+if (!visualCss.includes("margin-bottom: 0 !important") || !visualCss.includes("padding-bottom: 0 !important") || !visualCss.includes("margin-top: -2px !important")) {
+  errors.push("Timeline→caldera seam must remove the inherited page-section margin and overlap the caldera edge.");
+}
+if (!visualCss.includes("padding-bottom: clamp(220px, 18vw, 290px)") || !visualCss.includes("height: clamp(190px, 17vw, 275px)")) {
+  errors.push("The final Timeline card must remain above a dedicated reef runway instead of colliding with foreground coral.");
+}
 if (/rotateY\(|createOrientationState|stepOrientation|createNavigationPilot|stepNavigationPilot/.test(component + inspection)) {
   errors.push("Legacy continuous rotation/wander engines must stay deleted from Timeline motion.");
 }
@@ -121,4 +127,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log("Timeline motion OK: V21.3 hard-bounded vehicles + robust pre-volcano exit + V20.9 inspection visuals.");
+console.log("Timeline motion OK: V21.24 true caldera seam closure, protected reef runway and V20.9 autonomous inspection visuals.");

@@ -466,3 +466,12 @@ La navbar adopte un sélecteur `FR / EN` futuriste avec indicateur coulissant, g
 ## V14 — administration recentrée
 
 Les onglets Candidatures et CV Builder ainsi que leurs services ont été retirés. L’administration web gère désormais uniquement le contenu du portfolio, les fichiers publics, les versions, les analytics, les sauvegardes et les traductions. La route publique `/cv` reste disponible pour consulter le document déjà publié.
+
+## V21.16 — Living Ocean World
+
+La couche marine globale utilise désormais un moteur Canvas autonome, des transitions de biomes par IntersectionObserver, un champ de courant partagé, une faune avec steering/orientation cohérente et un rockfall volcanique persistant. Voir [`V21_16_LIVING_OCEAN_WORLD.md`](./docs/V21_16_LIVING_OCEAN_WORLD.md).
+
+
+## V21.17 — World hand-offs et sortie des projets
+
+Les changements de monde sont désormais matérialisés par des ponts visuels autonomes entre Profil/Skills, Timeline, caldeira et Projets. La fin des projets reçoit un véritable outro océanique/contact, et le rockfall volcanique distingue poussière, basalte, fragments chauds et rares blocs de méga-pulse. Voir [`V21_17_WORLD_HANDOFFS.md`](./docs/V21_17_WORLD_HANDOFFS.md).

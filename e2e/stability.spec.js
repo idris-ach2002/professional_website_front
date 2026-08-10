@@ -165,3 +165,41 @@ test("@stability résiste aux sauts de scroll et conserve une géométrie saine"
   expect([...new Set(layout.duplicateIds)]).toEqual([]);
   expect(pageErrors, `Erreurs runtime pendant le stress scroll: ${pageErrors.join(" | ")}`).toEqual([]);
 });
+
+test("@stability enchaîne les biomes du Living Ocean World sans dépendance au scroll", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  const pageErrors = capturePageErrors(page);
+  await openPortfolio(page, "fr");
+  await selectAnimationMode(page, "Complètes", "full");
+
+  const canvas = page.locator(".ocean-world-canvas");
+  await expect(canvas).toBeAttached();
+  await expect(page.locator(".ocean-transition-stage")).toBeAttached();
+  await expect(page.locator(".ocean-biome-transition-layer")).toHaveAttribute("data-world-director", "intersection-decision-band");
+
+  const timeline = page.locator("#timeline");
+  await timeline.evaluate((element) => element.scrollIntoView({ block: "center", behavior: "auto" }));
+  await expect(page.locator("html")).toHaveAttribute("data-ocean-biome", "deep", { timeout: 4_000 });
+
+  const volcano = page.locator("#abyss-volcano-field");
+  await expect(volcano).toBeAttached({ timeout: 10_000 });
+  await volcano.evaluate((element) => element.scrollIntoView({ block: "center", behavior: "auto" }));
+  await expect(page.locator("html")).toHaveAttribute("data-ocean-biome", "caldera", { timeout: 4_000 });
+
+  const projects = page.locator("#projects");
+  await projects.evaluate((element) => element.scrollIntoView({ block: "center", behavior: "auto" }));
+  await expect(page.locator("html")).toHaveAttribute("data-ocean-biome", "projects", { timeout: 4_000 });
+  await expect(projects.locator(".project-gallery-shell")).toBeAttached();
+  await expect(projects.locator(".project-slide-card").first()).toBeAttached();
+  await expect(projects.locator(".project-world-backdrop")).toHaveCount(0);
+
+  const outro = page.locator("#ocean-outro");
+  await outro.evaluate((element) => element.scrollIntoView({ block: "center", behavior: "auto" }));
+  await expect(page.locator("html")).toHaveAttribute("data-ocean-biome", "outro", { timeout: 4_000 });
+  await expect(outro.locator(".treasure-mine-field")).toHaveAttribute("data-mine-field", "excavation-runtime");
+  await expect(outro.locator(".treasure-mine-canvas")).toBeAttached();
+  await expect(page.locator(".ocean-ascent-vehicle")).toHaveCount(0);
+  await expect(page.locator(".ascent-vehicle-silhouette")).toHaveCount(0);
+
+  expect(pageErrors, `Erreurs runtime pendant les transitions de biomes: ${pageErrors.join(" | ")}`).toEqual([]);
+});

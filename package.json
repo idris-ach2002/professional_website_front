@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "prebuild": "node scripts/clean-public-legacy.mjs",
-    "build": "npm run check:retired && npm run check:source-tree && npm run check:css && npm run check:responsive && npm run check:timeline-motion && npm run check:high-refresh && npm run check:runtime-performance && npm run check:front-cost && npm run check:volcano-simulation && npm run check:localization && npm run check:stability-freeze && vite build && npm run generate:static && npm run check:static-seo && npm run check:performance",
+    "build": "npm run check:retired && npm run check:source-tree && npm run check:css && npm run check:responsive && npm run check:timeline-motion && npm run check:high-refresh && npm run check:runtime-performance && npm run check:front-cost && npm run check:volcano-simulation && npm run check:living-ocean-world && npm run check:localization && npm run check:stability-freeze && vite build && npm run generate:static && npm run check:static-seo && npm run check:performance",
     "lint": "eslint .",
     "preview": "vite preview",
     "clean": "rm -rf .cache .tmp lib build node_modules",
@@ -38,7 +38,8 @@
     "test:workers": "node scripts/test-worker-policy.mjs",
     "check:runtime-performance": "node scripts/check-runtime-performance.mjs",
     "check:front-cost": "node scripts/check-front-cost-reset.mjs",
-    "check:volcano-simulation": "node scripts/check-volcano-simulation.mjs"
+    "check:volcano-simulation": "node scripts/check-volcano-simulation.mjs",
+    "check:living-ocean-world": "node scripts/check-living-ocean-world.mjs"
   },
   "dependencies": {
     "@mantine/core": "^9.0.0",

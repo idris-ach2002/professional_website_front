@@ -58,8 +58,8 @@ if (!app.includes("runtimeQuality={runtimeQuality}")) {
 if (!ocean.includes('runtimeQuality === "constrained"') || !ocean.includes("CONSTRAINED_PARTICLE_COUNT") || !ocean.includes("!runtimeConstrained")) {
   errors.push("Ocean layers and particle density must adapt to sustained runtime pressure.");
 }
-if (!aquarium.includes("CONSTRAINED_FISH") || !aquarium.includes('runtimeQuality === "constrained"')) {
-  errors.push("Aquarium density must adapt to sustained runtime pressure.");
+if (!aquarium.includes("resolveMarinePopulation") || !aquarium.includes("runtimeQuality") || !aquarium.includes("population")) {
+  errors.push("Living Ocean World marine density must adapt to sustained runtime pressure.");
 }
 if (!volcano.includes("resolveVolcanoParticleCounts") || !volcano.includes("resolveDpr") || !volcano.includes("resolveRenderFps") || !volcano.includes("runtimeQuality")) {
   errors.push("Volcano particle density, DPR and render cadence must adapt to sustained runtime pressure.");

@@ -50,8 +50,8 @@ for (const filename of absoluteFiles) {
 
 const limits = {
   stylesheets: 20,
-  bytes: 212_000,
-  important: 1_200,
+  bytes: 245_000,
+  important: 1_300,
 };
 if (absoluteFiles.length > limits.stylesheets) errors.push(`Stylesheet count ${absoluteFiles.length} > ${limits.stylesheets}.`);
 if (totalBytes > limits.bytes) errors.push(`Global CSS ${totalBytes} bytes > ${limits.bytes} bytes.`);

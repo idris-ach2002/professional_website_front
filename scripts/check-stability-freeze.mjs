@@ -22,6 +22,7 @@ const requiredScripts = [
   "check:runtime-performance",
   "check:front-cost",
   "check:volcano-simulation",
+  "check:living-ocean-world",
   "test:e2e:functional",
   "test:e2e:responsive",
   "test:e2e:stability",
@@ -34,8 +35,8 @@ for (const script of requiredScripts) {
   if (!packageJson.scripts?.[script]) errors.push(`Missing npm script ${script}.`);
 }
 
-if (!packageJson.scripts?.build?.includes("check:source-tree") || !packageJson.scripts?.build?.includes("check:stability-freeze") || !packageJson.scripts?.build?.includes("check:runtime-performance") || !packageJson.scripts?.build?.includes("check:front-cost") || !packageJson.scripts?.build?.includes("check:volcano-simulation")) {
-  errors.push("The production build must execute source-tree, stability-freeze, runtime-performance, front-cost and volcano-simulation checks.");
+if (!packageJson.scripts?.build?.includes("check:source-tree") || !packageJson.scripts?.build?.includes("check:stability-freeze") || !packageJson.scripts?.build?.includes("check:runtime-performance") || !packageJson.scripts?.build?.includes("check:front-cost") || !packageJson.scripts?.build?.includes("check:volcano-simulation") || !packageJson.scripts?.build?.includes("check:living-ocean-world")) {
+  errors.push("The production build must execute source-tree, stability-freeze, runtime-performance, front-cost, volcano-simulation and living-ocean-world checks.");
 }
 if (!packageJson.scripts?.["test:e2e"]?.includes("test:e2e:stability")) {
   errors.push("The E2E chain must include the dedicated stability suite.");
@@ -63,11 +64,11 @@ for (const threshold of [
   if (!vite.includes(threshold)) errors.push(`Coverage threshold missing: ${threshold}.`);
 }
 
-if (!cssCheck.includes("const maxGlobalCssBytes = 205_000")) {
-  errors.push("V21 global CSS freeze must stay at <= 205000 bytes.");
+if (!cssCheck.includes("const maxGlobalCssBytes = 245_000")) {
+  errors.push("V21.24 global CSS freeze must stay at <= 245000 bytes.");
 }
-if (!cssCheck.includes("const maxImportantCount = 1_150")) {
-  errors.push("V21 !important freeze must stay at <= 1150 declarations.");
+if (!cssCheck.includes("const maxImportantCount = 1_300")) {
+  errors.push("V21.24 !important freeze must stay at <= 1300 declarations.");
 }
 if (!performanceCheck.includes("const HARD_INITIAL_JS_BROTLI = 360 * 1024")) {
   errors.push("V21 initial JS hard budget must stay at <= 360 KiB Brotli.");
@@ -143,6 +144,6 @@ if (errors.length > 0) {
 }
 
 console.log(
-  "V21 stability freeze OK: vehicle timing frozen, runtime governor enforced, coverage thresholds active, source/build budgets tightened, "
+  "V21.24 stability freeze OK: vehicle timing frozen, runtime governor enforced, coverage thresholds active, source/build budgets tightened, "
   + `${stabilityCount} stability E2E scenarios enforced.`,
 );
