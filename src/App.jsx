@@ -5,6 +5,8 @@ import { Routes, Route } from "react-router-dom";
 import AnalyticsTracker from "./components/AnalyticsTracker";
 import GlobalAquarium from "./components/GlobalAquarium";
 import OceanMorphBackground from "./components/OceanMorphBackground";
+import OceanWorldBridge from "./components/OceanWorldBridge";
+import OceanTransitionStage from "./components/OceanTransitionStage";
 import ProfileHero from "./components/ProfileHero";
 import ProjectsShowcase from "./components/ProjectsShowcase";
 import ProvenSkillsSection from "./components/ProvenSkillsSection";
@@ -107,6 +109,7 @@ function Home({
   const { t } = useLanguage();
   const { runtimeQuality } = usePerformanceRuntime();
   const { isMobile, reducedMotion, performanceMode, preference, isFirefox, animationsEnabled, animationsPaused } = responsiveProfile;
+  const showVolcano = !isMobile && !reducedMotion && animationsEnabled && !["lite", "ultra-lite"].includes(performanceMode);
 
   return (
     <main id="main-content" className="app-shell" tabIndex={-1}>
@@ -123,6 +126,12 @@ function Home({
         reducedMotion={reducedMotion}
         performanceMode={performanceMode}
         isFirefox={isFirefox}
+        paused={animationsPaused}
+        runtimeQuality={runtimeQuality}
+      />
+      <OceanTransitionStage
+        reducedMotion={reducedMotion}
+        performanceMode={performanceMode}
         paused={animationsPaused}
         runtimeQuality={runtimeQuality}
       />
@@ -155,6 +164,8 @@ function Home({
 
         <ProvenSkillsSection projects={projects} experiences={experiences} provenSkills={owner?.provenSkills} />
 
+        <OceanWorldBridge variant="descent" />
+
         <Suspense
           fallback={
             <div className="section-skeleton">
@@ -169,11 +180,18 @@ function Home({
           />
         </Suspense>
 
-        {!isMobile && !reducedMotion && animationsEnabled && !["lite", "ultra-lite"].includes(performanceMode) && (
-          <DeferredVolcanoField performanceMode={performanceMode} animationsPaused={animationsPaused} runtimeQuality={runtimeQuality} />
+        {showVolcano ? (
+          <>
+            <OceanWorldBridge variant="caldera" />
+            <DeferredVolcanoField performanceMode={performanceMode} animationsPaused={animationsPaused} runtimeQuality={runtimeQuality} />
+            <OceanWorldBridge variant="projects" />
+          </>
+        ) : (
+          <OceanWorldBridge variant="deep-projects" />
         )}
 
         <ProjectsShowcase projects={projects} />
+        <OceanWorldBridge variant="crystal" />
         <SiteFooter owner={owner} />
       </Stack>
     </main>

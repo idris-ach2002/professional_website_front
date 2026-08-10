@@ -878,7 +878,17 @@ export default function ProjectsShowcase({ projects }) {
   };
 
   return (
-    <section ref={rootRef} id="projects" className="page-section projects-section">
+    <section ref={rootRef} id="projects" className="page-section projects-section" data-project-world="research-station">
+      <div className="project-station-decor" aria-hidden="true">
+        <span className="project-station-ceiling" />
+        <span className="project-station-rail project-station-rail--left" />
+        <span className="project-station-rail project-station-rail--right" />
+        <span className="project-station-lightbar project-station-lightbar--one" />
+        <span className="project-station-lightbar project-station-lightbar--two" />
+        <span className="project-station-window project-station-window--one"><i /><b /></span>
+        <span className="project-station-window project-station-window--two"><i /><b /></span>
+        <span className="project-station-status">{t("projects.stationStatus")}</span>
+      </div>
       <SectionTitle
         reveal="soft"
         eyebrow={t("projects.eyebrow")}

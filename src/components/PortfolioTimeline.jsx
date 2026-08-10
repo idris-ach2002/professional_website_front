@@ -478,7 +478,7 @@ export default function PortfolioTimeline({ timeline, experiences, performanceMo
       <div className="timeline-dive-viewport">
         <div className="timeline-dive-content">
           <SectionTitle
-            reveal="fish"
+            reveal="soft"
             managedMotion
             eyebrow={t("timeline.eyebrow")}
             title={timeline?.title ?? t("timeline.defaultTitle")}

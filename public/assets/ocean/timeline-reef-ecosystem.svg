@@ -11,23 +11,23 @@
       <stop offset="1" stop-color="#081821"/>
     </linearGradient>
     <linearGradient id="kelp" x1="0" y1="1" x2="0" y2="0">
-      <stop offset="0" stop-color="#0d3b32"/>
-      <stop offset="0.48" stop-color="#14604b"/>
-      <stop offset="1" stop-color="#2b8a68"/>
+      <stop offset="0" stop-color="#0b4638"/>
+      <stop offset="0.48" stop-color="#117a58"/>
+      <stop offset="1" stop-color="#35b77f"/>
     </linearGradient>
     <linearGradient id="coralWarm" x1="0" y1="1" x2="0" y2="0">
-      <stop offset="0" stop-color="#6c2f3a"/>
-      <stop offset="0.55" stop-color="#c15e68"/>
-      <stop offset="1" stop-color="#ef9c83"/>
+      <stop offset="0" stop-color="#7d2638"/>
+      <stop offset="0.55" stop-color="#e25467"/>
+      <stop offset="1" stop-color="#ffad91"/>
     </linearGradient>
     <linearGradient id="coralCool" x1="0" y1="1" x2="0" y2="0">
-      <stop offset="0" stop-color="#154e57"/>
-      <stop offset="0.55" stop-color="#238c8c"/>
-      <stop offset="1" stop-color="#63c9bc"/>
+      <stop offset="0" stop-color="#0c5965"/>
+      <stop offset="0.55" stop-color="#19a7a0"/>
+      <stop offset="1" stop-color="#79e5d2"/>
     </linearGradient>
     <radialGradient id="sand" cx="50%" cy="0" r="90%">
-      <stop offset="0" stop-color="#244654" stop-opacity=".7"/>
-      <stop offset="1" stop-color="#06131b" stop-opacity=".98"/>
+      <stop offset="0" stop-color="#285b6c" stop-opacity=".7"/>
+      <stop offset="1" stop-color="#04131b" stop-opacity=".98"/>
     </radialGradient>
   </defs>
 
@@ -69,14 +69,14 @@
   </g>
 
   <g opacity=".82">
-    <ellipse cx="333" cy="516" rx="48" ry="22" fill="#1d5051"/>
-    <ellipse cx="338" cy="507" rx="28" ry="13" fill="#3d8279"/>
-    <ellipse cx="918" cy="529" rx="54" ry="24" fill="#173d46"/>
-    <ellipse cx="920" cy="519" rx="32" ry="14" fill="#2f6b6b"/>
-    <ellipse cx="1510" cy="531" rx="45" ry="20" fill="#213f4b"/>
+    <ellipse cx="333" cy="516" rx="48" ry="22" fill="#256a63"/>
+    <ellipse cx="338" cy="507" rx="28" ry="13" fill="#50a796"/>
+    <ellipse cx="918" cy="529" rx="54" ry="24" fill="#1c5661"/>
+    <ellipse cx="920" cy="519" rx="32" ry="14" fill="#398c87"/>
+    <ellipse cx="1510" cy="531" rx="45" ry="20" fill="#285666"/>
   </g>
 
-  <g fill="#7dd3c7" opacity=".42">
+  <g fill="#9cf3df" opacity=".42">
     <circle cx="406" cy="428" r="4"/><circle cx="441" cy="425" r="3"/><circle cx="982" cy="444" r="3"/>
     <circle cx="1048" cy="435" r="4"/><circle cx="1441" cy="454" r="3"/>
   </g>
