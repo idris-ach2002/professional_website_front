@@ -86,7 +86,7 @@ test("@stability supporte les changements rapides de modes d’animation", async
   expect(pageErrors, `Erreurs runtime pendant les changements d’animation: ${pageErrors.join(" | ")}`).toEqual([]);
 });
 
-test("@stability garde la Timeline autonome, révèle les cartes puis coupe la scène avant Rapier", async ({ page }) => {
+test("@stability garde la Timeline autonome, révèle les cartes puis coupe la scène avant le volcan abyssal", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   const pageErrors = capturePageErrors(page);
   await openPortfolio(page, "fr");
@@ -125,16 +125,15 @@ test("@stability garde la Timeline autonome, révèle les cartes puis coupe la s
   await expect(drone).toBeHidden();
   await expect(submarine).toBeHidden();
 
-  // DeferredBeachBall remplace son placeholder .beach-3d-section par le vrai
-  // composant lorsqu'il entre dans la zone de préchargement. Attendre l'ancre
-  // stable du composant monté évite de scroller un nœud qui se détache pendant
-  // l'action Playwright.
-  const rapier = page.locator("#kinetic-field");
-  await expect(rapier).toBeAttached({ timeout: 10_000 });
-  await rapier.evaluate((element) => {
+  // La scène volcanique remplace son placeholder quand elle entre dans la zone
+  // de préchargement. Attendre son ancre stable évite de scroller un nœud
+  // temporaire qui se détache pendant le lazy loading.
+  const volcano = page.locator("#abyss-volcano-field");
+  await expect(volcano).toBeAttached({ timeout: 10_000 });
+  await volcano.evaluate((element) => {
     element.scrollIntoView({ block: "center", behavior: "auto" });
   });
-  await expect(rapier).toBeVisible();
+  await expect(volcano).toBeVisible();
   await expect(drone).toBeHidden();
   await expect(submarine).toBeHidden();
 

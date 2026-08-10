@@ -27,6 +27,17 @@ const forbiddenFiles = [
   "public/icons.svg",
   "public/textures/beach-ball-panel-texture.svg",
   "src/styles/effects/05-ocean-drops.css",
+  "src/components/three/BeachBallField.jsx",
+  "public/models/ABSTRACT_SHAPES.glb",
+  "src/styles/effects/04-rapier-and-responsive.css",
+  "src/components/KineticSpriteField.jsx",
+  "src/animations/kineticSpriteEngine.js",
+  "src/animations/kineticSpriteEngine.test.js",
+  "src/styles/effects/04-kinetic-and-responsive.css",
+  "public/sprites/kinetic-shapes.webp",
+  "public/scenes/underwater-volcano.webp",
+  "src/animations/underwaterVolcanoEngine.js",
+  "src/animations/underwaterVolcanoEngine.test.js",
 ];
 
 const forbiddenTokens = [
@@ -37,6 +48,14 @@ const forbiddenTokens = [
   "useAdminCvStudio",
   "autonomousNavigationEngine",
   "orientationEngine",
+  "@react-three/",
+  "@react-three/rapier",
+  "ABSTRACT_SHAPES.glb",
+  "KineticSpriteField",
+  "kineticSpriteEngine",
+  "kinetic-shapes.webp",
+  "underwater-volcano.webp",
+  "underwaterVolcanoEngine",
 ];
 
 const sourceExtensions = new Set([".js", ".jsx", ".mjs", ".css"]);

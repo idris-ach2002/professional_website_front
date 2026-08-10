@@ -6,9 +6,11 @@ const DIST = "dist";
 const PUBLIC = "public";
 const HARD_INITIAL_JS_BROTLI = 360 * 1024;
 const TARGET_INITIAL_JS_BROTLI = 350 * 1024;
-const THREE_CHUNK_BROTLI = 700 * 1024;
+const GENERIC_VENDOR_BROTLI = 260 * 1024;
+const MAX_VOLCANO_SCENE = 32 * 1024;
+const MAX_VOLCANO_ENVIRONMENT = 16 * 1024;
 const MAX_PUBLIC_IMAGE = 400 * 1024;
-const MAX_PUBLIC_TOTAL = 700 * 1024;
+const MAX_PUBLIC_TOTAL = 400 * 1024;
 
 let hasFailure = false;
 
@@ -75,14 +77,35 @@ if (initialBrotli > HARD_INITIAL_JS_BROTLI) {
 }
 
 const distJs = filesRecursively(join(DIST, "assets")).filter((path) => path.endsWith(".js"));
-const threeChunk = distJs.find((path) => /vendor-three-/.test(path));
-if (!threeChunk) {
-  fail("vendor-three chunk was not found.");
-} else {
-  const size = brotliSize(threeChunk);
-  if (size > THREE_CHUNK_BROTLI) {
-    fail(`3D chunk Brotli ${formatKb(size)} > ${formatKb(THREE_CHUNK_BROTLI)}.`);
+const vendorSizes = distJs
+  .filter((path) => /\/vendor-[^/]+\.js$/.test(path))
+  .map((path) => ({ file: relative(DIST, path), size: brotliSize(path) }))
+  .sort((a, b) => b.size - a.size);
+if (vendorSizes.length > 0) {
+  console.log(`Vendor Brotli: ${vendorSizes.map((entry) => `${entry.file}=${formatKb(entry.size)}`).join(", ")}`);
+}
+const genericVendor = distJs.find((path) => /\/vendor-[^-][^/]*\.js$/.test(path) && !/vendor-(react|router|mantine|gsap)-/.test(path));
+if (genericVendor) {
+  const size = brotliSize(genericVendor);
+  if (size > GENERIC_VENDOR_BROTLI) {
+    fail(`generic vendor Brotli ${formatKb(size)} > ${formatKb(GENERIC_VENDOR_BROTLI)}.`);
   }
+  console.log(`Generic vendor Brotli: ${formatKb(size)}.`);
+}
+const volcanoScene = join(PUBLIC, "scenes", "abyss-volcano.svg");
+if (!existsSync(volcanoScene)) {
+  fail("public/scenes/abyss-volcano.svg is missing.");
+} else if (statSync(volcanoScene).size > MAX_VOLCANO_SCENE) {
+  fail(`drawn abyss volcano SVG ${formatKb(statSync(volcanoScene).size)} > ${formatKb(MAX_VOLCANO_SCENE)}.`);
+}
+const volcanoEnvironment = join(PUBLIC, "scenes", "abyss-volcano-environment.svg");
+if (!existsSync(volcanoEnvironment)) {
+  fail("public/scenes/abyss-volcano-environment.svg is missing.");
+} else if (statSync(volcanoEnvironment).size > MAX_VOLCANO_ENVIRONMENT) {
+  fail(`abyss volcano environment SVG ${formatKb(statSync(volcanoEnvironment).size)} > ${formatKb(MAX_VOLCANO_ENVIRONMENT)}.`);
+}
+if (distJs.some((path) => /vendor-three-/.test(path))) {
+  fail("vendor-three must not return after the Canvas 2D migration.");
 }
 
 const publicFiles = filesRecursively(PUBLIC);

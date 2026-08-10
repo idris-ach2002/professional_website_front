@@ -88,14 +88,14 @@ if (component.includes("timeline-card-inspection-light") || visualCss.includes("
   errors.push("Card-local inspection hotspot must stay removed; illumination must come from the vehicle torch.");
 }
 if (!component.includes("timeline-exit-sentinel") || !component.includes("timelineExit") || !visualCss.includes("data-timeline-exit=\"approaching\"")) {
-  errors.push("Timeline must hide the inspection vehicles before the Rapier section using the exit sentinel.");
+  errors.push("Timeline must hide the inspection vehicles before the abyss volcano using the exit sentinel.");
 }
 
 if (!visualCss.includes("margin-top:calc(var(--timeline-stage-height) * -1)") || visualCss.includes("margin-bottom:calc(var(--timeline-stage-height) * -1)")) {
   errors.push("Sticky Timeline stage must keep its full margin box; overlap belongs on the list so vehicles cannot paint past the section end.");
 }
 if (!visualCss.includes("height:clamp(160px,22vh,260px)") || !component.includes('rootMargin: "0px 0px -14% 0px"')) {
-  errors.push("Timeline exit guard must remain a broad pre-Rapier intersection zone, not a 1px sentinel that fast scroll can skip.");
+  errors.push("Timeline exit guard must remain a broad pre-volcano intersection zone, not a 1px sentinel that fast scroll can skip.");
 }
 if (!visualCss.includes('data-timeline-scene="exiting"') || !visualCss.includes('data-timeline-scene="idle"')) {
   errors.push("Timeline vehicles must have CSS fail-safe hiding in exiting/idle scene states.");
@@ -121,4 +121,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log("Timeline motion OK: V21.3 hard-bounded vehicles + robust pre-Rapier exit + V20.9 inspection visuals.");
+console.log("Timeline motion OK: V21.3 hard-bounded vehicles + robust pre-volcano exit + V20.9 inspection visuals.");

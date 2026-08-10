@@ -12,7 +12,9 @@ const main = read("src/main.jsx");
 const app = read("src/App.jsx");
 const ocean = read("src/components/OceanMorphBackground.jsx");
 const aquarium = read("src/components/GlobalAquarium.jsx");
-const rapier = read("src/components/three/BeachBallField.jsx");
+const volcano = read("src/components/UnderwaterVolcanoField.jsx");
+const volcanoWorker = read("src/workers/volcanoTexture.worker.js");
+const volcanoSimulation = read("src/animations/volcanoSimulationEngine.js");
 const analytics = read("src/components/AnalyticsTracker.jsx");
 const packageJson = JSON.parse(read("package.json"));
 const errors = [];
@@ -53,14 +55,20 @@ if (!analytics.includes("scheduleBackgroundTask")) {
 if (!app.includes("runtimeQuality={runtimeQuality}")) {
   errors.push("Runtime quality must reach visual subsystems.");
 }
-if (!ocean.includes('runtimeQuality === "constrained"') || !ocean.includes("RUNTIME_CONSTRAINED_MORPH_FPS")) {
-  errors.push("Ocean work must adapt to sustained runtime pressure.");
+if (!ocean.includes('runtimeQuality === "constrained"') || !ocean.includes("CONSTRAINED_PARTICLE_COUNT") || !ocean.includes("!runtimeConstrained")) {
+  errors.push("Ocean layers and particle density must adapt to sustained runtime pressure.");
 }
 if (!aquarium.includes("CONSTRAINED_FISH") || !aquarium.includes('runtimeQuality === "constrained"')) {
   errors.push("Aquarium density must adapt to sustained runtime pressure.");
 }
-if (!rapier.includes("CONSTRAINED_SHAPE_COUNT") || !rapier.includes("runtimeConstrained")) {
-  errors.push("Three/Rapier density and DPR must adapt to sustained runtime pressure.");
+if (!volcano.includes("resolveVolcanoParticleCounts") || !volcano.includes("resolveDpr") || !volcano.includes("resolveRenderFps") || !volcano.includes("runtimeQuality")) {
+  errors.push("Volcano particle density, DPR and render cadence must adapt to sustained runtime pressure.");
+}
+if (!volcanoWorker.includes("OffscreenCanvas") || !volcanoWorker.includes("transferToImageBitmap")) {
+  errors.push("Volcano texture preparation must support OffscreenCanvas Worker execution.");
+}
+if (!volcanoSimulation.includes("resolveVolcanoStageProfile") || !volcanoSimulation.includes("stepVolcanoSimulation")) {
+  errors.push("Volcano eruption stages must be simulated outside React state hot paths.");
 }
 if (!packageJson.scripts?.build?.includes("check:runtime-performance")) {
   errors.push("Production build must execute check:runtime-performance.");
@@ -76,5 +84,5 @@ if (errors.length) {
 
 console.log(
   "Runtime performance contract OK: prioritized scheduler, Long Tasks/LoAF observers, Worker analysis, "
-  + "hysteretic governor and adaptive ocean/aquarium/Rapier quality.",
+  + "hysteretic governor and adaptive ocean/aquarium/Canvas quality.",
 );

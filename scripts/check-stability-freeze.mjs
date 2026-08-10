@@ -20,6 +20,8 @@ const requiredScripts = [
   "check:source-tree",
   "check:stability-freeze",
   "check:runtime-performance",
+  "check:front-cost",
+  "check:volcano-simulation",
   "test:e2e:functional",
   "test:e2e:responsive",
   "test:e2e:stability",
@@ -32,8 +34,8 @@ for (const script of requiredScripts) {
   if (!packageJson.scripts?.[script]) errors.push(`Missing npm script ${script}.`);
 }
 
-if (!packageJson.scripts?.build?.includes("check:source-tree") || !packageJson.scripts?.build?.includes("check:stability-freeze") || !packageJson.scripts?.build?.includes("check:runtime-performance")) {
-  errors.push("The production build must execute source-tree, stability-freeze and runtime-performance checks.");
+if (!packageJson.scripts?.build?.includes("check:source-tree") || !packageJson.scripts?.build?.includes("check:stability-freeze") || !packageJson.scripts?.build?.includes("check:runtime-performance") || !packageJson.scripts?.build?.includes("check:front-cost") || !packageJson.scripts?.build?.includes("check:volcano-simulation")) {
+  errors.push("The production build must execute source-tree, stability-freeze, runtime-performance, front-cost and volcano-simulation checks.");
 }
 if (!packageJson.scripts?.["test:e2e"]?.includes("test:e2e:stability")) {
   errors.push("The E2E chain must include the dedicated stability suite.");
@@ -73,8 +75,8 @@ if (!performanceCheck.includes("const HARD_INITIAL_JS_BROTLI = 360 * 1024")) {
 if (!performanceCheck.includes("const TARGET_INITIAL_JS_BROTLI = 350 * 1024")) {
   errors.push("V21 initial JS target must stay at <= 350 KiB Brotli.");
 }
-if (!performanceCheck.includes("const MAX_PUBLIC_TOTAL = 700 * 1024")) {
-  errors.push("V21 public asset budget must stay at <= 700 KiB.");
+if (!performanceCheck.includes("const MAX_PUBLIC_TOTAL = 400 * 1024")) {
+  errors.push("Front-cost reset public asset budget must stay at <= 400 KiB.");
 }
 
 if (!playwright.includes("forbidOnly: Boolean(process.env.CI)")) {
