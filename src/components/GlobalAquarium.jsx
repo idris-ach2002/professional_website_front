@@ -95,7 +95,7 @@ const MOBILE_FISH = [
   },
 ];
 
-function FishRoute({ fish }) {
+function FishRoute({ fish, reacting = false }) {
   const driftValue = Number.parseFloat(fish.drift);
   const driftMid = Number.isFinite(driftValue) ? `${driftValue * 0.45}vh` : fish.drift;
 
@@ -115,7 +115,14 @@ function FishRoute({ fish }) {
       className={`aquarium-route aquarium-route--${fish.direction} aquarium-route--${fish.depth}`}
       style={style}
     >
-      <span className="aquarium-fish-bob">
+      <span
+        className="aquarium-fish-bob"
+        style={{
+          translate: reacting ? (fish.direction === "ltr" ? "38px -8px" : "-38px -8px") : "0 0",
+          transition: "translate .28s cubic-bezier(.2,.8,.2,1)",
+          animationDuration: reacting ? "1.05s" : undefined,
+        }}
+      >
         <img
           src="/assets/ocean/fish-swim-light.svg"
           alt=""
@@ -123,6 +130,7 @@ function FishRoute({ fish }) {
           className="aquarium-fish-image"
           draggable="false"
           decoding="async"
+          style={{ filter: reacting ? "brightness(1.08) saturate(1.08)" : undefined }}
         />
       </span>
     </span>
@@ -139,11 +147,18 @@ export default function GlobalAquarium({
   const [isPageHidden, setIsPageHidden] = useState(() =>
     typeof document !== "undefined" ? document.hidden : false,
   );
+  const [volcanoReaction, setVolcanoReaction] = useState(false);
 
   useEffect(() => {
     const handleVisibility = () => setIsPageHidden(document.hidden);
     document.addEventListener("visibilitychange", handleVisibility);
     return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, []);
+
+  useEffect(() => {
+    const handleVolcanoStage = (event) => setVolcanoReaction(Boolean(event.detail?.reaction));
+    window.addEventListener("portfolio:volcano-stage", handleVolcanoStage);
+    return () => window.removeEventListener("portfolio:volcano-stage", handleVolcanoStage);
   }, []);
   const fish = useMemo(() => {
     if (reducedMotion) return [MOBILE_FISH[0]];
@@ -162,7 +177,7 @@ export default function GlobalAquarium({
       aria-hidden="true"
     >
       {fish.map((item) => (
-        <FishRoute key={item.id} fish={item} />
+        <FishRoute key={item.id} fish={item} reacting={volcanoReaction} />
       ))}
     </div>
   );

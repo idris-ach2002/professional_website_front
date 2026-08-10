@@ -21,7 +21,7 @@
   overflow: visible !important;
 }
 
-.ocean-morph-path { transform-origin: 50% 72%; }
+.ocean-static-layer { transform-origin: 50% 72%; }
 
 .timeline-dive-viewport,.timeline-dive-content {
   position:relative;
