@@ -15,6 +15,11 @@ import {
   stepVolcanoSimulation,
 } from "../animations/volcanoSimulationEngine";
 import { createVolcanoWebGLRenderer } from "../rendering/volcanoWebGLRenderer";
+import {
+  createVolcanoRockfall,
+  resolveRockfallLimit,
+  stepVolcanoRockfall,
+} from "../animations/volcanoRockfallEngine";
 import { paintVolcanoSmokeTexture } from "../rendering/volcanoSmokeTexture";
 import {
   scheduleBackgroundTask,
@@ -161,7 +166,6 @@ function drawParticleField(context, particles, textures, viewport, elapsedSecond
   const ashStrength = Math.min(1.65, profile?.ash ?? 0.01);
   const bubbleStrength = Math.min(1.8, profile?.bubbles ?? 0.84);
   const sedimentStrength = Math.min(1.5, profile?.sediment ?? 0.12);
-  const debrisStrength = Math.min(1.8, profile?.debris ?? 0.03);
 
   for (const particle of particles) {
     const lifeRatio = Math.min(1, particle.life / Math.max(0.001, particle.ttl));
@@ -260,27 +264,7 @@ function drawParticleField(context, particles, textures, viewport, elapsedSecond
       continue;
     }
 
-    if (particle.type === "fragment") {
-      if (debrisStrength < 0.10) continue;
-      const r = particle.size;
-      context.save();
-      context.translate(particle.x, particle.y);
-      context.rotate(particle.rotation);
-      context.globalAlpha = particle.alpha * Math.max(0.06, fade) * debrisStrength;
-      context.fillStyle = "rgba(9,18,24,.94)";
-      context.strokeStyle = "rgba(255,104,30,.20)";
-      context.lineWidth = 0.8;
-      context.beginPath();
-      context.moveTo(-r, r * 0.15);
-      context.lineTo(-r * 0.22, -r * 0.86);
-      context.lineTo(r * 0.84, -r * 0.34);
-      context.lineTo(r * 0.48, r * 0.76);
-      context.closePath();
-      context.fill();
-      context.stroke();
-      context.restore();
-      continue;
-    }
+
 
     const texture = particle.type === "ember" ? textures.ember : textures.bio;
     const strength = particle.type === "ember" ? emberStrength : Math.max(0.45, 0.86 - (profile?.lava ?? 0) * 0.18);
@@ -291,6 +275,77 @@ function drawParticleField(context, particles, textures, viewport, elapsedSecond
     context.globalAlpha = particle.alpha * Math.max(0.08, fade) * pulse * strength;
     if (particle.type === "ember") context.globalCompositeOperation = "lighter";
     context.drawImage(texture, particle.x - size / 2, particle.y - size / 2, size, size);
+    context.restore();
+  }
+}
+
+
+function createSettledDebrisSurface(pixelWidth, pixelHeight) {
+  const surface = document.createElement("canvas");
+  surface.width = pixelWidth;
+  surface.height = pixelHeight;
+  return surface;
+}
+
+function traceRock(context, rock, dpr = 1) {
+  const r = rock.size * dpr;
+  const shape = rock.shape ?? [0.8, 0.7, 0.78, 0.68];
+  context.beginPath();
+  context.moveTo(-r * shape[0], r * 0.18);
+  context.lineTo(-r * 0.26, -r * shape[1]);
+  context.lineTo(r * shape[2], -r * 0.32);
+  context.lineTo(r * 0.52, r * shape[3]);
+  context.closePath();
+}
+
+function bakeSettledRock(surface, rock, viewport) {
+  if (!surface) return;
+  const context = surface.getContext("2d", { alpha: true });
+  if (!context) return;
+  const { dpr } = viewport;
+  context.save();
+  context.translate(rock.x * dpr, rock.y * dpr);
+  context.rotate(rock.rotation);
+  context.globalAlpha = rock.kind === "dust" ? 0.58 : 1;
+  context.fillStyle = rock.kind === "dust" ? "rgba(76,72,67,.72)" : "rgba(7,13,18,.96)";
+  context.strokeStyle = rock.heat > 0.08 ? `rgba(174,31,8,${Math.min(.48, rock.heat * .44)})` : "rgba(74,92,96,.16)";
+  context.lineWidth = Math.max(0.55, dpr * (rock.kind === "mega" ? 0.95 : 0.7));
+  traceRock(context, rock, dpr);
+  context.fill();
+  context.stroke();
+  context.restore();
+}
+
+function drawRockfall(context, rockfall, settledSurface, viewport) {
+  const { width, height, dpr } = viewport;
+  context.setTransform(1, 0, 0, 1, 0, 0);
+  context.clearRect(0, 0, width * dpr, height * dpr);
+  if (settledSurface) context.drawImage(settledSurface, 0, 0);
+  context.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  for (const rock of rockfall.active) {
+    context.save();
+    context.translate(rock.x, rock.y);
+    context.rotate(rock.rotation);
+    if (rock.kind === "dust") {
+      context.globalAlpha = 0.66;
+      context.fillStyle = "rgba(106,97,86,.76)";
+    } else {
+      context.fillStyle = rock.kind === "hot" || rock.kind === "mega" ? "rgba(10,12,14,.99)" : "rgba(6,12,17,.98)";
+    }
+    context.strokeStyle = rock.heat > 0.08 ? `rgba(226,52,12,${Math.min(.68, .18 + rock.heat * .54)})` : "rgba(82,103,108,.22)";
+    context.lineWidth = rock.kind === "mega" ? 1.25 : 0.85;
+    traceRock(context, rock, 1);
+    context.fill();
+    context.stroke();
+    if (rock.heat > 0.30 && rock.kind !== "dust") {
+      context.globalCompositeOperation = "lighter";
+      context.globalAlpha = Math.min(0.32, rock.heat * 0.24);
+      context.fillStyle = "rgba(255,72,12,.92)";
+      context.scale(0.48, 0.48);
+      traceRock(context, rock, 1);
+      context.fill();
+    }
     context.restore();
   }
 }
@@ -310,12 +365,14 @@ export default function UnderwaterVolcanoField({
   const stageRef = useRef(null);
   const webglCanvasRef = useRef(null);
   const particleCanvasRef = useRef(null);
+  const debrisCanvasRef = useRef(null);
+  const settledDebrisSurfaceRef = useRef(null);
+  const rockfallRef = useRef(createVolcanoRockfall(0x7a31));
   const rendererRef = useRef(null);
   const particlesRef = useRef([]);
   const texturesRef = useRef(null);
   const viewportRef = useRef({ width: 1, height: 1, dpr: 1 });
   const simulationRef = useRef(createVolcanoSimulation(0x8218));
-  const profileRef = useRef(resolveVolcanoStageProfile(simulationRef.current));
   const reportedPulseRef = useRef("base");
   const reportedReactionRef = useRef(false);
   const rafRef = useRef(0);
@@ -337,22 +394,27 @@ export default function UnderwaterVolcanoField({
   const dpr = resolveDpr(performanceMode, runtimeQuality);
   const targetFps = resolveRenderFps(performanceMode, runtimeQuality);
   const quality = qualityScalar(runtimeQuality, performanceMode);
+  const rockfallLimit = resolveRockfallLimit(runtimeQuality, performanceMode);
 
   const rebuildParticles = useCallback(() => {
     const { width, height } = viewportRef.current;
     if (width <= 1 || height <= 1) return;
-    const seed = 0x7610 + counts.smoke * 31 + counts.ember * 17 + counts.ash * 13 + counts.sediment * 11 + counts.fragment * 19;
+    const seed = 0x7610 + counts.smoke * 31 + counts.ember * 17 + counts.ash * 13 + counts.sediment * 11;
     particlesRef.current = createVolcanoParticles(width, height, counts, seed);
   }, [counts]);
 
   const resize = useCallback(() => {
     const particleCanvas = particleCanvasRef.current;
+    const debrisCanvas = debrisCanvasRef.current;
     const webglCanvas = webglCanvasRef.current;
     const stage = stageRef.current;
-    if (!particleCanvas || !webglCanvas || !stage) return;
+    if (!particleCanvas || !debrisCanvas || !webglCanvas || !stage) return;
     const viewport = resizeCanvas(particleCanvas, stage, dpr);
+    resizeCanvas(debrisCanvas, stage, dpr);
     viewportRef.current = viewport;
     rendererRef.current?.resize(viewport.width, viewport.height, dpr);
+    settledDebrisSurfaceRef.current = createSettledDebrisSurface(debrisCanvas.width, debrisCanvas.height);
+    rockfallRef.current = createVolcanoRockfall(0x7a31);
     rebuildParticles();
   }, [dpr, rebuildParticles]);
 
@@ -432,8 +494,10 @@ export default function UnderwaterVolcanoField({
 
   useEffect(() => {
     const particleCanvas = particleCanvasRef.current;
+    const debrisCanvas = debrisCanvasRef.current;
     const context = particleCanvas?.getContext("2d", { alpha: true, desynchronized: true });
-    if (!particleCanvas || !context || !active || !texturesRef.current) {
+    const debrisContext = debrisCanvas?.getContext("2d", { alpha: true, desynchronized: true });
+    if (!particleCanvas || !debrisCanvas || !context || !debrisContext || !active || !texturesRef.current) {
       cancelAnimationFrame(rafRef.current);
       lastFrameRef.current = 0;
       lastPaintRef.current = 0;
@@ -448,7 +512,6 @@ export default function UnderwaterVolcanoField({
 
       stepVolcanoSimulation(simulationRef.current, deltaSeconds);
       const profile = resolveVolcanoStageProfile(simulationRef.current);
-      profileRef.current = profile;
       if (profile.pulseType !== reportedPulseRef.current) {
         reportedPulseRef.current = profile.pulseType;
         setPulseName(profile.pulseType);
@@ -461,14 +524,28 @@ export default function UnderwaterVolcanoField({
 
       if (!lastPaintRef.current || timestamp - lastPaintRef.current >= paintInterval - 0.5) {
         lastPaintRef.current = timestamp;
+        const paintDelta = Math.min(0.05, Math.max(deltaSeconds, paintInterval / 1000));
         stepVolcanoParticles(
           particlesRef.current,
-          Math.min(0.05, Math.max(deltaSeconds, paintInterval / 1000)),
+          paintDelta,
           viewportRef.current.width,
           viewportRef.current.height,
           simulationRef.current.elapsed,
           profile,
         );
+        const settledRocks = stepVolcanoRockfall(
+          rockfallRef.current,
+          paintDelta,
+          viewportRef.current.width,
+          viewportRef.current.height,
+          simulationRef.current.elapsed,
+          profile,
+          rockfallLimit,
+        );
+        for (const rock of settledRocks) {
+          bakeSettledRock(settledDebrisSurfaceRef.current, rock, viewportRef.current);
+        }
+        drawRockfall(debrisContext, rockfallRef.current, settledDebrisSurfaceRef.current, viewportRef.current);
         rendererRef.current?.render(simulationRef.current.elapsed, profile, quality);
         drawParticleField(
           context,
@@ -488,7 +565,7 @@ export default function UnderwaterVolcanoField({
       lastFrameRef.current = 0;
       lastPaintRef.current = 0;
     };
-  }, [active, quality, targetFps]);
+  }, [active, quality, rockfallLimit, targetFps]);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -576,6 +653,7 @@ export default function UnderwaterVolcanoField({
             />
           )}
           <canvas ref={webglCanvasRef} className="volcano-webgl-canvas" />
+          <canvas ref={debrisCanvasRef} className="volcano-debris-canvas" />
           {sceneReady ? (
             <canvas ref={particleCanvasRef} className="volcano-particle-canvas" />
           ) : (

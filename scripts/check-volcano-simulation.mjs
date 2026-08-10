@@ -27,8 +27,12 @@ if (!engine.includes("FIRST_PULSES") || !engine.includes('kind: "mega"') || !eng
 if (!engine.includes("PERPETUAL_BASE") || !engine.includes("pulseStartedAt") || !engine.includes("resolvePulseEnvelope")) {
   errors.push("Perpetual lava/smoke baseline and pulse-envelope engine are required.");
 }
-if (!engine.includes('type === "sediment"') || !engine.includes('type === "fragment"')) {
-  errors.push("Living caldera must include sediment lift and lightweight rock fragments.");
+if (!engine.includes('type === "sediment"')) {
+  errors.push("Living caldera must keep sediment lift in the particle engine.");
+}
+const rockfall = read("src/animations/volcanoRockfallEngine.js");
+if (!rockfall.includes("stepVolcanoRockfall") || !rockfall.includes("settledCount")) {
+  errors.push("Living caldera must use persistent non-recycled volcanic rockfall.");
 }
 if (!component.includes("data-volcano-pulse") || !component.includes("volcano-foreground-vector")) {
   errors.push("Volcano component must expose pulse state and render the asymmetric foreground rock layer.");
@@ -100,4 +104,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log("Volcano simulation OK: V21.15 full-cone deep-crimson thermal veins + eruption heat amplification, with V21.14 steady natural smoke preserved unchanged.");
+console.log("Volcano simulation OK: V21.15 thermal veins and steady smoke preserved, with V21.16 persistent rockfall integrated.");

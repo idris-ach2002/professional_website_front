@@ -1,3 +1,5 @@
+import { OCEAN_BIOMES, sampleOceanCurrent } from "../ocean/oceanWorldEngine.js";
+
 const TAU = Math.PI * 2;
 
 function mulberry32(seed) {
@@ -382,25 +384,7 @@ function createParticle(type, random, width, height, index) {
     };
   }
 
-  if (type === "fragment") {
-    const left = random() < 0.5;
-    return {
-      id: `fragment-${index}`,
-      type,
-      variant: 0,
-      x: width * (left ? 0.16 + random() * 0.13 : 0.71 + random() * 0.13),
-      y: height * (0.48 + random() * 0.24),
-      vx: (left ? 1 : -1) * (4 + random() * 18),
-      vy: 5 + random() * 17,
-      size: 2.8 + random() * 7.2,
-      alpha: 0.18 + random() * 0.34,
-      phase: random() * TAU,
-      rotation: random() * TAU,
-      spin: (random() - 0.5) * 2.0,
-      life: random() * 6,
-      ttl: 4 + random() * 6,
-    };
-  }
+
 
   return {
     id: `bio-${index}`,
@@ -422,18 +406,18 @@ function createParticle(type, random, width, height, index) {
 
 export function resolveVolcanoParticleCounts(runtimeQuality = "high", performanceMode = "full") {
   if (runtimeQuality === "constrained") {
-    return { smoke: 18, vent: 4, ember: 20, ash: 8, bubble: 15, bio: 9, sediment: 8, fragment: 3 };
+    return { smoke: 18, vent: 4, ember: 20, ash: 8, bubble: 15, bio: 9, sediment: 8 };
   }
   if (runtimeQuality === "balanced" || performanceMode === "balanced") {
-    return { smoke: 28, vent: 6, ember: 38, ash: 14, bubble: 26, bio: 13, sediment: 15, fragment: 5 };
+    return { smoke: 28, vent: 6, ember: 38, ash: 14, bubble: 26, bio: 13, sediment: 15 };
   }
-  return { smoke: 40, vent: 10, ember: 62, ash: 24, bubble: 42, bio: 18, sediment: 26, fragment: 8 };
+  return { smoke: 40, vent: 10, ember: 62, ash: 24, bubble: 42, bio: 18, sediment: 26 };
 }
 
 export function createVolcanoParticles(width, height, counts, seed = 0x71a5) {
   const random = mulberry32(seed);
   const particles = [];
-  const orderedTypes = ["smoke", "vent", "ember", "ash", "bubble", "bio", "sediment", "fragment"];
+  const orderedTypes = ["smoke", "vent", "ember", "ash", "bubble", "bio", "sediment"];
 
   for (const type of orderedTypes) {
     const count = Math.max(0, Math.floor(counts?.[type] ?? 0));
@@ -468,7 +452,6 @@ export function stepVolcanoParticles(
   const eruption = clamp(profile?.eruption ?? 0.52, 0, 2.2);
   const shock = clamp(profile?.shock ?? 0, 0, 2.0);
   const sediment = clamp(profile?.sediment ?? 0.12, 0, 1.6);
-  const debris = clamp(profile?.debris ?? 0.03, 0, 1.8);
   const craterX = width * 0.5;
   const craterY = height * 0.385;
 
@@ -476,9 +459,15 @@ export function stepVolcanoParticles(
     particle.life += dt;
     particle.rotation += particle.spin * dt;
     const phase = particle.phase + elapsedSeconds * (particle.type === "ember" ? 3.4 : 0.78);
+    const sharedCurrent = sampleOceanCurrent(
+      particle.x / Math.max(1, width),
+      particle.y / Math.max(1, height),
+      elapsedSeconds,
+      OCEAN_BIOMES.CALDERA,
+    );
 
     if (particle.type === "vent") {
-      particle.x += (particle.vx + Math.sin(phase) * (3.2 + turbulence * 2.0)) * dt;
+      particle.x += (particle.vx + Math.sin(phase) * (3.2 + turbulence * 2.0) + sharedCurrent.x * 10) * dt;
       particle.y += particle.vy * (0.76 + plume * 0.20) * dt;
       particle.size += dt * 4.5;
     } else if (particle.type === "smoke") {
@@ -487,7 +476,7 @@ export function stepVolcanoParticles(
       const buoyancy = (0.82 + plume * 0.34) * layerBoost * smokeFlow;
       const lateral = layer === "hot" ? 2.8 : layer === "main" ? 5.4 : 8.2;
       const drift = Math.sin(phase) * lateral + Math.sin(phase * 0.47 + 1.7) * 2.1;
-      particle.x += (particle.vx + drift) * dt;
+      particle.x += (particle.vx + drift + sharedCurrent.x * 8) * dt;
       particle.y += particle.vy * buoyancy * dt;
       const expansion = layer === "hot"
         ? 2.4 + smokeDensity * 1.6
@@ -505,20 +494,16 @@ export function stepVolcanoParticles(
       particle.y += particle.vy * burst * dt;
     } else if (particle.type === "bubble") {
       const lift = 0.82 + (profile?.bubbles ?? 0) * 0.62;
-      particle.x += (particle.vx + Math.sin(phase) * (5.2 + turbulence * 4.6)) * dt;
+      particle.x += (particle.vx + Math.sin(phase) * (5.2 + turbulence * 4.6) + sharedCurrent.x * 12) * dt;
       particle.y += particle.vy * lift * dt;
       particle.size += dt * (0.12 + eruption * 0.30);
     } else if (particle.type === "sediment") {
       particle.x += (particle.vx + Math.sin(phase * 0.7) * (1.6 + turbulence * 2.2)) * dt;
       particle.y += (particle.vy * (0.22 + sediment * 0.46) + (1 - sediment) * 2.2) * dt;
       if (shock > 0.12) particle.y -= shock * dt * (22 + particle.size * 3.5);
-    } else if (particle.type === "fragment") {
-      particle.x += particle.vx * dt * (0.34 + debris * 0.56);
-      particle.y += particle.vy * dt * (0.42 + debris * 0.42);
-      if (shock > 0.10) particle.y -= shock * dt * 18;
     } else {
-      particle.x += (particle.vx + Math.sin(phase) * 0.8) * dt;
-      particle.y += particle.vy * dt;
+      particle.x += (particle.vx + Math.sin(phase) * 0.8 + sharedCurrent.x * 7) * dt;
+      particle.y += (particle.vy + sharedCurrent.y * 5) * dt;
     }
 
     if (shock > 0.08 && particle.type !== "vent" && particle.type !== "bio" && particle.type !== "smoke") {

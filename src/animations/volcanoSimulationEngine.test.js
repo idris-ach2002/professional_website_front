@@ -129,18 +129,17 @@ describe("volcano perpetual eruption engine", () => {
     expect(profile120.lava).toBeCloseTo(profile60.lava, 4);
   });
 
-  it("réduit fumée, sédiments et débris sous pression runtime", () => {
+  it("réduit fumée et sédiments sous pression runtime", () => {
     const high = resolveVolcanoParticleCounts("high", "full");
     const constrained = resolveVolcanoParticleCounts("constrained", "full");
     expect(constrained.smoke).toBeLessThan(high.smoke);
     expect(constrained.ember).toBeLessThan(high.ember);
     expect(constrained.bubble).toBeLessThan(high.bubble);
     expect(constrained.sediment).toBeLessThan(high.sediment);
-    expect(constrained.fragment).toBeLessThan(high.fragment);
   });
 
   it("préremplit un panache étroit et continu sans mushroom cloud", () => {
-    const counts = { smoke: 40, vent: 0, ember: 0, ash: 0, bubble: 0, bio: 0, sediment: 0, fragment: 0 };
+    const counts = { smoke: 40, vent: 0, ember: 0, ash: 0, bubble: 0, bio: 0, sediment: 0 };
     const particles = createVolcanoParticles(1200, 720, counts, 0x7610);
     const layers = particles.map((particle) => particle.plumeLayer);
     expect(layers).toEqual(expect.arrayContaining(["hot", "main", "diffuse"]));
@@ -152,13 +151,13 @@ describe("volcano perpetual eruption engine", () => {
   });
 
   it("crée les particules de caldeira latérale", () => {
-    const counts = { smoke: 1, vent: 1, ember: 1, ash: 1, bubble: 1, bio: 1, sediment: 1, fragment: 1 };
+    const counts = { smoke: 1, vent: 1, ember: 1, ash: 1, bubble: 1, bio: 1, sediment: 1 };
     const particles = createVolcanoParticles(1000, 600, counts, 91);
-    expect(particles.map((particle) => particle.type)).toEqual(expect.arrayContaining(["vent", "sediment", "fragment"]));
+    expect(particles.map((particle) => particle.type)).toEqual(expect.arrayContaining(["vent", "sediment"]));
   });
 
   it("fait évoluer les particules de façon cohérente", () => {
-    const counts = { smoke: 1, vent: 1, ember: 1, ash: 1, bubble: 1, bio: 1, sediment: 1, fragment: 1 };
+    const counts = { smoke: 1, vent: 1, ember: 1, ash: 1, bubble: 1, bio: 1, sediment: 1 };
     const a = createVolcanoParticles(1000, 600, counts, 91);
     const b = createVolcanoParticles(1000, 600, counts, 91);
     const simulation = createVolcanoSimulation(9);
