@@ -75,15 +75,14 @@ src/
 │   ├── CvPage.jsx                  # page CV PDF
 │   ├── FilePreview.jsx             # preview images/PDF
 │   ├── MetadataHead.jsx            # métadonnées SEO dynamiques
-│   ├── OceanMorphBackground.jsx    # fond animé SVG
+│   ├── OceanMorphBackground.jsx    # fond océanique SVG fixe + transforms GPU
 │   ├── PortfolioTimeline.jsx       # timeline du parcours
 │   ├── ProfileHero.jsx             # hero profil + contacts
 │   ├── ProjectsShowcase.jsx        # galerie/carrousel projets
 │   ├── SiteFooter.jsx              # footer
 │   ├── StatusBanner.jsx            # source API/demo/erreur
 │   ├── TopNavigation.jsx           # navigation sticky
-│   └── three/
-│       └── BeachBallField.jsx      # scène 3D interactive avec physique
+│   └── UnderwaterVolcanoField.jsx  # volcan abyssal WebP + particules Canvas 2D
 ├── utils/
 │   ├── adminJsonImport.js          # normalisation d’import JSON admin
 │   ├── filePreview.js              # normalisation et détection fichiers
@@ -197,11 +196,11 @@ Le portfolio public est composé de plusieurs blocs :
 | `StatusBanner` | Indique si les données viennent de l’API ou du fallback demo. |
 | `ProfileHero` | Présente l’identité, le titre, les contacts et les indicateurs clés. |
 | `PortfolioTimeline` | Affiche le parcours et les expériences. |
-| `BeachBallField` | Ajoute une scène 3D interactive. |
+| `UnderwaterVolcanoField` | Ajoute une scène abyssale légère : volcan WebP, fumée, bulles et particules Canvas 2D. |
 | `ProjectsShowcase` | Affiche les projets avec galerie, modale détails et liens. |
 | `SiteFooter` | Regroupe les liens finaux et le contact. |
 
-`PortfolioTimeline` et `BeachBallField` sont chargés avec `lazy()` et `Suspense` pour réduire le coût initial de rendu.
+`PortfolioTimeline` et `UnderwaterVolcanoField` sont chargés avec `lazy()` et `Suspense` pour réduire le coût initial de rendu.
 
 ## Admin panel
 
@@ -241,18 +240,15 @@ GSAP et ScrollTrigger sont chargés via CDN dans `index.html` :
 
 Le helper `src/animations/useGsap.js` attend la disponibilité de `window.gsap`, scope les animations et nettoie les timelines au démontage.
 
-### Three.js / React Three Fiber / Rapier
+### Scène volcanique abyssale
 
-`BeachBallField.jsx` crée une scène 3D interactive avec :
+`UnderwaterVolcanoField.jsx` remplace définitivement l’ancienne scène Three/Rapier. Elle utilise :
 
-- modèle GLB public : `/models/ABSTRACT_SHAPES.glb` ;
-- objets clonés ;
-- matériaux variés ;
-- corps physiques Rapier ;
-- collisions ;
-- impulsions au clic ;
-- interaction pointeur ;
-- rendu responsive.
+- une image WebP optimisée : `/scenes/underwater-volcano.webp` ;
+- un Canvas 2D uniquement pour fumée, bulles, braises et particules bioluminescentes ;
+- `requestAnimationFrame` natif avec `deltaTime` ;
+- une densité et un DPR adaptés par le performance governor ;
+- aucun moteur 3D, aucun GLB et aucun runtime physique WASM.
 
 ### Accessibilité performance
 

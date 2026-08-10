@@ -346,7 +346,7 @@
       "documentationUrl": "",
       "stacks": [
         "React",
-        "Three.js",
+        "Canvas 2D",
         "GSAP"
       ],
       "features": [

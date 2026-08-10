@@ -7,7 +7,7 @@
 - `core/` : variables globales, reset et document.
 - `components/` : composants publics partagés.
 - `sections/` : sections fonctionnelles du portfolio.
-- `effects/` : océan, aquarium et champ Three.js/Rapier.
+- `effects/` : océan, aquarium et scène volcanique WebP/Canvas 2D.
 - `navigation/` : couches historiques puis navigation actuellement utilisée.
 - `pages/` : administration, CV et analytics.
 - `overrides/` : raffinements tardifs conservés à leur position de cascade.

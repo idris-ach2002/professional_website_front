@@ -68,9 +68,8 @@ Backend Spring Boot / Docker
 - React 19 ;
 - Vite 8 ;
 - Mantine 9 ;
-- Tailwind CSS 4 via `@tailwindcss/vite` ;
 - React Router DOM 7 ;
-- Three.js, React Three Fiber, Drei et Rapier pour les scènes 3D et interactions physiques ;
+- Canvas 2D + atlas WebP pour le champ cinétique interactif léger ;
 - GSAP et ScrollTrigger chargés via CDN ;
 - Cloudflare Workers Assets via Wrangler.
 
