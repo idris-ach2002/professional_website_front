@@ -1,94 +1,21 @@
-/* Rapier/Three field plus the original responsive refinements that follow it. */
-/* ──────────────────────────────────────────────────────────────────────────
-   Full-width Rapier 3D kinetic field — transparent over existing ocean theme
-────────────────────────────────────────────────────────────────────────── */
-.beach-3d-section {
-  position: relative;
-  width: 100vw;
-  left: 50%;
-  right: 50%;
-  margin-left: -50vw;
-  margin-right: -50vw;
-  min-height: clamp(500px, 70vh, 780px);
-  margin-top: clamp(20px, 5vw, 70px);
-  margin-bottom: clamp(20px, 5vw, 70px);
-  padding: 0;
-  overflow: hidden;
-  isolation: isolate;
-  background: transparent !important;
-}
-
-.beach-3d-section::before,
-.beach-3d-section::after {
-  display: none !important;
-  content: none !important;
-}
-
-.beach-3d-stage {
-  position: relative;
-  width: 100%;
-  min-height: clamp(500px, 70vh, 780px);
-  overflow: hidden;
-  z-index: 1;
-  border: 0;
-  background: transparent !important;
-  box-shadow: none !important;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-
-.beach-3d-stage:focus-visible {
-  outline: 3px solid rgba(125, 211, 252, 0.88);
-  outline-offset: -12px;
-}
-
-
-.beach-3d-canvas {
-  position: absolute !important;
-  inset: 0;
-  width: 100% !important;
-  height: 100% !important;
-  z-index: 2;
-}
-
-@media (max-width: 980px) {
-  .beach-3d-section {
-    min-height: 520px;
-    padding-block: 0;
-  }
-
-  .beach-3d-stage {
-    min-height: 520px;
-  }
-}
-
-@media (max-width: 640px) {
-  .beach-3d-section {
-    min-height: 430px;
-  }
-
-  .beach-3d-stage {
-    min-height: 430px;
-  }
-}
-
-
-
-
-
-.ocean-morph-path,
+.volcano-field-section{position:relative;width:100vw;left:50%;margin-left:-50vw;min-height:clamp(560px,78vh,880px);margin-block:clamp(18px,4vw,58px) clamp(22px,5vw,72px);overflow:hidden;isolation:isolate;background:radial-gradient(ellipse at 50% 8%,rgba(83,211,246,.11),transparent 34%),radial-gradient(ellipse at 50% 72%,rgba(255,83,17,.07),transparent 28%),linear-gradient(180deg,rgba(2,35,59,.14),rgba(1,7,19,.98) 94%)!important}
+.volcano-field-section::before{content:"";position:absolute;inset:0;z-index:7;pointer-events:none;opacity:.22;background:radial-gradient(ellipse at 50% 42%,rgba(255,197,80,.48),rgba(255,70,12,.16) 14%,transparent 31%);mix-blend-mode:screen;transition:opacity .12s ease}.volcano-field-section[data-volcano-pulse="surge"]::before{opacity:.30}.volcano-field-section[data-volcano-pulse="burst"]::before{opacity:.44}.volcano-field-section[data-volcano-pulse="mega"]::before{opacity:.74}.volcano-field-section[data-volcano-stage="idle"]::before{opacity:.08}
+.volcano-field-section::after{content:"";position:absolute;inset:0;z-index:8;pointer-events:none;background:linear-gradient(180deg,rgba(1,8,22,.015),transparent 17% 73%,rgba(1,7,18,.78)),radial-gradient(ellipse at 50% 48%,transparent 46%,rgba(0,4,12,.28) 92%)}
+.volcano-field-stage{position:relative;width:100%;min-height:clamp(560px,78vh,880px);overflow:hidden;z-index:1;box-shadow:none!important;contain:layout paint}.volcano-environment-vector,.volcano-foreground-vector{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center bottom;pointer-events:none}.volcano-environment-vector{z-index:0;opacity:.98;filter:saturate(.92) contrast(1.12) brightness(.74)}.volcano-foreground-vector{z-index:5;opacity:.96;filter:saturate(.82) contrast(1.12) brightness(.68)}.volcano-render-stack{position:absolute;inset:0;z-index:2;overflow:hidden;pointer-events:none}.volcano-webgl-canvas,.volcano-particle-canvas{position:absolute!important;inset:0;width:100%!important;height:100%!important;pointer-events:none}.volcano-webgl-canvas{z-index:2}.volcano-particle-canvas{z-index:4}.volcano-fallback-vector{position:absolute;inset:0;z-index:1;width:100%;height:100%;object-fit:cover;object-position:center bottom;filter:contrast(1.1) brightness(.82)}
+.volcano-light-rays{position:absolute;z-index:1;left:50%;top:-16%;width:min(88vw,1260px);height:72%;transform:translate3d(-50%,0,0);clip-path:polygon(25% 0,75% 0,90% 100%,10% 100%);background:linear-gradient(180deg,rgba(201,248,255,.16),rgba(68,190,229,.025) 52%,transparent);opacity:.16}.volcano-seabed-vignette{position:absolute;z-index:6;inset:auto 0 0;height:28%;pointer-events:none;background:radial-gradient(ellipse at 50% 80%,rgba(255,79,13,.09),transparent 30%),linear-gradient(180deg,transparent,rgba(1,6,16,.82) 84%)}
+html[data-runtime-quality="constrained"] .volcano-light-rays{opacity:.08}html[data-runtime-quality="constrained"] .volcano-environment-vector,html[data-runtime-quality="constrained"] .volcano-foreground-vector{filter:saturate(.72) contrast(1.04) brightness(.68)}html[data-runtime-quality="constrained"] .volcano-field-section::before{opacity:.16}
+@media(max-width:980px){.volcano-field-section,.volcano-field-stage{min-height:560px}.volcano-environment-vector,.volcano-foreground-vector{width:122%;left:-11%;max-width:none}}@media(max-width:640px){.volcano-field-section,.volcano-field-stage{min-height:500px}.volcano-light-rays{width:132vw}.volcano-environment-vector,.volcano-foreground-vector{width:150%;left:-25%;max-width:none}}
+.ocean-static-layer,
 .ocean-deep-glow,
 .ocean-sky-glow {
   will-change: auto;
 }
-
 .ocean-sky-glow {
   background: radial-gradient(circle at 16% 10%, rgba(6, 182, 212, .18), transparent 24%),
     radial-gradient(circle at 88% 8%, rgba(14, 165, 233, .12), transparent 26%),
     radial-gradient(circle at 76% 78%, rgba(20, 184, 166, .15), transparent 28%);
   opacity: calc(.54 - var(--ocean-depth) * .52) !important;
 }
-
 .ocean-deep-glow {
   filter: blur(2px);
   opacity: calc(.46 + var(--ocean-depth) * .94) !important;
@@ -96,7 +23,6 @@
     radial-gradient(ellipse at 78% 78%, rgba(20, 184, 166, .10), transparent 34%),
     radial-gradient(ellipse at 50% 102%, rgba(0, 2, 10, .98), transparent 62%) !important;
 }
-
 :root {
   --ink: #082f49;
   --muted: #486b7a;
@@ -110,7 +36,6 @@
   --shadow-strong: 0 38px 120px rgba(8, 47, 73, .22);
   --global-ocean-depth: 0;
 }
-
 body::before {
   content: "";
   position: fixed;
@@ -123,33 +48,27 @@ body::before {
     linear-gradient(115deg, rgba(255,255,255,.24), transparent 34%, rgba(6,182,212,.08)) !important;
   opacity: calc(.48 - var(--global-ocean-depth) * .34);
 }
-
 .island-section {
   background: transparent !important;
 }
-
 .projects-section,
 .timeline-section,
 .page-section {
   border: 0 !important;
   box-shadow: none !important;
 }
-
-
 .hero-lead {
   font-size: clamp(1.15rem, 1.8vw, 1.55rem) !important;
   line-height: 1.55 !important;
   max-width: 880px;
   font-weight: 850 !important;
 }
-
 .hero-description {
   font-size: 1.03rem !important;
   line-height: 1.82 !important;
   max-width: 840px;
   font-weight: 650 !important;
 }
-
 .section-title-fish {
   min-height: clamp(240px, 30vh, 340px);
   align-content: center;
@@ -160,14 +79,12 @@ body::before {
   overflow: visible !important;
   clip-path: none !important;
 }
-
 .section-title-fish .section-title-copy {
   max-width: min(1020px, calc(100vw - 42px));
   padding-inline: clamp(12px, 3vw, 42px);
   width: min(1040px, calc(100vw - 44px));
   margin-inline: auto;
 }
-
 .section-reveal-fish {
   position: absolute;
   pointer-events: none;
@@ -181,20 +98,16 @@ body::before {
   width: clamp(150px, 23vw, 320px) !important;
   will-change: auto;
 }
-
-
 .section-reveal-bubble,
 .section-title-copy {
   will-change: auto;
 }
-
 .app-shell,
 #root,
 body,
 html {
   background: #010816 !important;
 }
-
 .app-shell {
   position: relative;
   min-height: 100vh;
@@ -202,7 +115,6 @@ html {
   isolation: isolate;
   overflow-x: clip;
 }
-
 .project-carousel-panel,
 .project-panel-inner,
 .project-gallery-camera,
@@ -213,7 +125,6 @@ html {
 .content-shell {
   background: transparent !important;
 }
-
 .ocean-bubble-field::after,
 .ocean-bubble-field::before,
 .projects-section::after,
@@ -229,7 +140,6 @@ html {
   box-shadow: none !important;
   filter: none !important;
 }
-
 .project-gallery-shell::after,
 .project-gallery-shell::before {
   position: absolute;
@@ -241,7 +151,6 @@ html {
   opacity: 0 !important;
   background: transparent !important;
 }
-
 .ocean-background {
   position: fixed;
   inset: 0;
@@ -260,7 +169,6 @@ html {
       #031b35 82%,
       #010816 100%) !important;
 }
-
 .ocean-background::after {
   content: "";
   position: absolute;
@@ -275,7 +183,6 @@ html {
       rgba(3, 25, 51, .9) 74%,
       rgba(1, 8, 22, .98) 100%) !important;
 }
-
 .ocean-depth-gradient {
   z-index: 1;
   transition: opacity .18s linear;
@@ -287,7 +194,6 @@ html {
       rgba(8, 47, 73, .76) 70%,
       rgba(1, 8, 22, .98) 100%) !important;
 }
-
 .ocean-surface-layer {
   z-index: 2;
   height: 34vh;
@@ -300,7 +206,6 @@ html {
   overflow: hidden !important;
   contain: paint;
 }
-
 .ocean-surface-waves {
   position: absolute;
   left: 0 !important;
@@ -313,35 +218,48 @@ html {
   transform: translate3d(0, 0, 0);
   animation: ocean-surface-infinite-drift 15s linear infinite;
 }
-
 .ocean-surface-wave-main {
   transform-box: fill-box;
   transform-origin: center center;
 }
-
 @keyframes ocean-surface-infinite-drift {
   from { transform: translate3d(0, 0, 0); }
   to { transform: translate3d(-50%, 0, 0); }
 }
-
 .ocean-map {
   position: absolute;
   z-index: 2;
   transform: translateY(calc(var(--ocean-depth) * -10vh)) scale(calc(1 + var(--ocean-depth) * .04));
-  transition: opacity .18s linear, transform .18s linear, filter .18s linear;
+  transition: opacity .18s linear, transform .18s linear;
   inset: -18% -14% !important;
   width: 128% !important;
   height: 136% !important;
   opacity: calc(.72 - var(--ocean-depth) * .5) !important;
-  filter: saturate(calc(1.02 - var(--ocean-depth) * .34)) brightness(calc(.96 - var(--ocean-depth) * .48)) !important;
 }
-
+.ocean-static-layer {
+  transform-box: fill-box;
+  transform-origin: center center;
+  will-change: transform;
+}
+.ocean-static-layer-1 {
+  animation: ocean-static-layer-drift-a 16s ease-in-out infinite alternate;
+}
+.ocean-static-layer-2 {
+  animation: ocean-static-layer-drift-b 21s ease-in-out infinite alternate;
+}
+@keyframes ocean-static-layer-drift-a {
+  from { transform: translate3d(-1.6%, 0, 0) scale3d(1.03, 1, 1); }
+  to { transform: translate3d(1.8%, -1.2%, 0) scale3d(1.05, 1.025, 1); }
+}
+@keyframes ocean-static-layer-drift-b {
+  from { transform: translate3d(1.2%, .8%, 0) scale3d(1.04, 1.015, 1); }
+  to { transform: translate3d(-1.4%, -1%, 0) scale3d(1.025, 1.035, 1); }
+}
 .ocean-abyss-floor,
 .ocean-deep-glow,
 .ocean-sky-glow {
   display: none !important;
 }
-
 .hero-copy,
 .empty-card,
 .project-slide-card,
@@ -351,39 +269,32 @@ html {
 .status-banner {
   background-clip: padding-box !important;
 }
-
 .section-title-bubbles .section-reveal-bubble,
 .section-title-bubbles .section-reveal-bubbles {
   display: none !important;
 }
-
 .timeline-section .section-heading,
 .projects-section .section-heading {
   color: rgba(234, 254, 255, .94) !important;
 }
-
 .timeline-section .section-description,
 .projects-section .section-description {
   color: rgba(198, 244, 255, .82) !important;
 }
-
 .timeline-section .section-eyebrow,
 .projects-section .section-eyebrow {
   color: rgba(236, 253, 255, .92) !important;
   background: rgba(8, 47, 73, .42) !important;
   border-color: rgba(186, 230, 253, .24) !important;
 }
-
 .hero-copy {
   min-width: 0;
   position: relative;
   z-index: 2;
   padding: clamp(24px, 4vw, 48px);
   border-radius: clamp(30px, 5vw, 56px);
-  backdrop-filter: blur(18px) saturate(1.08);
-  background: linear-gradient(135deg, rgba(255,255,255,.86), rgba(224,251,255,.66) 58%, rgba(125,211,252,.24)) !important;
+  background: linear-gradient(135deg, rgba(255,255,255,.94), rgba(224,251,255,.82) 58%, rgba(125,211,252,.30)) !important;
 }
-
 .portrait-content,
 .contact-card,
 .availability-copy,
@@ -394,7 +305,6 @@ html {
 .hero-title {
   color: #031827 !important;
 }
-
 .content-shell,
 .page-section,
 .project-carousel-panel,
@@ -404,7 +314,6 @@ html {
 .projects-section {
   background-image: none !important;
 }
-
 .section-title-copy,
 .hero-copy,
 .timeline-period,
@@ -414,26 +323,22 @@ html {
 .hero-title {
   text-shadow: none !important;
 }
-
 .project-gallery-camera,
 .project-gallery-viewport,
 .hero-copy {
   box-shadow: none !important;
 }
-
 .empty-card,
 .project-toolbar,
 .timeline-card,
 .hero-copy {
   border: 1px solid rgba(186, 230, 253, 0.22) !important;
 }
-
 .project-visual::after {
   display: none !important;
   content: none !important;
   animation: none !important;
 }
-
 .gallery-panel .project-slide-card,
 .gallery-panel {
   backface-visibility: hidden;
@@ -441,7 +346,6 @@ html {
   transform-style: preserve-3d;
   -webkit-transform-style: preserve-3d;
 }
-
 .gallery-panel.is-active .project-visual::after {
   position: absolute;
   inset: 0;
@@ -456,17 +360,14 @@ html {
   display: none !important;
   content: none !important;
 }
-
 .gallery-panel.is-active .project-image,
 .project-image {
   image-rendering: auto !important;
 }
-
 .gallery-panel:not(.is-active),
 .gallery-panel.is-active {
   filter: none !important;
 }
-
 .timeline-card *,
 .timeline-card,
 .project-period,
@@ -486,7 +387,6 @@ html {
 .hero-title-char {
   text-shadow: none !important;
 }
-
 .island-card,
 .hero-keyword,
 .gallery-nav-visual,
@@ -496,7 +396,6 @@ html {
 .project-toolbar {
   box-shadow: none !important;
 }
-
 .gallery-panel:not(.is-active) .project-slide-card::after,
 .project-gallery-shell::after,
 .project-gallery-shell::before,
@@ -504,11 +403,9 @@ html {
   box-shadow: none !important;
   filter: none !important;
 }
-
 .gallery-panel:not(.is-active) {
   pointer-events: auto;
 }
-
 .project-carousel-panel .project-panel-inner,
 .project-carousel-panel {
   width: 100% !important;
@@ -517,20 +414,17 @@ html {
   display: grid !important;
   place-items: center !important;
 }
-
 .gallery-panel:not(.is-active) .project-slide-card::after,
 .project-slide-card::after,
 .project-slide-card::before {
   display: none !important;
   content: none !important;
 }
-
 .project-content {
   position: relative;
   z-index: 1;
   min-width: 0;
 }
-
 .file-preview-image-trigger.project-visual,
 .project-visual,
 .gallery-panel.is-active .project-image,
@@ -541,40 +435,33 @@ html {
   animation: none !important;
   background: #eefbff !important;
 }
-
 .file-preview-image-trigger.project-visual,
 .project-visual {
   transform: none !important;
 }
-
 .project-image {
   transform: scale(1) !important;
   transform-origin: center center;
   transition: transform .42s cubic-bezier(.19, 1, .22, 1), filter .42s ease !important;
 }
-
 .gallery-panel.is-active .project-image-preview-trigger:hover .project-image,
 .gallery-panel.is-active .project-image-preview-trigger:focus-visible .project-image {
   filter: contrast(1.04) saturate(1.08) !important;
   transform: scale(1.055) !important;
 }
-
 .projects-section {
   margin-bottom: 10px;
   padding-bottom: 0;
   margin-top: clamp(-42px, -5vh, -18px) !important;
   padding-top: clamp(10px, 2vh, 24px) !important;
 }
-
 .gallery-panel.is-active .project-slide-card::-webkit-scrollbar-track {
   background: transparent;
 }
-
 .gallery-panel.is-active .project-slide-card::-webkit-scrollbar-thumb {
   border-radius: 999px;
   background: rgba(14, 116, 144, .28);
 }
-
 .timeline-submarine,
 .timeline-card,
 .section-description,
@@ -591,7 +478,6 @@ html {
 .project-gallery-shell {
   will-change: auto !important;
 }
-
 .gallery-live-label {
   position: relative;
   z-index: 5;
@@ -604,7 +490,6 @@ html {
   color: rgba(255, 255, 255, .94) !important;
   text-shadow: none !important;
 }
-
 .gallery-nav.gallery-nav-hitbox {
   background: transparent !important;
   border: none !important;
@@ -622,7 +507,6 @@ html {
   overflow: visible !important;
   pointer-events: auto !important;
 }
-
 .gallery-nav-visual {
   display: flex;
   align-items: center;
@@ -630,22 +514,18 @@ html {
   border: 1px solid rgba(3,105,161,.16);
   background: rgba(255,255,255,.74);
   color: var(--deep-ocean);
-  backdrop-filter: blur(18px);
   width: 46px !important;
   height: 46px !important;
   flex: 0 0 46px !important;
   border-radius: 999px !important;
   pointer-events: none !important;
 }
-
 .gallery-nav-prev {
   left: clamp(16px, 2vw, 30px) !important;
 }
-
 .gallery-nav-next {
   right: clamp(16px, 2vw, 30px) !important;
 }
-
 .project-slide-card,
 .project-panel-inner,
 .project-carousel-panel,
@@ -655,7 +535,6 @@ html {
 .project-gallery-shell {
   cursor: default !important;
 }
-
 .project-image-preview-trigger,
 .project-link-button,
 .project-link,
@@ -665,7 +544,6 @@ html {
 .gallery-nav {
   cursor: pointer !important;
 }
-
 .gallery-panel {
   position: absolute;
   min-width: 0;
@@ -698,7 +576,6 @@ html {
   contain: none;
   pointer-events: none !important;
 }
-
 .gallery-panel.is-active {
   cursor: default;
   opacity: 1 !important;
@@ -709,23 +586,17 @@ html {
   z-index: var(--gallery-z-index, 30) !important;
   pointer-events: auto !important;
 }
-
 .gallery-panel.is-active .project-image-preview-trigger,
 .gallery-panel.is-active button,
 .gallery-panel.is-active a {
   pointer-events: auto !important;
 }
-
 main,
 .content-shell,
 .page-section,
 .projects-section {
   overflow: visible !important;
 }
-
-
-
-
 .project-visual-static {
   position: relative;
   isolation: isolate;
@@ -733,7 +604,6 @@ main,
     radial-gradient(circle at 76% 68%, rgba(56, 189, 248, .18), transparent 34%),
     linear-gradient(135deg, #eefbff 0%, #dff7ff 52%, #f3fffb 100%) !important;
 }
-
 .project-visual-static::before {
   content: "";
   position: absolute;
@@ -744,13 +614,11 @@ main,
   background: linear-gradient(135deg, rgba(255,255,255,.62), rgba(186,230,253,.16));
   pointer-events: none;
 }
-
 .project-visual-static strong,
 .project-visual-static span {
   position: relative;
   z-index: 1;
 }
-
 .project-gallery-shell {
   position: relative;
   z-index: 2;
@@ -772,7 +640,6 @@ main,
   min-height: auto !important;
   padding-bottom: clamp(26px, 4vw, 48px) !important;
 }
-
 .project-gallery-viewport {
   position: relative;
   z-index: 2;
@@ -789,7 +656,6 @@ main,
   min-height: clamp(590px, 58vw, 720px) !important;
   padding-bottom: clamp(1.4rem, 3vh, 2.6rem) !important;
 }
-
 .project-gallery-camera {
   position: relative;
   backface-visibility: hidden;
@@ -803,12 +669,10 @@ main,
   height: clamp(560px, 54vw, 680px) !important;
   isolation: isolate;
 }
-
 .project-carousel-panel,
 .project-carousel-panel .project-panel-inner {
   min-height: 0 !important;
 }
-
 .gallery-panel:not(.is-active) .project-slide-card,
 .project-carousel-panel .project-slide-card,
 .project-slide-card {
@@ -833,7 +697,6 @@ main,
   max-height: clamp(560px, 54vw, 680px) !important;
   overflow: hidden !important;
 }
-
 .gallery-panel.is-active .project-slide-card {
   scroll-behavior: smooth;
   scrollbar-color: rgba(14, 116, 144, .34) transparent;
@@ -845,13 +708,11 @@ main,
   scrollbar-gutter: auto !important;
   scrollbar-width: none !important;
 }
-
 .gallery-panel.is-active .project-slide-card::-webkit-scrollbar {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
 }
-
 .project-carousel-panel .project-slide-grid,
 .project-slide-grid {
   display: grid !important;
@@ -861,7 +722,6 @@ main,
   height: 100% !important;
   min-height: 0 !important;
 }
-
 .gallery-panel.is-active .project-content,
 .project-content {
   display: flex !important;
@@ -871,11 +731,9 @@ main,
   min-height: 0 !important;
   overflow: hidden !important;
 }
-
 .project-content > * {
   min-width: 0;
 }
-
 .project-carousel-panel .project-slide-card h3,
 .project-slide-card h3 {
   display: -webkit-box !important;
@@ -885,12 +743,10 @@ main,
   overflow: hidden !important;
   overflow-wrap: anywhere;
 }
-
 .project-period,
 .project-subtitle {
   flex: 0 0 auto;
 }
-
 .gallery-panel.is-active .project-description,
 .project-description {
   display: -webkit-box !important;
@@ -900,7 +756,6 @@ main,
   overflow: hidden !important;
   overflow-wrap: anywhere;
 }
-
 .project-card-actions .project-links {
   display: flex !important;
   flex: 1 1 auto;
@@ -910,7 +765,6 @@ main,
   margin-top: 0;
   overflow: hidden;
 }
-
 .project-card-actions .project-link,
 .project-card-actions .project-link-button {
   flex: 0 0 auto;
@@ -919,35 +773,28 @@ main,
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 .project-read-more > span {
   pointer-events: none;
 }
-
 .project-read-more:hover {
   background: rgba(6, 182, 212, .15) !important;
 }
-
 .project-read-more:focus-visible {
   outline: 3px solid rgba(3, 105, 161, .30);
   outline-offset: 2px;
 }
-
 .project-detail-scroll::-webkit-scrollbar {
   width: 9px;
 }
-
 .project-detail-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
-
 .project-detail-scroll::-webkit-scrollbar-thumb {
   border: 2px solid transparent;
   border-radius: 999px;
   background: rgba(3, 105, 161, .32);
   background-clip: content-box;
 }
-
 .project-detail-hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -960,7 +807,6 @@ main,
   background: radial-gradient(circle at 90% 0%, rgba(6, 182, 212, .14), transparent 28%),
     rgba(255,255,255,.58);
 }
-
 .project-detail-hero > *,
 .project-detail-section,
 .project-detail-section > *,
@@ -968,7 +814,6 @@ main,
 .project-detail-links-section .project-links {
   min-width: 0;
 }
-
 .project-detail-hero h2 {
   margin: 12px 0 0 !important;
   color: #082f49 !important;
@@ -977,19 +822,16 @@ main,
   letter-spacing: -.07em !important;
   overflow-wrap: anywhere;
 }
-
 .project-detail-period,
 .project-detail-subtitle {
   color: rgba(3, 105, 161, .78) !important;
   font-weight: 850 !important;
   overflow-wrap: anywhere;
 }
-
 .project-detail-image-preview-trigger {
   margin-top: 18px;
   border-radius: 34px 22px 40px 26px;
 }
-
 .project-detail-image {
   display: block;
   width: 100%;
@@ -1000,7 +842,6 @@ main,
   border-radius: 34px 22px 40px 26px;
   background: #eefbff;
 }
-
 .project-detail-section {
   margin-top: 18px;
   padding: clamp(18px, 3vw, 26px);
@@ -1008,7 +849,6 @@ main,
   border-radius: 30px 20px 34px 24px;
   background: rgba(255,255,255,.56);
 }
-
 .project-detail-section h3 {
   margin: 0 0 12px;
   color: #082f49;
@@ -1016,7 +856,6 @@ main,
   line-height: 1.1;
   letter-spacing: -.03em;
 }
-
 .project-detail-lead {
   color: #123047 !important;
   font-size: 1.04rem !important;
@@ -1024,14 +863,12 @@ main,
   line-height: 1.72 !important;
   overflow-wrap: anywhere;
 }
-
 .project-detail-text {
   margin-top: 12px !important;
   color: rgba(72, 107, 122, .98) !important;
   line-height: 1.78 !important;
   overflow-wrap: anywhere;
 }
-
 .project-detail-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1042,20 +879,16 @@ main,
   line-height: 1.58;
   overflow-wrap: anywhere;
 }
-
 .project-detail-list li::marker {
   color: var(--reef);
 }
-
 .project-detail-links-section .project-links,
 .project-detail-stack {
   margin-top: 4px;
 }
-
 .project-carousel-panel.has-project-details .project-card-actions .project-links {
   display: none !important;
 }
-
 .project-card-actions {
   flex: 0 0 auto;
   align-items: center;
@@ -1069,7 +902,6 @@ main,
   position: relative;
   z-index: 8;
 }
-
 .project-read-more {
   position: relative;
   z-index: 8;
@@ -1095,7 +927,6 @@ main,
   touch-action: manipulation;
   white-space: nowrap !important;
 }
-
 .project-detail-modal-root {
   position: fixed !important;
   inset: 0 !important;
@@ -1108,7 +939,6 @@ main,
   overflow: hidden !important;
   isolation: isolate;
 }
-
 .project-detail-modal-overlay {
   backdrop-filter: blur(5px) saturate(1.08);
   position: absolute !important;
@@ -1116,7 +946,6 @@ main,
   z-index: 0 !important;
   background: rgba(2, 6, 23, .62) !important;
 }
-
 .project-detail-modal-inner {
   align-items: center !important;
   justify-content: center !important;
@@ -1131,7 +960,6 @@ main,
   min-height: 0 !important;
   pointer-events: none;
 }
-
 .project-detail-modal {
   display: flex !important;
   flex-direction: column !important;
@@ -1149,13 +977,11 @@ main,
   pointer-events: auto;
   transform: none !important;
 }
-
 .project-detail-modal *,
 .project-detail-scroll * {
   box-sizing: border-box;
   max-width: 100%;
 }
-
 .project-detail-modal-header {
   flex: 0 0 auto;
   min-height: 66px;
@@ -1167,7 +993,6 @@ main,
   justify-content: space-between !important;
   gap: 12px !important;
 }
-
 .project-detail-modal-title {
   min-width: 0 !important;
   color: #082f49 !important;
@@ -1181,7 +1006,6 @@ main,
   margin: 0 !important;
   white-space: normal !important;
 }
-
 .project-detail-modal-close {
   flex: 0 0 38px !important;
   color: #0369a1 !important;
@@ -1198,14 +1022,12 @@ main,
   line-height: 1 !important;
   cursor: pointer;
 }
-
 .project-detail-modal-body {
   flex: 1 1 auto !important;
   min-height: 0 !important;
   padding: 0 !important;
   overflow: hidden;
 }
-
 .project-detail-scroll {
   box-sizing: border-box;
   max-height: calc(100dvh - 94px) !important;
@@ -1217,7 +1039,6 @@ main,
   scrollbar-color: rgba(3, 105, 161, .34) transparent;
   width: 100% !important;
 }
-
 .project-detail-hero,
 .project-detail-section,
 .project-detail-lead,
@@ -1233,13 +1054,11 @@ main,
   word-break: break-word !important;
   hyphens: auto;
 }
-
 .project-detail-stack,
 .project-detail-links-section .project-links {
   flex-wrap: wrap !important;
   overflow: visible !important;
 }
-
 @keyframes project-pixel-reveal {
 0% {
     image-rendering: pixelated;
@@ -1257,7 +1076,6 @@ main,
     transform: scale(1.015);
   }
 }
-
 @keyframes project-pixel-mask {
 0% {
     opacity: .92;
@@ -1274,54 +1092,40 @@ main,
     transform: translateX(26%);
   }
 }
-
 @media (max-width: 1180px) {
-  
-
-  
-
   .mobile-burger {
     display: block;
   }
-
   .hero-grid {
     grid-template-columns: 1fr;
   }
-
   .hero-panel {
     transform: none;
     max-width: 560px;
     margin: 0 auto;
     width: 100%;
   }
-
   .featured-project-island {
     grid-column: span 6;
   }
-
   .project-toolbar {
     grid-template-columns: 1fr 1fr !important;
   }
-
   .stack-filter {
     grid-column: 1 / -1;
   }
-
   .project-gallery-shell {
     width: 100% !important;
     padding: clamp(20px, 3.4vw, 34px) clamp(30px, 4.4vw, 52px) clamp(28px, 3.8vw, 42px) !important;
   }
-
   .project-gallery-viewport {
     min-height: clamp(500px, 58vw, 640px) !important;
     padding-bottom: clamp(14px, 2vh, 28px) !important;
   }
-
   .project-gallery-camera {
     width: min(860px, 100%) !important;
     height: clamp(500px, 58vw, 640px) !important;
   }
-
   .gallery-panel.is-active .project-slide-card,
     .gallery-panel:not(.is-active) .project-slide-card,
     .project-carousel-panel .project-slide-card,
@@ -1332,7 +1136,6 @@ main,
     border-radius: 42px !important;
     min-height: 0 !important;
   }
-
   .project-carousel-panel .project-slide-grid,
     .project-slide-grid {
     grid-template-columns: minmax(210px, .76fr) minmax(0, 1.24fr) !important;
@@ -1340,7 +1143,6 @@ main,
     height: 100% !important;
     min-height: 0 !important;
   }
-
   .gallery-panel.is-active .project-image,
     .gallery-panel.is-active .project-visual,
     .project-image,
@@ -1349,108 +1151,81 @@ main,
     max-height: clamp(210px, 28vw, 330px) !important;
     border-radius: 28px !important;
   }
-
   .project-carousel-panel .project-slide-card h3,
     .project-slide-card h3 {
     font-size: clamp(1.9rem, 4.4vw, 3.55rem) !important;
     line-height: .95 !important;
   }
-
   .gallery-panel.is-active .project-description,
     .project-description {
     -webkit-line-clamp: 3 !important;
     font-size: clamp(.9rem, 1.25vw, 1rem) !important;
     line-height: 1.48 !important;
   }
-
   .gallery-panel:not(.is-active) {
     opacity: calc(var(--gallery-opacity, 1) * .82) !important;
   }
-
   .gallery-panel:not(.is-active) .project-slide-card {
     transform: scale(.88) !important;
   }
-
   .gallery-panel:not(.is-active) .project-card-actions {
     display: none !important;
   }
-
 }
-
 @media (max-width: 820px) {
   .content-shell {
     width: min(100% - 26px, 1500px);
     padding-top: 112px;
   }
-
-  
-
-  
-
   .section-title {
     display: block;
   }
-
   .section-heading {
     font-size: clamp(2rem, 12vw, 3.4rem) !important;
   }
-
   .hero-grid {
     min-height: auto;
     padding-top: 20px;
   }
-
   .hero-title {
     font-size: clamp(3rem, 18vw, 5.2rem) !important;
   }
-
-  
-
   .featured-project-island {
     grid-column: auto;
     margin-top: 0 !important;
     transform: none !important;
   }
-
   .project-toolbar {
     position: sticky;
     top: 88px;
     grid-template-columns: 1fr !important;
     border-radius: 24px;
   }
-
   .stack-filter {
     grid-column: auto;
   }
-
   .project-panel-inner {
     min-height: auto;
   }
-
   .project-slide-card {
     min-height: auto;
     border-radius: 42px 26px 54px 30px;
   }
-
   .project-slide-grid {
     min-height: auto;
     gap: 22px;
   }
-
   .project-image {
     min-height: 230px;
   }
-
   .project-slide-index {
     opacity: .55;
   }
-
   .project-gallery-camera,
     .project-gallery-viewport {
     min-height: auto;
     display: block;
   }
-
   .gallery-panel {
     position: relative;
     inset: auto;
@@ -1459,12 +1234,10 @@ main,
     opacity: 1 !important;
     filter: none !important;
   }
-
   .project-carousel-panel .project-slide-grid,
     .project-carousel-panel .project-slide-card {
     min-height: auto;
   }
-
   .project-gallery-shell {
     min-height: auto;
     padding: 58px 0 34px !important;
@@ -1473,7 +1246,6 @@ main,
     width: 100% !important;
     perspective: none !important;
   }
-
   .project-gallery-viewport {
     display: block !important;
     min-height: auto !important;
@@ -1481,7 +1253,6 @@ main,
     overflow: visible !important;
     touch-action: pan-y !important;
   }
-
   .project-gallery-camera {
     display: block !important;
     width: 100% !important;
@@ -1490,7 +1261,6 @@ main,
     transform: none !important;
     transform-style: flat !important;
   }
-
   .gallery-panel:not(.is-active),
     .gallery-panel.is-hidden,
     .gallery-panel.is-visible,
@@ -1506,7 +1276,6 @@ main,
     contain: none !important;
     pointer-events: none !important;
   }
-
   .gallery-panel.is-active {
     display: block !important;
     position: relative !important;
@@ -1514,7 +1283,6 @@ main,
     transform: none !important;
     pointer-events: auto !important;
   }
-
   .project-carousel-panel .project-panel-inner,
     .project-carousel-panel {
     display: block !important;
@@ -1522,7 +1290,6 @@ main,
     height: auto !important;
     min-height: 0 !important;
   }
-
   .gallery-panel.is-active .project-slide-card,
     .gallery-panel:not(.is-active) .project-slide-card,
     .project-carousel-panel .project-slide-card,
@@ -1533,7 +1300,6 @@ main,
     padding: clamp(18px, 5vw, 24px) !important;
     border-radius: 34px !important;
   }
-
   .project-carousel-panel .project-slide-grid,
     .project-slide-grid {
     grid-template-columns: 1fr !important;
@@ -1542,7 +1308,6 @@ main,
     height: 100% !important;
     min-height: 0 !important;
   }
-
   .project-visual-static,
     .project-image,
     .file-preview-image-trigger.project-visual,
@@ -1553,36 +1318,30 @@ main,
     margin-bottom: 0 !important;
     border-radius: 24px !important;
   }
-
   .gallery-panel.is-active .project-content,
     .project-content {
     gap: clamp(6px, 1.35svh, 10px) !important;
     height: 100% !important;
   }
-
   .project-carousel-panel .project-slide-card h3,
     .project-slide-card h3 {
     font-size: clamp(1.65rem, 9vw, 2.55rem) !important;
     line-height: .95 !important;
   }
-
   .project-subtitle,
     .project-period {
     font-size: .86rem !important;
     line-height: 1.25 !important;
   }
-
   .gallery-panel.is-active .project-description,
     .project-description {
     -webkit-line-clamp: 2 !important;
     font-size: .92rem !important;
     line-height: 1.48 !important;
   }
-
   .project-card-actions .project-links {
     max-width: calc(100% - 86px);
   }
-
   .gallery-nav {
     top: auto !important;
     bottom: 28px !important;
@@ -1590,117 +1349,88 @@ main,
     width: 48px !important;
     height: 48px !important;
   }
-
   .gallery-nav-prev {
     left: 18px !important;
   }
-
   .gallery-nav-next {
     right: 18px !important;
   }
-
   .gallery-dots {
     padding-inline: 68px !important;
     position: relative;
     z-index: 14;
     margin-top: -58px !important;
   }
-
   .gallery-live-label {
     margin-top: 14px !important;
     padding-inline: 58px;
     line-height: 1.25 !important;
   }
-
   .project-detail-modal-inner {
     padding: 10px !important;
   }
-
   .project-detail-modal {
     width: calc(100vw - 20px) !important;
     max-width: calc(100vw - 20px) !important;
     max-height: calc(100svh - 20px) !important;
     border-radius: 26px !important;
   }
-
   .project-detail-modal-header {
     min-height: 58px;
     padding: 14px 16px !important;
   }
-
   .project-detail-scroll {
     max-height: calc(100svh - 88px);
     padding: 14px;
   }
-
   .project-detail-hero {
     grid-template-columns: 1fr;
     gap: 12px;
   }
-
   .project-detail-list {
     grid-template-columns: 1fr;
   }
-
   .project-card-actions {
     min-height: 38px !important;
     padding-top: 4px !important;
     padding-bottom: 0;
   }
-
 }
-
 @media (max-width: 520px) {
-  
-
-  
-
-  
-
   .hero-actions .mantine-Button-root {
     width: 100%;
   }
-
   .portrait-card {
     min-height: 420px;
   }
-
   .portrait-placeholder,
     .portrait-image {
     width: 144px !important;
     height: 144px !important;
   }
-
   .timeline-card {
     padding: 22px !important;
   }
-
   .project-slide-card {
     padding: 22px !important;
   }
-
   .project-slide-card h3 {
     font-size: clamp(2rem, 13vw, 3.1rem) !important;
   }
-
   .project-toolbar-sticky {
     top: 78px;
   }
-
   .gallery-dot:not(.is-active) {
     width: 8px;
     height: 8px;
   }
-
   .gallery-dot.is-active {
     width: 28px;
   }
-
   .project-gallery-shell {
     padding-inline: 12px;
     padding-top: 52px !important;
   }
-
   .gallery-panel.is-active .project-slide-card,
     .project-carousel-panel .project-slide-card,
     .project-slide-card {
@@ -1708,7 +1438,6 @@ main,
     max-height: clamp(535px, 76svh, 620px) !important;
     padding: 18px !important;
   }
-
   .project-visual-static,
     .project-image,
     .file-preview-image-trigger.project-visual,
@@ -1716,92 +1445,74 @@ main,
     min-height: 145px !important;
     max-height: 178px !important;
   }
-
   .project-slide-index {
     top: 12px !important;
     right: 18px !important;
     font-size: clamp(2rem, 16vw, 4.2rem) !important;
   }
-
   .project-island-topline {
     margin-bottom: 8px !important;
     padding-right: 70px;
   }
-
   .project-carousel-panel .project-slide-card h3,
     .project-slide-card h3 {
     font-size: clamp(1.48rem, 8.2vw, 2.2rem) !important;
   }
-
   .project-card-actions .project-links {
     max-width: calc(100% - 84px);
   }
-
   .project-read-more {
     min-width: 92px;
   }
-
   .project-detail-modal-inner {
     padding: 8px !important;
   }
-
   .project-detail-modal-header {
     min-height: 54px;
     padding: 12px 14px !important;
   }
-
   .project-detail-hero,
     .project-detail-section {
     padding: 14px;
     border-radius: 20px;
   }
-
   .project-detail-hero h2 {
     font-size: clamp(1.55rem, 10vw, 2.35rem) !important;
   }
-
   .project-detail-image {
     max-height: 220px;
     border-radius: 20px;
   }
-
   .project-detail-lead,
     .project-detail-text,
     .project-detail-list {
     font-size: .94rem !important;
     line-height: 1.58 !important;
   }
-
   .project-detail-modal-root {
     padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)) !important;
   }
-
   .project-detail-modal {
     width: min(100%, calc(100dvw - 16px)) !important;
     max-width: calc(100dvw - 16px) !important;
     max-height: calc(100dvh - 16px) !important;
     border-radius: 22px !important;
   }
-
   .project-detail-scroll {
     max-height: calc(100dvh - 76px) !important;
     padding: 10px !important;
   }
-
   .project-detail-modal-title {
     font-size: .68rem !important;
     letter-spacing: .08em !important;
     line-height: 1.25 !important;
   }
-
   .project-detail-modal-close {
     flex-basis: 44px !important;
     width: 44px !important;
     height: 44px !important;
   }
-
 }
-
 @media (prefers-reduced-motion: reduce) {
   *::after,
     *::before,
@@ -1810,136 +1521,103 @@ main,
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
   }
-  
     .ocean-glow,
     .ocean-background {
     animation: none !important;
     transition: none !important;
   }
-
   .gallery-dot,
     .gallery-panel {
     transition: none !important;
   }
-
 }
-
 @media (max-width: 768px) {
   .admin-page {
     padding: 18px 10px 56px;
   }
-
   .admin-shell {
     width: min(100%, calc(100vw - 20px));
   }
-
   .admin-hero-actions {
     width: 100%;
   }
-
   .admin-hero-actions .mantine-Button-root {
     width: 100%;
   }
-
   .cv-page-content {
     padding-top: 82px;
   }
-
   .cv-page-actions {
     position: static;
     border-radius: 24px;
     width: 100%;
   }
-
   .cv-page-actions .mantine-Button-root {
     flex: 1 1 100%;
   }
-
   .file-preview-pdf-frame-shell {
     height: 68vh;
   }
-
   .timeline-image {
     height: 150px;
   }
-
 }
-
 @media (max-width: 980px) {
-
   .timeline-row {
     grid-template-columns: 64px minmax(0, 1fr);
   }
-
   .timeline-row.is-right .timeline-card,
     .timeline-row.is-left .timeline-card {
     grid-column: 2;
     justify-self: stretch;
   }
-
   .timeline-submarine,
     .timeline-straight-line {
     left: 30px;
   }
-
   .gallery-panel {
     contain: none;
   }
-
 }
-
 @media (max-width: 640px) {
-
   .timeline-list {
     gap: 36px;
   }
-
   .timeline-row {
     grid-template-columns: 42px minmax(0, 1fr);
   }
-
   .timeline-submarine,
     .timeline-straight-line {
     left: 18px;
   }
-
   .timeline-submarine {
     width: 72px;
   }
-
   .section-title-bubbles,
     .section-title-fish {
     min-height: 240px !important;
   }
-
   .section-reveal-fish {
     width: clamp(112px, 36vw, 180px);
   }
-
   .ocean-surface-layer {
     left: -60vw !important;
     width: 220vw !important;
   }
-
   .ocean-surface-waves {
     left: -56vw !important;
     width: 320vw !important;
   }
-
   .project-carousel-panel .project-slide-card,
     .project-slide-card {
     border-radius: 34px !important;
   }
-
   .timeline-card .skill-row {
     display: none !important;
   }
-
 }
-
 @media (max-width: 760px) {
   .hero-copy {
     padding: 24px 18px;
   }
-
 }

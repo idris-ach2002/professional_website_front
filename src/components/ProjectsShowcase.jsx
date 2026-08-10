@@ -903,6 +903,9 @@ export default function ProjectsShowcase({ projects }) {
       />
 
       <Group gap="xs" className="result-line" mb="xl">
+        <Badge className="executive-badge">
+          {t(filteredProjects.length > 1 ? "projects.countMany" : "projects.countOne", { count: filteredProjects.length })}
+        </Badge>
         {selectedStacks.map((stack) => (
           <Badge key={stack} className="filter-chip">
             {stack}

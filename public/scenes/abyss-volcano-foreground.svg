@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-hidden="true">
+  <defs>
+    <linearGradient id="nearRock" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#010309"/><stop offset=".62" stop-color="#030b13"/><stop offset="1" stop-color="#081822"/></linearGradient>
+    <linearGradient id="edgeWarm" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ff6420" stop-opacity=".13"/><stop offset="1" stop-color="#ff6420" stop-opacity="0"/></linearGradient>
+  </defs>
+  <!-- close left rock creates an asymmetric camera foreground -->
+  <path d="M0 900V663c43-58 91-87 143-88 56-1 91 31 132 73 27 28 66 49 116 62-56 31-91 64-111 100-16 29-20 59-21 90Z" fill="url(#nearRock)" opacity=".98"/>
+  <path d="M116 655c39-31 74-38 105-20 26 15 50 41 79 59-39 18-68 38-89 63-21-36-50-69-95-102Z" fill="url(#edgeWarm)" opacity=".58"/>
+  <g fill="#0b222c" opacity=".66"><ellipse cx="75" cy="829" rx="64" ry="25"/><ellipse cx="219" cy="852" rx="43" ry="17"/></g>
+  <!-- more distant right foreground rocks, intentionally smaller -->
+  <path d="M1600 900v-153c-31-39-67-57-108-53-46 5-74 35-104 68-20 22-47 39-81 49 38 22 64 48 79 76 3 5 5 9 7 13Z" fill="#02070d" opacity=".90"/>
+  <g fill="#0a202b" opacity=".62"><ellipse cx="1516" cy="851" rx="54" ry="21"/><ellipse cx="1387" cy="869" rx="37" ry="14"/></g>
+</svg>

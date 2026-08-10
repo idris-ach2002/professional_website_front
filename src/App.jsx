@@ -25,14 +25,14 @@ import usePerformanceRuntime from "./performance/usePerformanceRuntime";
 
 
 const PortfolioTimeline = lazy(() => import("./components/PortfolioTimeline"));
-const BeachBallField = lazy(() => import("./components/three/BeachBallField"));
+const UnderwaterVolcanoField = lazy(() => import("./components/UnderwaterVolcanoField"));
 const Admin = lazy(() => import("./components/Admin"));
 const CvPage = lazy(() => import("./components/CvPage"));
 const ProjectCaseStudyPage = lazy(() => import("./components/ProjectCaseStudyPage"));
 const NotFoundPage = lazy(() => import("./components/NotFoundPage"));
 const RecruiterPage = lazy(() => import("./components/RecruiterPage"));
 
-function DeferredBeachBall({ performanceMode, animationsPaused, runtimeQuality }) {
+function DeferredVolcanoField({ performanceMode, animationsPaused, runtimeQuality }) {
   const { t } = useLanguage();
   const sentinelRef = useRef(null);
   const [shouldLoad, setShouldLoad] = useState(false);
@@ -57,33 +57,25 @@ function DeferredBeachBall({ performanceMode, animationsPaused, runtimeQuality }
   if (shouldLoad) {
     return (
       <ErrorBoundary
-        title={t("error.threeTitle")}
+        title={t("error.volcanoTitle")}
         fallback={() => (
-          <section className="beach-3d-section is-suspended" aria-hidden="true">
-            <div className="beach-3d-stage">
-              <div className="beach-3d-suspended-placeholder">
-                <span />
-                <span />
-                <span />
-              </div>
+          <section className="volcano-field-section is-suspended" aria-hidden="true">
+            <div className="volcano-field-stage">
+              <div className="volcano-field-placeholder" />
             </div>
           </section>
         )}
       >
         <Suspense
           fallback={
-            <section className="beach-3d-section is-suspended" aria-hidden="true">
-              <div className="beach-3d-stage">
-                <div className="beach-3d-suspended-placeholder">
-                  <span />
-                  <span />
-                  <span />
-                </div>
+            <section className="volcano-field-section is-suspended" aria-hidden="true">
+              <div className="volcano-field-stage">
+                <div className="volcano-field-placeholder" />
               </div>
             </section>
           }
         >
-          <BeachBallField performanceMode={performanceMode} paused={animationsPaused} runtimeQuality={runtimeQuality} />
+          <UnderwaterVolcanoField performanceMode={performanceMode} paused={animationsPaused} runtimeQuality={runtimeQuality} />
         </Suspense>
       </ErrorBoundary>
     );
@@ -92,15 +84,11 @@ function DeferredBeachBall({ performanceMode, animationsPaused, runtimeQuality }
   return (
     <section
       ref={sentinelRef}
-      className="beach-3d-section is-suspended"
+      className="volcano-field-section is-suspended"
       aria-label={t("app.routeLoading")}
     >
-      <div className="beach-3d-stage">
-        <div className="beach-3d-suspended-placeholder" aria-hidden="true">
-          <span />
-          <span />
-          <span />
-        </div>
+      <div className="volcano-field-stage">
+        <div className="volcano-field-placeholder" aria-hidden="true" />
       </div>
     </section>
   );
@@ -182,7 +170,7 @@ function Home({
         </Suspense>
 
         {!isMobile && !reducedMotion && animationsEnabled && !["lite", "ultra-lite"].includes(performanceMode) && (
-          <DeferredBeachBall performanceMode={performanceMode} animationsPaused={animationsPaused} runtimeQuality={runtimeQuality} />
+          <DeferredVolcanoField performanceMode={performanceMode} animationsPaused={animationsPaused} runtimeQuality={runtimeQuality} />
         )}
 
         <ProjectsShowcase projects={projects} />

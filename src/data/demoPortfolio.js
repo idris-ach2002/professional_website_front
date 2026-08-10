@@ -171,9 +171,9 @@ export const demoOwner = {
   "projects": [
     {
       "title": "Portfolio professionnel — Frontend animé",
-      "subtitle": "React / Mantine / Tailwind / GSAP / Three.js",
-      "shortDescription": "Frontend React immersif et administrable qui transforme le portfolio en interface produit : données API, fallback local, sections publiques, viewers médias et animations GSAP/Three.js.",
-      "description": "Étude de cas frontend d’un portfolio professionnel dynamique. Le projet construit une interface React/Mantine/Tailwind orientée recruteur, connectée au backend Spring Boot et capable de fonctionner avec un mock local si l’API est indisponible. La valeur technique vient de l’orchestration entre expérience utilisateur, animations GSAP, scènes Three.js/Rapier, viewers PDF/image, routage public et données portfolio administrables.",
+      "subtitle": "React / Mantine / GSAP / Canvas 2D",
+      "shortDescription": "Frontend React immersif et administrable qui transforme le portfolio en interface produit : données API, fallback local, sections publiques, viewers médias et animations GSAP et Canvas 2D.",
+      "description": "Étude de cas frontend d’un portfolio professionnel dynamique. Le projet construit une interface React/Mantine orientée recruteur, connectée au backend Spring Boot et capable de fonctionner avec un mock local si l’API est indisponible. La valeur technique vient de l’orchestration entre expérience utilisateur, animations GSAP, moteur Canvas 2D léger, viewers PDF/image, routage public et données portfolio administrables.",
       "status": "IN_PROGRESS",
       "startDate": "2026-01-01",
       "endDate": null,
@@ -185,11 +185,9 @@ export const demoOwner = {
       "stacks": [
         "React",
         "Mantine",
-        "Tailwind CSS",
         "GSAP",
-        "Three.js",
-        "React Three Fiber",
-        "Rapier",
+        "Canvas 2D",
+        "Web Workers",
         "Vite",
         "Cloudflare Workers"
       ],
@@ -197,7 +195,7 @@ export const demoOwner = {
         "Frontend React/Vite connecté à une API portfolio avec fallback mock local.",
         "Sections publiques orientées recruteur : profil, timeline, projets, compétences et études de cas.",
         "Animations GSAP au scroll, navigation premium et interactions visuelles contrôlées.",
-        "Intégration Three.js/R3F/Rapier pour enrichir l’identité visuelle sans bloquer l’usage.",
+        "Scène de volcan sous-marin en WebP optimisé avec particules Canvas 2D, sans moteur 3D lourd ni physique WASM.",
         "Viewer PDF/image, modales, liens GitHub et documentation exploitables depuis les projets.",
         "Déploiement Cloudflare Workers Assets avec build Vite et configuration SPA."
       ],
@@ -222,7 +220,7 @@ export const demoOwner = {
         "Frontend",
         "React",
         "GSAP",
-        "Three.js",
+        "Canvas 2D",
         "Mantine",
         "Responsive",
         "Cloudflare",
@@ -231,11 +229,11 @@ export const demoOwner = {
       "caseStudy": {
         "problem": "Présenter un profil logiciel de façon plus convaincante qu’un portfolio statique, tout en gardant une lecture rapide pour un recruteur.",
         "role": "Conception front, intégration API, composants publics, animations GSAP, routage, fallback mock, amélioration UX et stabilisation responsive.",
-        "architecture": "Application React/Vite structurée en composants publics, services API, données de secours, routes React Router et couches d’animation GSAP/Three.js isolées.",
+        "architecture": "Application React/Vite structurée en composants publics, services API, données de secours, routes React Router et couches d’animation GSAP/Canvas isolées.",
         "technicalChoices": [
           "React/Mantine pour un socle UI maintenable et responsive.",
           "GSAP/ScrollTrigger pour des animations scrollytelling maîtrisées.",
-          "Three.js/R3F/Rapier pour les scènes immersives sans mélanger la logique métier.",
+          "Canvas 2D et WebP optimisé pour la scène volcanique abyssale sans dépendance 3D lourde.",
           "Fallback local pour garder le portfolio présentable même si le backend est indisponible."
         ],
         "challenges": [
@@ -522,7 +520,6 @@ export const demoOwner = {
         "PHP",
         "Symfony",
         "Twig",
-        "Tailwind CSS",
         "PostgreSQL",
         "Doctrine",
         "Webpack",

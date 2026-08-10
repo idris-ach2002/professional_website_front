@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-hidden="true">
+  <defs>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0a2a39" stop-opacity=".22"/><stop offset=".58" stop-color="#031521" stop-opacity=".82"/><stop offset="1" stop-color="#01050d"/></linearGradient>
+    <linearGradient id="leftFar" x1="0" y1=".2" x2="1" y2=".78"><stop offset="0" stop-color="#01050c"/><stop offset=".55" stop-color="#071925"/><stop offset="1" stop-color="#123241"/></linearGradient>
+    <linearGradient id="rightFar" x1="1" y1=".2" x2="0" y2=".76"><stop offset="0" stop-color="#01050c"/><stop offset=".58" stop-color="#061824"/><stop offset="1" stop-color="#102f3d"/></linearGradient>
+    <linearGradient id="innerWarmL" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ff5a18" stop-opacity="0"/><stop offset="1" stop-color="#ff6d1c" stop-opacity=".18"/></linearGradient>
+    <linearGradient id="innerWarmR" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#ff5a18" stop-opacity="0"/><stop offset="1" stop-color="#ff6d1c" stop-opacity=".18"/></linearGradient>
+    <radialGradient id="cold" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#66e7f3" stop-opacity=".34"/><stop offset="1" stop-color="#16a5bc" stop-opacity="0"/></radialGradient>
+    <radialGradient id="mineral" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#d6b477" stop-opacity=".34"/><stop offset="1" stop-color="#8a5a30" stop-opacity="0"/></radialGradient>
+  </defs>
+
+  <path d="M0 646c127-36 245-25 360 9 124 37 226 43 345 15 138-32 258-33 390 1 155 40 315 29 505-10v239H0Z" fill="url(#floor)"/>
+  <path d="M0 764c107-43 201-42 292-10 109 39 208 35 313-1 126-43 234-42 347 0 113 42 214 38 314 4 110-37 222-33 334 8v135H0Z" fill="#010713" opacity=".84"/>
+
+  <!-- asymmetric far caldera walls -->
+  <path d="M0 112c88 10 165 45 217 96 52 50 72 106 109 156 30 40 80 76 139 102-59 19-112 51-156 91-56 50-111 101-188 125-46 14-85 16-121 11Z" fill="url(#leftFar)" opacity=".98"/>
+  <path d="M0 248c68 11 121 39 159 80 36 40 55 84 88 119 30 31 69 53 111 69-45 22-81 52-115 83-42 38-83 69-133 84-40 11-75 11-110 4Z" fill="#0b2734" opacity=".72"/>
+  <path d="M1600 136c-75 9-141 36-191 80-53 47-81 103-119 151-33 41-78 73-133 98 59 18 110 51 154 90 55 49 110 95 183 119 43 14 78 17 106 13Z" fill="url(#rightFar)" opacity=".96"/>
+  <path d="M1600 270c-61 9-111 34-149 71-40 39-61 84-95 118-29 30-66 51-106 67 45 20 81 48 114 77 42 37 81 66 128 80 39 12 74 11 108 4Z" fill="#0a2532" opacity=".68"/>
+
+  <!-- jagged inward faces catch the volcanic light -->
+  <path d="M288 203l54 82 18 89 62 61-38 74 49 57-81 78-64-57 21-84-49-66 36-85-41-83Z" fill="#06121a" opacity=".92"/>
+  <path d="M1315 219l-55 75-16 86-58 61 37 70-46 61 80 72 62-60-20-80 46-69-34-82 39-79Z" fill="#06121a" opacity=".90"/>
+  <path d="M330 284l31 90 58 59-34 75 45 54-56 57-40-52 16-72-43-58 33-78-26-69Z" fill="url(#innerWarmL)" opacity=".72"/>
+  <path d="M1276 293l-29 89-55 59 32 72-43 56 55 55 39-54-15-69 41-61-31-77 24-66Z" fill="url(#innerWarmR)" opacity=".72"/>
+
+  <!-- basalt column fields -->
+  <g fill="#07141c" stroke="#18323d" stroke-width="2" opacity=".92">
+    <path d="M90 694l18-139 20-17 21 19 9 137Z"/><path d="M136 703l14-111 18-19 17 20 7 109Z"/><path d="M186 709l11-91 17-15 15 17 5 89Z"/>
+    <path d="M1406 706l9-104 17-18 18 19 10 103Z"/><path d="M1456 699l13-126 20-17 19 18 10 126Z"/><path d="M1510 706l10-92 17-15 16 17 5 90Z"/>
+  </g>
+  <g fill="#122d39" opacity=".58"><path d="M108 560l20-22 21 19-20 20Z"/><path d="M1474 576l15-20 19 18-15 18Z"/><path d="M1422 604l10-20 18 19-14 17Z"/></g>
+
+  <!-- real hydrothermal black-smoker silhouettes -->
+  <g fill="#030a10">
+    <path d="M252 758l11-109 12-18 13 14 7 113Z"/><path d="M281 758l8-78 11-14 10 13 4 79Z"/>
+    <path d="M1281 758l10-91 12-17 14 15 5 93Z"/><path d="M1317 758l13-128 14-20 15 18 8 130Z"/>
+  </g>
+  <g fill="#9f7144" opacity=".24"><ellipse cx="269" cy="664" rx="42" ry="25"/><ellipse cx="1337" cy="650" rx="48" ry="28"/></g>
+  <g fill="#577f6b" opacity=".26"><ellipse cx="287" cy="689" rx="33" ry="16"/><ellipse cx="1308" cy="682" rx="37" ry="18"/></g>
+  <g fill="#d7c18a" opacity=".16"><circle cx="250" cy="694" r="14"/><circle cx="1357" cy="689" r="13"/></g>
+
+  <!-- irregular cooled lava strata and micro-cracks on the walls -->
+  <g fill="none" stroke-linecap="round">
+    <g stroke="#294b56" opacity=".23"><path d="M21 281c101 27 154 86 209 154" stroke-width="5"/><path d="M44 359c78 19 124 67 170 122" stroke-width="3"/><path d="M18 510c79 5 127 38 177 82" stroke-width="4"/><path d="M1576 286c-96 25-149 83-205 150" stroke-width="5"/><path d="M1553 362c-76 18-123 65-168 120" stroke-width="3"/><path d="M1580 511c-75 4-123 37-171 81" stroke-width="4"/></g>
+    <g stroke="#ff6520" opacity=".11" stroke-width="3"><path d="M345 430l-28 41 13 38-31 43"/><path d="M381 485l-19 33 9 31-26 34"/><path d="M1251 427l28 42-14 37 31 44"/><path d="M1217 482l20 35-10 29 25 35"/></g>
+  </g>
+
+  <!-- sparse deep-sea life: tube worms/anemones, kept away from the focal volcano -->
+  <g fill="none" stroke-linecap="round" opacity=".64">
+    <path d="M111 804c-1-26 3-51 2-70m0 24-16-21m16 7 17-24" stroke="#12756f" stroke-width="9"/>
+    <path d="M181 824c-2-21 1-39 0-56m0 22 14-17m-14 5-13-15" stroke="#7b5a84" stroke-width="7"/>
+    <path d="M1484 808c1-27-3-51-1-72m0 25 17-22m-17 7-18-24" stroke="#0f706d" stroke-width="9"/>
+    <path d="M1408 826c2-19-1-37 1-54m-1 22-15-18m15 5 13-15" stroke="#805568" stroke-width="7"/>
+  </g>
+  <g opacity=".64"><circle cx="165" cy="713" r="31" fill="url(#cold)"/><circle cx="1440" cy="711" r="29" fill="url(#cold)"/><circle cx="270" cy="677" r="41" fill="url(#mineral)"/><circle cx="1330" cy="667" r="43" fill="url(#mineral)"/></g>
+</svg>
