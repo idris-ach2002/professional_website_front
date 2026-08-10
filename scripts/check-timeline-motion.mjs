@@ -90,6 +90,16 @@ if (component.includes("timeline-card-inspection-light") || visualCss.includes("
 if (!component.includes("timeline-exit-sentinel") || !component.includes("timelineExit") || !visualCss.includes("data-timeline-exit=\"approaching\"")) {
   errors.push("Timeline must hide the inspection vehicles before the Rapier section using the exit sentinel.");
 }
+
+if (!visualCss.includes("margin-top:calc(var(--timeline-stage-height) * -1)") || visualCss.includes("margin-bottom:calc(var(--timeline-stage-height) * -1)")) {
+  errors.push("Sticky Timeline stage must keep its full margin box; overlap belongs on the list so vehicles cannot paint past the section end.");
+}
+if (!visualCss.includes("height:clamp(160px,22vh,260px)") || !component.includes('rootMargin: "0px 0px -14% 0px"')) {
+  errors.push("Timeline exit guard must remain a broad pre-Rapier intersection zone, not a 1px sentinel that fast scroll can skip.");
+}
+if (!visualCss.includes('data-timeline-scene="exiting"') || !visualCss.includes('data-timeline-scene="idle"')) {
+  errors.push("Timeline vehicles must have CSS fail-safe hiding in exiting/idle scene states.");
+}
 if (!visualCss.includes("mask-image:linear-gradient") || !visualCss.includes("transparent 100%")) {
   errors.push("Abyss atmosphere must fade back to the global ocean before the next section.");
 }
@@ -111,4 +121,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log("Timeline motion OK: V20.9 bounded abyss + realistic 60-degree torch + vivid reef inspection + clean ocean exit.");
+console.log("Timeline motion OK: V21.3 hard-bounded vehicles + robust pre-Rapier exit + V20.9 inspection visuals.");

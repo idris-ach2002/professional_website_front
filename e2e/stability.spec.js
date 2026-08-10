@@ -95,6 +95,7 @@ test("@stability garde la Timeline autonome, révèle les cartes puis coupe la s
   const timeline = page.locator("#timeline");
   const firstCard = timeline.locator(".timeline-row").first();
   const drone = timeline.locator(".timeline-exploration-drone");
+  const submarine = timeline.locator(".timeline-submarine");
   const exitSentinel = timeline.locator(".timeline-exit-sentinel");
 
   await expect(firstCard).toBeAttached({ timeout: 10_000 });
@@ -121,7 +122,21 @@ test("@stability garde la Timeline autonome, révèle les cartes puis coupe la s
 
   await exitSentinel.scrollIntoViewIfNeeded();
   await expect(timeline).toHaveAttribute("data-timeline-exit", "approaching");
-  await expect(drone).toHaveCSS("opacity", "0");
+  await expect(drone).toBeHidden();
+  await expect(submarine).toBeHidden();
+
+  // DeferredBeachBall remplace son placeholder .beach-3d-section par le vrai
+  // composant lorsqu'il entre dans la zone de préchargement. Attendre l'ancre
+  // stable du composant monté évite de scroller un nœud qui se détache pendant
+  // l'action Playwright.
+  const rapier = page.locator("#kinetic-field");
+  await expect(rapier).toBeAttached({ timeout: 10_000 });
+  await rapier.evaluate((element) => {
+    element.scrollIntoView({ block: "center", behavior: "auto" });
+  });
+  await expect(rapier).toBeVisible();
+  await expect(drone).toBeHidden();
+  await expect(submarine).toBeHidden();
 
   expect(pageErrors, `Erreurs runtime dans la Timeline: ${pageErrors.join(" | ")}`).toEqual([]);
 });

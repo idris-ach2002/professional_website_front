@@ -346,7 +346,11 @@ export default function PortfolioTimeline({ timeline, experiences, performanceMo
           visibleCards.clear();
           requestedTargetIndex = -1;
           clearInspection();
-          if (explorationDrone) explorationDrone.style.opacity = "0";
+          if (explorationDrone) {
+            explorationDrone.style.opacity = "0";
+            explorationDrone.style.setProperty("--torch-strength", "0");
+          }
+          if (submarine) submarine.style.opacity = "0";
           stopLoop("idle");
         }
       },
@@ -355,11 +359,7 @@ export default function PortfolioTimeline({ timeline, experiences, performanceMo
 
     const exitObserver = exitSentinel ? new IntersectionObserver(
       ([entry]) => {
-        const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
-        const nextExitZone = Boolean(
-          entry?.isIntersecting
-          && (entry.boundingClientRect?.top ?? viewportHeight) <= viewportHeight * 0.78
-        );
+        const nextExitZone = Boolean(entry?.isIntersecting);
 
         if (nextExitZone === exitZoneActive) return;
         exitZoneActive = nextExitZone;
@@ -381,7 +381,7 @@ export default function PortfolioTimeline({ timeline, experiences, performanceMo
           window.requestAnimationFrame(selectBestVisibleCard);
         }
       },
-      { root: null, rootMargin: "0px 0px -8% 0px", threshold: [0, 0.01] },
+      { root: null, rootMargin: "0px 0px -14% 0px", threshold: [0, 0.01] },
     ) : null;
 
     const cardObserver = new IntersectionObserver(
