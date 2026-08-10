@@ -14,7 +14,6 @@
   border-radius: 36px;
   background: rgba(255, 255, 255, .84);
   box-shadow: 0 30px 100px rgba(2, 132, 199, .18);
-  backdrop-filter: blur(18px);
 }
 
 .not-found-content h1 {

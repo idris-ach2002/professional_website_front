@@ -286,8 +286,7 @@
   border: 1px solid rgba(14, 116, 144, .14);
   border-radius: 999px;
   color: var(--muted);
-  background: rgba(255, 255, 255, .56);
-  backdrop-filter: blur(18px);
+  background: rgba(255, 255, 255, .88);
 }
 
 .project-case-breadcrumb a {
@@ -546,7 +545,6 @@
   flex-wrap: wrap;
   gap: 8px;
   padding-block: 14px !important;
-  backdrop-filter: blur(16px);
 }
 
 .case-study-jump-nav a {

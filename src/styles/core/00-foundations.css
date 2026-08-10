@@ -56,17 +56,17 @@ button {
   inset: -12%;
 }
 
-.ocean-morph-path {
+.ocean-static-layer {
   transform-box: fill-box;
   transform-origin: center;
   mix-blend-mode: multiply;
 }
 
-.ocean-morph-path-1 {
+.ocean-static-layer-1 {
   opacity: .82;
 }
 
-.ocean-morph-path-2 {
+.ocean-static-layer-2 {
   opacity: .62;
 }
 

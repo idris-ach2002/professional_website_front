@@ -1,54 +1,16 @@
 import { useRef } from "react";
 import { useGsap } from "../animations/useGsap";
-import { clamp, damp } from "../animations/timelineMotion";
+import { clamp } from "../animations/timelineMotion";
 
-const PATH_COUNT = 2;
-const POINT_COUNT = 8;
-const BALANCED_POINT_COUNT = 6;
-const BALANCED_MORPH_PATH_COUNT = 1;
-const FULL_MORPH_FPS = 60;
-const BALANCED_MORPH_FPS = 45;
-const DEEP_FULL_MORPH_FPS = 45;
-const DEEP_BALANCED_MORPH_FPS = 30;
-const FULL_DEPTH_PAINT_FPS = 90;
-const BALANCED_DEPTH_PAINT_FPS = 60;
-const CONSTRAINED_DEPTH_PAINT_FPS = 45;
-const RUNTIME_BALANCED_MORPH_FPS = 45;
-const RUNTIME_CONSTRAINED_MORPH_FPS = 30;
-const RUNTIME_CONSTRAINED_DEEP_MORPH_FPS = 24;
+const FULL_PARTICLE_COUNT = 8;
+const BALANCED_PARTICLE_COUNT = 5;
+const CONSTRAINED_PARTICLE_COUNT = 3;
 const GLOBAL_DEPTH_PAINT_FPS = 45;
-const FULL_PARTICLE_COUNT = 10;
-const BALANCED_PARTICLE_COUNT = 7;
 
-function getWavePoint(pathIndex, pointIndex, phase = 0, pointCount = POINT_COUNT) {
-  const normalized = pointIndex / (pointCount - 1);
-  const base = 54 + pathIndex * 9;
-  const amplitude = 8 + pathIndex * 2.2;
-  const frequency = 1.35 + pathIndex * 0.22;
-  const drift = Math.sin((normalized * Math.PI * 2 * frequency) + phase + pathIndex * 0.7) * amplitude;
-  const secondary = Math.sin((normalized * Math.PI * 4.2) - phase * 0.72 + pathIndex) * (amplitude * 0.28);
-
-  return Math.max(18, Math.min(96, base + drift + secondary));
-}
-
-function renderPath(path, points) {
-  const pointCount = points.length;
-  const overscan = 10;
-  const startX = -overscan;
-  const endX = 100 + overscan;
-  const span = endX - startX;
-  const segmentWidth = span / (pointCount - 1);
-  let d = `M ${startX} 100 V ${points[0]} C`;
-
-  for (let index = 0; index < pointCount - 1; index += 1) {
-    const p = startX + ((index + 1) / (pointCount - 1)) * span;
-    const cp = p - segmentWidth / 2;
-    d += ` ${cp} ${points[index]} ${cp} ${points[index + 1]} ${p} ${points[index + 1]}`;
-  }
-
-  d += ` V 100 H ${startX} Z`;
-  path.setAttribute("d", d);
-}
+const STATIC_OCEAN_PATHS = [
+  "M -10 100 V 54 C 2 54 8 64 18 63 C 28 62 31 53 39 51 C 48 48 57 54 66 57 C 76 61 84 54 92 53 C 101 52 108 58 110 62 V 100 H -10 Z",
+  "M -10 100 V 70 C 0 67 7 73 17 72 C 27 71 32 58 42 56 C 51 54 58 65 67 69 C 76 73 83 67 92 63 C 101 59 106 57 110 58 V 100 H -10 Z",
+];
 
 export default function OceanMorphBackground({
   staticMode = false,
@@ -64,93 +26,71 @@ export default function OceanMorphBackground({
   const particleCount = staticMode || depthOnly
     ? 0
     : runtimeConstrained
-      ? 4
+      ? CONSTRAINED_PARTICLE_COUNT
       : adaptiveBalanced
         ? BALANCED_PARTICLE_COUNT
         : FULL_PARTICLE_COUNT;
 
   useGsap(rootRef, (gsap, ScrollTrigger) => {
-    if (staticMode) return undefined;
     const root = rootRef.current;
+    if (!root) return undefined;
+
     const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    const paths = gsap.utils.toArray(root.querySelectorAll(".ocean-morph-path"));
-    const particles = gsap.utils.toArray(root.querySelectorAll(".ocean-depth-particle"));
-
-    if (paths.length === 0) return undefined;
-
-    const initialPoints = paths.map((_, pathIndex) => (
-      Array.from(
-        { length: POINT_COUNT },
-        (_, pointIndex) => getWavePoint(pathIndex, pointIndex, adaptiveBalanced ? pathIndex * 0.44 : 0),
-      )
-    ));
-    paths.forEach((path, pathIndex) => renderPath(path, initialPoints[pathIndex]));
-
     gsap.set(root, { autoAlpha: 1, "--ocean-depth": 0, "--surface-opacity": 1 });
     document.documentElement.style.setProperty("--global-ocean-depth", "0");
 
+    if (staticMode) {
+      return () => document.documentElement.style.removeProperty("--global-ocean-depth");
+    }
+
     const glows = root.querySelectorAll(".ocean-glow");
+    const particles = root.querySelectorAll(".ocean-depth-particle");
+    const animations = [];
+
     if (!depthOnly && glows.length > 0 && !reducedMotion) {
-      gsap.to(glows, {
-        xPercent: (index) => (index % 2 === 0 ? 3 : -3),
-        yPercent: (index) => (index % 2 === 0 ? -2 : 2),
-        scale: adaptiveBalanced ? 1.025 : 1.06,
-        duration: adaptiveBalanced ? 11 : 7,
+      animations.push(gsap.to(glows, {
+        xPercent: (index) => (index % 2 === 0 ? 2.2 : -2.2),
+        yPercent: (index) => (index % 2 === 0 ? -1.4 : 1.4),
+        scale: adaptiveBalanced ? 1.018 : 1.035,
+        duration: adaptiveBalanced ? 13 : 9,
         repeat: -1,
         yoyo: true,
         ease: "sine.inOut",
-        stagger: 0.9,
-      });
+        stagger: 1.1,
+      }));
     }
 
     if (!depthOnly && particles.length > 0 && !reducedMotion) {
-      gsap.to(particles, {
-        y: (index) => -42 - (index % 5) * (adaptiveBalanced ? 12 : 22),
-        x: (index) => (index % 2 === 0 ? 12 : -10),
-        autoAlpha: (index) => 0.28 + (index % 4) * 0.08,
-        duration: (index) => (adaptiveBalanced ? 10 : 7) + (index % 6) * 1.4,
+      animations.push(gsap.to(particles, {
+        y: (index) => -28 - (index % 4) * (adaptiveBalanced ? 8 : 14),
+        x: (index) => (index % 2 === 0 ? 8 : -7),
+        autoAlpha: (index) => 0.22 + (index % 3) * 0.08,
+        duration: (index) => (adaptiveBalanced ? 12 : 9) + (index % 5) * 1.6,
         ease: "sine.inOut",
         repeat: -1,
         yoyo: true,
-        stagger: adaptiveBalanced ? 0.18 : 0.09,
+        stagger: adaptiveBalanced ? 0.24 : 0.15,
         force3D: true,
-      });
+      }));
     }
 
     let depthTrigger;
-    let targetDepth = 0;
-    let currentDepth = 0;
-    let lastDepthPaint = 0;
-    let lastGlobalDepthPaint = 0;
-    let lastPaintedDepth = Number.NaN;
-    let lastGlobalDepth = Number.NaN;
-    const depthResponse = depthOnly ? 13 : adaptiveBalanced ? 11 : 9.5;
-    const depthPaintFps = runtimeConstrained
-      ? CONSTRAINED_DEPTH_PAINT_FPS
-      : adaptiveBalanced || depthOnly
-        ? BALANCED_DEPTH_PAINT_FPS
-        : FULL_DEPTH_PAINT_FPS;
-    const depthPaintInterval = 1000 / depthPaintFps;
-    const globalDepthPaintInterval = 1000 / GLOBAL_DEPTH_PAINT_FPS;
-
+    let lastGlobalPublish = 0;
+    let lastDepth = Number.NaN;
+    const minGlobalInterval = 1000 / GLOBAL_DEPTH_PAINT_FPS;
     const toDepth = (progress) => clamp(Math.pow(progress * 1.5, 0.92), 0, 1);
-    const paintDepth = (depth, now = performance.now(), forceGlobal = false) => {
-      const roundedDepth = Number(depth.toFixed(4));
-      if (roundedDepth !== lastPaintedDepth) {
-        lastPaintedDepth = roundedDepth;
-        root.style.setProperty("--ocean-depth", String(roundedDepth));
-        root.style.setProperty("--surface-opacity", String(Math.max(0, 1 - roundedDepth * 2.05)));
-      }
 
-      const shouldPublishGlobal = forceGlobal
-        || now - lastGlobalDepthPaint >= globalDepthPaintInterval
-        || roundedDepth === 0
-        || roundedDepth === 1;
+    const paintDepth = (progress, force = false) => {
+      const now = performance.now();
+      const depth = Number(toDepth(progress).toFixed(4));
+      if (depth === lastDepth && !force) return;
+      lastDepth = depth;
+      root.style.setProperty("--ocean-depth", String(depth));
+      root.style.setProperty("--surface-opacity", String(Math.max(0, 1 - depth * 2.05)));
 
-      if (shouldPublishGlobal && roundedDepth !== lastGlobalDepth) {
-        lastGlobalDepthPaint = now;
-        lastGlobalDepth = roundedDepth;
-        document.documentElement.style.setProperty("--global-ocean-depth", String(roundedDepth));
+      if (force || now - lastGlobalPublish >= minGlobalInterval || depth === 0 || depth === 1) {
+        lastGlobalPublish = now;
+        document.documentElement.style.setProperty("--global-ocean-depth", String(depth));
       }
     };
 
@@ -159,95 +99,14 @@ export default function OceanMorphBackground({
         trigger: document.documentElement,
         start: "top top",
         end: "bottom bottom",
-        onUpdate: (self) => {
-          targetDepth = toDepth(self.progress);
-        },
-        onRefresh: (self) => {
-          targetDepth = toDepth(self.progress);
-          if (Math.abs(currentDepth - targetDepth) > 0.35) currentDepth = targetDepth;
-          paintDepth(currentDepth, performance.now(), true);
-        },
+        onUpdate: (self) => paintDepth(self.progress),
+        onRefresh: (self) => paintDepth(self.progress, true),
       });
-      targetDepth = toDepth(depthTrigger.progress);
-      currentDepth = targetDepth;
-      paintDepth(currentDepth, performance.now(), true);
+      paintDepth(depthTrigger.progress, true);
     }
-
-    if (reducedMotion) {
-      return () => {
-        depthTrigger?.kill();
-        document.documentElement.style.removeProperty("--global-ocean-depth");
-      };
-    }
-
-    let phase = 0;
-    let lastMorphFrame = 0;
-    const morphPaths = adaptiveBalanced
-      ? paths.slice(0, BALANCED_MORPH_PATH_COUNT)
-      : paths;
-    const morphPointCount = adaptiveBalanced ? BALANCED_POINT_COUNT : POINT_COUNT;
-    const pointBuffers = morphPaths.map(() => new Float32Array(morphPointCount));
-    const phasePerSecond = adaptiveBalanced ? 1.15 : 0.72;
-    const resolveMorphInterval = (depth) => {
-      const deep = depth >= 0.62;
-      let fps;
-      if (runtimeConstrained) {
-        fps = deep ? RUNTIME_CONSTRAINED_DEEP_MORPH_FPS : RUNTIME_CONSTRAINED_MORPH_FPS;
-      } else if (runtimeBalanced && !balancedMode) {
-        fps = deep ? DEEP_BALANCED_MORPH_FPS : RUNTIME_BALANCED_MORPH_FPS;
-      } else if (balancedMode) {
-        fps = deep ? DEEP_BALANCED_MORPH_FPS : BALANCED_MORPH_FPS;
-      } else {
-        fps = deep ? DEEP_FULL_MORPH_FPS : FULL_MORPH_FPS;
-      }
-      return 1000 / fps;
-    };
-
-    const onTick = (tickerTime, deltaTime = 8.333) => {
-      const now = typeof tickerTime === "number"
-        ? tickerTime * 1000
-        : performance.now();
-      const deltaSeconds = clamp(deltaTime / 1000, 1 / 240, 0.05);
-
-      currentDepth = damp(currentDepth, targetDepth, depthResponse, deltaSeconds);
-      if (Math.abs(targetDepth - currentDepth) < 0.00008) currentDepth = targetDepth;
-      if (now - lastDepthPaint >= depthPaintInterval) {
-        lastDepthPaint = now;
-        paintDepth(currentDepth, now);
-      }
-
-      if (depthOnly) return;
-
-      const morphFrameInterval = resolveMorphInterval(currentDepth);
-      if (now - lastMorphFrame < morphFrameInterval) return;
-      const morphDeltaSeconds = lastMorphFrame > 0
-        ? clamp((now - lastMorphFrame) / 1000, 1 / 240, 0.05)
-        : deltaSeconds;
-      lastMorphFrame = now;
-
-      // Expensive SVG geometry is intentionally decoupled from display Hz.
-      // Compositor transforms can still render at 90/120/144 Hz while the
-      // morph mesh is rebuilt at 60 Hz (or less when deep/low-power).
-      phase += phasePerSecond * morphDeltaSeconds;
-
-      morphPaths.forEach((path, pathIndex) => {
-        const currentPoints = pointBuffers[pathIndex];
-        for (let pointIndex = 0; pointIndex < morphPointCount; pointIndex += 1) {
-          currentPoints[pointIndex] = getWavePoint(
-            pathIndex,
-            pointIndex,
-            phase + pointIndex * 0.08,
-            morphPointCount,
-          );
-        }
-        renderPath(path, currentPoints);
-      });
-    };
-
-    gsap.ticker.add(onTick);
 
     return () => {
-      gsap.ticker.remove(onTick);
+      animations.forEach((animation) => animation.kill());
       depthTrigger?.kill();
       document.documentElement.style.removeProperty("--global-ocean-depth");
     };
@@ -281,7 +140,7 @@ export default function OceanMorphBackground({
             style={{
               "--particle-left": `${(index * 29) % 100}%`,
               "--particle-top": `${12 + ((index * 17) % 82)}%`,
-              "--particle-size": `${3 + (index % 6)}px`,
+              "--particle-size": `${3 + (index % 5)}px`,
               "--particle-delay": `${index * 0.12}s`,
             }}
           />
@@ -289,18 +148,19 @@ export default function OceanMorphBackground({
       </div>
       <svg className="ocean-map" viewBox="0 0 100 100" preserveAspectRatio="none">
         <defs>
-          <linearGradient id="oceanMorphA" x1="0%" y1="0%" x2="0%" y2="100%">
+          <linearGradient id="oceanStaticA" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="#bae6fd" stopOpacity="0.46" />
             <stop offset="100%" stopColor="#0284c7" stopOpacity="0.22" />
           </linearGradient>
-          <linearGradient id="oceanMorphB" x1="0%" y1="0%" x2="0%" y2="100%">
+          <linearGradient id="oceanStaticB" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="#67e8f9" stopOpacity="0.35" />
             <stop offset="100%" stopColor="#0e7490" stopOpacity="0.28" />
           </linearGradient>
         </defs>
-        {Array.from({ length: PATH_COUNT }, (_, index) => (
-          <path key={index} className={`ocean-morph-path ocean-morph-path-${index + 1}`} fill={`url(#oceanMorph${String.fromCharCode(65 + index)})`} />
-        ))}
+        <path className="ocean-static-layer ocean-static-layer-1" d={STATIC_OCEAN_PATHS[0]} fill="url(#oceanStaticA)" />
+        {!runtimeConstrained && (
+          <path className="ocean-static-layer ocean-static-layer-2" d={STATIC_OCEAN_PATHS[1]} fill="url(#oceanStaticB)" />
+        )}
       </svg>
       <div className="ocean-abyss-floor" />
     </div>
