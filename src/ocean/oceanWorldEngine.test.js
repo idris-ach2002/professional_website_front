@@ -46,7 +46,7 @@ describe("living ocean world", () => {
     expect(biomeFromSectionId("projects")).toBe(OCEAN_BIOMES.PROJECTS);
     expect(biomeFromSectionId("ocean-transition-outro")).toBe(OCEAN_BIOMES.OUTRO);
     expect(biomeFromSectionId("ocean-outro")).toBe(OCEAN_BIOMES.OUTRO);
-    expect(resolveBiomeTransitionDuration(OCEAN_BIOMES.PROJECTS, OCEAN_BIOMES.OUTRO)).toBeGreaterThan(1);
+    expect(resolveBiomeTransitionDuration(OCEAN_BIOMES.PROJECTS, OCEAN_BIOMES.OUTRO)).toBeCloseTo(0.78, 4);
   });
 
   test("le governor réduit la population", () => {

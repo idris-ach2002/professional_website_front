@@ -1,3 +1,5 @@
+import { resolveOceanTransitionDurationSeconds } from "./oceanTransitionTimings";
+
 const TAU = Math.PI * 2;
 
 export const OCEAN_BIOMES = Object.freeze({
@@ -325,12 +327,7 @@ export function biomeFromSectionId(id) {
 }
 
 export function resolveBiomeTransitionDuration(fromBiome, toBiome) {
-  if (fromBiome === toBiome) return 0;
-  if (fromBiome === OCEAN_BIOMES.SURFACE && toBiome === OCEAN_BIOMES.DEEP) return 1.15;
-  if (fromBiome === OCEAN_BIOMES.DEEP && toBiome === OCEAN_BIOMES.CALDERA) return 1.20;
-  if (fromBiome === OCEAN_BIOMES.CALDERA && toBiome === OCEAN_BIOMES.PROJECTS) return 1.08;
-  if (fromBiome === OCEAN_BIOMES.PROJECTS && toBiome === OCEAN_BIOMES.OUTRO) return 1.18;
-  return 0.86;
+  return resolveOceanTransitionDurationSeconds(fromBiome, toBiome);
 }
 
 export function deterministicRockSeed(x, y, index) {
