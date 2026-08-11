@@ -263,7 +263,6 @@ function drawRockShards(context, viewport, shards, progress, heat = 0) {
 function drawSeismicRift(context, viewport, progress, particles, shards, reverse = false) {
   const { width, height } = viewport;
   const p = reverse ? 1 - progress : progress;
-  const e = easeInOut(p);
   const lock = easeOut(clamp01(p / 0.36));
   const fracture = easeOut(clamp01((p - 0.28) / 0.52));
   const release = easeOut(clamp01((p - 0.68) / 0.30));

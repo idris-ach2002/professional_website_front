@@ -226,37 +226,46 @@ function drawRareEvent(context, event, viewport) {
   }
 }
 
-function chooseBiome(entries, currentBiome) {
-  // V21.18: the observer uses a narrow decision band instead of asking large
-  // sections to compete by intersection ratio. This makes direct jumps and
-  // Chromium/Firefox agree on the biome without binding animation progress to
-  // scroll pixels: scroll only selects the next world, then the transition is
-  // autonomous and time based.
+function chooseBiome(targets, currentBiome) {
+  // V21.25.3: IntersectionObserver remains the wake-up mechanism, but biome
+  // selection is always resolved from *current DOM geometry*. Chromium can
+  // delay/drop a narrow-band callback after scrollIntoView while the lazy
+  // caldera mounts under heavy rendering load. Reading every currently mounted
+  // world here makes direct jumps deterministic without binding cinematic
+  // progress to scroll pixels.
   const decisionY = window.innerHeight * 0.43;
   let winner = null;
   let winnerDistance = Number.POSITIVE_INFINITY;
   let winnerOrder = -1;
 
-  for (const entry of entries.values()) {
-    // Do not trust a stale IntersectionObserver isIntersecting flag after a
-    // programmatic/very large jump. Chromium can deliver the enter/exit
-    // records in separate batches. Geometry is read only when the observer
-    // fires; it selects a world but never drives frame-by-frame motion.
-    const rect = entry.target.getBoundingClientRect();
+  for (const target of targets) {
+    if (!target?.isConnected) continue;
+    const rect = target.getBoundingClientRect();
+    if (!Number.isFinite(rect.top) || !Number.isFinite(rect.bottom)) continue;
+
     const containsDecisionBand = rect.top <= decisionY && rect.bottom >= decisionY;
     const distance = containsDecisionBand
       ? 0
       : Math.min(Math.abs(rect.top - decisionY), Math.abs(rect.bottom - decisionY));
-    const order = BIOME_ORDER.indexOf(biomeFromSectionId(entry.target.id));
+    const order = BIOME_ORDER.indexOf(biomeFromSectionId(target.id));
 
     if (distance < winnerDistance - 0.5 || (Math.abs(distance - winnerDistance) <= 0.5 && order > winnerOrder)) {
-      winner = biomeFromSectionId(entry.target.id);
+      winner = biomeFromSectionId(target.id);
       winnerDistance = distance;
       winnerOrder = order;
     }
   }
 
   return winner ?? currentBiome;
+}
+
+function collectMountedWorldTargets() {
+  const targets = [];
+  for (const id of OBSERVED_SECTIONS) {
+    const target = document.getElementById(id);
+    if (target) targets.push(target);
+  }
+  return targets;
 }
 
 export default function GlobalAquarium({
@@ -275,7 +284,11 @@ export default function GlobalAquarium({
   const lastFrameRef = useRef(0);
   const elapsedRef = useRef(0);
   const dangerRef = useRef(0);
-  const entriesRef = useRef(new Map());
+  // The footer is intentionally compact (~35vh), so it can never cross the
+  // narrow 42–44% world-decision band at the document end. A dedicated
+  // visibility observer gives the final world priority while the mine is in
+  // view, without tying cinematic progress to scroll position.
+  const outroVisibleRef = useRef(false);
   const biomeRef = useRef(OCEAN_BIOMES.SURFACE);
   const transitionTimerRef = useRef(0);
   const [biome, setBiome] = useState(OCEAN_BIOMES.SURFACE);
@@ -348,16 +361,76 @@ export default function GlobalAquarium({
 
   useEffect(() => {
     const observed = new Set();
-    const observer = new IntersectionObserver((records) => {
-      for (const record of records) entriesRef.current.set(record.target.id, record);
-      const nextBiome = chooseBiome(entriesRef.current, biomeRef.current);
-      if (nextBiome !== biomeRef.current) {
-        setBiome(nextBiome);
-      }
+    const outroObserved = new Set();
+    let verificationFrame = 0;
+    let verificationTimer = 0;
+    let reconciliationTimer = 0;
+
+    const selectBandBiome = () => {
+      const nextBiome = outroVisibleRef.current
+        ? OCEAN_BIOMES.OUTRO
+        : chooseBiome(collectMountedWorldTargets(), biomeRef.current);
+      if (nextBiome !== biomeRef.current) setBiome(nextBiome);
+    };
+
+    // IntersectionObserver delivery can be split into several batches after a
+    // large programmatic jump (notably scrollIntoView in Chromium under load).
+    // Keep the narrow 42–44% decision band as the source of truth, but verify
+    // geometry again on the next frame and once after layout has settled. This
+    // never maps animation progress to scroll pixels: it only chooses the world.
+    const scheduleBandVerification = () => {
+      window.cancelAnimationFrame(verificationFrame);
+      window.clearTimeout(verificationTimer);
+      verificationFrame = window.requestAnimationFrame(() => {
+        selectBandBiome();
+        verificationFrame = window.requestAnimationFrame(selectBandBiome);
+      });
+      verificationTimer = window.setTimeout(selectBandBiome, 140);
+    };
+
+    const observer = new IntersectionObserver(() => {
+      scheduleBandVerification();
     }, {
       rootMargin: "-42% 0px -56% 0px",
       threshold: [0, 0.01],
     });
+
+    // A second, broad visibility observer is only a wake-up signal for direct
+    // jumps. It does not pick a biome itself; it asks the same decision-band
+    // geometry resolver to run. This closes the rare Chromium race where a
+    // newly visible lazy world (the caldera) misses the tiny-band callback.
+    const visibilityObserver = new IntersectionObserver(() => {
+      scheduleBandVerification();
+    }, {
+      rootMargin: "18% 0px 18% 0px",
+      threshold: [0, 0.01, 0.25, 0.5],
+    });
+
+    // The mine/footer is deliberately much shorter than a viewport. At the
+    // maximum scroll position its top remains below the 43% decision line, so
+    // the generic band observer cannot ever select it reliably. Observe the
+    // actual footer in the lower viewport instead; this also handles direct
+    // scrollIntoView/hash jumps consistently in Chromium and Firefox.
+    const outroObserver = new IntersectionObserver((records) => {
+      const record = records.at(-1);
+      if (!record) return;
+      outroVisibleRef.current = record.isIntersecting && record.intersectionRatio > 0;
+      if (outroVisibleRef.current) {
+        if (biomeRef.current !== OCEAN_BIOMES.OUTRO) setBiome(OCEAN_BIOMES.OUTRO);
+        return;
+      }
+      selectBandBiome();
+    }, {
+      rootMargin: "0px 0px -16% 0px",
+      threshold: [0, 0.01],
+    });
+
+    // IntersectionObserver is the primary trigger. A very low-frequency
+    // reconciliation watchdog closes a Chromium edge case where a lazy world
+    // is mounted and then centered by scrollIntoView before the observer has
+    // delivered its first record. It only resolves the active biome from
+    // current geometry; cinematic progress remains fully time based.
+    reconciliationTimer = window.setInterval(selectBandBiome, 180);
 
     const discoverSections = () => {
       for (const id of OBSERVED_SECTIONS) {
@@ -365,6 +438,12 @@ export default function GlobalAquarium({
         if (!target || observed.has(target)) continue;
         observed.add(target);
         observer.observe(target);
+        visibilityObserver.observe(target);
+        scheduleBandVerification();
+        if (id === "ocean-outro" && !outroObserved.has(target)) {
+          outroObserved.add(target);
+          outroObserver.observe(target);
+        }
       }
     };
 
@@ -374,6 +453,12 @@ export default function GlobalAquarium({
     return () => {
       mutationObserver.disconnect();
       observer.disconnect();
+      visibilityObserver.disconnect();
+      outroObserver.disconnect();
+      window.cancelAnimationFrame(verificationFrame);
+      window.clearTimeout(verificationTimer);
+      window.clearInterval(reconciliationTimer);
+      outroVisibleRef.current = false;
     };
   }, []);
 
