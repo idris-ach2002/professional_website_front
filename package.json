@@ -25,13 +25,13 @@
     "ci:verify": "npm run ci:quality && npm run test:e2e",
     "check:static-seo": "node scripts/check-static-seo.mjs",
     "check:performance": "node scripts/check-performance-budgets.mjs",
-    "test:e2e:functional": "playwright test --grep-invert \"@vitals|@responsive|@stability\"",
+    "test:e2e:functional": "playwright test --grep-invert \"@vitals|@responsive|@stability|@soak\"",
     "test:e2e:vitals": "playwright test --project=chromium --grep @vitals --workers=1",
     "check:responsive": "node scripts/check-responsive-contract.mjs",
     "test:e2e:responsive": "playwright test --project=chromium --grep @responsive",
     "check:timeline-motion": "node scripts/check-timeline-motion.mjs",
     "check:high-refresh": "node scripts/check-high-refresh.mjs",
-    "test:e2e:stability": "playwright test --grep @stability",
+    "test:e2e:stability": "PLAYWRIGHT_WORKER_CAP=6 playwright test --grep @stability",
     "check:source-tree": "node scripts/check-source-tree.mjs",
     "check:stability-freeze": "node scripts/check-stability-freeze.mjs",
     "ci:freeze": "npm run ci:verify",
@@ -39,7 +39,9 @@
     "check:runtime-performance": "node scripts/check-runtime-performance.mjs",
     "check:front-cost": "node scripts/check-front-cost-reset.mjs",
     "check:volcano-simulation": "node scripts/check-volcano-simulation.mjs",
-    "check:living-ocean-world": "node scripts/check-living-ocean-world.mjs"
+    "check:living-ocean-world": "node scripts/check-living-ocean-world.mjs",
+    "test:e2e:soak": "playwright test e2e/soak.spec.js --project=chromium --workers=1",
+    "ci:soak": "npm run test:e2e:soak"
   },
   "dependencies": {
     "@mantine/core": "^9.0.0",

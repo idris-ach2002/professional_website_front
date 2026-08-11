@@ -34,12 +34,22 @@ export default defineConfig({
     env: {
       ...process.env,
       VITE_ANALYTICS_DISABLED: "true",
+      VITE_E2E_RUNTIME_QUALITY: "constrained",
     },
   },
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        launchOptions: {
+          args: [
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-renderer-backgrounding",
+          ],
+        },
+      },
     },
     {
       name: "firefox",

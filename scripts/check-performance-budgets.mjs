@@ -4,13 +4,13 @@ import { join, relative } from "node:path";
 
 const DIST = "dist";
 const PUBLIC = "public";
-const HARD_INITIAL_JS_BROTLI = 360 * 1024;
-const TARGET_INITIAL_JS_BROTLI = 350 * 1024;
+const HARD_INITIAL_JS_BROTLI = 210 * 1024;
+const TARGET_INITIAL_JS_BROTLI = 190 * 1024;
 const GENERIC_VENDOR_BROTLI = 260 * 1024;
 const MAX_VOLCANO_SCENE = 32 * 1024;
 const MAX_VOLCANO_ENVIRONMENT = 16 * 1024;
 const MAX_PUBLIC_IMAGE = 400 * 1024;
-const MAX_PUBLIC_TOTAL = 400 * 1024;
+const MAX_PUBLIC_TOTAL = 230 * 1024;
 
 let hasFailure = false;
 
