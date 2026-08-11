@@ -17,6 +17,10 @@ const DEGRADE_WINDOWS = 2;
 const RECOVER_WINDOWS = 4;
 const INTERACTION_GUARD_MS = 320;
 
+const E2E_RUNTIME_QUALITY = ["high", "balanced", "constrained"].includes(import.meta.env.VITE_E2E_RUNTIME_QUALITY)
+  ? import.meta.env.VITE_E2E_RUNTIME_QUALITY
+  : null;
+
 function emptyPressureWindow() {
   return {
     count: 0,
@@ -45,8 +49,8 @@ function createWorker() {
 
 export default function PerformanceRuntimeProvider({ children }) {
   const { animationsEnabled, animationsPaused, performanceMode } = useAnimationPreferences();
-  const [runtimeQuality, setRuntimeQuality] = useState("high");
-  const qualityRef = useRef("high");
+  const [runtimeQuality, setRuntimeQuality] = useState(() => E2E_RUNTIME_QUALITY ?? "high");
+  const qualityRef = useRef(E2E_RUNTIME_QUALITY ?? "high");
   const metricsRef = useRef({
     recommendation: "high",
     estimatedHz: 0,
@@ -91,6 +95,15 @@ export default function PerformanceRuntimeProvider({ children }) {
   }, []);
 
   useEffect(() => {
+    if (E2E_RUNTIME_QUALITY) {
+      streakRef.current = { degrade: 0, recover: 0 };
+      if (qualityRef.current !== E2E_RUNTIME_QUALITY) {
+        qualityRef.current = E2E_RUNTIME_QUALITY;
+        setRuntimeQuality(E2E_RUNTIME_QUALITY);
+      }
+      return undefined;
+    }
+
     if (!animationsEnabled || animationsPaused || ["lite", "ultra-lite"].includes(performanceMode)) {
       streakRef.current = { degrade: 0, recover: 0 };
       if (qualityRef.current !== "constrained") {

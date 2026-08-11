@@ -1,18 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-
-const CINEMATIC_DURATIONS = Object.freeze({
-  // Recruiter-first pacing V21.25: dense reveals, completed in ~0.5–0.82 s.
-  "surface-deep": 760,
-  "deep-surface": 480,
-  "deep-caldera": 800,
-  "caldera-deep": 500,
-  "caldera-projects": 820,
-  "projects-caldera": 520,
-  "deep-projects": 740,
-  "projects-deep": 480,
-  "projects-outro": 780,
-  "outro-projects": 480,
-});
+import { OCEAN_CINEMATIC_DURATIONS_MS } from "../ocean/oceanTransitionTimings";
 
 function clamp01(value) {
   return Math.min(1, Math.max(0, value));
@@ -667,7 +654,7 @@ export default function OceanTransitionStage({ reducedMotion = false, performanc
       const to = event.detail?.to;
       if (!from || !to || from === to) return;
       const key = `${from}-${to}`;
-      if (!CINEMATIC_DURATIONS[key]) return;
+      if (!OCEAN_CINEMATIC_DURATIONS_MS[key]) return;
       setScene({ key, token: performance.now() });
     };
     window.addEventListener("portfolio:ocean-transition", handleTransition);
@@ -686,7 +673,7 @@ export default function OceanTransitionStage({ reducedMotion = false, performanc
     const seed = Math.round(scene.token) ^ scene.key.length * 131;
     const particles = createSceneParticles(count, seed);
     const shards = createRockShards(shardCount, seed);
-    const duration = CINEMATIC_DURATIONS[scene.key] ?? 760;
+    const duration = OCEAN_CINEMATIC_DURATIONS_MS[scene.key] ?? 760;
     const startedAt = performance.now();
     let disposed = false;
 

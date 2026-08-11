@@ -10,8 +10,11 @@ import {
   resolveBiomeTransitionDuration,
   stepMarinePopulation,
 } from "../ocean/oceanWorldEngine";
+import { OCEAN_WORLD_MOUNTED_EVENT } from "../ocean/oceanWorldRegistration";
+import { resolveAquariumFps } from "../ocean/oceanRuntimePolicy";
 
-const OBSERVED_SECTIONS = ["profile", "ocean-transition-deep", "timeline", "ocean-transition-caldera", "abyss-volcano-field", "ocean-transition-projects", "projects", "ocean-transition-outro", "ocean-outro"];
+const OBSERVED_SECTIONS = ["profile", "skills", "ocean-transition-deep", "timeline", "ocean-transition-caldera", "abyss-volcano-field", "ocean-transition-projects", "projects", "ocean-transition-outro", "ocean-outro"];
+const WORLD_SECTION_IDS = Object.freeze(["profile", "skills", "timeline", "abyss-volcano-field", "projects"]);
 
 const PALETTES = Object.freeze({
   reef: ["#8fe8ff", "#0ea5c6", "#f0fbff"],
@@ -227,35 +230,34 @@ function drawRareEvent(context, event, viewport) {
 }
 
 function chooseBiome(targets, currentBiome) {
-  // V21.25.3: IntersectionObserver remains the wake-up mechanism, but biome
-  // selection is always resolved from *current DOM geometry*. Chromium can
-  // delay/drop a narrow-band callback after scrollIntoView while the lazy
-  // caldera mounts under heavy rendering load. Reading every currently mounted
-  // world here makes direct jumps deterministic without binding cinematic
-  // progress to scroll pixels.
-  const decisionY = window.innerHeight * 0.43;
-  let winner = null;
-  let winnerDistance = Number.POSITIVE_INFINITY;
-  let winnerOrder = -1;
+  // V22.0.6: world arbitration follows the ordered content anchors relative
+  // to the viewport focus. Worlds are sequential, while some sections overlap
+  // slightly to preserve seamless handoffs. The latest real world whose start
+  // has crossed the viewport centre wins. Scroll only SELECTS the biome; the
+  // cinematic itself remains entirely time based and autonomous.
+  const viewportHeight = Math.max(1, window.innerHeight);
+  const focusY = viewportHeight * 0.5;
 
+  const candidates = [];
   for (const target of targets) {
-    if (!target?.isConnected) continue;
+    if (!target?.isConnected || !WORLD_SECTION_IDS.includes(target.id)) continue;
     const rect = target.getBoundingClientRect();
-    if (!Number.isFinite(rect.top) || !Number.isFinite(rect.bottom)) continue;
-
-    const containsDecisionBand = rect.top <= decisionY && rect.bottom >= decisionY;
-    const distance = containsDecisionBand
-      ? 0
-      : Math.min(Math.abs(rect.top - decisionY), Math.abs(rect.bottom - decisionY));
-    const order = BIOME_ORDER.indexOf(biomeFromSectionId(target.id));
-
-    if (distance < winnerDistance - 0.5 || (Math.abs(distance - winnerDistance) <= 0.5 && order > winnerOrder)) {
-      winner = biomeFromSectionId(target.id);
-      winnerDistance = distance;
-      winnerOrder = order;
-    }
+    if (!Number.isFinite(rect.top) || !Number.isFinite(rect.bottom) || rect.height <= 0) continue;
+    candidates.push({
+      biome: biomeFromSectionId(target.id),
+      top: rect.top,
+      order: BIOME_ORDER.indexOf(biomeFromSectionId(target.id)),
+    });
   }
 
+  if (!candidates.length) return currentBiome;
+  candidates.sort((left, right) => left.top - right.top || left.order - right.order);
+
+  let winner = candidates[0].biome;
+  for (const candidate of candidates) {
+    if (candidate.top > focusY + 1) break;
+    winner = candidate.biome;
+  }
   return winner ?? currentBiome;
 }
 
@@ -285,11 +287,12 @@ export default function GlobalAquarium({
   const elapsedRef = useRef(0);
   const dangerRef = useRef(0);
   // The footer is intentionally compact (~35vh), so it can never cross the
-  // narrow 42–44% world-decision band at the document end. A dedicated
+  // generic viewport-centre arbitration at the document end. A dedicated
   // visibility observer gives the final world priority while the mine is in
   // view, without tying cinematic progress to scroll position.
   const outroVisibleRef = useRef(false);
   const biomeRef = useRef(OCEAN_BIOMES.SURFACE);
+  const renderedBiomeRef = useRef(OCEAN_BIOMES.SURFACE);
   const transitionTimerRef = useRef(0);
   const [biome, setBiome] = useState(OCEAN_BIOMES.SURFACE);
   const [pageVisible, setPageVisible] = useState(() => typeof document === "undefined" ? true : !document.hidden);
@@ -306,8 +309,14 @@ export default function GlobalAquarium({
   }, [population]);
 
   useEffect(() => {
-    const previousBiome = biomeRef.current;
-    biomeRef.current = biome;
+    // A newer observer decision may have been committed synchronously before
+    // React flushes an older state update. Never let that stale render move the
+    // world marker backwards (the root cause of the intermittent deep→caldera
+    // failure under a heavily loaded Chromium test run).
+    if (biome !== biomeRef.current) return undefined;
+
+    const previousBiome = renderedBiomeRef.current;
+    renderedBiomeRef.current = biome;
     document.documentElement.dataset.oceanBiome = biome;
 
     const duration = previousBiome === biome ? 0.38 : resolveBiomeTransitionDuration(previousBiome, biome);
@@ -366,40 +375,48 @@ export default function GlobalAquarium({
     let verificationTimer = 0;
     let reconciliationTimer = 0;
 
-    const selectBandBiome = () => {
+    const commitBiome = (nextBiome) => {
+      if (!nextBiome || nextBiome === biomeRef.current) return;
+      // Update the observable world marker immediately. React still owns the
+      // rendered state, while the ref prevents stale observer batches from
+      // winning during rapid jumps.
+      biomeRef.current = nextBiome;
+      document.documentElement.dataset.oceanBiome = nextBiome;
+      setBiome(nextBiome);
+    };
+
+    const selectViewportBiome = () => {
       const nextBiome = outroVisibleRef.current
         ? OCEAN_BIOMES.OUTRO
         : chooseBiome(collectMountedWorldTargets(), biomeRef.current);
-      if (nextBiome !== biomeRef.current) setBiome(nextBiome);
+      commitBiome(nextBiome);
     };
 
-    // IntersectionObserver delivery can be split into several batches after a
-    // large programmatic jump (notably scrollIntoView in Chromium under load).
-    // Keep the narrow 42–44% decision band as the source of truth, but verify
-    // geometry again on the next frame and once after layout has settled. This
-    // never maps animation progress to scroll pixels: it only chooses the world.
+    // IntersectionObserver remains the primary trigger. Geometry is verified
+    // again after layout settles, but world choice is based on the viewport
+    // centre rather than stale observer ratios or decorative overlap.
     const scheduleBandVerification = () => {
       window.cancelAnimationFrame(verificationFrame);
       window.clearTimeout(verificationTimer);
       verificationFrame = window.requestAnimationFrame(() => {
-        selectBandBiome();
-        verificationFrame = window.requestAnimationFrame(selectBandBiome);
+        selectViewportBiome();
+        verificationFrame = window.requestAnimationFrame(selectViewportBiome);
       });
-      verificationTimer = window.setTimeout(selectBandBiome, 140);
+      verificationTimer = window.setTimeout(selectViewportBiome, 120);
     };
 
     const observer = new IntersectionObserver(() => {
+      selectViewportBiome();
       scheduleBandVerification();
     }, {
-      rootMargin: "-42% 0px -56% 0px",
+      rootMargin: "-48% 0px -48% 0px",
       threshold: [0, 0.01],
     });
 
-    // A second, broad visibility observer is only a wake-up signal for direct
-    // jumps. It does not pick a biome itself; it asks the same decision-band
-    // geometry resolver to run. This closes the rare Chromium race where a
-    // newly visible lazy world (the caldera) misses the tiny-band callback.
+    // A broad observer catches direct jumps/lazy mounts and commits the
+    // viewport-centred world immediately before scheduling verification.
     const visibilityObserver = new IntersectionObserver(() => {
+      selectViewportBiome();
       scheduleBandVerification();
     }, {
       rootMargin: "18% 0px 18% 0px",
@@ -407,7 +424,7 @@ export default function GlobalAquarium({
     });
 
     // The mine/footer is deliberately much shorter than a viewport. At the
-    // maximum scroll position its top remains below the 43% decision line, so
+    // maximum scroll position its centre remains below the viewport focus, so
     // the generic band observer cannot ever select it reliably. Observe the
     // actual footer in the lower viewport instead; this also handles direct
     // scrollIntoView/hash jumps consistently in Chromium and Firefox.
@@ -416,10 +433,10 @@ export default function GlobalAquarium({
       if (!record) return;
       outroVisibleRef.current = record.isIntersecting && record.intersectionRatio > 0;
       if (outroVisibleRef.current) {
-        if (biomeRef.current !== OCEAN_BIOMES.OUTRO) setBiome(OCEAN_BIOMES.OUTRO);
+        commitBiome(OCEAN_BIOMES.OUTRO);
         return;
       }
-      selectBandBiome();
+      selectViewportBiome();
     }, {
       rootMargin: "0px 0px -16% 0px",
       threshold: [0, 0.01],
@@ -430,7 +447,16 @@ export default function GlobalAquarium({
     // is mounted and then centered by scrollIntoView before the observer has
     // delivered its first record. It only resolves the active biome from
     // current geometry; cinematic progress remains fully time based.
-    reconciliationTimer = window.setInterval(selectBandBiome, 180);
+    reconciliationTimer = window.setInterval(selectViewportBiome, 180);
+
+    // `scrollend` is a low-frequency reconciliation hook, not a scroll-driven
+    // animation source. It is especially useful for instant anchor/scrollIntoView
+    // navigation when a browser delays IntersectionObserver delivery under load.
+    const handleScrollEnd = () => {
+      selectViewportBiome();
+      scheduleBandVerification();
+    };
+    window.addEventListener("scrollend", handleScrollEnd, { passive: true });
 
     const discoverSections = () => {
       for (const id of OBSERVED_SECTIONS) {
@@ -447,11 +473,12 @@ export default function GlobalAquarium({
       }
     };
 
+    const handleWorldMounted = () => discoverSections();
     discoverSections();
-    const mutationObserver = new MutationObserver(discoverSections);
-    mutationObserver.observe(document.body, { childList: true, subtree: true });
+    window.addEventListener(OCEAN_WORLD_MOUNTED_EVENT, handleWorldMounted);
     return () => {
-      mutationObserver.disconnect();
+      window.removeEventListener(OCEAN_WORLD_MOUNTED_EVENT, handleWorldMounted);
+      window.removeEventListener("scrollend", handleScrollEnd);
       observer.disconnect();
       visibilityObserver.disconnect();
       outroObserver.disconnect();
@@ -477,7 +504,14 @@ export default function GlobalAquarium({
 
     if (!agentsRef.current.length) rebuildPopulation();
 
+    const targetFps = resolveAquariumFps(runtimeQuality, performanceMode, isMobile);
+    const minimumFrameMs = 1000 / targetFps;
+
     const paint = (timestamp) => {
+      if (!reducedMotion && lastFrameRef.current && timestamp - lastFrameRef.current < minimumFrameMs) {
+        if (active) rafRef.current = requestAnimationFrame(paint);
+        return;
+      }
       const previous = lastFrameRef.current || timestamp;
       const delta = Math.min(0.05, Math.max(1 / 240, (timestamp - previous) / 1000));
       lastFrameRef.current = timestamp;
@@ -543,11 +577,16 @@ export default function GlobalAquarium({
       window.removeEventListener("resize", resize);
       window.visualViewport?.removeEventListener("resize", resize);
     };
-  }, [active, biome, dpr, isMobile, rebuildPopulation, reducedMotion, runtimeQuality]);
+  }, [active, biome, dpr, isMobile, performanceMode, rebuildPopulation, reducedMotion, runtimeQuality]);
 
   return (
-    <div className={`global-aquarium ocean-world-runtime${paused ? " is-paused" : ""}`} data-biome={biome} aria-hidden="true">
-      <div className="ocean-biome-transition-layer" data-world-director="intersection-decision-band">
+    <div
+      className={`global-aquarium ocean-world-runtime${paused ? " is-paused" : ""}`}
+      data-biome={biome}
+      data-simulation-fps={resolveAquariumFps(runtimeQuality, performanceMode, isMobile)}
+      aria-hidden="true"
+    >
+      <div className="ocean-biome-transition-layer" data-world-director="intersection-viewport-center">
         <span className="ocean-biome-haze" />
         <span className="ocean-biome-mineral" />
         <span className="ocean-biome-project-light" />

@@ -6,6 +6,7 @@ import {
   useState,
 } from "react";
 import { gsapReady } from "../animations/useGsap";
+import { announceOceanWorldMounted } from "../ocean/oceanWorldRegistration";
 import {
   createVolcanoParticles,
   createVolcanoSimulation,
@@ -361,6 +362,10 @@ export default function UnderwaterVolcanoField({
   paused = false,
   runtimeQuality = "high",
 }) {
+  useEffect(() => {
+    announceOceanWorldMounted("abyss-volcano-field");
+  }, []);
+
   const rootRef = useRef(null);
   const stageRef = useRef(null);
   const webglCanvasRef = useRef(null);

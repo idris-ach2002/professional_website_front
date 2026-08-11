@@ -852,3 +852,10 @@ html[data-ocean-cinematic] .global-aquarium .ocean-world-canvas {
 html:has(.ocean-transition-stage.is-active) .global-aquarium .ocean-world-canvas {
   opacity: 0 !important;
 }
+
+/* V22 — the mine terrain/excavation is baked once; only lightweight glints remain dynamic. */
+.treasure-mine-base-canvas { z-index: 0; }
+.treasure-mine-fx-canvas {
+  z-index: 2;
+  pointer-events: none;
+}

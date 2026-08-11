@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import useAnimationPreferences from "../contexts/useAnimationPreferences";
+import { resolveMineFxFps } from "../ocean/oceanRuntimePolicy";
 
 const TAU = Math.PI * 2;
 const TREASURES = Object.freeze([
@@ -210,18 +211,21 @@ function drawExcavationCover(ctx,width,height,reveal,cover,time){
 
 function drawGlints(ctx,width,height,reveal,time){if(reveal<.60)return;ctx.save();ctx.globalCompositeOperation="screen";TREASURES.forEach((item,index)=>{const phase=(time*.00045+index*.137)%1;if(phase>.14)return;const s=(1-phase/.14)*clamp((reveal-.60)/.4),x=width*item.x,y=height*item.y-item.size*.55,l=7+item.size*.24;ctx.strokeStyle=`rgba(255,255,241,${.34*s})`;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x-l,y);ctx.lineTo(x+l,y);ctx.moveTo(x,y-l);ctx.lineTo(x,y+l);ctx.stroke();});ctx.restore();}
 
-function renderMine(ctx,width,height,reveal,time,cover){ctx.clearRect(0,0,width,height);drawRockMass(ctx,width,height,.92);TREASURES.forEach(item=>drawTreasure(ctx,item,width,height,reveal,time));drawExcavationCover(ctx,width,height,reveal,cover,time);drawGlints(ctx,width,height,reveal,time);}
+function renderMineBase(ctx,width,height,reveal,time,cover){ctx.clearRect(0,0,width,height);drawRockMass(ctx,width,height,.92);TREASURES.forEach(item=>drawTreasure(ctx,item,width,height,reveal,time));drawExcavationCover(ctx,width,height,reveal,cover,time);}
+
+function renderMineFx(ctx,width,height,reveal,time){ctx.clearRect(0,0,width,height);drawGlints(ctx,width,height,reveal,time);}
 
 export default function TreasureMineField(){
-  const canvasRef=useRef(null),hostRef=useRef(null),rafRef=useRef(0),startedAtRef=useRef(0),activeRef=useRef(false);
+  const baseCanvasRef=useRef(null),fxCanvasRef=useRef(null),hostRef=useRef(null),rafRef=useRef(0),startedAtRef=useRef(0),activeRef=useRef(false),completedRef=useRef(false),lastFxRef=useRef(0);
   const { animationsEnabled,animationsPaused,ultraLite }=useAnimationPreferences();
-  useEffect(()=>{const host=hostRef.current,canvas=canvasRef.current;if(!host||!canvas)return undefined;const ctx=canvas.getContext("2d",{alpha:true});if(!ctx)return undefined;let destroyed=false,width=1,height=1,dpr=1;const cover=document.createElement("canvas");
-    const resize=()=>{const rect=host.getBoundingClientRect();width=Math.max(1,Math.round(rect.width));height=Math.max(1,Math.round(rect.height));dpr=Math.min(window.devicePixelRatio||1,ultraLite?1:1.4);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);canvas.style.width=`${width}px`;canvas.style.height=`${height}px`;cover.width=width;cover.height=height;ctx.setTransform(dpr,0,0,dpr,0,0);renderMine(ctx,width,height,activeRef.current?1:.02,performance.now(),cover);};
-    const frame=now=>{if(destroyed)return;if(!activeRef.current||animationsPaused){rafRef.current=0;return;}if(!startedAtRef.current)startedAtRef.current=now;const duration=ultraLite||!animationsEnabled?1:960,reveal=duration<=1?1:clamp((now-startedAtRef.current)/duration);renderMine(ctx,width,height,reveal,now,cover);if(reveal<1||(animationsEnabled&&!ultraLite))rafRef.current=requestAnimationFrame(frame);else rafRef.current=0;};
-    const start=()=>{activeRef.current=true;startedAtRef.current=0;cancelAnimationFrame(rafRef.current);rafRef.current=requestAnimationFrame(frame);};
-    const stop=()=>{activeRef.current=false;startedAtRef.current=0;cancelAnimationFrame(rafRef.current);rafRef.current=0;};
+  useEffect(()=>{const host=hostRef.current,baseCanvas=baseCanvasRef.current,fxCanvas=fxCanvasRef.current;if(!host||!baseCanvas||!fxCanvas)return undefined;const baseCtx=baseCanvas.getContext("2d",{alpha:true}),fxCtx=fxCanvas.getContext("2d",{alpha:true,desynchronized:true});if(!baseCtx||!fxCtx)return undefined;let destroyed=false,width=1,height=1,dpr=1;const cover=document.createElement("canvas");
+    const paintFinalBase=(now=performance.now())=>{renderMineBase(baseCtx,width,height,1,now,cover);completedRef.current=true;};
+    const resize=()=>{const rect=host.getBoundingClientRect();width=Math.max(1,Math.round(rect.width));height=Math.max(1,Math.round(rect.height));dpr=Math.min(window.devicePixelRatio||1,ultraLite?1:1.4);for(const canvas of [baseCanvas,fxCanvas]){canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);canvas.style.width=`${width}px`;canvas.style.height=`${height}px`;}cover.width=width;cover.height=height;baseCtx.setTransform(dpr,0,0,dpr,0,0);fxCtx.setTransform(dpr,0,0,dpr,0,0);if(completedRef.current)paintFinalBase();else renderMineBase(baseCtx,width,height,activeRef.current?1:.02,performance.now(),cover);renderMineFx(fxCtx,width,height,completedRef.current?1:.02,performance.now());};
+    const frame=now=>{if(destroyed)return;if(!activeRef.current||animationsPaused){rafRef.current=0;return;}if(!startedAtRef.current)startedAtRef.current=now;const duration=ultraLite||!animationsEnabled?1:960,reveal=completedRef.current?1:(duration<=1?1:clamp((now-startedAtRef.current)/duration));if(!completedRef.current){renderMineBase(baseCtx,width,height,reveal,now,cover);if(reveal>=1)completedRef.current=true;}const runtimeQuality=document.documentElement.dataset.runtimeQuality||"high",fxFps=animationsEnabled?resolveMineFxFps(runtimeQuality,ultraLite):0;if(fxFps>0&&now-lastFxRef.current>=1000/fxFps){lastFxRef.current=now;renderMineFx(fxCtx,width,height,reveal,now);}else if(fxFps===0){renderMineFx(fxCtx,width,height,reveal,now);}if(reveal<1||fxFps>0)rafRef.current=requestAnimationFrame(frame);else rafRef.current=0;};
+    const start=()=>{activeRef.current=true;startedAtRef.current=completedRef.current?performance.now():0;lastFxRef.current=0;cancelAnimationFrame(rafRef.current);rafRef.current=requestAnimationFrame(frame);};
+    const stop=()=>{activeRef.current=false;startedAtRef.current=0;cancelAnimationFrame(rafRef.current);rafRef.current=0;fxCtx.clearRect(0,0,width,height);};
     const observer=new IntersectionObserver(entries=>{const entry=entries[0];if(entry?.isIntersecting&&entry.intersectionRatio>.10)start();else stop();},{threshold:[0,.10,.30]});observer.observe(host);const ro=typeof ResizeObserver!=="undefined"?new ResizeObserver(resize):null;ro?.observe(host);window.addEventListener("resize",resize,{passive:true});resize();
     return()=>{destroyed=true;observer.disconnect();ro?.disconnect();window.removeEventListener("resize",resize);cancelAnimationFrame(rafRef.current);};
   },[animationsEnabled,animationsPaused,ultraLite]);
-  return <div ref={hostRef} className="treasure-mine-field" aria-hidden="true" data-mine-field="excavation-runtime"><canvas ref={canvasRef} className="treasure-mine-canvas"/><span className="mine-shaft-light"/><span className="mine-dust-overlay"/></div>;
+  return <div ref={hostRef} className="treasure-mine-field" aria-hidden="true" data-mine-field="excavation-runtime" data-render-mode="static-base-dynamic-fx"><canvas ref={baseCanvasRef} className="treasure-mine-canvas treasure-mine-base-canvas"/><canvas ref={fxCanvasRef} className="treasure-mine-canvas treasure-mine-fx-canvas"/><span className="mine-shaft-light"/><span className="mine-dust-overlay"/></div>;
 }

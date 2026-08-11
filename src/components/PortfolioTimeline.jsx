@@ -13,6 +13,7 @@ import {
   requestInspectionTarget,
   stepInspectionPilot,
 } from "../animations/timelineInspectionEngine";
+import { announceOceanWorldMounted } from "../ocean/oceanWorldRegistration";
 
 const categoryClasses = {
   SCHOOL: "timeline-school",
@@ -62,6 +63,10 @@ function TimelineCardReef({ variant = 0 }) {
 
 export default function PortfolioTimeline({ timeline, experiences, performanceMode = "full" }) {
   const rootRef = useRef(null);
+
+  useEffect(() => {
+    announceOceanWorldMounted("timeline");
+  }, []);
   const { locale, t } = useLanguage();
   const {
     preference: animationPreference,
