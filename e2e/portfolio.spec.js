@@ -1,56 +1,22 @@
-import { expect, test } from "@playwright/test";
-import { portfolioOwner } from "./fixtures/owner";
+import { expect, test } from "./support/test-fixtures";
+import {
+  CONTRACT_TIMEOUT_MS,
+  isPublicWebsiteRequest,
+  openPortfolioContract,
+} from "./support/runtime-contract";
 
-const PUBLIC_WEBSITE_PATH = "/website/default";
+test.use({ reducedMotion: "reduce" });
 
-function isPublicWebsiteRequest(url, locale) {
-  try {
-    const parsedUrl = new URL(url);
-    return parsedUrl.pathname.endsWith(PUBLIC_WEBSITE_PATH)
-      && parsedUrl.searchParams.get("locale") === locale;
-  } catch {
-    return false;
-  }
-}
-
-async function mockPublicApi(page) {
-  await page.route("**/website/default**", async (route) => {
-    const url = new URL(route.request().url());
-    const locale = url.searchParams.get("locale") === "en" ? "en" : "fr";
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(portfolioOwner(locale)),
-    });
-  });
-
-  await page.route("**/analytics/events", (route) => route.fulfill({ status: 204, body: "" }));
-}
-
-async function openPortfolio(page, locale = "fr") {
-  const publicResponse = page.waitForResponse(
-    (response) => isPublicWebsiteRequest(response.url(), locale) && response.status() === 200,
-  );
-
-  await page.goto(locale === "en" ? "/en" : "/", { waitUntil: "domcontentloaded" });
-  await publicResponse;
-  await expect(page.locator("main#main-content")).toBeVisible();
-}
-
-test.beforeEach(async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await mockPublicApi(page);
-});
 
 test("charge l'accueil depuis l'API publique", async ({ page }) => {
-  await openPortfolio(page, "fr");
+  await openPortfolioContract(page, "fr");
 
   await expect(page.getByRole("heading", { level: 1, name: "Développeur Java Full Stack" })).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("lang", "fr");
 });
 
 test("rend le lien d’évitement accessible au clavier", async ({ page }) => {
-  await openPortfolio(page, "fr");
+  await openPortfolioContract(page, "fr");
 
   await page.keyboard.press("Tab");
   const skipLink = page.getByRole("link", { name: "Aller au contenu principal" });
@@ -61,7 +27,7 @@ test("rend le lien d’évitement accessible au clavier", async ({ page }) => {
 });
 
 test("bascule du français vers l'anglais", async ({ page }) => {
-  await openPortfolio(page, "fr");
+  await openPortfolioContract(page, "fr");
   await expect(page.getByRole("heading", { level: 1, name: "Développeur Java Full Stack" })).toBeVisible();
 
   const englishResponse = page.waitForResponse(
@@ -85,7 +51,7 @@ test("bascule du français vers l'anglais", async ({ page }) => {
 
 
 test("expose une route anglaise indexable", async ({ page }) => {
-  await openPortfolio(page, "en");
+  await openPortfolioContract(page, "en");
 
   await expect(page).toHaveURL(/\/en$/);
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
@@ -94,7 +60,7 @@ test("expose une route anglaise indexable", async ({ page }) => {
 });
 
 test("piège le focus dans la modale projet et le restaure", async ({ page }) => {
-  await openPortfolio(page, "fr");
+  await openPortfolioContract(page, "fr");
 
   const trigger = page.getByRole("button", { name: "Détails" }).first();
   await trigger.scrollIntoViewIfNeeded();
@@ -105,9 +71,19 @@ test("piège le focus dans la modale projet et le restaure", async ({ page }) =>
   await expect(dialog.getByRole("heading", { level: 2, name: "Projet — Portfolio fiable" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Fermer les détails du projet" })).toBeFocused();
 
-  for (let index = 0; index < 8; index += 1) await page.keyboard.press("Tab");
+  const focusable = dialog.locator(
+    'a[href]:visible, button:not([disabled]):visible, input:not([disabled]):visible, select:not([disabled]):visible, textarea:not([disabled]):visible, [tabindex]:not([tabindex="-1"]):visible',
+  );
+  const focusableCount = await focusable.count();
+  expect(focusableCount, "précondition: la modale doit contenir au moins un contrôle focusable").toBeGreaterThan(0);
+
+  // Traverse more than one complete focus cycle. The invariant is checked
+  // after every key press instead of assuming a fixed number of controls.
+  for (let index = 0; index < focusableCount + 2; index += 1) {
+    await page.keyboard.press("Tab");
+    await expect(dialog.locator(":focus"), `focus trap après Tab ${index + 1}`).toHaveCount(1);
+  }
   await expect(dialog).toContainText("Portfolio fiable");
-  await expect(dialog.locator(":focus")).toHaveCount(1);
 
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
@@ -123,30 +99,38 @@ test("affiche la route 404", async ({ page }) => {
 
 test("ne provoque pas de débordement horizontal en mobile", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await openPortfolio(page, "fr");
+  await openPortfolioContract(page, "fr");
   await expect(page.getByRole("heading", { level: 1, name: "Développeur Java Full Stack" })).toBeVisible();
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
 });
 
-test("utilise le fallback français quand l'API est indisponible", async ({ page }) => {
-  await page.unroute("**/website/default**");
+test("utilise le fallback français quand l'API est indisponible", async ({ page, runtimeGuard }) => {
+  runtimeGuard.runtime.allowHttpResponse(
+    (response) => response.status() === 503 && isPublicWebsiteRequest(response.url(), "fr"),
+  );
+  // Page-level routing intentionally overrides the default context API fixture.
   await page.route("**/website/default**", (route) => route.fulfill({
     status: 503,
     contentType: "application/json",
     body: JSON.stringify({ code: "SERVICE_UNAVAILABLE" }),
   }));
 
+  const unavailableResponse = page.waitForResponse(
+    (response) => response.status() === 503 && isPublicWebsiteRequest(response.url(), "fr"),
+    { timeout: CONTRACT_TIMEOUT_MS },
+  );
   await page.goto("/?lang=fr", { waitUntil: "domcontentloaded" });
+  await unavailableResponse;
 
-  await expect(page.getByRole("heading", { level: 1, name: "Développeur Java Full Stack" })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("heading", { level: 1, name: "Développeur Java Full Stack" })).toBeVisible({ timeout: CONTRACT_TIMEOUT_MS * 2 });
 });
 
 test("expose les réglages d’animation dans le menu mobile", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  await openPortfolio(page, "fr");
+  await openPortfolioContract(page, "fr");
 
   await page.getByRole("button", { name: "Navigation principale" }).click();
   const mobileSettings = page.locator(".animation-preferences-mobile");
@@ -158,7 +142,7 @@ test("expose les réglages d’animation dans le menu mobile", async ({ page }) 
 
 test("mémorise les préférences d’animation et active le mode ultra-léger", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  await openPortfolio(page, "fr");
+  await openPortfolioContract(page, "fr");
 
   const desktopControl = page.locator(".animation-preferences-control");
   const animationNavItem = desktopControl.getByTestId("animation-preferences-trigger");
@@ -187,7 +171,7 @@ test("mémorise les préférences d’animation et active le mode ultra-léger",
 
 test("ne réintroduit pas le poisson de révélation dans le Parcours", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  await openPortfolio(page, "fr");
+  await openPortfolioContract(page, "fr");
 
   await expect(page.locator(".timeline-section .section-reveal-fish")).toHaveCount(0);
   await expect(page.locator(".ocean-transition-stage")).toHaveAttribute("data-reveal-engine", "cinematic-world-reveal");
@@ -197,6 +181,7 @@ test("@vitals respecte les budgets Web Vitals sur mobile", async ({ page, browse
   test.skip(browserName !== "chromium", "Les métriques PerformanceObserver sont contrôlées dans Chromium.");
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.addInitScript(() => {
     const supportedEntryTypes = PerformanceObserver.supportedEntryTypes ?? [];
     window.__portfolioPerformance = {
@@ -245,7 +230,7 @@ test("@vitals respecte les budgets Web Vitals sur mobile", async ({ page, browse
     }
   });
 
-  await openPortfolio(page, "fr");
+  await openPortfolioContract(page, "fr");
   await expect(page.getByRole("heading", { level: 1, name: "Développeur Java Full Stack" })).toBeVisible();
   await page.evaluate(async () => {
     await document.fonts?.ready;
@@ -256,21 +241,26 @@ test("@vitals respecte les budgets Web Vitals sur mobile", async ({ page, browse
   await page.waitForFunction(
     () => window.__portfolioPerformance?.lcp > 0,
     undefined,
-    { timeout: 10_000 },
+    { timeout: CONTRACT_TIMEOUT_MS },
   );
 
   // Warm the interaction path before starting the isolated INP sample.
   const navigationButton = page.getByRole("button", { name: "Navigation principale" });
   await navigationButton.click();
+  await expect(navigationButton).toHaveAttribute("aria-expanded", "true");
   await navigationButton.click();
-  await page.waitForTimeout(150);
+  await expect(navigationButton).toHaveAttribute("aria-expanded", "false");
   await page.evaluate(() => {
     window.__portfolioPerformance.inp = 0;
     window.__portfolioPerformance.interactions = {};
   });
 
   await navigationButton.click();
-  await page.waitForTimeout(250);
+  await expect(navigationButton).toHaveAttribute("aria-expanded", "true");
+  await expect.poll(
+    () => page.evaluate(() => Object.keys(window.__portfolioPerformance?.interactions ?? {}).length),
+    { timeout: CONTRACT_TIMEOUT_MS, intervals: [50, 100, 250] },
+  ).toBeGreaterThan(0);
 
   const metrics = await page.evaluate(() => ({
     ...window.__portfolioPerformance,

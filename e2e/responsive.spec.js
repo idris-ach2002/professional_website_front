@@ -1,5 +1,5 @@
-import { expect, test } from "@playwright/test";
-import { portfolioOwner } from "./fixtures/owner";
+import { expect, test } from "./support/test-fixtures";
+import { openPortfolioContract } from "./support/runtime-contract";
 
 const VIEWPORTS = [
   { name: "360x800", width: 360, height: 800, compact: true },
@@ -12,50 +12,6 @@ const VIEWPORTS = [
   { name: "1440x900", width: 1440, height: 900, compact: false },
   { name: "1920x1080", width: 1920, height: 1080, compact: false },
 ];
-
-async function mockPublicApi(page) {
-  await page.route("**/website/default**", async (route) => {
-    const url = new URL(route.request().url());
-    const locale = url.searchParams.get("locale") === "en" ? "en" : "fr";
-
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(portfolioOwner(locale)),
-    });
-  });
-
-  await page.route("**/analytics/events", (route) =>
-    route.fulfill({
-      status: 204,
-      body: "",
-    }),
-  );
-}
-
-async function openPortfolio(page) {
-  const response = page.waitForResponse((item) => {
-    const url = new URL(item.url());
-
-    return (
-      url.pathname.endsWith("/website/default")
-      && url.searchParams.get("locale") === "fr"
-      && item.status() === 200
-    );
-  });
-
-  await page.goto("/", {
-    waitUntil: "domcontentloaded",
-  });
-
-  await response;
-
-  await expect(page.locator("main#main-content")).toBeVisible();
-
-  await page.evaluate(async () => {
-    await document.fonts?.ready;
-  });
-}
 
 async function expectInsideViewport(locator, viewport) {
   await expect(locator).toBeVisible();
@@ -114,6 +70,7 @@ async function expectNoHorizontalOverflow(page, label) {
   ).toBeLessThanOrEqual(1);
 }
 
+
 for (const viewport of VIEWPORTS) {
   test(
     `@responsive ${viewport.name} conserve une mise en page stable`,
@@ -127,8 +84,7 @@ for (const viewport of VIEWPORTS) {
         reducedMotion: "reduce",
       });
 
-      await mockPublicApi(page);
-      await openPortfolio(page);
+      await openPortfolioContract(page, "fr");
 
       await expect(page.locator("html")).toHaveAttribute(
         "data-viewport",
