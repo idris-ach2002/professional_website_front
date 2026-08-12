@@ -41,6 +41,18 @@ export default defineConfig(({ mode }) => {
     },
     test: {
       globals: true,
+      // Unit files are isolated child processes; file-level parallelism stays
+      // enabled, but the reference worker count stays at the two-vCPU hosted floor
+      // so jsdom cannot oversubscribe a private-repository runner.
+      pool: 'forks',
+      isolate: true,
+      fileParallelism: true,
+      maxWorkers: Number(process.env.VITEST_WORKERS || 2),
+      sequence: {
+        concurrent: false,
+        hooks: 'stack',
+        setupFiles: 'list',
+      },
       environment: 'jsdom',
       environmentOptions: {
         jsdom: {
@@ -77,10 +89,10 @@ export default defineConfig(({ mode }) => {
         ],
         exclude: ['src/test/**', 'e2e/**'],
         thresholds: {
-          statements: 68,
-          branches: 50,
-          functions: 70,
-          lines: 75,
+          statements: 82,
+          branches: 70,
+          functions: 85,
+          lines: 84,
         },
       },
     },

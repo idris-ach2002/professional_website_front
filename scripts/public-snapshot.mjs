@@ -7,6 +7,8 @@ import { demoOwner } from "../src/data/demoPortfolio.js";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cacheDirectory = path.join(root, ".cache");
 const cachePath = path.join(cacheDirectory, "public-portfolio-snapshot.json");
+const HERMETIC_E2E_BUILD = process.env.E2E_HERMETIC_BUILD === "1";
+const HERMETIC_GENERATED_AT = "2000-01-01T00:00:00.000Z";
 
 function readEnvFiles() {
   const values = {};
@@ -121,6 +123,10 @@ function writeCachedSnapshot(snapshot) {
 }
 
 export function getPublicSiteUrl() {
+  if (HERMETIC_E2E_BUILD) {
+    return (process.env.VITE_PUBLIC_SITE_URL || "http://127.0.0.1:4173").replace(/\/$/, "");
+  }
+
   const fileEnv = readEnvFiles();
   const configured = process.env.PUBLIC_SITE_URL
     || process.env.VITE_PUBLIC_SITE_URL
@@ -131,6 +137,16 @@ export function getPublicSiteUrl() {
 }
 
 export async function loadPublicPortfolioSnapshot() {
+  if (HERMETIC_E2E_BUILD) {
+    return {
+      generatedAt: HERMETIC_GENERATED_AT,
+      source: "e2e-hermetic-demo",
+      apiBase: "",
+      fr: cloneDemoOwner("fr"),
+      en: cloneDemoOwner("en"),
+    };
+  }
+
   const fileEnv = readEnvFiles();
   const apiBase = normalizeApiBase(
     process.env.PUBLIC_API_BASE_URL
