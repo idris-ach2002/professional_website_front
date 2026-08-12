@@ -351,7 +351,6 @@ if (workflowFiles.length !== 1 || workflowFiles[0] !== "frontend-ci.yml") {
 for (const contract of [
   "runs-on: ubuntu-24.04",
   "Quality and hermetic E2E build",
-  "actions/upload-artifact@v4",
   "name: frontend-e2e-dist",
   "Browser contracts",
   "Responsive matrix",
@@ -366,6 +365,16 @@ for (const contract of [
 ]) {
   requireText(workflow, contract, `GitHub Actions contract missing: ${contract}.`);
 }
+for (const actionName of ["upload-artifact", "download-artifact"]) {
+  const majors = [...workflow.matchAll(new RegExp(`actions/${actionName}@v(\\d+)`, "g"))]
+    .map((match) => Number(match[1]));
+  if (majors.length === 0) {
+    errors.push(`GitHub Actions contract missing: actions/${actionName}.`);
+  } else if (majors.some((major) => !Number.isInteger(major) || major < 4)) {
+    errors.push(`GitHub Actions ${actionName} must use artifact protocol v4 or newer; found majors: ${majors.join(", ")}.`);
+  }
+}
+
 forbidText(workflow.split("  deploy:")[0], "VITE_E2E_RUNTIME_QUALITY:", "E2E runtime quality must not be a workflow-global env inherited by production.");
 forbidText(workflow.split("  deploy:")[0], "VITE_ANALYTICS_DISABLED:", "Analytics disabling must not be a workflow-global env inherited by production.");
 requireText(workflow, "E2E_ARTIFACT_REQUIRE_PREBUILT: \"1\"", "GitHub E2E jobs must reject missing/stale downloaded artifacts instead of rebuilding silently.");

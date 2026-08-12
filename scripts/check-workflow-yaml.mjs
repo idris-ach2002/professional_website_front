@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import yaml from "js-yaml";
+import * as yaml from "js-yaml";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const workflowDir = path.join(root, ".github/workflows");
@@ -17,7 +17,11 @@ for (const file of files) {
   const source = fs.readFileSync(path.join(workflowDir, file), "utf8");
   let document;
   try {
-    document = yaml.load(source);
+    const loadYaml = yaml.load ?? yaml.default?.load;
+    if (typeof loadYaml !== "function") {
+      throw new TypeError("js-yaml does not expose a load() parser.");
+    }
+    document = loadYaml(source);
   } catch (error) {
     errors.push(`${file}: YAML invalide: ${error.message}`);
     continue;
