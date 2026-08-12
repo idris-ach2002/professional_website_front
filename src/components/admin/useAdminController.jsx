@@ -6,6 +6,7 @@ import useAdminCrudActions from "./useAdminCrudActions";
 import useAdminJsonWorkspace from "./useAdminJsonWorkspace";
 import useAdminPortfolioCore from "./useAdminPortfolioCore";
 import useAdminSafetyActions from "./useAdminSafetyActions";
+import useAdminAsyncCoordinator from "./useAdminAsyncCoordinator";
 
 const adminCore = { ...adminCoreUtils, ...adminCoreUi };
 
@@ -70,6 +71,13 @@ export default function useAdminController() {
   const [portfolioRestoreLabel, setPortfolioRestoreLabel] = useState("Version restaurée depuis backup");
   const [adminActiveTab, setAdminActiveTab] = useState("version");
 
+  const asyncCoordinator = useAdminAsyncCoordinator({
+    setLoading,
+    setMessage,
+    setError,
+    setAuthStatus,
+  });
+
   const selectedVersion = useMemo(
     () => versions.find((version) => String(getEntityId(version)) === String(selectedVersionId)),
     [versions, selectedVersionId],
@@ -106,6 +114,7 @@ export default function useAdminController() {
     portfolioBackupUrl, setPortfolioBackupUrl, portfolioBackupJson, setPortfolioBackupJson,
     portfolioRestoreText, setPortfolioRestoreText, portfolioRestoreLabel, setPortfolioRestoreLabel,
     adminActiveTab, setAdminActiveTab, selectedVersion, selectedProject,
+    ...asyncCoordinator,
   };
 
   const portfolioCore = useAdminPortfolioCore(state);

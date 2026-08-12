@@ -4,6 +4,7 @@ import {
 
 import {
   apiRequest,
+  isAbortError,
   isAuthRequiredError,
   } from "../../services/authApi";
 import {
@@ -27,10 +28,10 @@ import {
 
 export default function useAdminPortfolioCore(ctx) {
   const {
-    setLoading,
-    setMessage,
     setError,
     setAuthStatus,
+    runAction,
+    runLatest,
     owners,
     setOwners,
     versions,
@@ -203,66 +204,44 @@ export default function useAdminPortfolioCore(ctx) {
     hydrateVersionForms(version);
   }
 
-  async function fetchOwners() {
-    const data = await apiRequest("GET", "/manager");
+  async function fetchOwners(signal) {
+    const data = await apiRequest("GET", "/manager", undefined, { signal });
     return Array.isArray(data) ? data : [];
   }
 
-  async function fetchVersions(ownerId) {
+  async function fetchVersions(ownerId, signal) {
     if (!ownerId) return [];
-    const data = await apiRequest("GET", `/manager/${ownerId}/versions`);
+    const data = await apiRequest("GET", `/manager/${ownerId}/versions`, undefined, { signal });
     return Array.isArray(data) ? data : [];
   }
 
-  async function fetchProjects(ownerId, versionId) {
+  async function fetchProjects(ownerId, versionId, signal) {
     if (!ownerId || !versionId) return [];
     const data = await apiRequest(
       "GET",
       `/manager/${ownerId}/versions/${versionId}/projects`,
+      undefined,
+      { signal },
     );
     return Array.isArray(data) ? data : [];
   }
 
-  async function runAction(action, successMessage) {
-    setLoading(true);
-    setError(null);
-    setMessage(null);
-
-    try {
-      const result = await action();
-      if (successMessage) setMessage(successMessage);
-      return result;
-    } catch (err) {
-      if (isAuthRequiredError(err)) {
-        setAuthStatus("login");
-        return null;
-      }
-
-      setError(err?.message ?? "Une erreur est survenue.");
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }
-
   async function refreshOwners({ selectLast = false } = {}) {
-    return runAction(async () => {
-      const ownerList = await fetchOwners();
-      setOwners(ownerList);
-
+    return runLatest("owners", async ({ signal, commit }) => {
+      const ownerList = await fetchOwners(signal);
       const targetOwner = selectLast ? ownerList.at(-1) : ownerList[0];
       const targetOwnerId = getEntityId(targetOwner);
+      const versionList = targetOwnerId ? await fetchVersions(targetOwnerId, signal) : [];
+      const activeVersion = versionList.find((version) => version.active);
+      const firstVersion = versionList[0];
 
-      setOwnerForm(hydrateOwnerForm(targetOwner));
-
-      if (targetOwnerId) {
-        setSelectedOwnerId(String(targetOwnerId));
-        const versionList = await fetchVersions(targetOwnerId);
+      commit(() => {
+        setOwners(ownerList);
+        setOwnerForm(hydrateOwnerForm(targetOwner));
+        setSelectedOwnerId(targetOwnerId ? String(targetOwnerId) : null);
         setVersions(versionList);
-        const activeVersion = versionList.find((version) => version.active);
-        const firstVersion = versionList[0];
         selectVersion(String(getEntityId(activeVersion ?? firstVersion ?? {})), versionList);
-      }
+      });
 
       return ownerList;
     }, "Owners chargés.");
@@ -274,18 +253,21 @@ export default function useAdminPortfolioCore(ctx) {
       return null;
     }
 
-    return runAction(async () => {
-      const versionList = await fetchVersions(ownerId);
-      setVersions(versionList);
+    return runLatest(`versions:${ownerId}`, async ({ signal, commit }) => {
+      const versionList = await fetchVersions(ownerId, signal);
       const preferredVersion = versionList.find(
         (version) => String(getEntityId(version)) === String(preferredVersionId),
       );
       const activeVersion = versionList.find((version) => version.active);
       const firstVersion = versionList[0];
-      selectVersion(
-        String(getEntityId(preferredVersion ?? activeVersion ?? firstVersion ?? {})),
-        versionList,
-      );
+
+      commit(() => {
+        setVersions(versionList);
+        selectVersion(
+          String(getEntityId(preferredVersion ?? activeVersion ?? firstVersion ?? {})),
+          versionList,
+        );
+      });
       return versionList;
     }, "Versions chargées.");
   }
@@ -296,25 +278,28 @@ export default function useAdminPortfolioCore(ctx) {
       return null;
     }
 
-    return runAction(async () => {
-      const projectList = await fetchProjects(selectedOwnerId, selectedVersionId);
-      setProjects(projectList);
-      setVersions((current) =>
-        current.map((version) =>
-          String(getEntityId(version)) === String(selectedVersionId)
-            ? { ...version, projects: projectList }
-            : version,
-        ),
-      );
+    return runLatest(`projects:${selectedOwnerId}:${selectedVersionId}`, async ({ signal, commit }) => {
+      const projectList = await fetchProjects(selectedOwnerId, selectedVersionId, signal);
+      const preferredProject = preferredProjectId
+        ? projectList.find((item) => String(getProjectId(item)) === String(preferredProjectId))
+        : null;
 
-      if (preferredProjectId) {
-        const project = projectList.find(
-          (item) => String(getProjectId(item)) === String(preferredProjectId),
+      commit(() => {
+        setProjects(projectList);
+        setVersions((current) =>
+          current.map((version) =>
+            String(getEntityId(version)) === String(selectedVersionId)
+              ? { ...version, projects: projectList }
+              : version,
+          ),
         );
-        if (project) selectProject(String(getProjectId(project)), projectList);
-      } else {
-        resetProjectForm(projectList);
-      }
+
+        if (preferredProject) {
+          selectProject(String(getProjectId(preferredProject)), projectList);
+        } else {
+          resetProjectForm(projectList);
+        }
+      });
 
       return projectList;
     }, "Projets chargés.");
@@ -332,35 +317,37 @@ export default function useAdminPortfolioCore(ctx) {
 
     if (!ownerId) return;
 
-    await runAction(async () => {
-      const versionList = await fetchVersions(ownerId);
-      setVersions(versionList);
+    await runLatest("owner-selection", async ({ signal, commit }) => {
+      const versionList = await fetchVersions(ownerId, signal);
       const activeVersion = versionList.find((version) => version.active);
       const firstVersion = versionList[0];
-      selectVersion(String(getEntityId(activeVersion ?? firstVersion ?? {})), versionList);
+      commit(() => {
+        setVersions(versionList);
+        selectVersion(String(getEntityId(activeVersion ?? firstVersion ?? {})), versionList);
+      });
     }, "Versions du owner chargées.");
   }
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
 
     async function loadInitialData() {
       setAuthStatus("checking");
       setError(null);
 
       try {
-        const ownerList = await fetchOwners();
-        if (cancelled) return;
+        const ownerList = await fetchOwners(controller.signal);
+        if (controller.signal.aborted) return;
 
         const firstOwner = ownerList[0];
         const firstOwnerId = getEntityId(firstOwner);
         let versionList = [];
 
         if (firstOwnerId) {
-          versionList = await fetchVersions(firstOwnerId);
+          versionList = await fetchVersions(firstOwnerId, controller.signal);
         }
 
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
 
         setOwners(ownerList);
         setOwnerForm(hydrateOwnerForm(firstOwner));
@@ -378,7 +365,7 @@ export default function useAdminPortfolioCore(ctx) {
 
         setAuthStatus("authenticated");
       } catch (err) {
-        if (cancelled) return;
+        if (controller.signal.aborted || isAbortError(err)) return;
 
         if (isAuthRequiredError(err)) {
           setAuthStatus("login");
@@ -393,7 +380,7 @@ export default function useAdminPortfolioCore(ctx) {
     loadInitialData();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
     // hydrateVersionForms must use the first payload from the initial admin bootstrap only.
     // eslint-disable-next-line react-hooks/exhaustive-deps

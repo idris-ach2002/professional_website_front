@@ -4,6 +4,8 @@ import {
   apiRequest,
   logoutAdmin,
   buildBackendUrl,
+  ownerEntityTag,
+  versionEntityTag,
   } from "../../services/authApi";
 import {
   emptyProfileFiles,
@@ -22,10 +24,11 @@ import {
 
 export default function useAdminCrudActions(ctx) {
   const {
-    setLoading,
     setMessage,
     setError,
+    owners,
     setOwners,
+    versions,
     setVersions,
     projects,
     setProjects,
@@ -33,6 +36,7 @@ export default function useAdminCrudActions(ctx) {
     setSelectedOwnerId,
     selectedVersionId,
     setSelectedVersionId,
+    selectedVersion,
     selectedProjectId,
     setSelectedProjectId,
     setProjectMode,
@@ -56,6 +60,7 @@ export default function useAdminCrudActions(ctx) {
     projectFiles,
     setProjectFiles,
     runAction,
+    runMutation,
     fetchOwners,
     refreshOwners,
     refreshVersions,
@@ -63,6 +68,18 @@ export default function useAdminCrudActions(ctx) {
     resetExperienceForm,
     selectExperience
   } = ctx;
+
+  function selectedOwnerIfMatch() {
+    const owner = owners.find((item) => String(getEntityId(item)) === String(selectedOwnerId));
+    return ownerEntityTag(owner);
+  }
+
+  function versionIfMatch(versionId = selectedVersionId) {
+    const version = String(versionId) === String(selectedVersionId)
+      ? selectedVersion
+      : versions.find((item) => String(getEntityId(item)) === String(versionId));
+    return versionEntityTag(version);
+  }
 
   async function buildProfilePayload() {
     const uploadedProfileImageUrl = await uploadFile(profileFiles.profileImage);
@@ -199,7 +216,7 @@ export default function useAdminCrudActions(ctx) {
   }
 
   async function createOwner() {
-    await runAction(async () => {
+    await runMutation(async () => {
       const payload = await buildOwnerPayload();
       await apiRequest("POST", "/manager", payload);
       await refreshOwners({ selectLast: true });
@@ -212,9 +229,11 @@ export default function useAdminCrudActions(ctx) {
       return;
     }
 
-    await runAction(async () => {
+    await runMutation(async () => {
       const payload = buildOwnerIdentityPayload();
-      await apiRequest("PUT", `/manager/${selectedOwnerId}`, payload);
+      await apiRequest("PUT", `/manager/${selectedOwnerId}`, payload, {
+        ifMatch: selectedOwnerIfMatch(),
+      });
 
       const ownerList = await fetchOwners();
       const updatedOwner = ownerList.find(
@@ -232,7 +251,7 @@ export default function useAdminCrudActions(ctx) {
       return;
     }
 
-    await runAction(async () => {
+    await runMutation(async () => {
       const payload = await buildVersionPayload({ includeContent: true });
       const createdVersion = await apiRequest(
         "POST",
@@ -249,7 +268,7 @@ export default function useAdminCrudActions(ctx) {
       return;
     }
 
-    await runAction(async () => {
+    await runMutation(async () => {
       const payload = await buildVersionPayload({ includeContent: false });
       const createdVersion = await apiRequest(
         "POST",
@@ -266,11 +285,12 @@ export default function useAdminCrudActions(ctx) {
       return;
     }
 
-    await runAction(async () => {
+    await runMutation(async () => {
       await apiRequest(
         "PUT",
         `/manager/${selectedOwnerId}/versions/${selectedVersionId}`,
         versionForm,
+        { ifMatch: versionIfMatch() },
       );
       await refreshVersions(selectedOwnerId, selectedVersionId);
     }, "Métadonnées de version mises à jour.");
@@ -282,10 +302,12 @@ export default function useAdminCrudActions(ctx) {
       return;
     }
 
-    await runAction(async () => {
+    await runMutation(async () => {
       await apiRequest(
         "PUT",
         `/manager/${selectedOwnerId}/versions/${versionId}/activate`,
+        undefined,
+        { ifMatch: versionIfMatch(versionId) },
       );
       await refreshVersions(selectedOwnerId, versionId);
     }, "Version activée.");
@@ -297,10 +319,12 @@ export default function useAdminCrudActions(ctx) {
       return;
     }
 
-    await runAction(async () => {
+    await runMutation(async () => {
       await apiRequest(
         "DELETE",
         `/manager/${selectedOwnerId}/versions/${versionId}`,
+        undefined,
+        { ifMatch: versionIfMatch(versionId) },
       );
       await refreshVersions(selectedOwnerId);
     }, "Version supprimée.");
@@ -312,12 +336,13 @@ export default function useAdminCrudActions(ctx) {
       return;
     }
 
-    await runAction(async () => {
+    await runMutation(async () => {
       const payload = await buildProfilePayload();
       await apiRequest(
         "PUT",
         `/manager/${selectedOwnerId}/versions/${selectedVersionId}/profile`,
         payload,
+        { ifMatch: versionIfMatch() },
       );
       setProfileForm(payload);
       setProfileFiles(emptyProfileFiles);
@@ -331,7 +356,7 @@ export default function useAdminCrudActions(ctx) {
       return;
     }
 
-    await runAction(async () => {
+    await runMutation(async () => {
       await apiRequest(
         "PUT",
         `/manager/${selectedOwnerId}/versions/${selectedVersionId}/timeline`,
@@ -339,6 +364,7 @@ export default function useAdminCrudActions(ctx) {
           ...timelineForm,
           experiences,
         },
+        { ifMatch: versionIfMatch() },
       );
       await refreshVersions(selectedOwnerId, selectedVersionId);
     }, "Timeline enregistrée.");
@@ -350,12 +376,13 @@ export default function useAdminCrudActions(ctx) {
       return;
     }
 
-    await runAction(async () => {
+    await runMutation(async () => {
       const payload = await buildProjectPayload();
       await apiRequest(
         "POST",
         `/manager/${selectedOwnerId}/versions/${selectedVersionId}/projects`,
         payload,
+        { ifMatch: versionIfMatch() },
       );
       setProjectFiles(emptyProjectFiles);
       await refreshVersions(selectedOwnerId, selectedVersionId);
@@ -368,12 +395,13 @@ export default function useAdminCrudActions(ctx) {
       return;
     }
 
-    await runAction(async () => {
+    await runMutation(async () => {
       const payload = await buildProjectPayload();
       const updatedProject = await apiRequest(
         "PUT",
         `/manager/${selectedOwnerId}/versions/${selectedVersionId}/projects/${selectedProjectId}`,
         payload,
+        { ifMatch: versionIfMatch() },
       );
       setProjectFiles(emptyProjectFiles);
       await refreshVersions(selectedOwnerId, selectedVersionId);
@@ -389,17 +417,19 @@ export default function useAdminCrudActions(ctx) {
       return;
     }
 
-    await runAction(async () => {
+    await runMutation(async () => {
       await apiRequest(
         "DELETE",
         `/manager/${selectedOwnerId}/versions/${selectedVersionId}/projects/${selectedProjectId}`,
+        undefined,
+        { ifMatch: versionIfMatch() },
       );
       await refreshVersions(selectedOwnerId, selectedVersionId);
     }, "Projet supprimé de la version.");
   }
 
   async function addExperienceLocally() {
-    await runAction(async () => {
+    await runMutation(async () => {
       const payload = await buildExperiencePayload();
       const next = normalizeExperienceOrder([...experiences, payload]);
       setExperiences(next);
@@ -413,7 +443,7 @@ export default function useAdminCrudActions(ctx) {
       return;
     }
 
-    await runAction(async () => {
+    await runMutation(async () => {
       const payload = await buildExperiencePayload();
       const next = experiences.map((item, index) => (index === selectedExperienceIndex ? payload : item));
       const normalizedNext = normalizeExperienceOrder(next);
@@ -475,19 +505,13 @@ export default function useAdminCrudActions(ctx) {
 
 
   async function handleLogout() {
-    setLoading(true);
-    setError(null);
-    setMessage(null);
-
-    try {
+    const loggedOut = await runAction(async () => {
       await logoutAdmin();
-      resetAdminState();
-      window.location.replace(buildBackendUrl("/login?logout"));
-    } catch (err) {
-      setError(err?.message ?? "Déconnexion impossible.");
-    } finally {
-      setLoading(false);
-    }
+      return true;
+    });
+    if (!loggedOut) return;
+    resetAdminState();
+    window.location.replace(buildBackendUrl("/login?logout"));
   }
 
   return {

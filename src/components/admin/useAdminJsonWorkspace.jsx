@@ -6,6 +6,8 @@ import {
   } from "../../utils/adminJsonImport";
 import {
   apiRequest,
+  ownerEntityTag,
+  versionEntityTag,
   } from "../../services/authApi";
 import {
   emptyExperienceForm,
@@ -14,7 +16,6 @@ import {
   emptyExperienceFiles,
   emptyProjectFiles,
   toArray,
-  getProjectId,
   normalizeDate,
   nullIfBlank,
   createEmptyContact,
@@ -28,15 +29,16 @@ import {
 export default function useAdminJsonWorkspace(ctx) {
   const {
     loading,
-    setLoading,
     setMessage,
     setError,
+    owners,
     setOwners,
     setVersions,
     projects,
     setProjects,
     selectedOwnerId,
     selectedVersionId,
+    selectedVersion,
     setSelectedProjectId,
     setProjectMode,
     ownerForm,
@@ -64,6 +66,7 @@ export default function useAdminJsonWorkspace(ctx) {
     jsonEditorError,
     setJsonEditorError,
     runAction,
+    runMutation,
     fetchOwners,
     fetchVersions,
     selectVersion
@@ -125,20 +128,12 @@ export default function useAdminJsonWorkspace(ctx) {
       return;
     }
 
-    setLoading(true);
-    setError(null);
-    setMessage(null);
-
-    try {
+    await runAction(async () => {
       const content = await jsonImportFile.text();
       const parsedPayload = JSON.parse(content);
       applyImportedPortfolioData(parsedPayload);
       setJsonImportFile(null);
-    } catch (err) {
-      setError(err?.message ?? "Import JSON impossible.");
-    } finally {
-      setLoading(false);
-    }
+    });
   }
 
   function importJsonFromText() {
@@ -443,59 +438,44 @@ export default function useAdminJsonWorkspace(ctx) {
 
     setJsonEditorError(null);
 
-    await runAction(async () => {
+    await runMutation(async () => {
+      const selectedOwner = owners.find((owner) => String(owner.ownerId) === String(selectedOwnerId));
+      const ownerIfMatch = ownerEntityTag(selectedOwner);
+      const versionIfMatch = versionEntityTag(selectedVersion);
+
+      // Replace the whole version snapshot in one transaction instead of issuing
+      // N delete/create project requests. This removes partial JSON imports and
+      // gives the backend one optimistic-concurrency boundary for the draft.
+      await apiRequest(
+        "PUT",
+        `/manager/${selectedOwnerId}/versions/${selectedVersionId}`,
+        {
+          ...normalized.versionForm,
+          prof: buildProfilePayloadFromData(normalized.profileForm),
+          timeline: {
+            ...normalized.timelineForm,
+            experiences: normalized.experiences,
+          },
+          projects: normalized.projects.map(buildProjectPayloadFromJsonProject),
+        },
+        { ifMatch: versionIfMatch },
+      );
+
       await apiRequest(
         "PUT",
         `/manager/${selectedOwnerId}`,
         buildOwnerIdentityPayloadFromData(normalized.ownerForm),
+        { ifMatch: ownerIfMatch },
       );
-
-      await apiRequest(
-        "PUT",
-        `/manager/${selectedOwnerId}/versions/${selectedVersionId}`,
-        normalized.versionForm,
-      );
-
-      await apiRequest(
-        "PUT",
-        `/manager/${selectedOwnerId}/versions/${selectedVersionId}/profile`,
-        buildProfilePayloadFromData(normalized.profileForm),
-      );
-
-      await apiRequest(
-        "PUT",
-        `/manager/${selectedOwnerId}/versions/${selectedVersionId}/timeline`,
-        {
-          ...normalized.timelineForm,
-          experiences: normalized.experiences,
-        },
-      );
-
-      const projectIdsToDelete = projects
-        .map(getProjectId)
-        .filter((projectId) => projectId !== null && projectId !== undefined);
-
-      for (const projectId of projectIdsToDelete) {
-        await apiRequest(
-          "DELETE",
-          `/manager/${selectedOwnerId}/versions/${selectedVersionId}/projects/${projectId}`,
-        );
-      }
-
-      for (const project of normalized.projects) {
-        await apiRequest(
-          "POST",
-          `/manager/${selectedOwnerId}/versions/${selectedVersionId}/projects`,
-          buildProjectPayloadFromJsonProject(project),
-        );
-      }
 
       applyNormalizedPortfolioData(normalized, { notify: false });
       setJsonEditorText(formatJsonPayload(parsedPayload));
       setJsonEditorOpened(false);
 
-      const ownerList = await fetchOwners();
-      const versionList = await fetchVersions(selectedOwnerId);
+      const [ownerList, versionList] = await Promise.all([
+        fetchOwners(),
+        fetchVersions(selectedOwnerId),
+      ]);
 
       setOwners(ownerList);
       setVersions(versionList);

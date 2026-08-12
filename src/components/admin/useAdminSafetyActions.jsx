@@ -2,6 +2,7 @@
 
 import {
   apiRequest,
+  versionEntityTag,
   } from "../../services/authApi";
 import {
   getEntityId,
@@ -13,6 +14,8 @@ export default function useAdminSafetyActions(ctx) {
     setError,
     selectedOwnerId,
     selectedVersionId,
+    selectedVersion,
+    versions,
     setPortfolioHealthReport,
     setPublishValidationReport,
     setPortfolioBackupUrl,
@@ -21,8 +24,16 @@ export default function useAdminSafetyActions(ctx) {
     setPortfolioRestoreText,
     portfolioRestoreLabel,
     runAction,
+    runMutation,
     refreshVersions
   } = ctx;
+
+  function versionIfMatch(versionId = selectedVersionId) {
+    const version = String(versionId) === String(selectedVersionId)
+      ? selectedVersion
+      : versions.find((item) => String(item.id) === String(versionId));
+    return versionEntityTag(version);
+  }
 
   async function runPortfolioHealthCheck() {
     if (!selectedOwnerId || !selectedVersionId) {
@@ -68,8 +79,13 @@ export default function useAdminSafetyActions(ctx) {
       return;
     }
 
-    await runAction(async () => {
-      await apiRequest("PUT", `/manager/${selectedOwnerId}/versions/${versionId}/activate-validated`);
+    await runMutation(async () => {
+      await apiRequest(
+        "PUT",
+        `/manager/${selectedOwnerId}/versions/${versionId}/activate-validated`,
+        undefined,
+        { ifMatch: versionIfMatch(versionId) },
+      );
       await refreshVersions(selectedOwnerId, versionId);
     }, "Version validée puis activée.");
   }
@@ -103,7 +119,7 @@ export default function useAdminSafetyActions(ctx) {
       return;
     }
 
-    const restored = await runAction(async () => {
+    const restored = await runMutation(async () => {
       const response = await apiRequest("POST", `/manager/${selectedOwnerId}/versions/backup/restore`, {
         backupJson: portfolioRestoreText,
         restoreLabel: portfolioRestoreLabel,
