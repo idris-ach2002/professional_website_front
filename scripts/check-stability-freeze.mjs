@@ -193,6 +193,15 @@ if (!stabilitySpec.includes('get: () => 4')) {
 if (!stabilitySpec.includes('await selectAnimationMode(page, "Complètes", "full");')) {
   errors.push("Full-world stability scenarios must explicitly activate the full animation profile.");
 }
+if (!stabilitySpec.includes('"data-performance-profile"')) {
+  errors.push("Animation mode changes must wait for the effective performance profile before continuing.");
+}
+const timelineScenario = stabilitySpec.match(
+  /test\("@stability garde la Timeline autonome[\s\S]*?\n}\);\n\ntest\(/,
+)?.[0] ?? "";
+if (timelineScenario.includes("jumpToSection(") || timelineScenario.includes("jumpToBiome(")) {
+  errors.push("Timeline stability must stop at its observable exit state instead of waiting for a deferred world gate.");
+}
 if (stabilitySpec.includes("page.waitForTimeout(")) {
   errors.push("Stability tests must use observable state or frame barriers instead of fixed sleeps.");
 }
@@ -204,6 +213,14 @@ if (!aquarium.includes("OCEAN_WORLD_RECONCILE_EVENT") || !aquarium.includes('dat
 }
 if (aquarium.includes("setInterval(selectViewportBiome")) {
   errors.push("World Director must not rely on periodic polling for biome correctness.");
+}
+if (/dataset\.oceanBiome\s*===\s*biome\)\s*delete\s+document\.documentElement\.dataset\.oceanBiome/.test(aquarium)) {
+  errors.push("Biome effect cleanup must not erase a newer synchronous World Director decision.");
+}
+const biomePublishIndex = aquarium.indexOf("document.documentElement.dataset.oceanBiome = nextBiome");
+const unchangedBiomeIndex = aquarium.indexOf("nextBiome === biomeRef.current");
+if (biomePublishIndex < 0 || unchangedBiomeIndex < 0 || biomePublishIndex > unchangedBiomeIndex) {
+  errors.push("World Director must synchronously reassert its marker before ignoring an unchanged biome.");
 }
 
 for (const anchor of [

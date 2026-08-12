@@ -72,6 +72,12 @@ function capturePageErrors(page) {
 }
 
 async function selectAnimationMode(page, label, expectedPreference) {
+  const expectedPerformanceMode = {
+    auto: "lite",
+    full: "full",
+    reduced: "lite",
+    off: "ultra-lite",
+  }[expectedPreference];
   const control = page.locator(".animation-preferences-control");
   const trigger = control.getByTestId("animation-preferences-trigger");
 
@@ -87,6 +93,10 @@ async function selectAnimationMode(page, label, expectedPreference) {
   await expect(page.locator("html")).toHaveAttribute(
     "data-animation-preference",
     expectedPreference,
+  );
+  await expect(page.locator("html")).toHaveAttribute(
+    "data-performance-profile",
+    expectedPerformanceMode,
   );
 }
 
@@ -325,13 +335,6 @@ test("@stability garde la Timeline autonome, révèle les cartes puis coupe la s
   await expect(timeline).toHaveAttribute("data-timeline-scene", "exiting");
   await expect(drone).toBeHidden();
   await expect(submarine).toBeHidden();
-
-  // This scenario validates the Timeline boundary, not WebGL lazy-load timing.
-  // The permanent caldera gate is therefore the deterministic navigation anchor.
-  await jumpToSection(
-    page,
-    "#ocean-transition-caldera",
-  );
 
   expect(
     pageErrors,

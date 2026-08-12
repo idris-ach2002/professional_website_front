@@ -294,13 +294,12 @@ export default function GlobalAquarium({
   }, [population]);
 
   useEffect(() => {
-    // A newer observer decision may be committed before React flushes an older
-    // state update. Never let a stale render move the observable world marker.
+    // The World Director publishes its observable marker synchronously.
+    // This effect only brings the rendered population to that decision.
     if (biome !== biomeRef.current) return undefined;
 
     const previousBiome = renderedBiomeRef.current;
     renderedBiomeRef.current = biome;
-    document.documentElement.dataset.oceanBiome = biome;
 
     const duration = previousBiome === biome ? 0.38 : resolveBiomeTransitionDuration(previousBiome, biome);
     const transitionName = `${previousBiome}-${biome}`;
@@ -333,7 +332,6 @@ export default function GlobalAquarium({
     return () => {
       window.clearTimeout(transitionTimerRef.current);
       if (document.documentElement.dataset.oceanTransition === transitionName) delete document.documentElement.dataset.oceanTransition;
-      if (document.documentElement.dataset.oceanBiome === biome) delete document.documentElement.dataset.oceanBiome;
     };
   }, [biome, population, rebuildPopulation]);
 
@@ -358,12 +356,13 @@ export default function GlobalAquarium({
     let verificationTimer = 0;
 
     const commitBiome = (nextBiome) => {
-      if (!nextBiome || nextBiome === biomeRef.current) return;
-      // Update the observable world marker immediately. React still owns the
-      // rendered state, while the ref prevents stale observer batches from
-      // winning during rapid jumps.
-      biomeRef.current = nextBiome;
+      if (!nextBiome) return;
+      // Reassert the observable decision even when the logical biome is
+      // unchanged. A React effect cleanup must never be able to leave the
+      // document without its current world marker.
       document.documentElement.dataset.oceanBiome = nextBiome;
+      if (nextBiome === biomeRef.current) return;
+      biomeRef.current = nextBiome;
       setBiome(nextBiome);
     };
 
@@ -474,6 +473,8 @@ export default function GlobalAquarium({
       window.clearTimeout(verificationTimer);
       outroVisibleRef.current = false;
       delete document.documentElement.dataset.oceanDirectorReady;
+      delete document.documentElement.dataset.oceanBiome;
+      delete document.documentElement.dataset.oceanTransition;
     };
   }, []);
 
