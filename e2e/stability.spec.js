@@ -100,6 +100,20 @@ async function selectAnimationMode(page, label, expectedPreference) {
   );
 }
 
+async function presetAnimationRuntime(page, { preference, paused }) {
+  await page.addInitScript(({ nextPreference, nextPaused }) => {
+    try {
+      window.localStorage.setItem("portfolio-animation-preference", nextPreference);
+      window.localStorage.setItem("portfolio-animation-paused", String(nextPaused));
+    } catch {
+      // Storage is optional in production; the hosted E2E origin supports it.
+    }
+  }, {
+    nextPreference: preference,
+    nextPaused: paused,
+  });
+}
+
 async function jumpToSection(page, selector, { align = "center", timeout = 10_000 } = {}) {
   const target = page.locator(selector);
   await expect(target).toBeAttached({ timeout });
@@ -383,8 +397,15 @@ test("@stability enchaîne les biomes du Living Ocean World sans dépendance au 
   await page.emulateMedia({ reducedMotion: "no-preference" });
   const pageErrors = capturePageErrors(page);
 
+  // Keep every full-world gate mounted while isolating World Director
+  // arbitration from the aquarium, volcano, transition and mine render loops.
+  // Active motion is covered independently by the Timeline and soak scenarios.
+  await presetAnimationRuntime(page, { preference: "full", paused: true });
   await openPortfolio(page, "fr");
-  await selectAnimationMode(page, "Complètes", "full");
+
+  await expect(page.locator("html")).toHaveAttribute("data-animation-preference", "full");
+  await expect(page.locator("html")).toHaveAttribute("data-performance-profile", "full");
+  await expect(page.locator("html")).toHaveAttribute("data-animation-state", "paused");
 
   await expect(page.locator(".ocean-world-canvas")).toBeAttached();
   await expect(page.locator(".ocean-transition-stage")).toBeAttached();

@@ -21,6 +21,25 @@ npm run ci:quality
 npm run ci:verify
 ```
 
+## Stabilité navigateur
+
+La suite `@stability` conserve un budget strict de 60 secondes par scénario,
+sans retry. En local, elle utilise jusqu’à six workers ; chaque shard GitHub est
+isolé sur un worker et répète son lot dix fois contre le même build de
+production.
+
+Le scénario du Living Ocean World démarre directement avec le profil complet
+et les animations en pause. Toutes les ancres et tous les biomes restent donc
+montés, tandis que l’arbitrage du World Director est testé séparément des
+boucles de rendu continues de l’aquarium, du volcan, des transitions et de la
+mine. Les animations actives restent couvertes par les scénarios Timeline et
+soak.
+
+```bash
+npm run test:e2e:stability:repeat
+npm run test:e2e:stability:ci -- --repeat-each=10
+```
+
 ## Validation SEO statique
 
 Un build local peut être exécuté sans `VITE_PUBLIC_SITE_URL`. Dans ce cas, le

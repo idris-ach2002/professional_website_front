@@ -202,6 +202,21 @@ const timelineScenario = stabilitySpec.match(
 if (timelineScenario.includes("jumpToSection(") || timelineScenario.includes("jumpToBiome(")) {
   errors.push("Timeline stability must stop at its observable exit state instead of waiting for a deferred world gate.");
 }
+const biomeScenario = stabilitySpec.match(
+  /test\("@stability enchaîne les biomes du Living Ocean World[\s\S]*?\n}\);\s*$/,
+)?.[0] ?? "";
+if (!biomeScenario.includes('presetAnimationRuntime(page, { preference: "full", paused: true })')) {
+  errors.push("Biome stability must mount the complete world while pausing unrelated continuous render loops.");
+}
+for (const marker of [
+  '"data-animation-preference", "full"',
+  '"data-performance-profile", "full"',
+  '"data-animation-state", "paused"',
+]) {
+  if (!biomeScenario.includes(marker)) {
+    errors.push(`Biome stability must verify its isolated full-world runtime marker: ${marker}.`);
+  }
+}
 if (stabilitySpec.includes("page.waitForTimeout(")) {
   errors.push("Stability tests must use observable state or frame barriers instead of fixed sleeps.");
 }
