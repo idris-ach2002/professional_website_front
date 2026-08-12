@@ -719,7 +719,7 @@ export default function OceanTransitionStage({ reducedMotion = false, performanc
       ref={canvasRef}
       className={`ocean-transition-stage${scene ? " is-active" : ""}`}
       data-cinematic={scene?.key ?? "idle"}
-      data-reveal-engine="cinematic-world-reveal-v21-25"
+      data-reveal-engine="cinematic-world-reveal"
       aria-hidden="true"
     />
   );

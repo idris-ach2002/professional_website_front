@@ -18,6 +18,15 @@ export const BIOME_ORDER = Object.freeze([
   OCEAN_BIOMES.OUTRO,
 ]);
 
+export const OCEAN_WORLD_ANCHOR_IDS = Object.freeze([
+  "profile",
+  "skills",
+  "ocean-transition-deep",
+  "ocean-transition-caldera",
+  "ocean-transition-projects",
+  "ocean-transition-outro",
+]);
+
 export const BIOME_PROFILES = Object.freeze({
   [OCEAN_BIOMES.SURFACE]: Object.freeze({
     currentStrength: 0.34,
@@ -324,6 +333,28 @@ export function biomeFromSectionId(id) {
   if (id === "ocean-transition-projects" || id === "projects") return OCEAN_BIOMES.PROJECTS;
   if (id === "ocean-transition-outro" || id === "ocean-outro") return OCEAN_BIOMES.OUTRO;
   return OCEAN_BIOMES.SURFACE;
+}
+
+export function resolveViewportBiome(anchors, currentBiome, focusY) {
+  const safeFocusY = Number.isFinite(focusY) ? focusY : 0;
+  const focusTolerance = 2;
+  const candidates = anchors
+    .filter((anchor) => OCEAN_WORLD_ANCHOR_IDS.includes(anchor?.id) && Number.isFinite(anchor?.top))
+    .map((anchor) => ({
+      id: anchor.id,
+      top: anchor.top,
+      biome: biomeFromSectionId(anchor.id),
+      order: OCEAN_WORLD_ANCHOR_IDS.indexOf(anchor.id),
+    }))
+    .sort((left, right) => left.top - right.top || left.order - right.order);
+
+  let winner = currentBiome;
+  for (const candidate of candidates) {
+    if (candidate.top > safeFocusY + focusTolerance) break;
+    winner = candidate.biome;
+  }
+
+  return winner;
 }
 
 export function resolveBiomeTransitionDuration(fromBiome, toBiome) {

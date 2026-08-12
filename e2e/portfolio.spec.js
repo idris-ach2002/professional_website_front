@@ -190,7 +190,7 @@ test("ne réintroduit pas le poisson de révélation dans le Parcours", async ({
   await openPortfolio(page, "fr");
 
   await expect(page.locator(".timeline-section .section-reveal-fish")).toHaveCount(0);
-  await expect(page.locator(".ocean-transition-stage")).toHaveAttribute("data-reveal-engine", "cinematic-world-reveal-v21-25");
+  await expect(page.locator(".ocean-transition-stage")).toHaveAttribute("data-reveal-engine", "cinematic-world-reveal");
 });
 
 test("@vitals respecte les budgets Web Vitals sur mobile", async ({ page, browserName }, testInfo) => {

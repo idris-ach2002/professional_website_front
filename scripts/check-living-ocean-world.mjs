@@ -14,6 +14,7 @@ const mine = read("src/components/TreasureMineField.jsx");
 const engine = read("src/ocean/oceanWorldEngine.js");
 const timings = read("src/ocean/oceanTransitionTimings.js");
 const runtimePolicy = read("src/ocean/oceanRuntimePolicy.js");
+const registration = read("src/ocean/oceanWorldRegistration.js");
 const rockfall = read("src/animations/volcanoRockfallEngine.js");
 const volcano = read("src/components/UnderwaterVolcanoField.jsx");
 const volcanoEngine = read("src/animations/volcanoSimulationEngine.js");
@@ -49,9 +50,10 @@ if (!engine.includes("resolveRareOceanEvent") || !aquarium.includes("drawRareEve
 for (const variant of ["descent", "caldera", "projects", "deep-projects", "crystal"]) {
   if (!bridge.includes(`${variant}:`) && !bridge.includes(`"${variant}":`)) errors.push(`Missing world gate variant: ${variant}.`);
 }
-for (const transitionId of ["ocean-transition-deep", "ocean-transition-caldera", "ocean-transition-projects", "ocean-transition-outro", "ocean-outro"]) {
-  if (!aquarium.includes(transitionId) && !footer.includes(transitionId)) errors.push(`Missing observed world hand-off: ${transitionId}.`);
+for (const transitionId of ["ocean-transition-deep", "ocean-transition-caldera", "ocean-transition-projects", "ocean-transition-outro"]) {
+  if (!engine.includes(transitionId)) errors.push(`Missing stable world hand-off anchor: ${transitionId}.`);
 }
+if (!footer.includes("ocean-outro")) errors.push("Missing final ocean world footer anchor.");
 if (!app.includes('<OceanWorldBridge variant="descent"') || !app.includes('<OceanWorldBridge variant="caldera"') || !app.includes('<OceanWorldBridge variant="projects"')) {
   errors.push("Desktop world flow must explicitly gate surface→deep→caldera→projects.");
 }
@@ -72,6 +74,15 @@ if (!aquarium.includes('rootMargin: "-48% 0px -48% 0px"') || !aquarium.includes(
 }
 if (!aquarium.includes('addEventListener("scrollend"')) {
   errors.push("OceanWorldDirector must retain low-frequency scrollend reconciliation for direct navigation.");
+}
+if (!registration.includes('OCEAN_WORLD_RECONCILE_EVENT = "portfolio:ocean-world-reconcile"')) {
+  errors.push("OceanWorldDirector must expose an explicit reconciliation event for deterministic programmatic navigation.");
+}
+if (!aquarium.includes("OCEAN_WORLD_RECONCILE_EVENT") || !aquarium.includes('dataset.oceanDirectorReady = "true"')) {
+  errors.push("OceanWorldDirector must publish readiness and process explicit reconciliation requests synchronously.");
+}
+if (aquarium.includes("setInterval(selectViewportBiome")) {
+  errors.push("OceanWorldDirector must not poll viewport geometry on a fixed interval.");
 }
 if (!transitionStage.includes("position") && !css.includes(".ocean-transition-stage")) {
   errors.push("Transition stage must be a fixed viewport cinematic layer.");
@@ -94,14 +105,14 @@ for (const sceneFunction of ["drawPressureDescent", "drawSeismicRift", "drawStat
 if (transitionStage.includes("drawSubmarine") || transitionStage.includes("drawFish")) {
   errors.push("World cinematics must not reveal the next universe with a crossing fish or vehicle.");
 }
-if (!transitionStage.includes('data-reveal-engine="cinematic-world-reveal-v21-25"')) {
-  errors.push("Transition stage must expose the V21.25 fast cinematic world-reveal engine marker.");
+if (!transitionStage.includes('data-reveal-engine="cinematic-world-reveal"')) {
+  errors.push("Transition stage must expose the cinematic world-reveal engine marker.");
 }
 if (!css.includes(".ocean-world-gate") || css.includes(".ocean-world-bridge{")) {
   errors.push("Legacy visible bridge bands must remain removed; only invisible gates are allowed.");
 }
 if (!projects.includes('data-project-world="research-station"') || !projects.includes("project-carousel-panel") || !projects.includes("ProjectVisual") || !projects.includes("project-gallery-shell")) {
-  errors.push("Projects must preserve the proven V21.19 carousel and its project cards.");
+  errors.push("Projects must preserve the established carousel and its project cards.");
 }
 if (projects.includes("project-world-backdrop") || projects.includes("resolveProjectWorldTheme")) {
   errors.push("Per-project viewport worlds must remain removed; only the global project-station background may change.");
@@ -116,7 +127,7 @@ if (!css.includes(".treasure-mine-footer") || !css.includes("min-height: clamp(3
   errors.push("Treasure mine must remain a compact footer rather than a full-height chapter.");
 }
 if (/ocean-ascent-vehicle|ascent-vehicle-silhouette|oceanVehicleAscent/.test(`${footer}\n${bridge}\n${css}`)) {
-  errors.push("Ascending project vehicles are forbidden in V21.22.");
+  errors.push("Ascending project vehicles are forbidden in the final world flow.");
 }
 
 if (!css.includes('html[data-ocean-cinematic] .global-aquarium .ocean-world-canvas')) {
@@ -170,4 +181,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log("Living Ocean World V22 OK: V21.25 visuals are frozen while transition timing, lazy-world registration, aquarium cadence and mine rendering are consolidated for runtime efficiency.");
+console.log("Living Ocean World contract OK: visuals are frozen while transition timing, stable world anchors, aquarium cadence and mine rendering remain performance-safe.");

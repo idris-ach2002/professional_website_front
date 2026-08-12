@@ -14,11 +14,62 @@ concurrency:
   group: frontend-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  VITE_PUBLIC_SITE_URL: http://127.0.0.1:4173
+
 jobs:
-  verify:
-    name: Quality, build and E2E
+  quality:
+    name: Quality and single production build
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests and coverage
+        run: npm run test:coverage
+
+      - name: Build once
+        run: npm run build
+
+      - name: Upload production build
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 2
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: coverage
+          if-no-files-found: ignore
+          retention-days: 14
+
+  functional:
+    name: Functional and responsive E2E
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PLAYWRIGHT_PREBUILT: "1"
+      PLAYWRIGHT_WORKERS: "2"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,27 +86,85 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium firefox
 
-      - name: Run V22 freeze
-        run: npm run ci:freeze
+      - name: Download production build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist
+
+      - name: Run functional tests
+        run: npm run test:e2e:functional
+
+      - name: Run responsive tests
+        run: npm run test:e2e:responsive
 
       - name: Upload browser reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-test-reports
+          name: frontend-functional-reports
           path: |
             playwright-report
             test-results
-            coverage
           if-no-files-found: ignore
           retention-days: 14
 
-  soak:
-    name: 60s runtime soak
-    needs: verify
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  stability:
+    name: Stability shard ${{ matrix.shard }}/6
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+    env:
+      PLAYWRIGHT_PREBUILT: "1"
+      PLAYWRIGHT_WORKERS: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox
+
+      - name: Download production build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist
+
+      - name: Run deterministic stability repetitions
+        run: npm run test:e2e:stability:ci -- --shard=${{ matrix.shard }}/6 --repeat-each=10
+
+      - name: Upload stability report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-stability-${{ matrix.shard }}
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
+  vitals:
+    name: Web Vitals
+    needs: quality
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    env:
+      PLAYWRIGHT_PREBUILT: "1"
+      PLAYWRIGHT_WORKERS: "1"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -71,6 +180,65 @@ jobs:
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
+
+      - name: Download production build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist
+
+      - name: Run Web Vitals
+        run: npm run test:e2e:vitals
+
+      - name: Upload Web Vitals report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-vitals-report
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
+  verify:
+    name: Frontend freeze gate
+    needs: [functional, stability, vitals]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm all quality gates
+        run: echo "Frontend quality, browser stability and Web Vitals gates passed."
+
+  soak:
+    name: Runtime soak
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      PLAYWRIGHT_PREBUILT: "1"
+      PLAYWRIGHT_WORKERS: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Download production build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist
 
       - name: Run soak
         run: npm run ci:soak

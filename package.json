@@ -22,7 +22,7 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
     "ci:quality": "npm run lint && npm run test:coverage && npm run build",
-    "ci:verify": "npm run ci:quality && npm run test:e2e",
+    "ci:verify": "npm run ci:quality && PLAYWRIGHT_PREBUILT=1 npm run test:e2e",
     "check:static-seo": "node scripts/check-static-seo.mjs",
     "check:performance": "node scripts/check-performance-budgets.mjs",
     "test:e2e:functional": "playwright test --grep-invert \"@vitals|@responsive|@stability|@soak\"",
@@ -31,7 +31,7 @@
     "test:e2e:responsive": "playwright test --project=chromium --grep @responsive",
     "check:timeline-motion": "node scripts/check-timeline-motion.mjs",
     "check:high-refresh": "node scripts/check-high-refresh.mjs",
-    "test:e2e:stability": "PLAYWRIGHT_WORKER_CAP=6 playwright test --grep @stability",
+    "test:e2e:stability": "PLAYWRIGHT_WORKER_CAP=6 playwright test --grep @stability --retries=0",
     "check:source-tree": "node scripts/check-source-tree.mjs",
     "check:stability-freeze": "node scripts/check-stability-freeze.mjs",
     "ci:freeze": "npm run ci:verify",
@@ -41,7 +41,10 @@
     "check:volcano-simulation": "node scripts/check-volcano-simulation.mjs",
     "check:living-ocean-world": "node scripts/check-living-ocean-world.mjs",
     "test:e2e:soak": "playwright test e2e/soak.spec.js --project=chromium --workers=1",
-    "ci:soak": "npm run test:e2e:soak"
+    "ci:soak": "npm run test:e2e:soak",
+    "test:e2e:stability:ci": "PLAYWRIGHT_WORKERS=1 PLAYWRIGHT_PREBUILT=1 playwright test --grep @stability --retries=0",
+    "test:e2e:stability:repeat": "PLAYWRIGHT_WORKER_CAP=6 playwright test --grep @stability --retries=0 --repeat-each=10",
+    "ci:stability:repeat": "npm run test:e2e:stability:repeat"
   },
   "dependencies": {
     "@mantine/core": "^9.0.0",
