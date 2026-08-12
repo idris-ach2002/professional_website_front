@@ -3,12 +3,12 @@
 ## Installation
 
 ```bash
-npm install
+nvm use 22.16.0
+npm ci
 npx playwright install chromium firefox
 ```
 
-`npm install` régénère aussi `package-lock.json` après l'ajout de Vitest et Playwright.
-Le lockfile régénéré doit être commité pour pouvoir remplacer ensuite `npm install` par `npm ci` dans la CI.
+Le runtime Node/npm est vérifié par `check:runtime-env` et le lockfile commité est la source de vérité pour `npm ci`.
 
 ## Commandes
 
@@ -21,52 +21,74 @@ npm run ci:quality
 npm run ci:verify
 ```
 
-## Stabilité navigateur
+## Stabilité navigateur et concurrence
 
-La suite `@stability` conserve un budget strict de 60 secondes par scénario,
-sans retry. En local, elle utilise jusqu’à six workers ; chaque shard GitHub est
-isolé sur un worker et répète son lot dix fois contre le même build de
-production.
+Les suites sont séparées par propriété afin qu’un test de performance ou
+d’endurance ne soit pas confondu avec un test fonctionnel :
 
-Le scénario du Living Ocean World démarre directement avec le profil complet
-et les animations en pause. Toutes les ancres et tous les biomes restent donc
-montés, tandis que l’arbitrage du World Director est testé séparément des
-boucles de rendu continues de l’aquarium, du volcan, des transitions et de la
-mine. Les animations actives restent couvertes par les scénarios Timeline et
-soak.
+```txt
+fonctionnel       → Chromium + Firefox, workers hardware-aware plafonnés à 2
+responsive        → Chromium, 9 viewports
+stability         → Chromium + Firefox, scénarios sans retry
+concurrency local → Chromium, 4 workers, repeat-each=5
+concurrency CI    → Chromium, 2 workers, repeat-each=5
+vitals            → Chromium, 1 worker
+soak manuel       → Chromium, 1 worker
+```
 
-Le soak démarre au contraire explicitement avec le profil complet et les
-animations actives. Il entre dans le volcan différé par le gate stable de la
-caldera, vérifie son montage, puis parcourt le monde pendant toute la durée du
-test. Ce profil explicite est nécessaire sur les runners CI à quatre cœurs,
-où le mode automatique sélectionne normalement le profil allégé sans volcan.
-
-Sa navigation utilise exclusivement les cinq gates structurels persistants ;
-la Timeline, le volcan, les projets et l’outro restent des objets contrôlés et
-ne sont jamais des cibles d’attente. Avant et après chaque déplacement, le test
-vérifie les pré/postconditions du runtime : route, profil, état du World
-Director, biome, unicité et ordre des gates, erreurs navigateur, géométrie,
-aquarium, cohérence FPS/qualité adaptative, volcan et canvas de la mine. Chaque
-accès DOM possède un budget court de trois secondes, afin qu’un élément perdu
-produise immédiatement un diagnostic ciblé au lieu d’absorber le timeout global
-du soak.
-
-Chaque déplacement est une transaction géométrique : le test neutralise
-temporairement le défilement fluide, converge vers la position exacte du gate,
-contrôle l’erreur de scroll et de centrage à deux pixels, demande une
-réconciliation synchrone du biome, puis restaure le comportement visuel normal.
-
-Le soak effectue une seule expédition contrôlée de la surface à l’outro, revient
-sur le monde des projets, puis laisse le site vivre sans aucune action injectée
-jusqu’à la fin de la minute. Les scans exhaustifs interviennent en précondition,
-après l’expédition et en postcondition. Un watchdog collecte en parallèle
-erreurs JavaScript, requêtes échouées, crash du renderer et fermeture prématurée
-de la page. Les sauts répétés et le stress de navigation restent couverts par
-la suite `@stability`.
+`ci:freeze` constitue la gate courte de référence. Le soak reste un diagnostic
+d’endurance volontaire : il ne bloque ni `ci:full` ni le déploiement GitHub.
 
 ```bash
-npm run test:e2e:stability:repeat
-npm run test:e2e:stability:ci -- --repeat-each=10
+npm run ci:freeze
+npm run ci:concurrency
+npm run ci:full
+SOAK_DURATION_MS=60000 npm run ci:soak
+```
+
+Les E2E utilisent un build hermétique unique et estampillé. En mode
+`PLAYWRIGHT_PREBUILT=1`, la signature SHA-256 du `dist` doit correspondre aux
+sources courantes ; un artefact périmé est refusé avant le démarrage du
+navigateur. Les accès réseau externes sont remplacés par des fixtures
+déterministes afin que Google Fonts, Cloudinary ou un backend distant ne
+puissent pas rendre un test aléatoire.
+
+Le contrat runtime commun surveille les erreurs JavaScript, les crashs, les
+requêtes réellement fatales et les accès réseau non autorisés. Les annulations
+propres au moteur navigateur (`ERR_ABORTED`, `NS_BINDING_ABORTED`, etc.) restent
+des diagnostics plutôt que des violations applicatives.
+
+## Concurrence de l’administration
+
+Les lectures admin susceptibles de se chevaucher suivent une politique
+**latest-wins** : chaque lane possède un `AbortController` et une génération.
+Une réponse ancienne ne peut modifier React qu’au travers d’un `commit()` qui
+vérifie encore que sa génération est courante. Les mutations sont sérialisées
+par un lane dédié afin d’éviter deux écritures simultanées depuis le même
+client.
+
+Le protocole HTTP complète cette protection :
+
+```txt
+GET owner/version
+  ↓
+rowVersion/contentRevision + ETag
+  ↓
+mutation admin avec If-Match
+  ├── révision courante → succès + nouvelle révision
+  └── révision périmée → ConcurrencyConflictError → rechargement requis
+```
+
+Le cache CSRF partage une seule requête réseau entre mutations concurrentes,
+mais l’annulation d’un consommateur n’annule pas le chargement du token pour
+les autres. Les panneaux analytics et traduction annulent également leurs
+requêtes devenues obsolètes ou leur travail long lors du démontage.
+
+Les contrats correspondants sont contrôlés par :
+
+```bash
+npm run check:admin-async
+npm run test:coverage
 ```
 
 ## Validation SEO statique
@@ -120,4 +142,4 @@ npm run check:responsive
 npm run test:e2e:responsive
 ```
 
-`npm run ci:verify` exécute désormais trois phases E2E séparées : fonctionnel, matrice responsive Chromium, puis Web Vitals Chromium isolés. La matrice V18 couvre 9 tailles de 360×800 à 1920×1080 et bloque tout débordement horizontal connu.
+`npm run ci:verify` exécute des phases E2E séparées : fonctionnel Chromium/Firefox, matrice responsive Chromium, stabilité Chromium/Firefox, puis Web Vitals Chromium isolés. La matrice V18 couvre 9 tailles de 360×800 à 1920×1080 et bloque tout débordement horizontal connu.
