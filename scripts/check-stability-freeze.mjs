@@ -222,6 +222,12 @@ const unchangedBiomeIndex = aquarium.indexOf("nextBiome === biomeRef.current");
 if (biomePublishIndex < 0 || unchangedBiomeIndex < 0 || biomePublishIndex > unchangedBiomeIndex) {
   errors.push("World Director must synchronously reassert its marker before ignoring an unchanged biome.");
 }
+if ((aquarium.match(/activeWorldDirectorOwner !== directorOwner/g) ?? []).length < 2) {
+  errors.push("A stale World Director cleanup must not erase markers owned by a replacement instance.");
+}
+if (!aquarium.includes("queueMicrotask(() =>")) {
+  errors.push("World Director marker cleanup must yield to a replacement mount before removing document state.");
+}
 
 for (const anchor of [
   '"ocean-transition-deep"',

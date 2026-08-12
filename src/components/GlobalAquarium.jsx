@@ -255,6 +255,8 @@ function collectMountedWorldTargets() {
   return targets;
 }
 
+let activeWorldDirectorOwner = null;
+
 export default function GlobalAquarium({
   isMobile = false,
   reducedMotion = false,
@@ -350,13 +352,14 @@ export default function GlobalAquarium({
   }, []);
 
   useEffect(() => {
+    const directorOwner = Symbol("ocean-world-director");
     const observed = new Set();
     const outroObserved = new Set();
     let verificationFrame = 0;
     let verificationTimer = 0;
 
     const commitBiome = (nextBiome) => {
-      if (!nextBiome) return;
+      if (!nextBiome || activeWorldDirectorOwner !== directorOwner) return;
       // Reassert the observable decision even when the logical biome is
       // unchanged. A React effect cleanup must never be able to leave the
       // document without its current world marker.
@@ -459,6 +462,7 @@ export default function GlobalAquarium({
     window.addEventListener(OCEAN_WORLD_MOUNTED_EVENT, handleWorldMounted);
     window.addEventListener(OCEAN_WORLD_RECONCILE_EVENT, handleExplicitReconcile);
     window.addEventListener("scrollend", handleScrollEnd, { passive: true });
+    activeWorldDirectorOwner = directorOwner;
     document.documentElement.dataset.oceanDirectorReady = "true";
     selectViewportBiome();
 
@@ -472,9 +476,16 @@ export default function GlobalAquarium({
       window.cancelAnimationFrame(verificationFrame);
       window.clearTimeout(verificationTimer);
       outroVisibleRef.current = false;
-      delete document.documentElement.dataset.oceanDirectorReady;
-      delete document.documentElement.dataset.oceanBiome;
-      delete document.documentElement.dataset.oceanTransition;
+      // React may mount a replacement director before an older effect cleanup
+      // is flushed. Defer document cleanup by one microtask and only let the
+      // instance that still owns the markers remove them.
+      queueMicrotask(() => {
+        if (activeWorldDirectorOwner !== directorOwner) return;
+        activeWorldDirectorOwner = null;
+        delete document.documentElement.dataset.oceanDirectorReady;
+        delete document.documentElement.dataset.oceanBiome;
+        delete document.documentElement.dataset.oceanTransition;
+      });
     };
   }, []);
 
