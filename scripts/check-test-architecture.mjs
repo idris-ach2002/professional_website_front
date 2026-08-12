@@ -58,6 +58,8 @@ for (const file of [
 const requiredScripts = [
   "ci:migrate",
   "check:runtime-env",
+  "check:repo-hygiene",
+  "package:source",
   "check:production-env",
   "check:workflow",
   "ci:preflight",
@@ -94,6 +96,7 @@ for (const script of requiredScripts) {
 requireText(packageJson.scripts?.build ?? "", "check:stability-freeze", "Production build must run the test-architecture freeze gate.");
 requireText(packageJson.scripts?.prebuild ?? "", "ci:migrate", "Prebuild must retire the known legacy CI workflow before architecture checks.");
 requireText(packageJson.scripts?.["ci:preflight"] ?? "", "check:runtime-env", "ci:preflight must fail fast on an unsupported Node/npm runtime.");
+requireText(packageJson.scripts?.["ci:preflight"] ?? "", "check:repo-hygiene", "ci:preflight must reject tracked secrets/generated artefacts.");
 requireText(packageJson.scripts?.["ci:preflight"] ?? "", "check:test-architecture", "ci:preflight must validate the test architecture on every standalone gate.");
 requireText(packageJson.scripts?.["ci:preflight"] ?? "", "test:workers", "ci:preflight must validate worker policy.");
 requireText(packageJson.scripts?.["ci:quality"] ?? "", "ci:preflight", "ci:quality must run the common preflight contract.");

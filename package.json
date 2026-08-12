@@ -52,7 +52,7 @@
     "test:e2e:soak:ci": "PLAYWRIGHT_SOAK=1 PLAYWRIGHT_WORKERS=1 playwright test e2e/soak.spec.js --project=chromium --workers=1",
     "test:e2e:concurrency:smoke": "PLAYWRIGHT_WORKERS=2 PLAYWRIGHT_STRESS=1 playwright test e2e/stability.spec.js --project=chromium --retries=0 --repeat-each=2",
     "ci:full": "npm run ci:freeze && npm run ci:concurrency",
-    "check:test-architecture": "npm run ci:migrate && npm run check:workflow && node scripts/check-test-architecture.mjs",
+    "check:test-architecture": "npm run ci:migrate && npm run check:workflow && npm run check:admin-async && npm run check:security-headers && node scripts/check-test-architecture.mjs",
     "test:e2e:browser:ci": "PLAYWRIGHT_WORKER_CAP=2 playwright test e2e/portfolio.spec.js e2e/stability.spec.js --grep-invert @vitals --retries=0",
     "test:leaks": "vitest run --detect-async-leaks --maxWorkers=2",
     "e2e:artifact:stamp": "node scripts/e2e-build-artifact.mjs write",
@@ -63,7 +63,11 @@
     "e2e:artifact:ensure": "node scripts/e2e-build-artifact.mjs ensure",
     "e2e:artifact:build": "E2E_HERMETIC_BUILD=1 VITE_E2E_RUNTIME_QUALITY=constrained VITE_ANALYTICS_DISABLED=true VITE_PUBLIC_SITE_URL=http://127.0.0.1:4173 VITE_API_BASE_URL=http://127.0.0.1:4173 VITE_USE_DIRECT_BACKEND=true VITE_UPLOAD_ENDPOINT=/uploads/ npm run build && E2E_HERMETIC_BUILD=1 VITE_E2E_RUNTIME_QUALITY=constrained VITE_ANALYTICS_DISABLED=true VITE_PUBLIC_SITE_URL=http://127.0.0.1:4173 VITE_API_BASE_URL=http://127.0.0.1:4173 VITE_USE_DIRECT_BACKEND=true VITE_UPLOAD_ENDPOINT=/uploads/ npm run e2e:artifact:stamp",
     "check:production-env": "node scripts/check-production-env.mjs",
-    "ci:preflight": "npm run check:runtime-env && npm run check:test-architecture && npm run test:workers"
+    "ci:preflight": "npm run check:runtime-env && npm run check:repo-hygiene && npm run check:test-architecture && npm run test:workers",
+    "check:admin-async": "node scripts/check-admin-async-architecture.mjs",
+    "check:security-headers": "node scripts/check-security-headers.mjs",
+    "check:repo-hygiene": "node scripts/check-repository-hygiene.mjs",
+    "package:source": "node scripts/package-source.mjs"
   },
   "dependencies": {
     "@mantine/core": "^9.0.0",
