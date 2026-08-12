@@ -15,6 +15,7 @@ const aquarium = read("src/components/GlobalAquarium.jsx");
 const cssCheck = read("scripts/check-css-architecture.mjs");
 const performanceCheck = read("scripts/check-performance-budgets.mjs");
 const stabilitySpec = read("e2e/stability.spec.js");
+const soakSpec = read("e2e/soak.spec.js");
 const workerPolicy = read("scripts/test-worker-policy.mjs");
 const ownerFixture = read("e2e/fixtures/owner.js");
 const workflow = read(".github/workflows/frontend-ci.yml");
@@ -219,6 +220,25 @@ for (const marker of [
 }
 if (stabilitySpec.includes("page.waitForTimeout(")) {
   errors.push("Stability tests must use observable state or frame barriers instead of fixed sleeps.");
+}
+for (const marker of [
+  'window.localStorage.setItem("portfolio-animation-preference", "full")',
+  'window.localStorage.setItem("portfolio-animation-paused", "false")',
+  '"data-performance-profile", "full"',
+  '"data-animation-state", "running"',
+]) {
+  if (!soakSpec.includes(marker)) {
+    errors.push(`Soak must explicitly exercise the active full-world runtime: ${marker}.`);
+  }
+}
+if (!soakSpec.includes('selector === "#ocean-transition-caldera"')) {
+  errors.push("Soak must enter the deferred volcano through its stable caldera gate.");
+}
+if (!soakSpec.includes('page.locator("#abyss-volcano-field")')) {
+  errors.push("Soak must verify that entering the caldera mounts the deferred volcano.");
+}
+if (soakSpec.includes('selectors = ["#profile", "#timeline", "#abyss-volcano-field"')) {
+  errors.push("Soak must not navigate through the deferred volcano before it is mounted.");
 }
 if (!oceanRegistration.includes('OCEAN_WORLD_RECONCILE_EVENT = "portfolio:ocean-world-reconcile"')) {
   errors.push("Ocean world registration must expose the explicit reconciliation event.");

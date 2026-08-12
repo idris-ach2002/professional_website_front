@@ -16,21 +16,35 @@ test.beforeEach(async ({ page }) => {
 test("@soak maintient le Living Ocean World stable pendant une session longue", async ({ page }) => {
   test.setTimeout(SOAK_DURATION_MS + 45_000);
   await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.addInitScript(() => {
+    try {
+      window.localStorage.setItem("portfolio-animation-preference", "full");
+      window.localStorage.setItem("portfolio-animation-paused", "false");
+    } catch {
+      // Storage is optional in production; the hosted E2E origin supports it.
+    }
+  });
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
 
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect(page.locator("main#main-content")).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("data-animation-preference", "full");
+  await expect(page.locator("html")).toHaveAttribute("data-performance-profile", "full");
+  await expect(page.locator("html")).toHaveAttribute("data-animation-state", "running");
+  await expect(page.locator("html")).toHaveAttribute("data-ocean-director-ready", "true");
 
-  const selectors = ["#profile", "#timeline", "#abyss-volcano-field", "#projects", "#ocean-outro", "#projects", "#timeline"];
+  const selectors = ["#profile", "#timeline", "#ocean-transition-caldera", "#projects", "#ocean-outro", "#projects", "#timeline"];
   const deadline = Date.now() + SOAK_DURATION_MS;
   let pass = 0;
 
   while (Date.now() < deadline) {
     const selector = selectors[pass % selectors.length];
     const target = page.locator(selector);
-    if (selector === "#abyss-volcano-field") await expect(target).toBeAttached({ timeout: 10_000 });
     await target.evaluate((element) => element.scrollIntoView({ block: "center", behavior: "auto" }));
+    if (selector === "#ocean-transition-caldera") {
+      await expect(page.locator("#abyss-volcano-field")).toBeAttached({ timeout: 10_000 });
+    }
     await page.waitForTimeout(110);
     pass += 1;
   }

@@ -35,6 +35,12 @@ boucles de rendu continues de l’aquarium, du volcan, des transitions et de la
 mine. Les animations actives restent couvertes par les scénarios Timeline et
 soak.
 
+Le soak démarre au contraire explicitement avec le profil complet et les
+animations actives. Il entre dans le volcan différé par le gate stable de la
+caldera, vérifie son montage, puis parcourt le monde pendant toute la durée du
+test. Ce profil explicite est nécessaire sur les runners CI à quatre cœurs,
+où le mode automatique sélectionne normalement le profil allégé sans volcan.
+
 ```bash
 npm run test:e2e:stability:repeat
 npm run test:e2e:stability:ci -- --repeat-each=10
