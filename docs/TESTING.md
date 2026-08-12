@@ -41,6 +41,29 @@ caldera, vérifie son montage, puis parcourt le monde pendant toute la durée du
 test. Ce profil explicite est nécessaire sur les runners CI à quatre cœurs,
 où le mode automatique sélectionne normalement le profil allégé sans volcan.
 
+Sa navigation utilise exclusivement les cinq gates structurels persistants ;
+la Timeline, le volcan, les projets et l’outro restent des objets contrôlés et
+ne sont jamais des cibles d’attente. Avant et après chaque déplacement, le test
+vérifie les pré/postconditions du runtime : route, profil, état du World
+Director, biome, unicité et ordre des gates, erreurs navigateur, géométrie,
+aquarium, cohérence FPS/qualité adaptative, volcan et canvas de la mine. Chaque
+accès DOM possède un budget court de trois secondes, afin qu’un élément perdu
+produise immédiatement un diagnostic ciblé au lieu d’absorber le timeout global
+du soak.
+
+Chaque déplacement est une transaction géométrique : le test neutralise
+temporairement le défilement fluide, converge vers la position exacte du gate,
+contrôle l’erreur de scroll et de centrage à deux pixels, demande une
+réconciliation synchrone du biome, puis restaure le comportement visuel normal.
+
+Le soak effectue une seule expédition contrôlée de la surface à l’outro, revient
+sur le monde des projets, puis laisse le site vivre sans aucune action injectée
+jusqu’à la fin de la minute. Les scans exhaustifs interviennent en précondition,
+après l’expédition et en postcondition. Un watchdog collecte en parallèle
+erreurs JavaScript, requêtes échouées, crash du renderer et fermeture prématurée
+de la page. Les sauts répétés et le stress de navigation restent couverts par
+la suite `@stability`.
+
 ```bash
 npm run test:e2e:stability:repeat
 npm run test:e2e:stability:ci -- --repeat-each=10

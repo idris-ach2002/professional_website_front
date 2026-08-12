@@ -1,4 +1,4 @@
-name: Frontend CI
+name: Frontend CI/CD
 
 on:
   push:
@@ -14,13 +14,10 @@ concurrency:
   group: frontend-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  VITE_PUBLIC_SITE_URL: http://127.0.0.1:4173
-
 jobs:
   quality:
-    name: Quality and single production build
-    runs-on: ubuntu-latest
+    name: Quality and hermetic E2E build
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -35,19 +32,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
+      - name: Lint, worker policy, unit tests, coverage and build
+        run: npm run ci:quality
 
-      - name: Unit tests and coverage
-        run: npm run test:coverage
-
-      - name: Build once
-        run: npm run build
-
-      - name: Upload production build
+      - name: Upload hermetic E2E build
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-dist
+          name: frontend-e2e-dist
           path: dist
           include-hidden-files: true
           if-no-files-found: error
@@ -62,14 +53,15 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-  functional:
-    name: Functional and responsive E2E
+  browser-contracts:
+    name: Browser contracts (Chromium + Firefox)
     needs: quality
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
       PLAYWRIGHT_PREBUILT: "1"
-      PLAYWRIGHT_WORKERS: "2"
+      E2E_ARTIFACT_REQUIRE_PREBUILT: "1"
+      PLAYWRIGHT_WORKER_CAP: "2"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -83,44 +75,38 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright browsers
+      - name: Install Chromium and Firefox
         run: npx playwright install --with-deps chromium firefox
 
-      - name: Download production build
+      - name: Download hermetic E2E build
         uses: actions/download-artifact@v4
         with:
-          name: frontend-dist
+          name: frontend-e2e-dist
           path: dist
 
-      - name: Run functional tests
-        run: npm run test:e2e:functional
+      - name: Run functional and stability browser contracts
+        run: npm run test:e2e:browser:ci
 
-      - name: Run responsive tests
-        run: npm run test:e2e:responsive
-
-      - name: Upload browser reports
+      - name: Upload browser contract report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-functional-reports
+          name: frontend-browser-contracts
           path: |
             playwright-report
             test-results
           if-no-files-found: ignore
           retention-days: 14
 
-  stability:
-    name: Stability shard ${{ matrix.shard }}/6
+  responsive:
+    name: Responsive matrix
     needs: quality
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2, 3, 4, 5, 6]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
     env:
       PLAYWRIGHT_PREBUILT: "1"
-      PLAYWRIGHT_WORKERS: "1"
+      E2E_ARTIFACT_REQUIRE_PREBUILT: "1"
+      PLAYWRIGHT_WORKER_CAP: "2"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -134,23 +120,69 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium firefox
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
 
-      - name: Download production build
+      - name: Download hermetic E2E build
         uses: actions/download-artifact@v4
         with:
-          name: frontend-dist
+          name: frontend-e2e-dist
           path: dist
 
-      - name: Run deterministic stability repetitions
-        run: npm run test:e2e:stability:ci -- --shard=${{ matrix.shard }}/6 --repeat-each=10
+      - name: Run responsive matrix
+        run: npm run test:e2e:responsive
 
-      - name: Upload stability report
+      - name: Upload responsive report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-stability-${{ matrix.shard }}
+          name: frontend-responsive-report
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
+  concurrency-contract:
+    name: Hosted concurrency contract
+    needs: quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PLAYWRIGHT_PREBUILT: "1"
+      E2E_ARTIFACT_REQUIRE_PREBUILT: "1"
+      PLAYWRIGHT_WORKERS: "2"
+      PLAYWRIGHT_STRESS: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Download hermetic E2E build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-e2e-dist
+          path: dist
+
+      - name: Exercise hosted-runner race invariants
+        run: npm run ci:concurrency:hosted
+
+      - name: Upload concurrency report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-concurrency-report
           path: |
             playwright-report
             test-results
@@ -160,10 +192,11 @@ jobs:
   vitals:
     name: Web Vitals
     needs: quality
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 12
     env:
       PLAYWRIGHT_PREBUILT: "1"
+      E2E_ARTIFACT_REQUIRE_PREBUILT: "1"
       PLAYWRIGHT_WORKERS: "1"
     steps:
       - name: Checkout
@@ -181,13 +214,13 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Download production build
+      - name: Download hermetic E2E build
         uses: actions/download-artifact@v4
         with:
-          name: frontend-dist
+          name: frontend-e2e-dist
           path: dist
 
-      - name: Run Web Vitals
+      - name: Run isolated Web Vitals
         run: npm run test:e2e:vitals
 
       - name: Upload Web Vitals report
@@ -203,21 +236,25 @@ jobs:
 
   verify:
     name: Frontend freeze gate
-    needs: [functional, stability, vitals]
-    runs-on: ubuntu-latest
+    needs: [browser-contracts, responsive, concurrency-contract, vitals]
+    runs-on: ubuntu-24.04
     steps:
-      - name: Confirm all quality gates
-        run: echo "Frontend quality, browser stability and Web Vitals gates passed."
+      - name: Confirm all gates
+        run: echo "Quality, browser, responsive, concurrency and Web Vitals contracts passed."
 
   soak:
-    name: Runtime soak
+    name: Runtime soak (manual diagnostic)
     needs: verify
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
     timeout-minutes: 12
     env:
       PLAYWRIGHT_PREBUILT: "1"
+      E2E_ARTIFACT_REQUIRE_PREBUILT: "1"
       PLAYWRIGHT_WORKERS: "1"
+      SOAK_DURATION_MS: "60000"
+      SOAK_HEARTBEAT_MS: "5000"
+      SOAK_STRUCTURE_EVERY: "3"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -234,10 +271,10 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Download production build
+      - name: Download hermetic E2E build
         uses: actions/download-artifact@v4
         with:
-          name: frontend-dist
+          name: frontend-e2e-dist
           path: dist
 
       - name: Run soak
@@ -253,3 +290,44 @@ jobs:
             test-results
           if-no-files-found: ignore
           retention-days: 14
+
+  deploy:
+    name: Deploy Cloudflare
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    environment: production
+    env:
+      VITE_PUBLIC_SITE_URL: ${{ vars.PUBLIC_SITE_URL }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PUBLIC_API_BASE_URL: ${{ vars.PUBLIC_API_BASE_URL }}
+      VITE_API_BASE_URL: ${{ vars.PUBLIC_API_BASE_URL }}
+      STATIC_SNAPSHOT_REQUIRED: "true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate production build environment
+        run: npm run check:production-env
+
+      - name: Build deployable snapshot from public backend
+        run: npm run build
+
+      - name: Deploy to Cloudflare
+        if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
+        run: npm run cf:deploy
+
+      - name: Skip deployment without secrets
+        if: env.CLOUDFLARE_API_TOKEN == '' || env.CLOUDFLARE_ACCOUNT_ID == ''
+        run: |
+          echo "Deployment skipped: Cloudflare secrets are not configured."
