@@ -187,6 +187,12 @@ if (!stabilitySpec.includes('"portfolio:ocean-world-reconcile"')) {
 if (!stabilitySpec.includes('"data-ocean-director-ready"')) {
   errors.push("Stability tests must wait for the World Director readiness marker before navigation.");
 }
+if (!stabilitySpec.includes('get: () => 4')) {
+  errors.push("Stability tests must emulate the four-core hosted-runner hardware class locally.");
+}
+if (!stabilitySpec.includes('await selectAnimationMode(page, "Complètes", "full");')) {
+  errors.push("Full-world stability scenarios must explicitly activate the full animation profile.");
+}
 if (stabilitySpec.includes("page.waitForTimeout(")) {
   errors.push("Stability tests must use observable state or frame barriers instead of fixed sleeps.");
 }

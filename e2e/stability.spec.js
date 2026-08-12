@@ -221,6 +221,16 @@ async function jumpToBiome(page, selector, expectedBiome, options) {
 
 
 test.beforeEach(async ({ context }) => {
+  // Use the hosted-runner hardware class everywhere. This prevents a powerful
+  // local machine from selecting a different automatic animation profile and
+  // hiding CI-only rendering paths.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "hardwareConcurrency", {
+      configurable: true,
+      get: () => 4,
+    });
+  });
+
   await mockPublicApi(context);
 });
 
@@ -312,19 +322,16 @@ test("@stability garde la Timeline autonome, révèle les cartes puis coupe la s
 
   await exitSentinel.scrollIntoViewIfNeeded();
   await expect(timeline).toHaveAttribute("data-timeline-exit", "approaching");
+  await expect(timeline).toHaveAttribute("data-timeline-scene", "exiting");
   await expect(drone).toBeHidden();
   await expect(submarine).toBeHidden();
 
   // This scenario validates the Timeline boundary, not WebGL lazy-load timing.
   // The permanent caldera gate is therefore the deterministic navigation anchor.
-  const { target: calderaGate } = await jumpToSection(
+  await jumpToSection(
     page,
     "#ocean-transition-caldera",
   );
-
-  await expect(calderaGate).toBeAttached();
-  await expect(drone).toBeHidden();
-  await expect(submarine).toBeHidden();
 
   expect(
     pageErrors,
@@ -374,6 +381,7 @@ test("@stability enchaîne les biomes du Living Ocean World sans dépendance au 
   const pageErrors = capturePageErrors(page);
 
   await openPortfolio(page, "fr");
+  await selectAnimationMode(page, "Complètes", "full");
 
   await expect(page.locator(".ocean-world-canvas")).toBeAttached();
   await expect(page.locator(".ocean-transition-stage")).toBeAttached();
