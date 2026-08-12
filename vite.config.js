@@ -74,6 +74,8 @@ export default defineConfig(({ mode }) => {
         // realistic; critical modules are raised incrementally as tests grow.
         include: [
           'src/services/portfolioApi.js',
+          'src/services/authApi.js',
+          'src/components/admin/useAdminAsyncCoordinator.js',
           'src/localization/LanguageProvider.jsx',
           'src/components/NotFoundPage.jsx',
           'src/performance/performanceMetrics.js',
