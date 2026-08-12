@@ -4,16 +4,43 @@ const API_BASE_URL = USE_DIRECT_BACKEND ? RAW_API_BASE_URL : "";
 const UPLOAD_ENDPOINT = import.meta.env.VITE_UPLOAD_ENDPOINT ?? "/uploads/";
 
 let csrfTokenCache = null;
+let csrfTokenInFlight = null;
 
-export class AuthRequiredError extends Error {
+export class ApiError extends Error {
+  constructor(message, { status = 0, code = null, details = null, requestId = null } = {}) {
+    super(message || "Action impossible.");
+    this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+    this.details = details;
+    this.requestId = requestId;
+  }
+}
+
+export class AuthRequiredError extends ApiError {
   constructor(message = "Connexion requise.") {
-    super(message);
+    super(message, { status: 401, code: "AUTH_REQUIRED" });
     this.name = "AuthRequiredError";
+  }
+}
+
+export class ConcurrencyConflictError extends ApiError {
+  constructor(message = "Ces données ont été modifiées ailleurs. Recharge les données avant de réessayer.", options = {}) {
+    super(message, options);
+    this.name = "ConcurrencyConflictError";
   }
 }
 
 export function isAuthRequiredError(error) {
   return error instanceof AuthRequiredError || error?.name === "AuthRequiredError";
+}
+
+export function isConcurrencyConflictError(error) {
+  return error instanceof ConcurrencyConflictError || error?.name === "ConcurrencyConflictError";
+}
+
+export function isAbortError(error) {
+  return error?.name === "AbortError" || error?.code === "ABORT_ERR";
 }
 
 function buildApiUrl(path) {
@@ -25,8 +52,23 @@ export function buildBackendUrl(path) {
   return buildApiUrl(path);
 }
 
+export function versionEntityTag(versionOrId, revision) {
+  const id = typeof versionOrId === "object" ? versionOrId?.id : versionOrId;
+  const value = typeof versionOrId === "object" ? versionOrId?.contentRevision : revision;
+  if (id === null || id === undefined || value === null || value === undefined) return null;
+  return `"version-${id}-${value}"`;
+}
+
+export function ownerEntityTag(ownerOrId, revision) {
+  const id = typeof ownerOrId === "object" ? ownerOrId?.ownerId : ownerOrId;
+  const value = typeof ownerOrId === "object" ? ownerOrId?.rowVersion : revision;
+  if (id === null || id === undefined || value === null || value === undefined) return null;
+  return `"owner-${id}-${value}"`;
+}
+
 function invalidateCsrfToken() {
   csrfTokenCache = null;
+  csrfTokenInFlight = null;
 }
 
 function isUnsafeMethod(method) {
@@ -61,36 +103,65 @@ function isLoginResponse(response, text, contentType) {
   return landedOnLogin || htmlLoginPage;
 }
 
-export async function getCsrfToken(forceRefresh = false) {
-  if (csrfTokenCache && !forceRefresh) return csrfTokenCache;
-
+async function requestCsrfToken() {
   const response = await fetch(buildApiUrl("/csrf"), {
     method: "GET",
     credentials: "include",
     redirect: "manual",
-    headers: {
-      Accept: "application/json",
-    },
+    headers: { Accept: "application/json" },
   });
 
   const { contentType, data, text } = await readResponse(response);
-
   if (isLoginResponse(response, text, contentType) || response.status === 401 || response.status === 403) {
     invalidateCsrfToken();
     throw new AuthRequiredError();
   }
-
   if (!response.ok || !data?.token) {
-    throw new Error("Action impossible.");
+    throw new ApiError(data?.message ?? "Impossible d’obtenir le jeton CSRF.", {
+      status: response.status,
+      code: data?.code ?? "CSRF_UNAVAILABLE",
+      requestId: data?.requestId ?? response.headers.get("X-Request-ID"),
+    });
   }
-
-  csrfTokenCache = {
+  return {
     token: data.token,
     headerName: data.headerName ?? "X-CSRF-TOKEN",
     parameterName: data.parameterName ?? "_csrf",
   };
+}
 
-  return csrfTokenCache;
+function waitForPromiseWithSignal(promise, signal) {
+  if (!signal) return promise;
+  if (signal.aborted) return Promise.reject(new DOMException("Aborted", "AbortError"));
+
+  return new Promise((resolve, reject) => {
+    const abort = () => reject(new DOMException("Aborted", "AbortError"));
+    signal.addEventListener("abort", abort, { once: true });
+    promise.then(resolve, reject).finally(() => signal.removeEventListener("abort", abort));
+  });
+}
+
+export function resetAuthSessionCache() {
+  invalidateCsrfToken();
+}
+
+export async function getCsrfToken(forceRefresh = false, signal) {
+  if (csrfTokenCache && !forceRefresh) return csrfTokenCache;
+  if (forceRefresh) csrfTokenCache = null;
+
+  // Deduplicate concurrent unsafe mutations. A single CSRF round-trip is enough
+  // for every request waiting in the same authenticated session.
+  if (!csrfTokenInFlight) {
+    csrfTokenInFlight = requestCsrfToken()
+      .then((token) => {
+        csrfTokenCache = token;
+        return token;
+      })
+      .finally(() => {
+        csrfTokenInFlight = null;
+      });
+  }
+  return waitForPromiseWithSignal(csrfTokenInFlight, signal);
 }
 
 async function parseApiResponse(response) {
@@ -102,13 +173,22 @@ async function parseApiResponse(response) {
   }
 
   if (!response.ok) {
-    throw new Error(data?.message ?? "Action impossible.");
+    const options = {
+      status: response.status,
+      code: data?.code ?? null,
+      details: data?.details ?? null,
+      requestId: data?.requestId ?? response.headers.get("X-Request-ID"),
+    };
+    const message = data?.message ?? `Action impossible (HTTP ${response.status}).`;
+    if (response.status === 409 || response.status === 412 || response.status === 428) {
+      throw new ConcurrencyConflictError(message, options);
+    }
+    throw new ApiError(message, options);
   }
 
   if (!text) return null;
   if (contentType.includes("application/json")) return data;
-
-  throw new Error("Action impossible.");
+  throw new ApiError("Réponse API inattendue.", { status: response.status });
 }
 
 export async function apiRequest(method, path, body, options = {}) {
@@ -116,14 +196,14 @@ export async function apiRequest(method, path, body, options = {}) {
   const shouldSendBody = body !== undefined && body !== null;
   const headers = {
     Accept: "application/json",
+    ...(options.headers ?? {}),
   };
 
-  if (shouldSendBody) {
-    headers["Content-Type"] = "application/json";
-  }
+  if (shouldSendBody) headers["Content-Type"] = "application/json";
+  if (options.ifMatch) headers["If-Match"] = options.ifMatch;
 
   if (isUnsafeMethod(methodUpper)) {
-    const csrf = await getCsrfToken(options.forceCsrfRefresh);
+    const csrf = await getCsrfToken(options.forceCsrfRefresh, options.signal);
     headers[csrf.headerName] = csrf.token;
   }
 
@@ -133,6 +213,7 @@ export async function apiRequest(method, path, body, options = {}) {
     redirect: "manual",
     headers,
     body: shouldSendBody ? JSON.stringify(body) : undefined,
+    signal: options.signal,
   });
 
   try {
@@ -140,9 +221,8 @@ export async function apiRequest(method, path, body, options = {}) {
   } catch (error) {
     if (isAuthRequiredError(error) && isUnsafeMethod(methodUpper) && !options.forceCsrfRefresh) {
       invalidateCsrfToken();
-      return apiRequest(methodUpper, path, body, { forceCsrfRefresh: true });
+      return apiRequest(methodUpper, path, body, { ...options, forceCsrfRefresh: true });
     }
-
     throw error;
   }
 }
@@ -153,7 +233,7 @@ export async function uploadProtectedFile(file, options = {}) {
   const formData = new FormData();
   formData.append("file", file);
 
-  const csrf = await getCsrfToken(options.forceCsrfRefresh);
+  const csrf = await getCsrfToken(options.forceCsrfRefresh, options.signal);
   const response = await fetch(buildApiUrl(UPLOAD_ENDPOINT), {
     method: "POST",
     credentials: "include",
@@ -163,6 +243,7 @@ export async function uploadProtectedFile(file, options = {}) {
       [csrf.headerName]: csrf.token,
     },
     body: formData,
+    signal: options.signal,
   });
 
   try {
@@ -170,17 +251,15 @@ export async function uploadProtectedFile(file, options = {}) {
   } catch (error) {
     if (isAuthRequiredError(error) && !options.forceCsrfRefresh) {
       invalidateCsrfToken();
-      return uploadProtectedFile(file, { forceCsrfRefresh: true });
+      return uploadProtectedFile(file, { ...options, forceCsrfRefresh: true });
     }
-
     throw error;
   }
 }
 
-export async function logoutAdmin() {
+export async function logoutAdmin(options = {}) {
   try {
-    const csrf = await getCsrfToken();
-
+    const csrf = await getCsrfToken(false, options.signal);
     await fetch(buildApiUrl("/logout"), {
       method: "POST",
       credentials: "include",
@@ -189,6 +268,7 @@ export async function logoutAdmin() {
         Accept: "text/html, */*;q=0.8",
         [csrf.headerName]: csrf.token,
       },
+      signal: options.signal,
     });
   } finally {
     invalidateCsrfToken();

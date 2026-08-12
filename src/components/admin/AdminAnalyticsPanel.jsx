@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Badge, Button, Card, Group, Loader, Paper, SimpleGrid, Stack, Table, Text, TextInput, Title } from "@mantine/core";
-import { apiRequest, isAuthRequiredError } from "../../services/authApi";
+import { apiRequest, isAbortError, isAuthRequiredError } from "../../services/authApi";
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -13,11 +13,11 @@ function addDays(date, days) {
 }
 
 
-async function fetchAnalyticsSummary(from, to) {
+async function fetchAnalyticsSummary(from, to, signal) {
   const params = new URLSearchParams({ recentLimit: "80" });
   if (from) params.set("from", from);
   if (to) params.set("to", to);
-  return apiRequest("GET", `/manager/analytics/summary?${params.toString()}`);
+  return apiRequest("GET", `/manager/analytics/summary?${params.toString()}`, null, { signal });
 }
 
 function formatDateTime(value) {
@@ -73,53 +73,45 @@ export default function AdminAnalyticsPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const initialRangeRef = useRef({ from, to });
+  const requestRef = useRef(null);
 
   const dailyMax = useMemo(
     () => Math.max(...(summary?.dailyVisits ?? []).map((item) => item.pageViews ?? 0), 1),
     [summary?.dailyVisits],
   );
 
-  async function loadAnalytics() {
+  const loadAnalyticsRange = useCallback(async (rangeFrom, rangeTo) => {
+    requestRef.current?.abort();
+    const controller = new AbortController();
+    requestRef.current = controller;
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchAnalyticsSummary(from, to);
-      setSummary(data);
+      const data = await fetchAnalyticsSummary(rangeFrom, rangeTo, controller.signal);
+      if (!controller.signal.aborted && requestRef.current === controller) setSummary(data);
     } catch (loadError) {
+      if (isAbortError(loadError)) return;
+      if (requestRef.current !== controller) return;
       if (isAuthRequiredError(loadError)) {
         setError("Connexion admin requise pour consulter les analytics.");
       } else {
         setError(loadError?.message ?? "Impossible de charger les analytics.");
       }
     } finally {
-      setLoading(false);
+      if (requestRef.current === controller) {
+        requestRef.current = null;
+        setLoading(false);
+      }
     }
-  }
+  }, []);
+
+  const loadAnalytics = useCallback(() => loadAnalyticsRange(from, to), [from, loadAnalyticsRange, to]);
 
   useEffect(() => {
-    let cancelled = false;
     const initialRange = initialRangeRef.current;
-
-    fetchAnalyticsSummary(initialRange.from, initialRange.to)
-      .then((data) => {
-        if (!cancelled) setSummary(data);
-      })
-      .catch((loadError) => {
-        if (cancelled) return;
-        if (isAuthRequiredError(loadError)) {
-          setError("Connexion admin requise pour consulter les analytics.");
-        } else {
-          setError(loadError?.message ?? "Impossible de charger les analytics.");
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    loadAnalyticsRange(initialRange.from, initialRange.to);
+    return () => requestRef.current?.abort();
+  }, [loadAnalyticsRange]);
 
   return (
     <TabsPanelShell>

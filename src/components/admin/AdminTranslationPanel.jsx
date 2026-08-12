@@ -14,7 +14,8 @@ import {
   Textarea,
   Title,
 } from "@mantine/core";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { isAbortError } from "../../services/authApi";
 import {
   autoTranslateBundle,
   fetchTranslationBundle,
@@ -89,6 +90,9 @@ export default function AdminTranslationPanel() {
   const [error, setError] = useState("");
   const [onlyMissingOrStale, setOnlyMissingOrStale] = useState(true);
   const [publishAfterBulk, setPublishAfterBulk] = useState(false);
+  const actionControllerRef = useRef(null);
+  const bulkControllerRef = useRef(null);
+
   const [bulkState, setBulkState] = useState({
     running: false,
     current: 0,
@@ -98,22 +102,22 @@ export default function AdminTranslationPanel() {
     failures: [],
   });
 
-  const refreshCatalog = useCallback(async () => {
-    const result = await fetchTranslationCatalog(TARGET_LOCALE);
+  const refreshCatalog = useCallback(async (options = {}) => {
+    const result = await fetchTranslationCatalog(TARGET_LOCALE, options);
     const normalized = result ?? [];
     setCatalog(normalized);
     return normalized;
   }, []);
 
   useEffect(() => {
-    let active = true;
+    const controller = new AbortController();
 
     Promise.all([
-      fetchTranslationProviderHealth(),
-      fetchTranslationCatalog(TARGET_LOCALE),
+      fetchTranslationProviderHealth({ signal: controller.signal }),
+      fetchTranslationCatalog(TARGET_LOCALE, { signal: controller.signal }),
     ])
       .then(([provider, items]) => {
-        if (!active) return;
+        if (controller.signal.aborted) return;
         const normalizedItems = items ?? [];
         const initialItem = normalizedItems.find((item) => item.contentType === "PROJECT")
           ?? normalizedItems[0]
@@ -129,42 +133,39 @@ export default function AdminTranslationPanel() {
         }
       })
       .catch((cause) => {
-        if (active) {
-          setError(cause?.message ?? "Impossible de charger les traductions.");
-        }
+        if (!isAbortError(cause)) setError(cause?.message ?? "Impossible de charger les traductions.");
       })
       .finally(() => {
-        if (active) setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       });
 
-    return () => {
-      active = false;
-    };
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => () => {
+    actionControllerRef.current?.abort();
+    bulkControllerRef.current?.abort();
   }, []);
 
   useEffect(() => {
     const parsed = parseEntryValue(selected);
     if (!parsed) return undefined;
 
-    let active = true;
-    fetchTranslationBundle(parsed.contentType, parsed.contentKey, TARGET_LOCALE)
+    const controller = new AbortController();
+    fetchTranslationBundle(parsed.contentType, parsed.contentKey, TARGET_LOCALE, { signal: controller.signal })
       .then((result) => {
-        if (!active) return;
+        if (controller.signal.aborted) return;
         setBundle(result);
         setDraft(result?.translatedFields ?? {});
       })
       .catch((cause) => {
-        if (active) {
-          setError(cause?.message ?? "Impossible de charger cette traduction.");
-        }
+        if (!isAbortError(cause)) setError(cause?.message ?? "Impossible de charger cette traduction.");
       })
       .finally(() => {
-        if (active) setBundleLoading(false);
+        if (!controller.signal.aborted) setBundleLoading(false);
       });
 
-    return () => {
-      active = false;
-    };
+    return () => controller.abort();
   }, [selected]);
 
   const catalogByType = CONTENT_TABS.reduce((result, tab) => {
@@ -205,25 +206,38 @@ export default function AdminTranslationPanel() {
     }
   };
 
+  const beginAction = () => {
+    actionControllerRef.current?.abort();
+    const controller = new AbortController();
+    actionControllerRef.current = controller;
+    return controller;
+  };
+
   const runPreview = async () => {
     if (!bundle?.sourceFields) return;
+    const controller = beginAction();
     setWorking(true);
     setError("");
     setMessage("");
     try {
-      const result = await previewTranslation(bundle.sourceFields, "fr", TARGET_LOCALE);
+      const result = await previewTranslation(bundle.sourceFields, "fr", TARGET_LOCALE, { signal: controller.signal });
+      if (controller.signal.aborted) return;
       setDraft(result?.translatedFields ?? {});
       setMessage("Proposition LibreTranslate générée. Relis et corrige avant publication.");
     } catch (cause) {
-      setError(cause?.message ?? "LibreTranslate est indisponible.");
+      if (!isAbortError(cause)) setError(cause?.message ?? "LibreTranslate est indisponible.");
     } finally {
-      setWorking(false);
+      if (actionControllerRef.current === controller) {
+        actionControllerRef.current = null;
+        setWorking(false);
+      }
     }
   };
 
   const persist = async (status) => {
     const parsed = parseEntryValue(selected);
     if (!parsed) return;
+    const controller = beginAction();
     setWorking(true);
     setError("");
     setMessage("");
@@ -234,16 +248,22 @@ export default function AdminTranslationPanel() {
         draft,
         status,
         TARGET_LOCALE,
+        { signal: controller.signal },
       );
+      if (controller.signal.aborted) return;
       setBundle(result);
-      await refreshCatalog();
+      await refreshCatalog({ signal: controller.signal });
+      if (controller.signal.aborted) return;
       setMessage(status === "PUBLISHED"
         ? "Traduction publiée. Le site public anglais la servira depuis PostgreSQL."
         : "Brouillon enregistré.");
     } catch (cause) {
-      setError(cause?.message ?? "Impossible d’enregistrer la traduction.");
+      if (!isAbortError(cause)) setError(cause?.message ?? "Impossible d’enregistrer la traduction.");
     } finally {
-      setWorking(false);
+      if (actionControllerRef.current === controller) {
+        actionControllerRef.current = null;
+        setWorking(false);
+      }
     }
   };
 
@@ -268,6 +288,10 @@ export default function AdminTranslationPanel() {
       );
       if (!confirmed) return;
     }
+
+    bulkControllerRef.current?.abort();
+    const controller = new AbortController();
+    bulkControllerRef.current = controller;
 
     setError("");
     setMessage("");
@@ -300,19 +324,23 @@ export default function AdminTranslationPanel() {
           item.contentKey,
           targetStatus,
           TARGET_LOCALE,
+          { signal: controller.signal },
         );
+        if (controller.signal.aborted) return;
         successes += 1;
         if (entryValue(item) === selectedValue) {
           setBundle(translated);
           setDraft(translated?.translatedFields ?? {});
         }
       } catch (cause) {
+        if (isAbortError(cause) || controller.signal.aborted) return;
         failures.push({
           item: item.label,
           message: cause?.message ?? "Échec de traduction",
         });
       }
 
+      if (controller.signal.aborted) return;
       setBulkState((current) => ({
         ...current,
         current: index + 1,
@@ -323,14 +351,17 @@ export default function AdminTranslationPanel() {
     }
 
     try {
-      await refreshCatalog();
+      await refreshCatalog({ signal: controller.signal });
     } catch (cause) {
+      if (isAbortError(cause) || controller.signal.aborted) return;
       failures.push({
         item: "Actualisation du catalogue",
         message: cause?.message ?? "Impossible de recharger les statuts",
       });
     }
 
+    if (controller.signal.aborted) return;
+    bulkControllerRef.current = null;
     setBulkState((current) => ({
       ...current,
       running: false,
