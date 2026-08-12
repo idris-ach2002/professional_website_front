@@ -16,6 +16,8 @@ import {
   OCEAN_WORLD_RECONCILE_EVENT,
 } from "../ocean/oceanWorldRegistration";
 import { resolveAquariumFps } from "../ocean/oceanRuntimePolicy";
+import useAnimationPreferences from "../contexts/useAnimationPreferences";
+import { isOceanTransitionEnabled } from "../animations/oceanTransitionPreferences";
 
 const OBSERVED_SECTIONS = Object.freeze([...OCEAN_WORLD_ANCHOR_IDS, "ocean-outro"]);
 
@@ -264,6 +266,7 @@ export default function GlobalAquarium({
   paused = false,
   runtimeQuality = "high",
 }) {
+  const { transitionPreferences } = useAnimationPreferences();
   const canvasRef = useRef(null);
   const agentsRef = useRef([]);
   const previousAgentsRef = useRef([]);
@@ -303,25 +306,45 @@ export default function GlobalAquarium({
     const previousBiome = renderedBiomeRef.current;
     renderedBiomeRef.current = biome;
 
-    const duration = previousBiome === biome ? 0.38 : resolveBiomeTransitionDuration(previousBiome, biome);
+    const runningTransition = transitionRef.current;
+    const runningTransitionName = `${runningTransition.from}-${runningTransition.to}`;
+    if (runningTransition.duration > 0 && !isOceanTransitionEnabled(transitionPreferences, runningTransitionName)) {
+      previousAgentsRef.current = [];
+      transitionRef.current = { ...runningTransition, duration: 0 };
+      window.clearTimeout(transitionTimerRef.current);
+      delete document.documentElement.dataset.oceanTransition;
+    }
+
     const transitionName = `${previousBiome}-${biome}`;
+    const transitionEnabled = previousBiome === biome
+      || isOceanTransitionEnabled(transitionPreferences, transitionName);
+    const duration = previousBiome === biome
+      ? 0.38
+      : transitionEnabled
+        ? resolveBiomeTransitionDuration(previousBiome, biome)
+        : 0;
+
     if (previousBiome !== biome) {
       window.clearTimeout(transitionTimerRef.current);
-      document.documentElement.dataset.oceanTransition = transitionName;
-      window.dispatchEvent(new CustomEvent("portfolio:ocean-transition", {
-        detail: { from: previousBiome, to: biome, duration },
-      }));
-      transitionTimerRef.current = window.setTimeout(() => {
-        if (document.documentElement.dataset.oceanTransition === transitionName) {
-          delete document.documentElement.dataset.oceanTransition;
-        }
-      }, Math.ceil(duration * 1000 + 180));
+      delete document.documentElement.dataset.oceanTransition;
+
+      if (transitionEnabled) {
+        document.documentElement.dataset.oceanTransition = transitionName;
+        window.dispatchEvent(new CustomEvent("portfolio:ocean-transition", {
+          detail: { from: previousBiome, to: biome, duration },
+        }));
+        transitionTimerRef.current = window.setTimeout(() => {
+          if (document.documentElement.dataset.oceanTransition === transitionName) {
+            delete document.documentElement.dataset.oceanTransition;
+          }
+        }, Math.ceil(duration * 1000 + 180));
+      }
     }
 
     if (!agentsRef.current.length) {
       rebuildPopulation(biome);
     } else if (previousBiome !== biome || agentsRef.current.length !== population) {
-      previousAgentsRef.current = agentsRef.current;
+      previousAgentsRef.current = transitionEnabled ? agentsRef.current : [];
       agentsRef.current = createMarinePopulation(population, biome, 0x5183 + population * 13 + BIOME_ORDER.indexOf(biome) * 97);
       transitionRef.current = {
         from: previousBiome,
@@ -335,7 +358,7 @@ export default function GlobalAquarium({
       window.clearTimeout(transitionTimerRef.current);
       if (document.documentElement.dataset.oceanTransition === transitionName) delete document.documentElement.dataset.oceanTransition;
     };
-  }, [biome, population, rebuildPopulation]);
+  }, [biome, population, rebuildPopulation, transitionPreferences]);
 
   useEffect(() => {
     const handleVisibility = () => setPageVisible(!document.hidden);

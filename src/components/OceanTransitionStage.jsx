@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { OCEAN_CINEMATIC_DURATIONS_MS } from "../ocean/oceanTransitionTimings";
+import useAnimationPreferences from "../contexts/useAnimationPreferences";
+import { isOceanTransitionEnabled } from "../animations/oceanTransitionPreferences";
 
 function clamp01(value) {
   return Math.min(1, Math.max(0, value));
@@ -644,6 +646,7 @@ function drawScene(context, sceneKey, viewport, progress, particles, shards) {
 }
 
 export default function OceanTransitionStage({ reducedMotion = false, performanceMode = "full", paused = false, runtimeQuality = "high" }) {
+  const { transitionPreferences } = useAnimationPreferences();
   const canvasRef = useRef(null);
   const rafRef = useRef(0);
   const [scene, setScene] = useState(null);
@@ -654,30 +657,40 @@ export default function OceanTransitionStage({ reducedMotion = false, performanc
       const to = event.detail?.to;
       if (!from || !to || from === to) return;
       const key = `${from}-${to}`;
-      if (!OCEAN_CINEMATIC_DURATIONS_MS[key]) return;
+      if (!OCEAN_CINEMATIC_DURATIONS_MS[key] || !isOceanTransitionEnabled(transitionPreferences, key)) return;
       setScene({ key, token: performance.now() });
     };
     window.addEventListener("portfolio:ocean-transition", handleTransition);
     return () => window.removeEventListener("portfolio:ocean-transition", handleTransition);
-  }, []);
+  }, [transitionPreferences]);
+
+  const enabledScene = scene && isOceanTransitionEnabled(transitionPreferences, scene.key) ? scene : null;
+
+  useEffect(() => {
+    if (!scene || enabledScene) return undefined;
+    const frameId = window.requestAnimationFrame(() => {
+      setScene((current) => current?.token === scene.token ? null : current);
+    });
+    return () => window.cancelAnimationFrame(frameId);
+  }, [enabledScene, scene]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !scene || reducedMotion || paused || ["lite", "ultra-lite"].includes(performanceMode)) return undefined;
+    if (!canvas || !enabledScene || reducedMotion || paused || ["lite", "ultra-lite"].includes(performanceMode)) return undefined;
     const context = canvas.getContext("2d", { alpha: true, desynchronized: true });
     if (!context) return undefined;
 
     let viewport = resizeCanvas(canvas, runtimeQuality);
     const count = runtimeQuality === "constrained" ? 18 : runtimeQuality === "balanced" ? 28 : 40;
     const shardCount = runtimeQuality === "constrained" ? 8 : runtimeQuality === "balanced" ? 12 : 16;
-    const seed = Math.round(scene.token) ^ scene.key.length * 131;
+    const seed = Math.round(enabledScene.token) ^ enabledScene.key.length * 131;
     const particles = createSceneParticles(count, seed);
     const shards = createRockShards(shardCount, seed);
-    const duration = OCEAN_CINEMATIC_DURATIONS_MS[scene.key] ?? 760;
+    const duration = OCEAN_CINEMATIC_DURATIONS_MS[enabledScene.key] ?? 760;
     const startedAt = performance.now();
     let disposed = false;
 
-    document.documentElement.dataset.oceanCinematic = scene.key;
+    document.documentElement.dataset.oceanCinematic = enabledScene.key;
 
     const resize = () => {
       viewport = resizeCanvas(canvas, runtimeQuality);
@@ -692,15 +705,15 @@ export default function OceanTransitionStage({ reducedMotion = false, performanc
       context.clearRect(0, 0, viewport.width, viewport.height);
       context.save();
       context.globalAlpha = sceneFade(progress);
-      drawScene(context, scene.key, viewport, progress, particles, shards);
+      drawScene(context, enabledScene.key, viewport, progress, particles, shards);
       context.restore();
 
       if (progress < 1) {
         rafRef.current = window.requestAnimationFrame(paint);
       } else {
         context.clearRect(0, 0, viewport.width, viewport.height);
-        if (document.documentElement.dataset.oceanCinematic === scene.key) delete document.documentElement.dataset.oceanCinematic;
-        setScene((current) => current?.token === scene.token ? null : current);
+        if (document.documentElement.dataset.oceanCinematic === enabledScene.key) delete document.documentElement.dataset.oceanCinematic;
+        setScene((current) => current?.token === enabledScene.token ? null : current);
       }
     };
 
@@ -710,15 +723,15 @@ export default function OceanTransitionStage({ reducedMotion = false, performanc
       window.cancelAnimationFrame(rafRef.current);
       window.removeEventListener("resize", resize);
       window.visualViewport?.removeEventListener("resize", resize);
-      if (document.documentElement.dataset.oceanCinematic === scene.key) delete document.documentElement.dataset.oceanCinematic;
+      if (document.documentElement.dataset.oceanCinematic === enabledScene.key) delete document.documentElement.dataset.oceanCinematic;
     };
-  }, [paused, performanceMode, reducedMotion, runtimeQuality, scene]);
+  }, [enabledScene, paused, performanceMode, reducedMotion, runtimeQuality]);
 
   return (
     <canvas
       ref={canvasRef}
-      className={`ocean-transition-stage${scene ? " is-active" : ""}`}
-      data-cinematic={scene?.key ?? "idle"}
+      className={`ocean-transition-stage${enabledScene ? " is-active" : ""}`}
+      data-cinematic={enabledScene?.key ?? "idle"}
       data-reveal-engine="cinematic-world-reveal"
       aria-hidden="true"
     />

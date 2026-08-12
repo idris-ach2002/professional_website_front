@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
 import AnimationPreferencesContext from "./animationPreferencesContextValue";
+import {
+  DEFAULT_OCEAN_TRANSITION_PREFERENCES,
+  normalizeOceanTransitionPreferences,
+} from "../animations/oceanTransitionPreferences";
 
 const MOBILE_QUERY = "(max-width: 820px)";
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 const STORAGE_KEY = "portfolio-animation-preference";
 const PAUSE_STORAGE_KEY = "portfolio-animation-paused";
+const TRANSITION_STORAGE_KEY = "portfolio-animation-transitions-v1";
 const VALID_PREFERENCES = new Set(["auto", "full", "reduced", "off"]);
 
 
@@ -28,6 +33,17 @@ function readStoredPaused() {
     return window.localStorage.getItem(PAUSE_STORAGE_KEY) === "true";
   } catch {
     return false;
+  }
+}
+
+
+function readStoredTransitionPreferences() {
+  if (typeof window === "undefined") return { ...DEFAULT_OCEAN_TRANSITION_PREFERENCES };
+  try {
+    const stored = window.localStorage.getItem(TRANSITION_STORAGE_KEY);
+    return normalizeOceanTransitionPreferences(stored ? JSON.parse(stored) : null);
+  } catch {
+    return { ...DEFAULT_OCEAN_TRANSITION_PREFERENCES };
   }
 }
 
@@ -72,6 +88,7 @@ export default function AnimationPreferencesProvider({ children }) {
   const [browserSignals] = useState(readBrowserSignals);
   const [preference, setPreferenceState] = useState(readStoredPreference);
   const [paused, setPausedState] = useState(readStoredPaused);
+  const [transitionPreferences, setTransitionPreferencesState] = useState(readStoredTransitionPreferences);
   const [mediaState, setMediaState] = useState(() => ({
     isMobile: readMedia(MOBILE_QUERY),
     systemReducedMotion: readMedia(REDUCED_MOTION_QUERY),
@@ -119,6 +136,10 @@ export default function AnimationPreferencesProvider({ children }) {
   }, [paused]);
 
   useEffect(() => {
+    try { window.localStorage.setItem(TRANSITION_STORAGE_KEY, JSON.stringify(transitionPreferences)); } catch { /* storage is optional */ }
+  }, [transitionPreferences]);
+
+  useEffect(() => {
     const root = document.documentElement;
     root.dataset.performanceProfile = performanceMode;
     root.dataset.animationPreference = preference;
@@ -155,6 +176,17 @@ export default function AnimationPreferencesProvider({ children }) {
     animationsPaused,
     ultraLite,
     gpuTier,
+    transitionPreferences,
+    setTransitionEnabled: (key, enabled) => {
+      if (!(key in DEFAULT_OCEAN_TRANSITION_PREFERENCES)) return;
+      setTransitionPreferencesState((current) => ({
+        ...current,
+        [key]: Boolean(enabled),
+      }));
+    },
+    resetTransitionPreferences: () => {
+      setTransitionPreferencesState({ ...DEFAULT_OCEAN_TRANSITION_PREFERENCES });
+    },
   };
 
   return <AnimationPreferencesContext.Provider value={value}>{children}</AnimationPreferencesContext.Provider>;

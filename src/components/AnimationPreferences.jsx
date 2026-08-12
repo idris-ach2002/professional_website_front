@@ -1,3 +1,7 @@
+import {
+  OCEAN_TRANSITION_CONTROLS,
+  OCEAN_TRANSITION_PREFERENCE_KEYS,
+} from "../animations/oceanTransitionPreferences";
 import useAnimationPreferences from "../contexts/useAnimationPreferences";
 import useLanguage from "../localization/useLanguage";
 
@@ -23,6 +27,73 @@ function PreferenceIcon({ option }) {
   );
 }
 
+function TransitionSwitch({ label, description, checked, onChange, masterOff = false }) {
+  return (
+    <button
+      type="button"
+      className="animation-transition-switch"
+      role="switch"
+      aria-checked={checked}
+      data-master-off={masterOff ? "true" : "false"}
+      onClick={() => onChange(!checked)}
+    >
+      <span className="animation-transition-copy">
+        <strong>{label}</strong>
+        <span>{description}</span>
+      </span>
+      <span className="animation-switch-track" aria-hidden="true">
+        <span className="animation-switch-thumb" />
+      </span>
+    </button>
+  );
+}
+
+function TransitionControls({ transitionPreferences, setTransitionEnabled, resetTransitionPreferences, t, compact = false }) {
+  const masterEnabled = transitionPreferences[OCEAN_TRANSITION_PREFERENCE_KEYS.MASTER] !== false;
+  const enabledCount = OCEAN_TRANSITION_CONTROLS.reduce(
+    (count, item) => count + (transitionPreferences[item.key] !== false ? 1 : 0),
+    0,
+  );
+
+  return (
+    <section className={`animation-transition-controls${compact ? " is-compact" : ""}`} aria-label={t("animations.transitionsLabel")}>
+      <div className="animation-transition-heading">
+        <div>
+          <strong>{t("animations.transitionsLabel")}</strong>
+          <span>{t("animations.transitionsDescription")}</span>
+        </div>
+        <span className="animation-transition-count">
+          {masterEnabled ? t("animations.transitionsActiveCount", { count: enabledCount }) : t("animations.transitionsMasterOff")}
+        </span>
+      </div>
+
+      <TransitionSwitch
+        label={t("animations.transitionsMaster")}
+        description={t("animations.transitionsMasterDescription")}
+        checked={masterEnabled}
+        onChange={(enabled) => setTransitionEnabled(OCEAN_TRANSITION_PREFERENCE_KEYS.MASTER, enabled)}
+      />
+
+      <div className="animation-transition-list">
+        {OCEAN_TRANSITION_CONTROLS.map((item) => (
+          <TransitionSwitch
+            key={item.key}
+            label={t(item.labelKey)}
+            description={t(item.descriptionKey)}
+            checked={transitionPreferences[item.key] !== false}
+            masterOff={!masterEnabled}
+            onChange={(enabled) => setTransitionEnabled(item.key, enabled)}
+          />
+        ))}
+      </div>
+
+      <button type="button" className="animation-transition-reset" onClick={resetTransitionPreferences}>
+        {t("animations.transitionsReset")}
+      </button>
+    </section>
+  );
+}
+
 function MobileControls({
   preference,
   setPreference,
@@ -32,6 +103,9 @@ function MobileControls({
   animationsEnabled,
   systemReducedMotion,
   gpuTier,
+  transitionPreferences,
+  setTransitionEnabled,
+  resetTransitionPreferences,
   t,
 }) {
   return (
@@ -65,6 +139,13 @@ function MobileControls({
       <div className="animation-preferences-status" role="status" aria-live="polite">
         {systemReducedMotion ? t("animations.systemOverride") : t("animations.gpuStatus", { tier: t(`animations.gpu.${gpuTier}`) })}
       </div>
+      <TransitionControls
+        compact
+        transitionPreferences={transitionPreferences}
+        setTransitionEnabled={setTransitionEnabled}
+        resetTransitionPreferences={resetTransitionPreferences}
+        t={t}
+      />
     </div>
   );
 }
@@ -80,6 +161,9 @@ export default function AnimationPreferences({ mobile = false, active = null, se
     animationsEnabled,
     systemReducedMotion,
     gpuTier,
+    transitionPreferences,
+    setTransitionEnabled,
+    resetTransitionPreferences,
   } = useAnimationPreferences();
 
   if (mobile) {
@@ -94,6 +178,9 @@ export default function AnimationPreferences({ mobile = false, active = null, se
           animationsEnabled={animationsEnabled}
           systemReducedMotion={systemReducedMotion}
           gpuTier={gpuTier}
+          transitionPreferences={transitionPreferences}
+          setTransitionEnabled={setTransitionEnabled}
+          resetTransitionPreferences={resetTransitionPreferences}
           t={t}
         />
       </section>
@@ -176,6 +263,13 @@ export default function AnimationPreferences({ mobile = false, active = null, se
                 <strong>{t(`animations.effective.${performanceMode}`)}</strong>
                 <span>{statusText}</span>
               </div>
+
+              <TransitionControls
+                transitionPreferences={transitionPreferences}
+                setTransitionEnabled={setTransitionEnabled}
+                resetTransitionPreferences={resetTransitionPreferences}
+                t={t}
+              />
             </div>
           </div>
         </div>
