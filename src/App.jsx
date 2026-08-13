@@ -27,17 +27,30 @@ import usePerformanceRuntime from "./performance/usePerformanceRuntime";
 
 
 const PortfolioTimeline = lazy(() => import("./components/PortfolioTimeline"));
-const UnderwaterVolcanoField = lazy(() => import("./components/UnderwaterVolcanoField"));
+const loadUnderwaterVolcanoField = () => import("./components/UnderwaterVolcanoField");
+const UnderwaterVolcanoField = lazy(loadUnderwaterVolcanoField);
 const Admin = lazy(() => import("./components/Admin"));
+const AdminVersionPreviewPage = lazy(() => import("./components/admin/AdminVersionPreviewPage"));
 const CvPage = lazy(() => import("./components/CvPage"));
 const ProjectCaseStudyPage = lazy(() => import("./components/ProjectCaseStudyPage"));
 const NotFoundPage = lazy(() => import("./components/NotFoundPage"));
 const RecruiterPage = lazy(() => import("./components/RecruiterPage"));
 
-function DeferredVolcanoField({ performanceMode, animationsPaused, runtimeQuality }) {
+function DeferredVolcanoField({ performanceMode, animationsPaused, runtimeQuality, runtimeBudget }) {
   const { t } = useLanguage();
+  const { requestPrefetch } = usePerformanceRuntime();
   const sentinelRef = useRef(null);
   const [shouldLoad, setShouldLoad] = useState(false);
+
+  useEffect(() => {
+    if (shouldLoad) return undefined;
+    const result = requestPrefetch("underwater-volcano-module", loadUnderwaterVolcanoField, {
+      probability: 0.72,
+      cost: "high",
+    });
+    result.promise?.catch(() => {});
+    return undefined;
+  }, [requestPrefetch, shouldLoad]);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
@@ -77,7 +90,7 @@ function DeferredVolcanoField({ performanceMode, animationsPaused, runtimeQualit
             </section>
           }
         >
-          <UnderwaterVolcanoField performanceMode={performanceMode} paused={animationsPaused} runtimeQuality={runtimeQuality} />
+          <UnderwaterVolcanoField performanceMode={performanceMode} paused={animationsPaused} runtimeQuality={runtimeQuality} runtimeBudget={runtimeBudget} />
         </Suspense>
       </ErrorBoundary>
     );
@@ -107,7 +120,7 @@ function Home({
 }) {
   const responsiveProfile = useResponsiveProfile();
   const { t } = useLanguage();
-  const { runtimeQuality } = usePerformanceRuntime();
+  const { runtimeQuality, runtimeBudget } = usePerformanceRuntime();
   const { isMobile, reducedMotion, performanceMode, preference, isFirefox, animationsEnabled, animationsPaused } = responsiveProfile;
   const showVolcano = !isMobile && !reducedMotion && animationsEnabled && !["lite", "ultra-lite"].includes(performanceMode);
 
@@ -128,6 +141,7 @@ function Home({
         isFirefox={isFirefox}
         paused={animationsPaused}
         runtimeQuality={runtimeQuality}
+        runtimeBudget={runtimeBudget}
       />
       <OceanTransitionStage
         reducedMotion={reducedMotion}
@@ -183,7 +197,7 @@ function Home({
         {showVolcano ? (
           <>
             <OceanWorldBridge variant="caldera" />
-            <DeferredVolcanoField performanceMode={performanceMode} animationsPaused={animationsPaused} runtimeQuality={runtimeQuality} />
+            <DeferredVolcanoField performanceMode={performanceMode} animationsPaused={animationsPaused} runtimeQuality={runtimeQuality} runtimeBudget={runtimeBudget} />
             <OceanWorldBridge variant="projects" />
           </>
         ) : (
@@ -344,6 +358,8 @@ export default function App() {
         <Route path="/en" element={homeElement} />
         <Route path="/admin" element={adminElement} />
         <Route path="/en/admin" element={adminElement} />
+        <Route path="/admin/preview/:ownerId/:versionId" element={<Suspense fallback={<div className="route-loading">{t("app.routeLoading")}</div>}><AdminVersionPreviewPage /></Suspense>} />
+        <Route path="/en/admin/preview/:ownerId/:versionId" element={<Suspense fallback={<div className="route-loading">{t("app.routeLoading")}</div>}><AdminVersionPreviewPage /></Suspense>} />
         <Route path="/cv" element={cvElement} />
         <Route path="/en/cv" element={cvElement} />
         <Route path="/recruiter" element={recruiterElement} />

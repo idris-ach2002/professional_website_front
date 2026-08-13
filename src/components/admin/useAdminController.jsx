@@ -7,6 +7,7 @@ import useAdminJsonWorkspace from "./useAdminJsonWorkspace";
 import useAdminPortfolioCore from "./useAdminPortfolioCore";
 import useAdminSafetyActions from "./useAdminSafetyActions";
 import useAdminAsyncCoordinator from "./useAdminAsyncCoordinator";
+import useAdminPublicationActions from "./useAdminPublicationActions";
 
 const adminCore = { ...adminCoreUtils, ...adminCoreUi };
 
@@ -70,6 +71,14 @@ export default function useAdminController() {
   const [portfolioRestoreText, setPortfolioRestoreText] = useState("");
   const [portfolioRestoreLabel, setPortfolioRestoreLabel] = useState("Version restaurée depuis backup");
   const [adminActiveTab, setAdminActiveTab] = useState("version");
+  const [publicationJobs, setPublicationJobs] = useState([]);
+  const [publicationEvents, setPublicationEvents] = useState([]);
+  const [publicationDiff, setPublicationDiff] = useState(null);
+  const [publicationCompareVersionId, setPublicationCompareVersionId] = useState(null);
+  const [publicationScheduleAt, setPublicationScheduleAt] = useState("");
+  const [publicationAudit, setPublicationAudit] = useState([]);
+  const [publicationDraftMeta, setPublicationDraftMeta] = useState({ label: "", description: "" });
+  const [publicationAutosaveState, setPublicationAutosaveState] = useState({ status: "idle", lastSavedAt: null, message: null });
 
   const asyncCoordinator = useAdminAsyncCoordinator({
     setLoading,
@@ -114,6 +123,10 @@ export default function useAdminController() {
     portfolioBackupUrl, setPortfolioBackupUrl, portfolioBackupJson, setPortfolioBackupJson,
     portfolioRestoreText, setPortfolioRestoreText, portfolioRestoreLabel, setPortfolioRestoreLabel,
     adminActiveTab, setAdminActiveTab, selectedVersion, selectedProject,
+    publicationJobs, setPublicationJobs, publicationEvents, setPublicationEvents, publicationDiff, setPublicationDiff,
+    publicationCompareVersionId, setPublicationCompareVersionId, publicationScheduleAt, setPublicationScheduleAt,
+    publicationAudit, setPublicationAudit, publicationDraftMeta, setPublicationDraftMeta,
+    publicationAutosaveState, setPublicationAutosaveState,
     ...asyncCoordinator,
   };
 
@@ -121,6 +134,7 @@ export default function useAdminController() {
   const jsonWorkspace = useAdminJsonWorkspace({ ...state, ...portfolioCore });
   const safetyActions = useAdminSafetyActions({ ...state, ...portfolioCore });
   const crudActions = useAdminCrudActions({ ...state, ...portfolioCore });
+  const publicationActions = useAdminPublicationActions({ ...state, ...portfolioCore });
 
   return {
     ...adminCore,
@@ -129,6 +143,7 @@ export default function useAdminController() {
     ...jsonWorkspace,
     ...safetyActions,
     ...crudActions,
+    ...publicationActions,
     rootRef,
     jsonHighlightRef,
     jsonLineNumbersRef,

@@ -56,7 +56,12 @@ export default function useAdminPortfolioCore(ctx) {
     setSelectedExperienceIndex,
     setProjectForm,
     setExperienceFiles,
-    setProjectFiles
+    setProjectFiles,
+    setPublicationScheduleAt,
+    setPublicationCompareVersionId,
+    setPublicationDiff,
+    setPublicationDraftMeta,
+    setPublicationAutosaveState
   } = ctx;
 
   function updateOwnerForm(field, value) {
@@ -201,6 +206,14 @@ export default function useAdminPortfolioCore(ctx) {
     );
 
     setSelectedVersionId(versionId ? String(versionId) : null);
+    setPublicationScheduleAt?.("");
+    setPublicationCompareVersionId?.(null);
+    setPublicationDiff?.(null);
+    setPublicationDraftMeta?.({
+      label: version?.label ?? "",
+      description: version?.description ?? "",
+    });
+    setPublicationAutosaveState?.({ status: version ? "saved" : "idle", lastSavedAt: null, message: null });
     hydrateVersionForms(version);
   }
 

@@ -8,6 +8,7 @@ import AdminProfilePanel from "./AdminProfilePanel";
 import AdminTimelinePanel from "./AdminTimelinePanel";
 import AdminProjectsPanel from "./AdminProjectsPanel";
 import AdminTranslationPanel from "./AdminTranslationPanel";
+import AdminPublicationStudio from "./AdminPublicationStudio";
 
 export default function AdminMainTabs({ controller }) {
   const {
@@ -98,15 +99,21 @@ export default function AdminMainTabs({ controller }) {
     addProject,
     updateProject,
     deleteProject,
+    refreshPublicationOperationalState,
   } = controller;
 
   return (
     <Card shadow="sm" padding="xl" radius="xl" withBorder className="admin-tabs-card">
-      <Tabs value={adminActiveTab} onChange={(value) => setAdminActiveTab(value ?? "version")} variant="outline" radius="md" className="admin-tabs">
+      <Tabs value={adminActiveTab} onChange={(value) => {
+        const next = value ?? "version";
+        setAdminActiveTab(next);
+        if (next === "publication") refreshPublicationOperationalState();
+      }} variant="outline" radius="md" className="admin-tabs">
         <Tabs.List>
           <Tabs.Tab value="import">Import JSON</Tabs.Tab>
           <Tabs.Tab value="owner">Profil principal</Tabs.Tab>
           <Tabs.Tab value="version">Versions</Tabs.Tab>
+          <Tabs.Tab value="publication">Publication Studio</Tabs.Tab>
           <Tabs.Tab value="safety">Santé & backup</Tabs.Tab>
           <Tabs.Tab value="analytics">Analytics</Tabs.Tab>
           <Tabs.Tab value="translations">Traductions</Tabs.Tab>
@@ -150,6 +157,9 @@ export default function AdminMainTabs({ controller }) {
           selectVersion={selectVersion}
           activateVersionWithValidation={activateVersionWithValidation}
         />
+        <Tabs.Panel value="publication" pt="lg">
+          <AdminPublicationStudio controller={controller} />
+        </Tabs.Panel>
         <AdminSafetyPanel
           portfolioHealthReport={portfolioHealthReport}
           publishValidationReport={publishValidationReport}
