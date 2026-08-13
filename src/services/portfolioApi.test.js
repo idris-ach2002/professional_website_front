@@ -14,10 +14,11 @@ function owner(overrides = {}) {
 }
 
 function jsonResponse(payload, { status = 200 } = {}) {
-  return Promise.resolve(new Response(JSON.stringify(payload), {
+  return {
+    ok: status >= 200 && status < 300,
     status,
-    headers: { "Content-Type": "application/json" },
-  }));
+    json: () => payload,
+  };
 }
 
 describe("portfolioApi", () => {
@@ -78,10 +79,7 @@ describe("portfolioApi", () => {
     const first = refreshPortfolio("en");
     const second = refreshPortfolio("en");
     expect(first).toBe(second);
-    resolveFetch(new Response(JSON.stringify(owner()), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    }));
+    resolveFetch(jsonResponse(owner()));
 
     await expect(Promise.all([first, second])).resolves.toHaveLength(2);
     expect(fetchMock).toHaveBeenCalledTimes(1);
