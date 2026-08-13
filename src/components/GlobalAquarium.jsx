@@ -16,6 +16,12 @@ import {
   OCEAN_WORLD_RECONCILE_EVENT,
 } from "../ocean/oceanWorldRegistration";
 import { resolveAquariumFps } from "../ocean/oceanRuntimePolicy";
+import { applyMarineStateBuffer, createMarineWorkerRuntime } from "../performance/marineWorkerRuntime";
+import {
+  markRuntimeOwnerMounted,
+  markRuntimeOwnerUnmounted,
+  registerRuntimeResource,
+} from "../performance/resourceLifecycleRegistry";
 import useAnimationPreferences from "../contexts/useAnimationPreferences";
 import { isOceanTransitionEnabled } from "../animations/oceanTransitionPreferences";
 
@@ -29,11 +35,10 @@ const PALETTES = Object.freeze({
   vent: ["#3c5660", "#14272d", "#b2ecdc"],
 });
 
-function resolveDpr(runtimeQuality) {
+function resolveDpr(runtimeQuality, budgetCap = Infinity) {
   const device = typeof window === "undefined" ? 1 : window.devicePixelRatio || 1;
-  if (runtimeQuality === "constrained") return Math.min(device, 0.90);
-  if (runtimeQuality === "balanced") return Math.min(device, 1.05);
-  return Math.min(device, 1.22);
+  const qualityCap = runtimeQuality === "constrained" ? 0.90 : runtimeQuality === "balanced" ? 1.05 : 1.22;
+  return Math.min(device, qualityCap, Number.isFinite(Number(budgetCap)) ? Number(budgetCap) : qualityCap);
 }
 
 function resizeCanvas(canvas, dpr) {
@@ -265,6 +270,7 @@ export default function GlobalAquarium({
   performanceMode = "full",
   paused = false,
   runtimeQuality = "high",
+  runtimeBudget = null,
 }) {
   const { transitionPreferences } = useAnimationPreferences();
   const canvasRef = useRef(null);
@@ -273,6 +279,9 @@ export default function GlobalAquarium({
   const transitionRef = useRef({ from: OCEAN_BIOMES.SURFACE, to: OCEAN_BIOMES.SURFACE, startedAt: 0, duration: 0 });
   const viewportRef = useRef({ width: 1, height: 1, dpr: 1 });
   const rafRef = useRef(0);
+  const marineWorkerRef = useRef(null);
+  const marineWorkerLeaseRef = useRef(null);
+  const marineWorkerDeltaRef = useRef(0);
   const lastFrameRef = useRef(0);
   const elapsedRef = useRef(0);
   const dangerRef = useRef(0);
@@ -287,16 +296,75 @@ export default function GlobalAquarium({
   const [biome, setBiome] = useState(OCEAN_BIOMES.SURFACE);
   const [pageVisible, setPageVisible] = useState(() => typeof document === "undefined" ? true : !document.hidden);
 
-  const population = useMemo(
-    () => resolveMarinePopulation(runtimeQuality, performanceMode, isMobile),
-    [isMobile, performanceMode, runtimeQuality],
+  const population = useMemo(() => {
+    const baseline = resolveMarinePopulation(runtimeQuality, performanceMode, isMobile);
+    const scale = Math.max(0.2, Number(runtimeBudget?.marinePopulationScale ?? 1));
+    return Math.max(2, Math.round(baseline * scale));
+  }, [isMobile, performanceMode, runtimeBudget?.marinePopulationScale, runtimeQuality]);
+  const dpr = useMemo(
+    () => resolveDpr(runtimeQuality, runtimeBudget?.dprCap),
+    [runtimeBudget?.dprCap, runtimeQuality],
   );
-  const dpr = useMemo(() => resolveDpr(runtimeQuality), [runtimeQuality]);
   const active = pageVisible && !paused;
 
   const rebuildPopulation = useCallback((targetBiome = biomeRef.current) => {
     agentsRef.current = createMarinePopulation(population, targetBiome, 0x5183 + population * 13);
+    marineWorkerDeltaRef.current = 0;
+    marineWorkerRef.current?.sync(agentsRef.current);
   }, [population]);
+
+  useEffect(() => {
+    markRuntimeOwnerMounted("GlobalAquarium");
+    return () => markRuntimeOwnerUnmounted("GlobalAquarium");
+  }, []);
+
+  useEffect(() => {
+    const workerEnabled = Boolean(runtimeBudget?.workerSimulation) && !reducedMotion;
+    if (!workerEnabled) {
+      marineWorkerRef.current?.terminate();
+      marineWorkerRef.current = null;
+      marineWorkerLeaseRef.current?.release();
+      marineWorkerLeaseRef.current = null;
+      marineWorkerDeltaRef.current = 0;
+      return undefined;
+    }
+
+    const lease = registerRuntimeResource({
+      owner: "GlobalAquarium",
+      type: "worker",
+      label: "marine-simulation",
+    });
+    const runtime = createMarineWorkerRuntime({
+      onState: (stateBuffer, count, status) => {
+        applyMarineStateBuffer(agentsRef.current, stateBuffer, count);
+        lease.update({ metadata: { status: "active", latencyMs: status.latencyMs } });
+        window.__portfolioMarineWorker = { status: "active", latencyMs: status.latencyMs, count };
+      },
+      onStatus: (status) => {
+        lease.update({ metadata: status });
+        window.__portfolioMarineWorker = status;
+      },
+    });
+
+    if (!runtime) {
+      lease.release();
+      window.__portfolioMarineWorker = { status: "unavailable" };
+      return undefined;
+    }
+
+    marineWorkerRef.current = runtime;
+    marineWorkerLeaseRef.current = lease;
+    runtime.sync(agentsRef.current);
+
+    return () => {
+      runtime.terminate();
+      if (marineWorkerRef.current === runtime) marineWorkerRef.current = null;
+      if (marineWorkerLeaseRef.current === lease) marineWorkerLeaseRef.current = null;
+      marineWorkerDeltaRef.current = 0;
+      lease.release();
+      delete window.__portfolioMarineWorker;
+    };
+  }, [reducedMotion, runtimeBudget?.workerSimulation]);
 
   useEffect(() => {
     // The World Director publishes its observable marker synchronously.
@@ -346,6 +414,8 @@ export default function GlobalAquarium({
     } else if (previousBiome !== biome || agentsRef.current.length !== population) {
       previousAgentsRef.current = transitionEnabled ? agentsRef.current : [];
       agentsRef.current = createMarinePopulation(population, biome, 0x5183 + population * 13 + BIOME_ORDER.indexOf(biome) * 97);
+      marineWorkerDeltaRef.current = 0;
+      marineWorkerRef.current?.sync(agentsRef.current);
       transitionRef.current = {
         from: previousBiome,
         to: biome,
@@ -517,9 +587,15 @@ export default function GlobalAquarium({
     if (!canvas) return undefined;
     const context = canvas.getContext("2d", { alpha: true, desynchronized: true });
     if (!context) return undefined;
+    const canvasLease = registerRuntimeResource({ owner: "GlobalAquarium", type: "canvas", label: "ocean-world" });
+    const rafLease = registerRuntimeResource({ owner: "GlobalAquarium", type: "raf", label: "ocean-paint-loop" });
 
     const resize = () => {
       viewportRef.current = resizeCanvas(canvas, dpr);
+      canvasLease.update({
+        estimatedBytes: canvas.width * canvas.height * 4,
+        metadata: { width: canvas.width, height: canvas.height, dpr },
+      });
     };
     resize();
     window.addEventListener("resize", resize, { passive: true });
@@ -527,8 +603,11 @@ export default function GlobalAquarium({
 
     if (!agentsRef.current.length) rebuildPopulation();
 
-    const targetFps = resolveAquariumFps(runtimeQuality, performanceMode, isMobile);
-    const minimumFrameMs = 1000 / targetFps;
+    const targetFps = Math.min(
+      resolveAquariumFps(runtimeQuality, performanceMode, isMobile),
+      Number(runtimeBudget?.aquariumFps || Infinity),
+    );
+    const minimumFrameMs = 1000 / Math.max(1, targetFps);
 
     const paint = (timestamp) => {
       if (!reducedMotion && lastFrameRef.current && timestamp - lastFrameRef.current < minimumFrameMs) {
@@ -553,21 +632,23 @@ export default function GlobalAquarium({
         : 1;
       const easedTransition = transitionProgress * transitionProgress * (3 - 2 * transitionProgress);
       if (!reducedMotion) {
-        stepMarinePopulation(
-          agentsRef.current,
-          delta,
-          elapsedRef.current,
-          biomeRef.current,
-          { danger: dangerRef.current, dangerX: 0.5, dangerY: 0.56 },
-        );
+        const danger = { danger: dangerRef.current, dangerX: 0.5, dangerY: 0.56 };
+        const workerRuntime = marineWorkerRef.current;
+        const workerStatus = workerRuntime?.getStatus();
+        if (workerRuntime && !workerStatus?.failed && runtimeBudget?.workerSimulation) {
+          marineWorkerDeltaRef.current = Math.min(0.05, marineWorkerDeltaRef.current + delta);
+          const submitted = workerRuntime.step({
+            delta: marineWorkerDeltaRef.current,
+            elapsed: elapsedRef.current,
+            biome: biomeRef.current,
+            danger,
+          });
+          if (submitted) marineWorkerDeltaRef.current = 0;
+        } else {
+          stepMarinePopulation(agentsRef.current, delta, elapsedRef.current, biomeRef.current, danger);
+        }
         if (transitionProgress < 1 && previousAgentsRef.current.length) {
-          stepMarinePopulation(
-            previousAgentsRef.current,
-            delta,
-            elapsedRef.current,
-            transition.from,
-            { danger: dangerRef.current, dangerX: 0.5, dangerY: 0.56 },
-          );
+          stepMarinePopulation(previousAgentsRef.current, delta, elapsedRef.current, transition.from, danger);
         }
       }
       if (transitionProgress < 1 && previousAgentsRef.current.length) {
@@ -582,7 +663,7 @@ export default function GlobalAquarium({
         drawAgent(context, agent, viewport, elapsedRef.current, profile.visibility * easedTransition);
       }
 
-      if (!isMobile && !reducedMotion && runtimeQuality !== "constrained") {
+      if (!isMobile && !reducedMotion && runtimeQuality !== "constrained" && runtimeBudget?.rareOceanEvents !== false) {
         drawRareEvent(context, resolveRareOceanEvent(elapsedRef.current), viewport);
       }
 
@@ -597,16 +678,18 @@ export default function GlobalAquarium({
     return () => {
       cancelAnimationFrame(rafRef.current);
       lastFrameRef.current = 0;
+      rafLease.release();
+      canvasLease.release();
       window.removeEventListener("resize", resize);
       window.visualViewport?.removeEventListener("resize", resize);
     };
-  }, [active, biome, dpr, isMobile, performanceMode, rebuildPopulation, reducedMotion, runtimeQuality]);
+  }, [active, biome, dpr, isMobile, performanceMode, rebuildPopulation, reducedMotion, runtimeBudget?.aquariumFps, runtimeBudget?.rareOceanEvents, runtimeBudget?.workerSimulation, runtimeQuality]);
 
   return (
     <div
       className={`global-aquarium ocean-world-runtime${paused ? " is-paused" : ""}`}
       data-biome={biome}
-      data-simulation-fps={resolveAquariumFps(runtimeQuality, performanceMode, isMobile)}
+      data-simulation-fps={Math.min(resolveAquariumFps(runtimeQuality, performanceMode, isMobile), Number(runtimeBudget?.aquariumFps || Infinity))}
       aria-hidden="true"
     >
       <div className="ocean-biome-transition-layer" data-world-director="intersection-viewport-center">

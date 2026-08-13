@@ -326,6 +326,13 @@ function uniformLocations(gl, program) {
   };
 }
 
+export function shouldUseVolcanoWebGLRenderer({
+  runtimeQuality = "high",
+  volcanoRenderer = "webgl2",
+} = {}) {
+  return runtimeQuality !== "constrained" && volcanoRenderer !== "fallback";
+}
+
 export function createVolcanoWebGLRenderer(canvas) {
   const gl = canvas.getContext("webgl2", {
     alpha: true,
@@ -392,6 +399,10 @@ export function createVolcanoWebGLRenderer(canvas) {
   const destroy = () => {
     gl.deleteBuffer(buffer);
     gl.deleteProgram(program);
+    // Explicitly release the driver context. Deleting the program alone can
+    // leave the GPU process compiling/retaining the large fragment shader when
+    // the deferred volcano exits its active zone.
+    gl.getExtension?.("WEBGL_lose_context")?.loseContext?.();
   };
 
   return { gl, resize, render, destroy };

@@ -66,6 +66,27 @@ class ResizeObserverMock {
 }
 
 
+function installDocumentFonts() {
+  const fonts = {
+    status: "loaded",
+    ready: Promise.resolve(),
+    check: vi.fn(() => true),
+    load: vi.fn(() => Promise.resolve([])),
+    add: vi.fn(),
+    delete: vi.fn(() => false),
+    clear: vi.fn(),
+    forEach: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(() => true),
+  };
+
+  Object.defineProperty(document, "fonts", {
+    configurable: true,
+    value: fonts,
+  });
+}
+
 function resetDocumentShell() {
   for (const element of [document.documentElement, document.body]) {
     if (!element) continue;
@@ -112,6 +133,7 @@ beforeEach(() => {
   installStorage("localStorage");
   installStorage("sessionStorage");
   installMatchMedia();
+  installDocumentFonts();
   vi.stubGlobal("ResizeObserver", ResizeObserverMock);
   vi.stubGlobal("IntersectionObserver", IntersectionObserverMock);
   vi.stubGlobal("scrollTo", vi.fn());

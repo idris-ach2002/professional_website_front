@@ -6,6 +6,8 @@ import { gsapReady, useGsap } from "../animations/useGsap";
 import useResponsiveProfile from "../hooks/useResponsiveProfile";
 import useAnimationPreferences from "../contexts/useAnimationPreferences";
 import useLanguage from "../localization/useLanguage";
+import usePerformanceRuntime from "../performance/usePerformanceRuntime";
+import { ASSET_PRIORITIES, resolveAssetLoadingPolicy } from "../performance/assetLoadingPolicy";
 import SectionTitle from "./SectionTitle";
 import { FilePreviewButton, PreviewableImage } from "./FilePreview";
 import { isPreviewableFile } from "../utils/filePreview";
@@ -22,6 +24,14 @@ import {
 
 function ProjectVisual({ project, index, active = false }) {
   const { t } = useLanguage();
+  const { runtimeProfile, memoryState, capabilities } = usePerformanceRuntime();
+  const assetPolicy = resolveAssetLoadingPolicy({
+    priority: active ? ASSET_PRIORITIES.VISIBLE_SOON : ASSET_PRIORITIES.BACKGROUND,
+    runtimeProfile,
+    memoryState,
+    saveData: capabilities.saveData,
+    effectiveType: capabilities.effectiveType,
+  });
   if (project.imageUrl) {
     return (
       <PreviewableImage
@@ -31,8 +41,8 @@ function ProjectVisual({ project, index, active = false }) {
         imageClassName="project-image"
         modalTitle={t("projects.modalTitle", { title: project.title })}
         showOverlay={false}
-        loading={active ? "eager" : "lazy"}
-        fetchPriority={active ? "high" : "low"}
+        loading={assetPolicy.loading}
+        fetchPriority={assetPolicy.fetchPriority}
       />
     );
   }

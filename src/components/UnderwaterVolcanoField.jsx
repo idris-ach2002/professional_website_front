@@ -15,7 +15,10 @@ import {
   stepVolcanoParticles,
   stepVolcanoSimulation,
 } from "../animations/volcanoSimulationEngine";
-import { createVolcanoWebGLRenderer } from "../rendering/volcanoWebGLRenderer";
+import {
+  createVolcanoWebGLRenderer,
+  shouldUseVolcanoWebGLRenderer,
+} from "../rendering/volcanoWebGLRenderer";
 import {
   createVolcanoRockfall,
   resolveRockfallLimit,
@@ -26,18 +29,23 @@ import {
   scheduleBackgroundTask,
   scheduleUserVisibleTask,
 } from "../performance/runtimeScheduler";
+import {
+  markRuntimeOwnerMounted,
+  markRuntimeOwnerUnmounted,
+  registerRuntimeResource,
+} from "../performance/resourceLifecycleRegistry";
 
 const VOLCANO_FALLBACK_PATH = "/scenes/abyss-volcano.svg";
 const VOLCANO_ENVIRONMENT_PATH = "/scenes/abyss-volcano-environment.svg";
 
-function resolveDpr(performanceMode, runtimeQuality) {
+function resolveDpr(performanceMode, runtimeQuality, budgetCap = Infinity) {
   const deviceDpr = typeof window === "undefined" ? 1 : window.devicePixelRatio || 1;
   const maxDpr = runtimeQuality === "constrained"
     ? 0.92
     : performanceMode === "balanced" || runtimeQuality === "balanced"
       ? 1.04
       : 1.16;
-  return Math.min(deviceDpr, maxDpr);
+  return Math.min(deviceDpr, maxDpr, Number.isFinite(Number(budgetCap)) ? Number(budgetCap) : maxDpr);
 }
 
 function resolveRenderFps(performanceMode, runtimeQuality) {
@@ -361,9 +369,15 @@ export default function UnderwaterVolcanoField({
   performanceMode = "full",
   paused = false,
   runtimeQuality = "high",
+  runtimeBudget = null,
 }) {
   useEffect(() => {
     announceOceanWorldMounted("abyss-volcano-field");
+  }, []);
+
+  useEffect(() => {
+    markRuntimeOwnerMounted("UnderwaterVolcanoField");
+    return () => markRuntimeOwnerUnmounted("UnderwaterVolcanoField");
   }, []);
 
   const rootRef = useRef(null);
@@ -391,13 +405,14 @@ export default function UnderwaterVolcanoField({
   const [eruptionReaction, setEruptionReaction] = useState(false);
   const [pageVisible, setPageVisible] = useState(() => typeof document === "undefined" ? true : !document.hidden);
 
-  const counts = useMemo(
-    () => resolveVolcanoParticleCounts(runtimeQuality, performanceMode),
-    [performanceMode, runtimeQuality],
-  );
+  const counts = useMemo(() => {
+    const base = resolveVolcanoParticleCounts(runtimeQuality, performanceMode);
+    const scale = Math.max(0.2, Number(runtimeBudget?.volcanoScale ?? 1));
+    return Object.fromEntries(Object.entries(base).map(([key, value]) => [key, Math.max(1, Math.round(value * scale))]));
+  }, [performanceMode, runtimeBudget?.volcanoScale, runtimeQuality]);
   const active = sceneReady && insideActiveZone && pageVisible && !paused;
-  const dpr = resolveDpr(performanceMode, runtimeQuality);
-  const targetFps = resolveRenderFps(performanceMode, runtimeQuality);
+  const dpr = resolveDpr(performanceMode, runtimeQuality, runtimeBudget?.dprCap);
+  const targetFps = Math.min(resolveRenderFps(performanceMode, runtimeQuality), Number(runtimeBudget?.volcanoFps || Infinity));
   const quality = qualityScalar(runtimeQuality, performanceMode);
   const rockfallLimit = resolveRockfallLimit(runtimeQuality, performanceMode);
 
@@ -428,6 +443,25 @@ export default function UnderwaterVolcanoField({
     document.addEventListener("visibilitychange", handleVisibility);
     return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, []);
+
+  useEffect(() => {
+    const releaseInactiveResources = (event) => {
+      const nextState = event.detail?.to;
+      if (!["pressure", "critical"].includes(nextState) || insideActiveZone) return;
+      const textures = texturesRef.current;
+      if (textures) {
+        for (const texture of [...(textures.smoke ?? []), textures.hotSmoke, textures.ember, textures.bubble, textures.bio]) {
+          texture?.close?.();
+        }
+        texturesRef.current = null;
+      }
+      particlesRef.current = [];
+      settledDebrisSurfaceRef.current = null;
+      if (nextState === "critical") setSceneReady(false);
+    };
+    window.addEventListener("portfolio:memory-pressure", releaseInactiveResources);
+    return () => window.removeEventListener("portfolio:memory-pressure", releaseInactiveResources);
+  }, [insideActiveZone]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -473,13 +507,39 @@ export default function UnderwaterVolcanoField({
 
   useEffect(() => {
     if (!sceneReady || !webglCanvasRef.current) return undefined;
-    const renderer = createVolcanoWebGLRenderer(webglCanvasRef.current);
+    const canvasLeases = [
+      [webglCanvasRef.current, "volcano-webgl"],
+      [debrisCanvasRef.current, "volcano-debris"],
+      [particleCanvasRef.current, "volcano-particles"],
+    ].filter(([canvas]) => Boolean(canvas)).map(([canvas, label]) => registerRuntimeResource({
+      owner: "UnderwaterVolcanoField",
+      type: "canvas",
+      label,
+      estimatedBytes: canvas.width * canvas.height * 4,
+    }));
+    const renderer = shouldUseVolcanoWebGLRenderer({
+      runtimeQuality,
+      volcanoRenderer: runtimeBudget?.volcanoRenderer,
+    })
+      ? createVolcanoWebGLRenderer(webglCanvasRef.current)
+      : null;
+    const rendererLease = registerRuntimeResource({
+      owner: "UnderwaterVolcanoField",
+      type: "renderer",
+      label: renderer ? "webgl2-volcano-renderer" : "volcano-fallback-renderer",
+    });
     rendererRef.current = renderer;
     setRendererKind(renderer ? "webgl2" : "fallback");
     resize();
 
     const stage = stageRef.current;
-    if (!stage) return undefined;
+    if (!stage) {
+      rendererRef.current?.destroy();
+      rendererRef.current = null;
+      rendererLease.release();
+      canvasLeases.forEach((lease) => lease.release());
+      return undefined;
+    }
     const observer = new ResizeObserver(resize);
     observer.observe(stage);
     window.visualViewport?.addEventListener("resize", resize, { passive: true });
@@ -489,8 +549,10 @@ export default function UnderwaterVolcanoField({
       window.visualViewport?.removeEventListener("resize", resize);
       rendererRef.current?.destroy();
       rendererRef.current = null;
+      rendererLease.release();
+      canvasLeases.forEach((lease) => lease.release());
     };
-  }, [resize, sceneReady]);
+  }, [resize, runtimeBudget?.volcanoRenderer, runtimeQuality, sceneReady]);
 
   useEffect(() => {
     if (!sceneReady) return;
@@ -509,7 +571,12 @@ export default function UnderwaterVolcanoField({
       return undefined;
     }
 
-    const paintInterval = 1000 / targetFps;
+    const rafLease = registerRuntimeResource({
+      owner: "UnderwaterVolcanoField",
+      type: "raf",
+      label: "volcano-paint-loop",
+    });
+    const paintInterval = 1000 / Math.max(1, targetFps);
     const tick = (timestamp) => {
       const previous = lastFrameRef.current || timestamp;
       const deltaSeconds = Math.min(1 / 20, Math.max(1 / 240, (timestamp - previous) / 1000));
@@ -569,6 +636,7 @@ export default function UnderwaterVolcanoField({
       cancelAnimationFrame(rafRef.current);
       lastFrameRef.current = 0;
       lastPaintRef.current = 0;
+      rafLease.release();
     };
   }, [active, quality, rockfallLimit, targetFps]);
 
