@@ -24,6 +24,7 @@ import { getOwnerFullName, sortByDisplayOrder } from "./utils/portfolio";
 import useResponsiveProfile from "./hooks/useResponsiveProfile";
 import useLanguage from "./localization/useLanguage";
 import usePerformanceRuntime from "./performance/usePerformanceRuntime";
+import { ItemVisibilityProvider, VisibilityGate } from "./visibility/ItemVisibilityContext";
 
 
 const PortfolioTimeline = lazy(() => import("./components/PortfolioTimeline"));
@@ -35,6 +36,7 @@ const CvPage = lazy(() => import("./components/CvPage"));
 const ProjectCaseStudyPage = lazy(() => import("./components/ProjectCaseStudyPage"));
 const NotFoundPage = lazy(() => import("./components/NotFoundPage"));
 const RecruiterPage = lazy(() => import("./components/RecruiterPage"));
+const MissionControlPage = lazy(() => import("./components/MissionControlPage"));
 
 function DeferredVolcanoField({ performanceMode, animationsPaused, runtimeQuality, runtimeBudget }) {
   const { t } = useLanguage();
@@ -128,13 +130,13 @@ function Home({
     <main id="main-content" className="app-shell" tabIndex={-1}>
       <SEOHead owner={owner} projects={projects} experiences={experiences} />
 
-      <OceanMorphBackground
+      <VisibilityGate item="global.ambient.background"><OceanMorphBackground
         staticMode={performanceMode === "ultra-lite" || preference === "reduced"}
         depthOnly={performanceMode === "lite" && preference === "auto"}
         performanceMode={performanceMode}
         runtimeQuality={runtimeQuality}
-      />
-      <GlobalAquarium
+      /></VisibilityGate>
+      <VisibilityGate item="global.ambient.aquarium"><GlobalAquarium
         isMobile={isMobile}
         reducedMotion={reducedMotion}
         performanceMode={performanceMode}
@@ -142,21 +144,21 @@ function Home({
         paused={animationsPaused}
         runtimeQuality={runtimeQuality}
         runtimeBudget={runtimeBudget}
-      />
-      <OceanTransitionStage
+      /></VisibilityGate>
+      <VisibilityGate item="global.ambient.transitions"><OceanTransitionStage
         reducedMotion={reducedMotion}
         performanceMode={performanceMode}
         paused={animationsPaused}
         runtimeQuality={runtimeQuality}
-      />
+      /></VisibilityGate>
 
-      <TopNavigation owner={owner} source={state.source} />
+      <VisibilityGate item="global.navbar"><TopNavigation owner={owner} source={state.source} /></VisibilityGate>
 
       <Stack gap="xl" className="content-shell">
-        <StatusBanner source={state.source} error={state.error} cachedAt={state.cachedAt} />
+        <VisibilityGate item="home.status"><StatusBanner source={state.source} error={state.error} cachedAt={state.cachedAt} /></VisibilityGate>
 
         {state.owners.length > 1 && (
-          <Select
+          <VisibilityGate item="home.owner-selector"><Select
             label={t("status.ownerLabel")}
             data={state.owners.map((item) => ({
               value: String(item.ownerId),
@@ -166,17 +168,17 @@ function Home({
             onChange={setSelectedOwnerId}
             className="owner-select"
             radius="xl"
-          />
+          /></VisibilityGate>
         )}
 
-        <ProfileHero
+        <VisibilityGate item="home.profile"><ProfileHero
           owner={owner}
           profile={profile}
           projects={projects}
           experiences={experiences}
-        />
+        /></VisibilityGate>
 
-        <ProvenSkillsSection projects={projects} experiences={experiences} provenSkills={owner?.provenSkills} />
+        <VisibilityGate item="home.skills"><ProvenSkillsSection projects={projects} experiences={experiences} provenSkills={owner?.provenSkills} /></VisibilityGate>
 
         <OceanWorldBridge variant="descent" />
 
@@ -187,26 +189,26 @@ function Home({
             </div>
           }
         >
-          <PortfolioTimeline
+          <VisibilityGate item="home.timeline"><PortfolioTimeline
             timeline={owner?.timeline}
             experiences={experiences}
             performanceMode={performanceMode}
-          />
+          /></VisibilityGate>
         </Suspense>
 
         {showVolcano ? (
           <>
             <OceanWorldBridge variant="caldera" />
-            <DeferredVolcanoField performanceMode={performanceMode} animationsPaused={animationsPaused} runtimeQuality={runtimeQuality} runtimeBudget={runtimeBudget} />
+            <VisibilityGate item="home.volcano"><DeferredVolcanoField performanceMode={performanceMode} animationsPaused={animationsPaused} runtimeQuality={runtimeQuality} runtimeBudget={runtimeBudget} /></VisibilityGate>
             <OceanWorldBridge variant="projects" />
           </>
         ) : (
           <OceanWorldBridge variant="deep-projects" />
         )}
 
-        <ProjectsShowcase projects={projects} />
+        <VisibilityGate item="home.projects"><ProjectsShowcase projects={projects} /></VisibilityGate>
         <OceanWorldBridge variant="crystal" />
-        <SiteFooter owner={owner} />
+        <VisibilityGate item="home.footer"><SiteFooter owner={owner} /></VisibilityGate>
       </Stack>
     </main>
   );
@@ -347,7 +349,16 @@ export default function App() {
     </ErrorBoundary>
   );
 
+  const missionControlElement = (
+    <ErrorBoundary title="Architecture technique">
+      <Suspense fallback={<div className="route-loading">{t("app.routeLoading")}</div>}>
+        <MissionControlPage owner={owner} projects={projects} experiences={experiences} />
+      </Suspense>
+    </ErrorBoundary>
+  );
+
   return (
+    <ItemVisibilityProvider>
     <>
       <ViewportStability />
       <SkipToContent />
@@ -364,6 +375,8 @@ export default function App() {
         <Route path="/en/cv" element={cvElement} />
         <Route path="/recruiter" element={recruiterElement} />
         <Route path="/en/recruiter" element={recruiterElement} />
+        <Route path="/engineering" element={missionControlElement} />
+        <Route path="/en/engineering" element={missionControlElement} />
         <Route path="/projects/:projectSlug" element={projectElement} />
         <Route path="/en/projects/:projectSlug" element={projectElement} />
         <Route
@@ -376,5 +389,6 @@ export default function App() {
         />
       </Routes>
     </>
+    </ItemVisibilityProvider>
   );
 }

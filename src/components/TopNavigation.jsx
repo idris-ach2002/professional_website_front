@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 import useLanguage from "../localization/useLanguage";
 import AnimationPreferences from "./AnimationPreferences";
+import { useItemVisibility } from "../visibility/useItemVisibility";
 import {
   getOwnerFullName,
   getProjectSlug,
@@ -18,7 +19,7 @@ import {
 } from "../utils/portfolio";
 
 const NAV_LOGO_SRC = "/assets/identity/idris-navbar-logo.png";
-const COMPACT_NAV_QUERY = "(max-width: 1100px)";
+const COMPACT_NAV_QUERY = "(max-width: 1240px)";
 
 function readCompactNavigation() {
   return typeof window !== "undefined" && window.matchMedia(COMPACT_NAV_QUERY).matches;
@@ -120,6 +121,7 @@ function buildMenuGroups(owner, t, localizedPath) {
   return [
     {
       label: t("nav.profile"),
+      visibilityKey: "global.navbar.profile",
       href: "#profile",
       layout: "single",
       sections: [
@@ -135,6 +137,7 @@ function buildMenuGroups(owner, t, localizedPath) {
     },
     {
       label: t("nav.journey"),
+      visibilityKey: "global.navbar.journey",
       href: "#timeline",
       layout: "single",
       sections: [
@@ -152,6 +155,7 @@ function buildMenuGroups(owner, t, localizedPath) {
     },
     {
       label: t("nav.projects"),
+      visibilityKey: "global.navbar.projects",
       href: "#projects",
       layout: "wide",
       sections: [
@@ -171,6 +175,7 @@ function buildMenuGroups(owner, t, localizedPath) {
     },
     {
       label: t("nav.skills"),
+      visibilityKey: "global.navbar.skills",
       href: "#skills",
       layout: "wide align-right",
       sections: [
@@ -184,6 +189,26 @@ function buildMenuGroups(owner, t, localizedPath) {
             { label: t("nav.architecture"), description: t("nav.architectureDescription"), icon: "architecture" },
             { label: t("nav.reliability"), description: t("nav.reliabilityDescription"), icon: "quality" },
             { label: t("nav.product"), description: t("nav.productDescription"), icon: "product" },
+          ],
+        },
+      ],
+    },
+    {
+      label: t("nav.engineering"),
+      visibilityKey: "global.navbar.architecture",
+      href: "/engineering",
+      layout: "single align-right",
+      sections: [
+        {
+          eyebrow: t("nav.observability"),
+          items: [
+            {
+              label: t("nav.missionControl"),
+              description: t("nav.missionControlDescription"),
+              href: "/engineering",
+              icon: "architecture",
+              badge: "LIVE",
+            },
           ],
         },
       ],
@@ -413,7 +438,7 @@ function LanguageDropdown({ active, setActive, language, setLanguage, t }) {
   );
 }
 
-function MobileMenu({ opened, groups, isHomePath, owner, profile, localizedPath, recruiterHref, language, setLanguage, t, onClose }) {
+function MobileMenu({ opened, groups, isHomePath, owner, profile, localizedPath, recruiterHref, language, setLanguage, t, onClose, isVisible }) {
   return (
     <nav
       id="portfolio-mobile-menu"
@@ -437,10 +462,10 @@ function MobileMenu({ opened, groups, isHomePath, owner, profile, localizedPath,
         </div>
       ))}
       <div className="nav_mobile-utility-group" role="group" aria-label={t("nav.mainLabel")}>
-        <a href={recruiterHref} className="nav_mobile-direct-link" onClick={onClose}>
+        {isVisible("global.navbar.recruiter") && <a href={recruiterHref} className="nav_mobile-direct-link" onClick={onClose}>
           <span>{t("nav.recruiter")}</span>
-        </a>
-        <div className="nav_mobile-language-menu" role="group" aria-label={t("language.selectorLabel", { fallback: "Langue" })}>
+        </a>}
+        {isVisible("global.navbar.language") && <div className="nav_mobile-language-menu" role="group" aria-label={t("language.selectorLabel", { fallback: "Langue" })}>
           <button
             type="button"
             className={`nav_mobile-language-option${language === "fr" ? " is-active" : ""}`}
@@ -464,8 +489,8 @@ function MobileMenu({ opened, groups, isHomePath, owner, profile, localizedPath,
           >
             EN
           </button>
-        </div>
-        <AnimationPreferences mobile />
+        </div>}
+        {isVisible("global.navbar.animations") && <AnimationPreferences mobile />}
       </div>
     </nav>
   );
@@ -473,6 +498,7 @@ function MobileMenu({ opened, groups, isHomePath, owner, profile, localizedPath,
 
 export default function TopNavigation({ owner }) {
   const compactNavigation = useCompactNavigation();
+  const { isVisible } = useItemVisibility();
   const { language, localizedPath, setLanguage, t } = useLanguage();
   const location = useLocation();
   const [active, setActive] = useState(null);
@@ -484,7 +510,7 @@ export default function TopNavigation({ owner }) {
   const recruiterHref = localizedPath("/recruiter");
   const cvHref = normalizeUrl(profile?.cvUrl || "#profile");
 
-  const groups = useMemo(() => buildMenuGroups(owner, t, localizedPath), [localizedPath, owner, t]);
+  const groups = useMemo(() => buildMenuGroups(owner, t, localizedPath).filter((group) => isVisible(group.visibilityKey)), [isVisible, localizedPath, owner, t]);
 
   useEffect(() => {
     if (!compactNavigation || !mobileOpen) return undefined;
@@ -531,24 +557,24 @@ export default function TopNavigation({ owner }) {
                   localizedPath={localizedPath}
                 />
               ))}
-              <a href={contactHref} className="nav_direct-link w-inline-block">{t("nav.contact")}</a>
-              <a href={recruiterHref} className={`nav_direct-link nav_recruiter-menu-link w-inline-block${location.pathname === "/recruiter" ? " is-active" : ""}`}
+              {isVisible("global.navbar.contact") && <a href={contactHref} className="nav_direct-link w-inline-block">{t("nav.contact")}</a>}
+              {isVisible("global.navbar.recruiter") && <a href={recruiterHref} className={`nav_direct-link nav_recruiter-menu-link w-inline-block${location.pathname === "/recruiter" ? " is-active" : ""}`}
                 aria-current={location.pathname === "/recruiter" ? "page" : undefined}
               >
                 {t("nav.recruiter")}
-              </a>
-              <AnimationPreferences active={active} setActive={setActive} />
-              <LanguageDropdown
+              </a>}
+              {isVisible("global.navbar.animations") && <AnimationPreferences active={active} setActive={setActive} compactTrigger />}
+              {isVisible("global.navbar.language") && <LanguageDropdown
                 active={active}
                 setActive={setActive}
                 language={language}
                 setLanguage={setLanguage}
                 t={t}
-              />
+              />}
             </div>
           </nav>}
 
-          {!compactNavigation && <div className="nav_actions-wrap">
+          {!compactNavigation && isVisible("global.navbar.cv") && <div className="nav_actions-wrap">
             <a id="nav-download" href={cvHref} target={cvHref?.startsWith("http") ? "_blank" : undefined} rel={cvHref?.startsWith("http") ? "noreferrer" : undefined} className="nav_big-button button w-inline-block">
               <span>{t("nav.downloadCv")}</span>
             </a>
@@ -577,6 +603,7 @@ export default function TopNavigation({ owner }) {
             language={language}
             setLanguage={setLanguage}
             t={t}
+            isVisible={isVisible}
             onClose={() => setMobileOpen(false)}
           />}
         </div>
