@@ -1,3 +1,5 @@
+import { createGpuTimerQuery } from "../engineering/gpuProfiler";
+
 const VERTEX_SHADER = `#version 300 es
 precision highp float;
 layout(location = 0) in vec2 a_position;
@@ -327,10 +329,9 @@ function uniformLocations(gl, program) {
 }
 
 export function shouldUseVolcanoWebGLRenderer({
-  runtimeQuality = "high",
   volcanoRenderer = "webgl2",
 } = {}) {
-  return runtimeQuality !== "constrained" && volcanoRenderer !== "fallback";
+  return volcanoRenderer !== "fallback";
 }
 
 export function createVolcanoWebGLRenderer(canvas) {
@@ -364,6 +365,7 @@ export function createVolcanoWebGLRenderer(canvas) {
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
   const uniforms = uniformLocations(gl, program);
+  const gpuTimer = createGpuTimerQuery(gl, "volcano");
 
   const resize = (width, height, dpr = 1) => {
     const pixelWidth = Math.max(1, Math.round(width * dpr));
@@ -380,6 +382,7 @@ export function createVolcanoWebGLRenderer(canvas) {
   };
 
   const render = (timeSeconds, profile, quality = 1) => {
+    gpuTimer?.begin();
     gl.useProgram(program);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -394,9 +397,11 @@ export function createVolcanoWebGLRenderer(canvas) {
     gl.uniform1f(uniforms.canyonLight, profile?.canyonLight ?? 0.18);
     gl.uniform1f(uniforms.quality, quality);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gpuTimer?.end();
   };
 
   const destroy = () => {
+    gpuTimer?.destroy();
     gl.deleteBuffer(buffer);
     gl.deleteProgram(program);
     // Explicitly release the driver context. Deleting the program alone can

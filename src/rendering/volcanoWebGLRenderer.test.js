@@ -9,11 +9,11 @@ describe("volcano WebGL runtime policy", () => {
     })).toBe(true);
   });
 
-  it("uses the deterministic fallback for constrained E2E/runtime quality", () => {
+  it("keeps the original WebGL composition available in constrained quality", () => {
     expect(shouldUseVolcanoWebGLRenderer({
       runtimeQuality: "constrained",
       volcanoRenderer: "webgl2",
-    })).toBe(false);
+    })).toBe(true);
   });
 
   it("honours an explicit fallback budget independently of the legacy quality", () => {

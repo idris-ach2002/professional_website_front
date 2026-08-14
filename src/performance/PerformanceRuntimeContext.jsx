@@ -526,6 +526,8 @@ export default function PerformanceRuntimeProvider({ children }) {
   const getRuntimeSnapshot = useCallback(() => ({
     profile: runtimeProfileRef.current,
     quality: profileToLegacyQuality(runtimeProfileRef.current),
+    capabilityProfile: capabilityProfileRef.current,
+    preferenceMode: performanceModeRef.current,
     budget: runtimeBudgetRef.current,
     capabilities: capabilitiesRef.current,
     metrics: metricsRef.current,

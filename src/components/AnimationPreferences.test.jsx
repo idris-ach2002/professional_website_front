@@ -29,8 +29,9 @@ describe("AnimationPreferences", () => {
   });
 
   it("exposes the master transition switch and the five world seams", () => {
-    renderControls();
+    const { container } = renderControls();
     expect(screen.getAllByRole("switch")).toHaveLength(6);
+    expect(container.querySelectorAll(".animation-control-tile")).toHaveLength(11);
     expect(screen.getByRole("switch", { name: /Profil ↔ Timeline/i })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByRole("switch", { name: /Timeline ↔ Volcan/i })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: /Timeline ↔ Projets/i })).toBeInTheDocument();

@@ -38,7 +38,10 @@ const PROFILE_BUDGETS = Object.freeze({
     backgroundWork: true,
     prefetchLevel: "conservative",
     volcanoRenderer: "webgl2",
-    volcanoScale: 0.72,
+    // Keep the original volcano composition in the normal balanced profile.
+    // Lower profiles still reduce it, but capable machines no longer receive
+    // a second density reduction on top of the legacy balanced simulation.
+    volcanoScale: 1,
     volcanoFps: 42,
   }),
   [RUNTIME_PROFILES.REDUCED]: Object.freeze({
@@ -49,7 +52,7 @@ const PROFILE_BUDGETS = Object.freeze({
     workerSimulation: false,
     backgroundWork: false,
     prefetchLevel: "critical-only",
-    volcanoRenderer: "fallback",
+    volcanoRenderer: "webgl2",
     volcanoScale: 0.45,
     volcanoFps: 20,
   }),
@@ -61,7 +64,7 @@ const PROFILE_BUDGETS = Object.freeze({
     workerSimulation: false,
     backgroundWork: false,
     prefetchLevel: "off",
-    volcanoRenderer: "fallback",
+    volcanoRenderer: "webgl2",
     volcanoScale: 0.25,
     volcanoFps: 12,
   }),
