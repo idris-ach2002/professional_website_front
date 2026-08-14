@@ -16,6 +16,8 @@ const REQUIRED_BUILD_PROFILE = Object.freeze({
   VITE_API_BASE_URL: "http://127.0.0.1:4173",
   VITE_USE_DIRECT_BACKEND: "true",
   VITE_UPLOAD_ENDPOINT: "/uploads/",
+  VITE_BUILD_ID: "e2e-build",
+  VITE_COMMIT_SHA: "e2e-commit",
 });
 
 const INPUTS = [

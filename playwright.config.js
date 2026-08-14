@@ -15,6 +15,7 @@ const usePrebuiltDist = process.env.PLAYWRIGHT_PREBUILT === "1";
 const stressMode = process.env.PLAYWRIGHT_STRESS === "1";
 const soakMode = process.env.PLAYWRIGHT_SOAK === "1";
 const metricsMode = process.env.PLAYWRIGHT_METRICS === "1";
+const chromiumExecutablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE;
 const previewCommand = `npm run preview -- --host 127.0.0.1 --port ${port} --strictPort`;
 const artifactCommand = usePrebuiltDist
   ? "node scripts/e2e-build-artifact.mjs verify"
@@ -61,6 +62,7 @@ export default defineConfig({
       use: {
         ...devices["Desktop Chrome"],
         launchOptions: {
+          ...(chromiumExecutablePath ? { executablePath: chromiumExecutablePath } : {}),
           args: [
             "--disable-background-timer-throttling",
             "--disable-backgrounding-occluded-windows",
