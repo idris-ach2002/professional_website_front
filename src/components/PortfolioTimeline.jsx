@@ -14,6 +14,8 @@ import {
   stepInspectionPilot,
 } from "../animations/timelineInspectionEngine";
 import { announceOceanWorldMounted } from "../ocean/oceanWorldRegistration";
+import { useItemVisibility } from "../visibility/useItemVisibility";
+import { experienceVisibilityKey } from "../visibility/itemVisibilityRegistry";
 
 const categoryClasses = {
   SCHOOL: "timeline-school",
@@ -63,6 +65,8 @@ function TimelineCardReef({ variant = 0 }) {
 
 export default function PortfolioTimeline({ timeline, experiences, performanceMode = "full" }) {
   const rootRef = useRef(null);
+  const { isVisible } = useItemVisibility();
+  const visibleExperiences = experiences.filter((experience, index) => isVisible(experienceVisibilityKey(experience, index)));
 
   useEffect(() => {
     announceOceanWorldMounted("timeline");
@@ -459,7 +463,7 @@ export default function PortfolioTimeline({ timeline, experiences, performanceMo
         delete card.dataset.timelineInspection;
       });
     };
-  }, [autonomousEnabled, experiences.length, performanceMode, animationsPaused]);
+  }, [autonomousEnabled, visibleExperiences.length, performanceMode, animationsPaused]);
 
   return (
     <section
@@ -507,7 +511,7 @@ export default function PortfolioTimeline({ timeline, experiences, performanceMo
             </div>
 
             <div className="timeline-list">
-              {experiences.map((experience, index) => {
+              {visibleExperiences.map((experience, index) => {
                 const side = index % 2 === 0 ? "left" : "right";
                 const missionNumber = String(index + 1).padStart(2, "0");
                 const depth = formatDepth(getScenographicDepth(index), locale);

@@ -1,4 +1,4 @@
-import { Card, Tabs } from "@mantine/core";
+import { Tabs } from "@mantine/core";
 import AdminImportPanel from "./AdminImportPanel";
 import AdminOwnerPanel from "./AdminOwnerPanel";
 import AdminVersionsPanel from "./AdminVersionsPanel";
@@ -9,6 +9,9 @@ import AdminTimelinePanel from "./AdminTimelinePanel";
 import AdminProjectsPanel from "./AdminProjectsPanel";
 import AdminTranslationPanel from "./AdminTranslationPanel";
 import AdminPublicationStudio from "./AdminPublicationStudio";
+import AdminDashboard from "./AdminDashboard";
+import AdminMissionControlPanel from "./AdminMissionControlPanel";
+import AdminItemsVisibilityPanel from "./AdminItemsVisibilityPanel";
 
 export default function AdminMainTabs({ controller }) {
   const {
@@ -103,24 +106,13 @@ export default function AdminMainTabs({ controller }) {
   } = controller;
 
   return (
-    <Card shadow="sm" padding="xl" radius="xl" withBorder className="admin-tabs-card">
+    <div className="admin-tabs-card">
       <Tabs value={adminActiveTab} onChange={(value) => {
-        const next = value ?? "version";
+        const next = value ?? "overview";
         setAdminActiveTab(next);
         if (next === "publication") refreshPublicationOperationalState();
-      }} variant="outline" radius="md" className="admin-tabs">
-        <Tabs.List>
-          <Tabs.Tab value="import">Import JSON</Tabs.Tab>
-          <Tabs.Tab value="owner">Profil principal</Tabs.Tab>
-          <Tabs.Tab value="version">Versions</Tabs.Tab>
-          <Tabs.Tab value="publication">Publication Studio</Tabs.Tab>
-          <Tabs.Tab value="safety">Santé & backup</Tabs.Tab>
-          <Tabs.Tab value="analytics">Analytics</Tabs.Tab>
-          <Tabs.Tab value="translations">Traductions</Tabs.Tab>
-          <Tabs.Tab value="profile">Profil & fichiers</Tabs.Tab>
-          <Tabs.Tab value="timeline">Timeline</Tabs.Tab>
-          <Tabs.Tab value="project">Projets</Tabs.Tab>
-        </Tabs.List>
+      }} className="admin-tabs">
+        <Tabs.Panel value="overview"><AdminDashboard controller={controller} /></Tabs.Panel>
 
         <AdminImportPanel
           jsonImportFile={jsonImportFile}
@@ -180,6 +172,8 @@ export default function AdminMainTabs({ controller }) {
           setPortfolioRestoreText={setPortfolioRestoreText}
         />
         <Tabs.Panel value="analytics" pt="lg"><AdminAnalyticsPanel /></Tabs.Panel>
+        <Tabs.Panel value="mission" pt="lg"><AdminMissionControlPanel /></Tabs.Panel>
+        <Tabs.Panel value="items-visiblility" pt="lg"><AdminItemsVisibilityPanel controller={controller} /></Tabs.Panel>
         <Tabs.Panel value="translations" pt="lg"><AdminTranslationPanel /></Tabs.Panel>
         <Tabs.Panel value="profile" pt="lg">
           <AdminProfilePanel
@@ -244,6 +238,6 @@ export default function AdminMainTabs({ controller }) {
           />
         </Tabs.Panel>
       </Tabs>
-    </Card>
+    </div>
   );
 }

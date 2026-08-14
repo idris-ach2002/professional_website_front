@@ -3,6 +3,7 @@ import { useRef } from "react";
 import { useGsap } from "../animations/useGsap";
 import useLanguage from "../localization/useLanguage";
 import { PreviewableImage } from "./FilePreview";
+import { VisibilityGate } from "../visibility/ItemVisibilityContext";
 import {
   getContactHref,
   getInitials,
@@ -105,22 +106,22 @@ export default function ProfileHero({ owner, profile }) {
         <AnimatedTitle title={profile?.title ?? fullName} />
 
         {profile?.headline && (
-          <article className="profile-sub-card profile-headline-card">
+          <VisibilityGate item="home.profile.headline"><article className="profile-sub-card profile-headline-card">
             <span className="profile-sub-card-label">{t("hero.positioning")}</span>
             <p className="profile-sub-card-text">{profile.headline}</p>
-          </article>
+          </article></VisibilityGate>
         )}
 
         <div className="profile-copy-stack">
           {(profile?.shortDescription ?? profile?.description) && (
-            <div className="profile-copy-card profile-copy-card--lead">
+            <VisibilityGate item="home.profile.lead"><div className="profile-copy-card profile-copy-card--lead">
               <Text className="hero-lead">{profile?.shortDescription ?? profile?.description}</Text>
-            </div>
+            </div></VisibilityGate>
           )}
           {profile?.description && profile.description !== profile?.shortDescription && (
-            <div className="profile-copy-card profile-copy-card--description">
+            <VisibilityGate item="home.profile.description"><div className="profile-copy-card profile-copy-card--description">
               <Text className="hero-description">{profile.description}</Text>
-            </div>
+            </div></VisibilityGate>
           )}
         </div>
 
@@ -156,7 +157,7 @@ export default function ProfileHero({ owner, profile }) {
         </Group>
       </div>
 
-      <aside className="hero-panel">
+      <VisibilityGate item="home.profile.panel"><aside className="hero-panel">
         <ProfilePortrait owner={owner} profile={profile} t={t} />
         <Card className="availability-card island-card" radius="xl">
           <Group justify="space-between" align="center" wrap="nowrap">
@@ -184,7 +185,7 @@ export default function ProfileHero({ owner, profile }) {
             </Stack>
           </Card>
         )}
-      </aside>
+      </aside></VisibilityGate>
     </section>
   );
 }

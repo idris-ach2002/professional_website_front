@@ -1,133 +1,55 @@
-import { Badge, Button, Card, Group, Select, SimpleGrid, Stack, Text } from "@mantine/core";
+import { Badge, Button, Card, Group, Select } from "@mantine/core";
 
 export default function AdminContextCard({ controller }) {
   const {
-    owners,
-    versions,
-    selectedOwnerId,
-    selectedVersionId,
-    selectedVersion,
-    activeVersionsCount,
-    selectedVersionProjectsCount,
-    selectedVersionExperiencesCount,
-    getEntityId,
-    getOwnerLabel,
-    handleOwnerChange,
-    selectVersion,
-    refreshVersions,
-    refreshProjects,
-    downloadCurrentVersionJson,
-    openCurrentVersionJsonEditor,
-    activateVersionWithValidation,
-    deleteVersion,
+    owners, versions, selectedOwnerId, selectedVersionId, selectedVersion,
+    activeVersionsCount, selectedVersionProjectsCount, selectedVersionExperiencesCount,
+    getEntityId, getOwnerLabel, handleOwnerChange, selectVersion, refreshVersions,
+    refreshProjects, downloadCurrentVersionJson, openCurrentVersionJsonEditor,
+    activateVersionWithValidation, deleteVersion,
   } = controller;
 
   return (
-    <Card shadow="sm" padding="xl" radius="xl" withBorder className="admin-context-card">
-      <Stack>
-        <Group justify="space-between" align="flex-start">
-          <div>
-            <Text fw={800}>Contexte de modification</Text>
-            <Text size="sm" c="dimmed">
-              Sélectionne un profil, une version, puis modifie ses blocs de contenu.
-            </Text>
-          </div>
-
-          <Group gap="xs">
-            <Badge color={activeVersionsCount === 1 ? "green" : "red"} variant="light">
-              {activeVersionsCount} active
-            </Badge>
-            <Badge variant="light">
-              {versions.length} version{versions.length > 1 ? "s" : ""}
-            </Badge>
-            <Badge variant="light">
-              {selectedVersionProjectsCount} projet{selectedVersionProjectsCount > 1 ? "s" : ""}
-            </Badge>
-            <Badge variant="light">
-              {selectedVersionExperiencesCount} expérience{selectedVersionExperiencesCount > 1 ? "s" : ""}
-            </Badge>
-          </Group>
-        </Group>
-
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
+    <Card padding="md" radius="xl" className="admin-context-card">
+      <div className="admin-context-main">
+        <div className="admin-context-label"><span>Contexte</span><strong>Où modifiez-vous ?</strong></div>
+        <div className="admin-context-selectors">
           <Select
-            label="Profil"
+            aria-label="Profil à modifier"
             placeholder="Choisir un profil"
-            data={owners.map((owner) => ({
-              value: String(getEntityId(owner)),
-              label: getOwnerLabel(owner),
-            }))}
+            data={owners.map((owner) => ({ value: String(getEntityId(owner)), label: getOwnerLabel(owner) }))}
             value={selectedOwnerId}
             onChange={handleOwnerChange}
             searchable
           />
-
           <Select
-            label="Version"
+            aria-label="Version à modifier"
             placeholder="Choisir une version"
             data={versions.map((version) => ({
               value: String(getEntityId(version)),
-              label: `${version.versionTag ?? "version"} — ${
-                version.label ?? "Sans label"
-              }${version.active ? " — active" : ""}`,
+              label: `${version.versionTag ?? "version"} — ${version.label ?? "Sans label"}${version.active ? " — active" : ""}`,
             }))}
             value={selectedVersionId}
             onChange={(value) => selectVersion(value)}
             searchable
           />
-        </SimpleGrid>
-
-        <Group>
-          <Button
-            variant="light"
-            onClick={() => refreshVersions(selectedOwnerId)}
-            disabled={!selectedOwnerId}
-          >
-            Recharger versions
-          </Button>
-
-          <Button
-            variant="light"
-            onClick={() => refreshProjects()}
-            disabled={!selectedOwnerId || !selectedVersionId}
-          >
-            Recharger projets
-          </Button>
-
-          <Button
-            variant="light"
-            onClick={downloadCurrentVersionJson}
-            disabled={!selectedOwnerId || !selectedVersionId}
-          >
-            Télécharger JSON
-          </Button>
-
-          <Button
-            variant="filled"
-            onClick={openCurrentVersionJsonEditor}
-            disabled={!selectedOwnerId || !selectedVersionId}
-          >
-            Éditer JSON
-          </Button>
-
-          <Button
-            color="green"
-            onClick={() => activateVersionWithValidation()}
-            disabled={!selectedOwnerId || !selectedVersionId || selectedVersion?.active}
-          >
-            Valider & activer
-          </Button>
-
-          <Button
-            color="red"
-            variant="light"
-            onClick={() => deleteVersion()}
-            disabled={!selectedOwnerId || !selectedVersionId || selectedVersion?.active}
-          >
-            Supprimer version inactive
-          </Button>
-        </Group>
-      </Stack>
+        </div>
+        <div className="admin-context-status">
+          <Badge color={activeVersionsCount === 1 ? "green" : "red"} variant="light">{activeVersionsCount} active</Badge>
+          <span>{selectedVersionProjectsCount} projets · {selectedVersionExperiencesCount} expériences</span>
+        </div>
+        <details className="admin-context-more">
+          <summary>Actions</summary>
+          <Group gap="xs">
+            <Button size="xs" variant="light" onClick={() => refreshVersions(selectedOwnerId)} disabled={!selectedOwnerId}>Versions</Button>
+            <Button size="xs" variant="light" onClick={() => refreshProjects()} disabled={!selectedVersionId}>Projets</Button>
+            <Button size="xs" variant="light" onClick={downloadCurrentVersionJson} disabled={!selectedVersionId}>Télécharger JSON</Button>
+            <Button size="xs" onClick={openCurrentVersionJsonEditor} disabled={!selectedVersionId}>Éditer JSON</Button>
+            <Button size="xs" color="green" onClick={() => activateVersionWithValidation()} disabled={!selectedVersionId || selectedVersion?.active}>Valider & activer</Button>
+            <Button size="xs" color="red" variant="light" onClick={() => deleteVersion()} disabled={!selectedVersionId || selectedVersion?.active}>Supprimer</Button>
+          </Group>
+        </details>
+      </div>
     </Card>
   );
 }

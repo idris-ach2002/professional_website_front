@@ -142,7 +142,7 @@ describe("portfolioApi", () => {
   it("retourne le cache après l'échec de l'API", async () => {
     window.localStorage.setItem(CACHE_KEY_FR, JSON.stringify({
       version: 4,
-      cachedAt: "2026-08-06T18:00:00.000Z",
+      cachedAt: new Date().toISOString(),
       owner: owner(),
     }));
     vi.stubGlobal("fetch", vi.fn(() => jsonResponse({ error: "down" }, { status: 400 })));

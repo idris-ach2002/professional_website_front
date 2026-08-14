@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Badge, Button, Card, Group, Loader, Paper, SimpleGrid, Stack, Table, Text, TextInput, Title } from "@mantine/core";
 import { apiRequest, isAbortError, isAuthRequiredError } from "../../services/authApi";
+import { fetchPerformanceHistory } from "../../services/engineeringApi";
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -66,12 +67,69 @@ function MetricList({ title, items = [] }) {
   );
 }
 
+function AdvancedJourneyAnalytics({ summary, performanceHistory }) {
+  const actions = Number(summary.cvClicks || 0) + Number(summary.githubClicks || 0) + Number(summary.linkedinClicks || 0);
+  const funnel = [
+    { label: "Visiteurs", value: Number(summary.uniqueVisitors || 0) },
+    { label: "Projets consultés", value: Number(summary.projectViews || 0) },
+    { label: "Actions qualifiées", value: actions },
+  ];
+  const maxFunnel = Math.max(...funnel.map((item) => item.value), 1);
+  const sources = (summary.topSources ?? []).slice(0, 4);
+  const sourceTotal = Math.max(sources.reduce((total, item) => total + Number(item.value || 0), 0), 1);
+  const latestBuild = performanceHistory?.builds?.[0];
+
+  return (
+    <section className="advanced-analytics-grid" aria-label="Parcours et performance croisés">
+      <Card withBorder radius="xl" p="lg" className="advanced-funnel-card">
+        <Group justify="space-between"><Title order={4}>Funnel d’engagement</Title><Badge variant="light">signaux réels</Badge></Group>
+        <Text size="sm" c="dimmed" mt={4}>Du premier contact aux actions à forte intention.</Text>
+        <div className="advanced-funnel">
+          {funnel.map((stage, index) => (
+            <div key={stage.label} style={{ "--funnel-width": `${Math.max(34, stage.value / maxFunnel * 100)}%` }}>
+              <span>{index + 1}</span><strong>{stage.label}</strong><b>{stage.value}</b>
+              <small>{index === 0 ? "base" : `${Math.round(stage.value / Math.max(funnel[0].value, 1) * 100)} % des visiteurs`}</small>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card withBorder radius="xl" p="lg" className="advanced-flow-card">
+        <Group justify="space-between"><Title order={4}>Flux d’acquisition</Title><Badge color="cyan" variant="light">Sankey</Badge></Group>
+        <Text size="sm" c="dimmed" mt={4}>Les sources observées convergent vers le contenu puis vers les actions.</Text>
+        <div className="advanced-flow">
+          <div className="advanced-flow-sources">
+            {sources.length === 0 && <span>Aucune source</span>}
+            {sources.map((source) => <span key={source.label} style={{ "--flow": Math.max(2, Math.round(source.value / sourceTotal * 12)) }}>{source.label || "Direct"}<b>{source.value}</b></span>)}
+          </div>
+          <i aria-hidden="true" />
+          <strong>Portfolio<small>{summary.pageViews ?? 0} vues</small></strong>
+          <i aria-hidden="true" />
+          <div className="advanced-flow-outcomes"><span>Projets <b>{summary.projectViews ?? 0}</b></span><span>CV <b>{summary.cvClicks ?? 0}</b></span><span>Réseaux <b>{Number(summary.githubClicks || 0) + Number(summary.linkedinClicks || 0)}</b></span></div>
+        </div>
+      </Card>
+
+      <Card withBorder radius="xl" p="lg" className="advanced-correlation-card">
+        <Group justify="space-between"><Title order={4}>Performance × usage</Title><Badge color={latestBuild ? "teal" : "gray"} variant="light">{latestBuild?.buildId ?? "aucun build"}</Badge></Group>
+        <Text size="sm" c="dimmed" mt={4}>La qualité technique du dernier build rapprochée de l’usage sur la période.</Text>
+        <div className="advanced-correlation-matrix">
+          <article><span>FPS moyen</span><strong>{latestBuild?.averageFps?.toFixed?.(1) ?? "—"}</strong><small>{Number(latestBuild?.averageFps || 0) >= 55 ? "fluide" : "à surveiller"}</small></article>
+          <article><span>Frame p95</span><strong>{latestBuild ? `${latestBuild.averageFrameP95Ms.toFixed(1)} ms` : "—"}</strong><small>rendu navigateur</small></article>
+          <article><span>Latence API</span><strong>{latestBuild ? `${latestBuild.averageApiLatencyMs.toFixed(1)} ms` : "—"}</strong><small>{summary.pageViews ?? 0} pages vues</small></article>
+          <article><span>Intention</span><strong>{actions}</strong><small>{summary.projectViews ?? 0} vues projets</small></article>
+        </div>
+      </Card>
+    </section>
+  );
+}
+
 export default function AdminAnalyticsPanel() {
   const [from, setFrom] = useState(addDays(new Date(), -30));
   const [to, setTo] = useState(todayIso());
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [performanceHistory, setPerformanceHistory] = useState(null);
   const initialRangeRef = useRef({ from, to });
   const requestRef = useRef(null);
 
@@ -110,7 +168,12 @@ export default function AdminAnalyticsPanel() {
   useEffect(() => {
     const initialRange = initialRangeRef.current;
     loadAnalyticsRange(initialRange.from, initialRange.to);
-    return () => requestRef.current?.abort();
+    const controller = new AbortController();
+    fetchPerformanceHistory(120, { signal: controller.signal }).then(setPerformanceHistory).catch(() => {});
+    return () => {
+      controller.abort();
+      requestRef.current?.abort();
+    };
   }, [loadAnalyticsRange]);
 
   return (
@@ -150,6 +213,8 @@ export default function AdminAnalyticsPanel() {
               <MetricCard label="Clics LinkedIn" value={summary.linkedinClicks} />
               <MetricCard label="Vues projets" value={summary.projectViews} />
             </SimpleGrid>
+
+            <AdvancedJourneyAnalytics summary={summary} performanceHistory={performanceHistory} />
 
             <Card withBorder radius="xl" p="lg" className="analytics-list-card">
               <Group justify="space-between" align="center">

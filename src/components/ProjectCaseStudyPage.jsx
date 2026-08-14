@@ -1,6 +1,7 @@
 import { Anchor, Badge, Button, Card, Group, Loader, SimpleGrid, Stack, Text, Title } from "@mantine/core";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { VisibilityGate } from "../visibility/ItemVisibilityContext";
 
 import MetadataHead from "./MetadataHead";
 import OceanMorphBackground from "./OceanMorphBackground";
@@ -183,7 +184,7 @@ export default function ProjectCaseStudyPage({ owner, projects = [] }) {
           <span>{project.title}</span>
         </div>
 
-        <section className="project-case-hero island-card">
+        <VisibilityGate item="project.hero"><section className="project-case-hero island-card">
           <div className="project-case-hero-copy">
             <Group gap="xs" className="project-case-meta">
               <Badge className="project-status">{t(`status.${project.status}`, { fallback: project.status })}</Badge>
@@ -219,9 +220,9 @@ export default function ProjectCaseStudyPage({ owner, projects = [] }) {
               showOverlay={false}
             />
           )}
-        </section>
+        </section></VisibilityGate>
 
-        <Card className="island-card case-study-recruiter-summary" radius="xl">
+        <VisibilityGate item="project.summary"><Card className="island-card case-study-recruiter-summary" radius="xl">
           <Text className="case-study-section-kicker">{t("case.summaryTitle")}</Text>
           <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
             <article>
@@ -237,15 +238,16 @@ export default function ProjectCaseStudyPage({ owner, projects = [] }) {
               <p>{summaryValue(sectionMap.outcomes)}</p>
             </article>
           </SimpleGrid>
-        </Card>
+        </Card></VisibilityGate>
 
-        <nav className="case-study-jump-nav island-card" aria-label={t("case.navigation")}>
+        <VisibilityGate item="project.navigation"><nav className="case-study-jump-nav island-card" aria-label={t("case.navigation")}>
           {sections.map((section) => (
             <a key={section.id} href={`#case-${section.id}`}>{section.label}</a>
           ))}
-        </nav>
+        </nav></VisibilityGate>
 
         {proofTags.length > 0 && (
+          <VisibilityGate item="project.evidence">
           <Card className="island-card case-study-evidence-card" radius="xl">
             <Text className="case-study-section-kicker">{t("case.evidence")}</Text>
             <Group gap={8} className="case-study-stack-row">
@@ -253,16 +255,17 @@ export default function ProjectCaseStudyPage({ owner, projects = [] }) {
                 <Badge key={proof} className="stack-badge" variant="outline">{proof}</Badge>
               ))}
             </Group>
-          </Card>
+          </Card></VisibilityGate>
         )}
 
-        <section className="case-study-map" aria-label={t("case.detailedLabel")}>
+        <VisibilityGate item="project.map"><section className="case-study-map" aria-label={t("case.detailedLabel")}>
           {sections.map((section) => (
             <CaseStudySection key={section.id} section={section} />
           ))}
-        </section>
+        </section></VisibilityGate>
 
         {project.stacks?.length > 0 && (
+          <VisibilityGate item="project.stack">
           <Card className="island-card case-study-stack-card" radius="xl">
             <Text className="case-study-section-kicker">{t("case.stack")}</Text>
             <Group gap={8} className="case-study-stack-row">
@@ -272,15 +275,15 @@ export default function ProjectCaseStudyPage({ owner, projects = [] }) {
                 </Badge>
               ))}
             </Group>
-          </Card>
+          </Card></VisibilityGate>
         )}
 
-        <Card className="island-card case-study-links-card" radius="xl">
+        <VisibilityGate item="project.resources"><Card className="island-card case-study-links-card" radius="xl">
           <Text className="case-study-section-kicker">{t("case.resources")}</Text>
           <ProjectCaseLinks project={project} />
-        </Card>
+        </Card></VisibilityGate>
 
-        <SiteFooter owner={owner} />
+        <VisibilityGate item="project.footer"><SiteFooter owner={owner} /></VisibilityGate>
       </Stack>
     </main>
   );

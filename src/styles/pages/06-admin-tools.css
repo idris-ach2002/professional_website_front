@@ -44,3 +44,36 @@
   transform: translateY(-1px);
   box-shadow: 0 14px 34px rgba(12, 23, 30, 0.08);
 }
+
+/* items-visiblility ------------------------------------------------------- */
+.items-visibility-admin { display: grid; gap: 1rem; }
+.items-visibility-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1.25rem; border: 1px solid rgba(129, 239, 210, .2); border-radius: 22px; background: linear-gradient(145deg, rgba(18, 31, 38, .96), rgba(26, 29, 37, .96)); }
+.items-visibility-header > div:first-child { max-width: 780px; }
+.items-visibility-header span { color: #71e5c6; font: 800 12px "SFMono-Regular", Consolas, monospace; letter-spacing: .12em; }
+.items-visibility-header h2 { margin: .35rem 0; color: #f6f5f1; font-size: clamp(1.65rem, 3vw, 2.5rem); }
+.items-visibility-header p { margin: 0; color: rgba(245, 244, 239, .76); font-size: 14px; line-height: 1.65; }
+.items-visibility-actions { display: flex; flex-wrap: wrap; gap: .55rem; }
+.items-visibility-actions button { min-height: 42px; padding: .65rem .9rem; border: 1px solid rgba(255,255,255,.14); border-radius: 12px; background: rgba(255,255,255,.055); color: #f5f3ee; font-weight: 750; cursor: pointer; }
+.items-visibility-actions button.is-primary { border-color: rgba(113,229,198,.42); background: rgba(113,229,198,.15); color: #aef5df; }
+.items-visibility-actions button:disabled { opacity: .45; cursor: default; }
+.items-visibility-toolbar { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .75rem; align-items: center; }
+.items-visibility-toolbar input { width: 100%; min-height: 46px; padding: .7rem .9rem; border: 1px solid rgba(255,255,255,.12); border-radius: 13px; background: rgba(13,17,22,.74); color: #fff; font-size: 14px; }
+.items-visibility-toolbar span { color: rgba(255,255,255,.6); font: 700 12px "SFMono-Regular", Consolas, monospace; }
+.items-visibility-tree { display: grid; gap: .65rem; }
+.items-visibility-node { min-width: 0; }
+.items-visibility-row { display: grid; grid-template-columns: 86px minmax(0,1fr) auto; gap: .9rem; align-items: center; min-height: 64px; padding: .72rem .9rem; border: 1px solid rgba(255,255,255,.1); border-radius: 15px; background: rgba(17,21,27,.78); }
+.items-visibility-node.depth-0 > .items-visibility-row { border-color: rgba(113,229,198,.22); background: rgba(20,32,36,.9); }
+.items-visibility-node.depth-1 > .items-visibility-row { background: rgba(26,29,35,.82); }
+.items-visibility-kind { color: #78dec4; font: 800 11px "SFMono-Regular", Consolas, monospace; text-transform: uppercase; }
+.items-visibility-row strong, .items-visibility-row code { display: block; }
+.items-visibility-row strong { color: #f6f4ef; font-size: 14px; }
+.items-visibility-row code { margin-top: .18rem; color: rgba(255,255,255,.55); font-size: 12px; overflow-wrap: anywhere; }
+.items-visibility-children { display: grid; gap: .5rem; margin: .5rem 0 0 clamp(.45rem, 2vw, 1.5rem); padding-left: clamp(.45rem, 2vw, 1.25rem); border-left: 1px solid rgba(113,229,198,.18); }
+.items-visibility-switch { display: grid; grid-template-columns: 38px auto; gap: .5rem; align-items: center; cursor: pointer; }
+.items-visibility-switch input { position: absolute; opacity: 0; pointer-events: none; }
+.items-visibility-switch span { position: relative; width: 38px; height: 22px; border-radius: 999px; background: #4c5059; transition: background .18s ease; }
+.items-visibility-switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .18s ease; }
+.items-visibility-switch input:checked + span { background: #45c8a8; }
+.items-visibility-switch input:checked + span::after { transform: translateX(16px); }
+.items-visibility-switch b { color: rgba(255,255,255,.72); font-size: 12px; }
+@media (max-width: 760px) { .items-visibility-header { flex-direction: column; } .items-visibility-toolbar { grid-template-columns: 1fr; } .items-visibility-row { grid-template-columns: 1fr auto; } .items-visibility-kind { display: none; } }

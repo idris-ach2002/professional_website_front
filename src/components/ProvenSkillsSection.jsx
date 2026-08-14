@@ -5,6 +5,8 @@ import { Link } from "react-router-dom";
 import SectionTitle from "./SectionTitle";
 import useLanguage from "../localization/useLanguage";
 import { buildProvenSkills, getProjectSlug } from "../utils/portfolio";
+import { useItemVisibility } from "../visibility/useItemVisibility";
+import { skillVisibilityKey } from "../visibility/itemVisibilityRegistry";
 
 function normalizeApiSkill(skill, projects = [], experiences = [], defaultDescription) {
   if (!skill) return null;
@@ -53,13 +55,15 @@ function normalizeApiSkill(skill, projects = [], experiences = [], defaultDescri
 
 export default function ProvenSkillsSection({ projects = [], experiences = [], provenSkills = [] }) {
   const { localizedPath, t } = useLanguage();
+  const { isVisible } = useItemVisibility();
   const skills = useMemo(() => {
     const apiSkills = (provenSkills ?? [])
       .map((skill) => normalizeApiSkill(skill, projects, experiences, t("skills.description")))
       .filter((skill) => skill && skill.evidenceCount > 0);
 
-    return apiSkills.length > 0 ? apiSkills : buildProvenSkills(projects, experiences);
-  }, [projects, experiences, provenSkills, t]);
+    const source = apiSkills.length > 0 ? apiSkills : buildProvenSkills(projects, experiences);
+    return source.filter((skill) => isVisible(skillVisibilityKey(skill)));
+  }, [projects, experiences, provenSkills, t, isVisible]);
   const [selectedSkillId, setSelectedSkillId] = useState(null);
   const buttonRefs = useRef([]);
 

@@ -1,6 +1,9 @@
 import { Anchor, Badge, Button, Card, Group, SimpleGrid, Stack, Text, Title } from "@mantine/core";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { VisibilityGate } from "../visibility/ItemVisibilityContext";
+import { useItemVisibility } from "../visibility/useItemVisibility";
+import { recruiterExperienceVisibilityKey, recruiterProjectVisibilityKey, skillVisibilityKey } from "../visibility/itemVisibilityRegistry";
 
 import MetadataHead from "./MetadataHead";
 import OceanMorphBackground from "./OceanMorphBackground";
@@ -75,6 +78,7 @@ function RecruiterProjectCard({ project, localizedPath, t }) {
 
 export default function RecruiterPage({ owner, profile, projects = [], experiences = [] }) {
   const { locale, localizedPath, t } = useLanguage();
+  const { isVisible } = useItemVisibility();
   const [copied, setCopied] = useState(false);
   const ownerName = getOwnerFullName(owner);
   const currentYear = new Date().getFullYear();
@@ -89,9 +93,12 @@ export default function RecruiterPage({ owner, profile, projects = [], experienc
     .filter((experience) => ["INTERNSHIP", "SCHOOL", "ALTERNANCE", "CDI"].includes(experience.category))
     .slice(0, 3);
   const configuredSkills = Array.isArray(owner?.provenSkills) ? owner.provenSkills : [];
-  const provenSkills = configuredSkills.length > 0
+  const provenSkills = (configuredSkills.length > 0
     ? configuredSkills
-    : buildProvenSkills(projects, experiences);
+    : buildProvenSkills(projects, experiences))
+    .filter((skill) => isVisible(skillVisibilityKey(skill, "recruiter.skills")));
+  const visiblePriorityProjects = priorityProjects.filter((project) => isVisible(recruiterProjectVisibilityKey(project)));
+  const visiblePriorityExperiences = priorityExperiences.filter((experience, index) => isVisible(recruiterExperienceVisibilityKey(experience, index)));
 
   const handleCopy = async () => {
     try {
@@ -110,7 +117,7 @@ export default function RecruiterPage({ owner, profile, projects = [], experienc
       <TopNavigation owner={owner} />
 
       <Stack gap="xl" className="content-shell recruiter-page-content">
-        <section className="recruiter-hero island-card">
+        <VisibilityGate item="recruiter.hero"><section className="recruiter-hero island-card">
           <div className="recruiter-hero-copy">
             <Text className="recruiter-eyebrow">{t("recruiter.eyebrow")}</Text>
             <Title order={1}>{ownerName}</Title>
@@ -137,9 +144,9 @@ export default function RecruiterPage({ owner, profile, projects = [], experienc
               {copied ? t("recruiter.linkCopied") : t("recruiter.copyLink")}
             </Button>
           </Group>
-        </section>
+        </section></VisibilityGate>
 
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md" className="recruiter-facts-grid">
+        <VisibilityGate item="recruiter.facts"><SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md" className="recruiter-facts-grid">
           <Card className="recruiter-fact-card" radius="xl">
             <Text>{t("recruiter.availability")}</Text>
             <strong>{profile?.availability || t("hero.openOpportunities")}</strong>
@@ -150,15 +157,15 @@ export default function RecruiterPage({ owner, profile, projects = [], experienc
           </Card>
           <Card className="recruiter-fact-card" radius="xl">
             <Text>{t("recruiter.education")}</Text>
-            <strong>{priorityExperiences.find((experience) => experience.category === "SCHOOL")?.title || "Master Informatique"}</strong>
+            <strong>{visiblePriorityExperiences.find((experience) => experience.category === "SCHOOL")?.title || "Master Informatique"}</strong>
           </Card>
           <Card className="recruiter-fact-card" radius="xl">
             <Text>{t("recruiter.target")}</Text>
             <strong>{t("recruiter.targetValue")}</strong>
           </Card>
-        </SimpleGrid>
+        </SimpleGrid></VisibilityGate>
 
-        <section className="recruiter-section island-card">
+        <VisibilityGate item="recruiter.skills"><section className="recruiter-section island-card">
           <div className="recruiter-section-heading">
             <Text className="recruiter-card-kicker">01</Text>
             <Title order={2}>{t("recruiter.provenSkills")}</Title>
@@ -174,15 +181,15 @@ export default function RecruiterPage({ owner, profile, projects = [], experienc
               </article>
             ))}
           </SimpleGrid>
-        </section>
+        </section></VisibilityGate>
 
-        <section className="recruiter-section island-card">
+        <VisibilityGate item="recruiter.experience"><section className="recruiter-section island-card">
           <div className="recruiter-section-heading">
             <Text className="recruiter-card-kicker">02</Text>
             <Title order={2}>{t("recruiter.experience")}</Title>
           </div>
           <Stack gap="sm" className="recruiter-experience-list">
-            {priorityExperiences.length > 0 ? priorityExperiences.map((experience) => (
+            {visiblePriorityExperiences.length > 0 ? visiblePriorityExperiences.map((experience) => (
               <article key={`${experience.displayOrder}-${experience.title}`} className="recruiter-experience-item">
                 <div>
                   <Text className="recruiter-experience-category">{t(`category.${experience.category}`, { fallback: experience.category })}</Text>
@@ -196,16 +203,16 @@ export default function RecruiterPage({ owner, profile, projects = [], experienc
               </article>
             )) : <Text>{t("recruiter.noExperience")}</Text>}
           </Stack>
-        </section>
+        </section></VisibilityGate>
 
-        <section className="recruiter-section island-card">
+        <VisibilityGate item="recruiter.projects"><section className="recruiter-section island-card">
           <div className="recruiter-section-heading">
             <Text className="recruiter-card-kicker">03</Text>
             <Title order={2}>{t("recruiter.projects")}</Title>
           </div>
-          {priorityProjects.length > 0 ? (
+          {visiblePriorityProjects.length > 0 ? (
             <SimpleGrid cols={{ base: 1, lg: 3 }} spacing="md">
-              {priorityProjects.map((project) => (
+              {visiblePriorityProjects.map((project) => (
                 <RecruiterProjectCard
                   key={project.id ?? project.title}
                   project={project}
@@ -215,9 +222,9 @@ export default function RecruiterPage({ owner, profile, projects = [], experienc
               ))}
             </SimpleGrid>
           ) : <Text>{t("recruiter.noProject")}</Text>}
-        </section>
+        </section></VisibilityGate>
 
-        <footer className="recruiter-contact-footer island-card">
+        <VisibilityGate item="recruiter.contact"><footer className="recruiter-contact-footer island-card">
           <div className="recruiter-contact-footer__identity">
             <Text className="recruiter-card-kicker">{t("recruiter.contact")}</Text>
             <Title order={2}>{ownerName}</Title>
@@ -236,7 +243,7 @@ export default function RecruiterPage({ owner, profile, projects = [], experienc
           <Text className="recruiter-contact-footer__copyright">
             © {currentYear} {ownerName}
           </Text>
-        </footer>
+        </footer></VisibilityGate>
       </Stack>
     </main>
   );

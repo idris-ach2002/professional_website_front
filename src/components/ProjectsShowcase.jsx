@@ -11,6 +11,8 @@ import { ASSET_PRIORITIES, resolveAssetLoadingPolicy } from "../performance/asse
 import SectionTitle from "./SectionTitle";
 import { FilePreviewButton, PreviewableImage } from "./FilePreview";
 import { isPreviewableFile } from "../utils/filePreview";
+import { useItemVisibility } from "../visibility/useItemVisibility";
+import { projectVisibilityKey } from "../visibility/itemVisibilityRegistry";
 import {
   LINK_LABELS,
   downloadText,
@@ -831,13 +833,14 @@ function ProjectGallery({ projects }) {
 }
 
 export default function ProjectsShowcase({ projects }) {
+  const { isVisible } = useItemVisibility();
   const { t } = useLanguage();
   const rootRef = useRef(null);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("ALL");
   const [selectedStacks, setSelectedStacks] = useState([]);
 
-  const publicProjects = useMemo(() => getPublicProjects(projects), [projects]);
+  const publicProjects = useMemo(() => getPublicProjects(projects).filter((project) => isVisible(projectVisibilityKey(project))), [isVisible, projects]);
   const statuses = useMemo(() => getAvailableStatuses(publicProjects), [publicProjects]);
   const stacks = useMemo(() => getAvailableStacks(publicProjects), [publicProjects]);
 

@@ -70,7 +70,7 @@ export default function useAdminController() {
   const [portfolioBackupJson, setPortfolioBackupJson] = useState("");
   const [portfolioRestoreText, setPortfolioRestoreText] = useState("");
   const [portfolioRestoreLabel, setPortfolioRestoreLabel] = useState("Version restaurée depuis backup");
-  const [adminActiveTab, setAdminActiveTab] = useState("version");
+  const [adminActiveTab, setAdminActiveTab] = useState("overview");
   const [publicationJobs, setPublicationJobs] = useState([]);
   const [publicationEvents, setPublicationEvents] = useState([]);
   const [publicationDiff, setPublicationDiff] = useState(null);
