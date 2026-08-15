@@ -114,11 +114,11 @@ const aggressivePrefetch = decideSmartPrefetch({
 if (normalPrefetch.decision !== "skip") errors.push(`normal volcano prefetch should skip, got ${normalPrefetch.decision}`);
 if (aggressivePrefetch.decision !== "prefetch") errors.push(`aggressive volcano prefetch should remain enabled, got ${aggressivePrefetch.decision}`);
 
-if (pkg.scripts?.["check:final"] !== "npm run check:initial-source && node scripts/check-final-front-hardening.mjs") {
+if (pkg.scripts?.["check:final"] !== "npm run check:initial-source && node scripts/check-final-front-hardening.mjs && npm run check:main-thread") {
   errors.push("check:final script missing or changed");
 }
-if (pkg.scripts?.["ci:release"] !== "npm run ci:full && npm run ci:soak") {
-  errors.push("ci:release must run exactly one ci:full followed by one ci:soak");
+if (pkg.scripts?.["ci:release"] !== "npm run ci:full && npm run test:e2e:main-thread && npm run ci:soak") {
+  errors.push("ci:release must run exactly one ci:full, one isolated main-thread lab, then one ci:soak");
 }
 if (!pkg.scripts?.build?.includes("npm run check:final")) errors.push("build must enforce check:final before Vite");
 if (!pkg.scripts?.["ci:preflight"]?.includes("npm run check:final")) errors.push("ci:preflight must enforce check:final");

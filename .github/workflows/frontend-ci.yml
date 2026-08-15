@@ -234,9 +234,55 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  main-thread:
+    name: Main Thread Laboratory
+    needs: quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      PLAYWRIGHT_PREBUILT: "1"
+      E2E_ARTIFACT_REQUIRE_PREBUILT: "1"
+      PLAYWRIGHT_WORKERS: "1"
+      MAIN_THREAD_SAMPLE_MS: "1400"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Download hermetic E2E build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-e2e-dist
+          path: dist
+
+      - name: Run Main Thread Laboratory
+        run: npm run test:e2e:main-thread
+
+      - name: Upload main-thread report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-main-thread-report
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
   verify:
     name: Frontend freeze gate
-    needs: [browser-contracts, responsive, concurrency-contract, vitals]
+    needs: [browser-contracts, responsive, concurrency-contract, vitals, main-thread]
     runs-on: ubuntu-24.04
     steps:
       - name: Confirm all gates

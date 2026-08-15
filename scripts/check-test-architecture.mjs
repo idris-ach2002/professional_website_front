@@ -28,6 +28,8 @@ const functional = read("e2e/portfolio.spec.js");
 const responsive = read("e2e/responsive.spec.js");
 const stability = read("e2e/stability.spec.js");
 const soak = read("e2e/soak.spec.js");
+const mainThreadLab = read("e2e/main-thread-laboratory.spec.js");
+const mainThreadHelper = read("e2e/support/main-thread-laboratory.js");
 const workerPolicy = read("scripts/test-worker-policy.mjs");
 const runtimeEnv = read("scripts/check-runtime-env.mjs");
 const artifact = read("scripts/e2e-build-artifact.mjs");
@@ -75,8 +77,10 @@ const requiredScripts = [
   "ci:concurrency:hosted",
   "test:e2e:vitals",
   "test:e2e:soak",
+  "test:e2e:main-thread",
   "test:e2e:soak:ci",
   "test:workers",
+  "check:main-thread",
   "test:leaks",
   "e2e:artifact:stamp",
   "e2e:artifact:verify",
@@ -127,6 +131,9 @@ requireText(packageJson.scripts?.["test:e2e:soak:ci"] ?? "", "PLAYWRIGHT_WORKERS
 requireText(packageJson.scripts?.["test:e2e:soak:ci"] ?? "", "--workers=1", "Soak must remain a single-browser single-worker endurance test.");
 requireText(packageJson.scripts?.["test:e2e:vitals"] ?? "", "PLAYWRIGHT_WORKERS=1", "Web Vitals config and CLI must agree on one worker.");
 requireText(packageJson.scripts?.["test:e2e:vitals"] ?? "", "--workers=1", "Web Vitals must remain isolated on one worker.");
+requireText(packageJson.scripts?.["test:e2e:main-thread"] ?? "", "PLAYWRIGHT_WORKERS=1", "Main Thread Laboratory must remain isolated on one worker.");
+requireText(packageJson.scripts?.["test:e2e:main-thread"] ?? "", "--workers=1", "Main Thread Laboratory CLI must remain isolated on one worker.");
+requireText(packageJson.scripts?.["test:e2e:main-thread"] ?? "", "--project=chromium", "Main Thread Laboratory requires Chromium PerformanceObserver coverage.");
 requireText(packageJson.scripts?.["test:e2e:responsive"] ?? "", "--project=chromium", "Responsive matrix must run once in Chromium instead of duplicating layout checks cross-browser.");
 
 for (const threshold of ["statements: 82", "branches: 70", "functions: 85", "lines: 84"]) {
@@ -215,6 +222,15 @@ requireText(faultPolicy, 'severity: "diagnostic"', "Browser cancellations must r
 requireText(faultPolicy, 'severity: "fatal"', "Unknown network failures must remain fatal.");
 requireText(fixtures, "{ auto: true }", "Runtime/network guard must be an automatic Playwright fixture.");
 requireText(fixtures, "testInfo.errors.length === 0", "Automatic fixture must preserve the primary test failure.");
+for (const contract of [
+  "long-animation-frame",
+  "eventLoopDelays",
+  "rankMainThreadHotspot",
+]) {
+  requireText(mainThreadHelper + mainThreadLab, contract, `Main Thread Laboratory contract missing: ${contract}.`);
+}
+requireText(mainThreadLab, "main-thread-laboratory.json", "Main Thread Laboratory must attach a machine-readable JSON report.");
+requireText(mainThreadLab, "investigate-offscreen-canvas-worker", "Main Thread Laboratory must identify OffscreenCanvas Worker candidates rather than workerizing blindly.");
 requireText(runtime, "Single-flight bounded renderer probe", "Renderer liveness probes must remain single-flight.");
 requireText(runtime, "page.evaluate(probe, arg)", "Renderer liveness must use direct page evaluation instead of Locator actionability.");
 forbidText(runtime, 'locator("html").evaluate', "Renderer liveness probes must not depend on locating <html> before evaluation.");
@@ -404,5 +420,5 @@ if (errors.length > 0) {
 console.log(
   "Test architecture OK: hermetic fixtures, observable pre/postconditions, isolated browser contexts, "
   + "pinned Node/npm runtime, hermetic build+browser network, hardware-aware normal worker caps, portable two-worker hosted race gate plus four-worker local stress, "
-  + "single-flight steady-state soak probes without synthetic lifecycle assumptions, single-worker vitals/soak, and one authoritative CI/CD workflow.",
+  + "single-flight steady-state soak probes without synthetic lifecycle assumptions, single-worker vitals/soak/main-thread diagnostics, and one authoritative CI/CD workflow.",
 );

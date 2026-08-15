@@ -78,8 +78,10 @@
     "check:phase3-performance": "node scripts/check-phase3-performance.mjs",
     "check:phase4-cascade": "node scripts/check-phase4-cascade.mjs",
     "check:initial-source": "node scripts/check-initial-source-closure.mjs",
-    "check:final": "npm run check:initial-source && node scripts/check-final-front-hardening.mjs",
-    "ci:release": "npm run ci:full && npm run ci:soak"
+    "check:final": "npm run check:initial-source && node scripts/check-final-front-hardening.mjs && npm run check:main-thread",
+    "ci:release": "npm run ci:full && npm run test:e2e:main-thread && npm run ci:soak",
+    "check:main-thread": "node scripts/check-main-thread-laboratory.mjs",
+    "test:e2e:main-thread": "PLAYWRIGHT_METRICS=1 PLAYWRIGHT_WORKERS=1 playwright test e2e/main-thread-laboratory.spec.js --project=chromium --workers=1"
   },
   "dependencies": {
     "@mantine/core": "^9.0.0",
