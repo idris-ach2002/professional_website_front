@@ -1,13 +1,19 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
   useLocation,
 } from "react-router-dom";
 import useLanguage from "../localization/useLanguage";
+import "../styles/navigation/premium-navigation-v2.css";
 import AnimationPreferences from "./AnimationPreferences";
+import CommandUtilities from "./navigation/CommandUtilities";
+import usePremiumNavigationMotion from "./navigation/usePremiumNavigationMotion";
+import usePremiumNavigationShellMotion from "./navigation/usePremiumNavigationShellMotion";
+import SignatureCanvas from "./navigation/SignatureCanvas";
 import { useItemVisibility } from "../visibility/useItemVisibility";
 import {
   getOwnerFullName,
@@ -19,30 +25,31 @@ import {
 } from "../utils/portfolio";
 
 const NAV_LOGO_SRC = "/assets/identity/idris-navbar-logo.png";
-const COMPACT_NAV_QUERY = "(max-width: 1240px)";
+const MOBILE_DOCK_QUERY = "(max-width: 1240px), (hover: none) and (pointer: coarse) and (max-width: 1366px)";
 
-function readCompactNavigation() {
-  return typeof window !== "undefined" && window.matchMedia(COMPACT_NAV_QUERY).matches;
+function readMediaQuery(query) {
+  return typeof window !== "undefined" && window.matchMedia(query).matches;
 }
 
-function useCompactNavigation() {
-  const [compact, setCompact] = useState(readCompactNavigation);
+function useNavigationMedia(query) {
+  const [matches, setMatches] = useState(() => readMediaQuery(query));
 
   useEffect(() => {
-    const media = window.matchMedia(COMPACT_NAV_QUERY);
-    const update = () => setCompact(media.matches);
+    const media = window.matchMedia(query);
+    const update = () => setMatches(media.matches);
 
     media.addEventListener?.("change", update);
 
     return () => media.removeEventListener?.("change", update);
-  }, []);
+  }, [query]);
 
-  return compact;
+  return matches;
 }
+
 
 function getFallbackProjectItems(t) {
   return [
-    { label: "Portfolio full stack", description: t("nav.projectShowcaseDescription"), href: "#projects", icon: "code", badge: "CASE" },
+    { label: "Portfolio full stack", description: t("nav.projectShowcaseDescription"), href: "#projects", icon: "code" },
     { label: "Pipeline AIS", description: "AIS collection, storage and processing", href: "#projects", icon: "server" },
     { label: "Adaptive Huffman", description: "Compression, bitstream I/O and visualization", href: "#projects", icon: "algorithm" },
     { label: "DLP / ILP", description: "Java interpreter, ANTLR and C compilation", href: "#projects", icon: "compiler" },
@@ -56,14 +63,6 @@ function getFallbackSkillItems(t) {
     { label: "Frontend", description: "React, Vite, product UI and interactions", href: "#skills", icon: "frontend" },
     { label: "Data & pipelines", description: "Data streams, storage and processing", href: "#skills", icon: "data" },
   ];
-}
-
-function splitLetters(label) {
-  return String(label).split("").map((char, index) => (
-    <span key={`${char}-${index}`} aria-hidden="true">
-      {char === " " ? "\u00A0" : char}
-    </span>
-  ));
 }
 
 function getContactValue(owner, type) {
@@ -94,7 +93,7 @@ function buildMenuGroups(owner, t, localizedPath) {
   const projects = getPublicProjects(sortByDisplayOrder(owner?.projects ?? []));
   const provenSkills = Array.isArray(owner?.provenSkills) ? owner.provenSkills : [];
 
-  const experienceItems = experiences.slice(0, 5).map((experience, index) => ({
+  const experienceItems = experiences.slice(0, 4).map((experience, index) => ({
     label: experience?.organization || experience?.title || `${t("nav.journey")} ${index + 1}`,
     description: experience?.title || experience?.summary || t("nav.viewExperience"),
     href: `#${getExperienceAnchor(experience, index)}`,
@@ -102,12 +101,12 @@ function buildMenuGroups(owner, t, localizedPath) {
     badge: experience?.currentPosition ? t("nav.current") : undefined,
   }));
 
-  const projectItems = projects.slice(0, 5).map((project, index) => ({
+  const projectItems = projects.slice(0, 4).map((project, index) => ({
     label: project?.title || `${t("projects.project")} ${index + 1}`,
     description: project?.subtitle || project?.shortDescription || project?.description || t("nav.viewCaseStudy"),
     href: localizedPath(`/projects/${getProjectSlug(project)}`),
     icon: getProjectIcon(project, index),
-    badge: index === 0 ? "CASE" : undefined,
+
   }));
 
   const skillItems = provenSkills.slice(0, 4).map((skill, index) => ({
@@ -115,12 +114,13 @@ function buildMenuGroups(owner, t, localizedPath) {
     description: skill?.summary || skill?.description || t("nav.provenSkill"),
     href: "#skills",
     icon: ["proof", "server", "frontend", "data"][index] ?? "proof",
-    badge: index === 0 ? "PROOF" : undefined,
+
   }));
 
   return [
     {
       label: t("nav.profile"),
+      icon: "profile",
       visibilityKey: "global.navbar.profile",
       href: "#profile",
       layout: "single",
@@ -137,6 +137,7 @@ function buildMenuGroups(owner, t, localizedPath) {
     },
     {
       label: t("nav.journey"),
+      icon: "briefcase",
       visibilityKey: "global.navbar.journey",
       href: "#timeline",
       layout: "single",
@@ -155,6 +156,7 @@ function buildMenuGroups(owner, t, localizedPath) {
     },
     {
       label: t("nav.projects"),
+      icon: "grid",
       visibilityKey: "global.navbar.projects",
       href: "#projects",
       layout: "wide",
@@ -175,6 +177,7 @@ function buildMenuGroups(owner, t, localizedPath) {
     },
     {
       label: t("nav.skills"),
+      icon: "expertise",
       visibilityKey: "global.navbar.skills",
       href: "#skills",
       layout: "wide align-right",
@@ -195,6 +198,7 @@ function buildMenuGroups(owner, t, localizedPath) {
     },
     {
       label: t("nav.engineering"),
+      icon: "architecture",
       visibilityKey: "global.navbar.architecture",
       href: "/engineering",
       layout: "single align-right",
@@ -207,7 +211,6 @@ function buildMenuGroups(owner, t, localizedPath) {
               description: t("nav.missionControlDescription"),
               href: "/engineering",
               icon: "architecture",
-              badge: "LIVE",
             },
           ],
         },
@@ -241,6 +244,8 @@ function Icon({ type }) {
     code: <path d="m9.4 8-4 4 4 4M14.6 8l4 4-4 4M13.2 5.8l-2.4 12.4" />,
     github: <path d="M9.2 19.4c-3.1.95-3.1-1.55-4.35-1.86m8.7 3.16v-2.45c.04-.55-.14-1.1-.5-1.52 1.68-.2 3.45-.83 3.45-3.76a2.92 2.92 0 0 0-.8-2.02 2.74 2.74 0 0 0-.05-2.04s-.63-.2-2.1.78a7.18 7.18 0 0 0-3.83 0c-1.46-.98-2.1-.78-2.1-.78a2.74 2.74 0 0 0-.04 2.04 2.92 2.92 0 0 0-.8 2.04c0 2.9 1.76 3.55 3.44 3.76-.35.42-.54.96-.5 1.52v2.45" />,
     proof: <path d="M12 3.8 19.2 7v5.35c0 4.2-2.8 6.55-7.2 8-4.4-1.45-7.2-3.8-7.2-8V7L12 3.8Zm-3 8.35 2.1 2.1 4.1-4.45" />,
+    expertise: <><path d="M12 3.6 18.4 7.2v7.3L12 18.4l-6.4-3.9V7.2L12 3.6Z" /><path d="m12 7.3 1.05 2.45 2.55 1.05-2.55 1.05L12 14.4l-1.05-2.55-2.55-1.05 2.55-1.05L12 7.3Z" /></>,
+    more: <><circle cx="7" cy="7" r="1.4" /><circle cx="17" cy="7" r="1.4" /><circle cx="7" cy="17" r="1.4" /><circle cx="17" cy="17" r="1.4" /></>,
     server: <path d="M5.5 5.2h13v5.6h-13V5.2Zm0 8h13v5.6h-13v-5.6ZM8 8h.05M8 16h.05" />,
     frontend: <path d="M4.8 6.2h14.4v11.6H4.8V6.2Zm0 3.2h14.4M8.2 14l-1.4-1.4 1.4-1.4M15.8 11.2l1.4 1.4-1.4 1.4" />,
     quality: <path d="M12 4.2 14 9l5.2.4-4 3.4 1.25 5.05L12 15.15 7.55 17.85 8.8 12.8l-4-3.4L10 9l2-4.8Z" />,
@@ -299,7 +304,7 @@ function MegaMenuItem({ item, isHomePath, profile, owner, localizedPath, onNavig
       </span>
       <span className="dropdown-link-copy">
         <span className="dropdown-link-title-row">
-          <span className="dropdown-link-text" aria-label={item.label}>{splitLetters(item.label)}</span>
+          <span className="dropdown-link-text">{item.label}</span>
           {item.badge ? <span className="dropdown-link-badge">{item.badge}</span> : null}
         </span>
         <span className="dropdown-link-description">{item.description}</span>
@@ -308,9 +313,9 @@ function MegaMenuItem({ item, isHomePath, profile, owner, localizedPath, onNavig
   );
 }
 
-function DesktopDropdown({ group, active, setActive, isHomePath, owner, profile, localizedPath }) {
+function DesktopDropdown({ group, active, setActive, isHomePath, owner, profile, localizedPath, sectionActive }) {
   const open = active === group.label;
-  const className = `nav_menu-dropdown-toggle-v2 w-dropdown ${group.layout ?? "single"}${open ? " is-open" : ""}`;
+  const className = `nav_menu-dropdown-toggle-v2 w-dropdown ${group.layout ?? "single"}${open ? " is-open" : ""}${sectionActive ? " is-section-active" : ""}`;
 
   return (
     <div
@@ -329,9 +334,12 @@ function DesktopDropdown({ group, active, setActive, isHomePath, owner, profile,
       <a
         href={resolveSectionHref(group.href, isHomePath, localizedPath)}
         className="dropdown1_toggle v2 w-dropdown-toggle"
+        data-nav-primary
+        data-nav-section={group.label}
         aria-expanded={open}
         onClick={() => setActive(null)}
       >
+        <span className="nav_primary-icon"><Icon type={group.icon} /></span>
         <span>{group.label}</span>
         <svg viewBox="0 0 16 16" className="nav_menu-dropdown-arrow" aria-hidden="true">
           <path d="M4.4 6.2 8 9.8l3.6-3.6" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
@@ -365,186 +373,326 @@ function DesktopDropdown({ group, active, setActive, isHomePath, owner, profile,
   );
 }
 
-function LanguageDropdown({ active, setActive, language, setLanguage, t }) {
-  const menuKey = "__language";
-  const open = active === menuKey;
-  const options = [
-    {
-      code: "fr",
-      label: t("language.french"),
-      description: t("language.frenchDescription"),
-    },
-    {
-      code: "en",
-      label: t("language.english"),
-      description: t("language.englishDescription"),
-    },
-  ];
+function MobileSheetHeader({ icon, title, eyebrow, onClose, actionHref, onAction }) {
+  return (
+    <header className={`nav_mobile-sheet-header${actionHref ? " has-action" : ""}`}>
+      <span className="nav_mobile-sheet-heading-icon"><Icon type={icon} /></span>
+      <div className="nav_mobile-sheet-heading-copy">
+        {eyebrow ? <small>{eyebrow}</small> : null}
+        <strong>{title}</strong>
+      </div>
+      {actionHref ? (
+        <a className="nav_mobile-sheet-open" href={actionHref} onClick={onAction} aria-label={`Ouvrir ${title}`}>
+          <span aria-hidden="true">↗</span>
+        </a>
+      ) : null}
+      <button type="button" className="nav_mobile-sheet-close" onClick={onClose} aria-label="Fermer">×</button>
+    </header>
+  );
+}
+
+function MobileGroupSheet({ group, isHomePath, owner, profile, localizedPath, onClose, t }) {
+  const sectionHref = resolveSectionHref(group.href, isHomePath, localizedPath);
+  const normalizedGroupLabel = group.label.trim().toLocaleLowerCase();
 
   return (
-    <div
-      className={`nav_language-dropdown nav_menu-dropdown-toggle-v2 w-dropdown single align-right${open ? " is-open" : ""}`}
-      onMouseEnter={() => setActive(menuKey)}
-      onMouseLeave={() => setActive(null)}
-      onFocus={() => setActive(menuKey)}
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) setActive(null);
-      }}
-    >
-      <button
-        type="button"
-        className="dropdown1_toggle v2 w-dropdown-toggle"
-        aria-label={t("language.title")}
-        aria-expanded={open}
-        onClick={() => setActive(open ? null : menuKey)}
-      >
-        <span>{t("language.title")}</span>
-        <svg viewBox="0 0 16 16" className="nav_menu-dropdown-arrow" aria-hidden="true">
-          <path d="M4.4 6.2 8 9.8l3.6-3.6" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
+    <>
+      <MobileSheetHeader
+        icon={group.icon}
+        title={group.label}
+        eyebrow={t("nav.mainLabel")}
+        actionHref={sectionHref}
+        onAction={onClose}
+        onClose={onClose}
+      />
+      <div className="nav_mobile-sheet-sections">
+        {group.sections.map((section) => {
+          const compactItems = section.items.filter((item) => item.label?.trim().toLocaleLowerCase() !== normalizedGroupLabel);
+          if (compactItems.length === 0) return null;
+          return (
+            <section className="nav_mobile-sheet-section" key={`${group.label}-${section.eyebrow || "main"}`}>
+              {section.eyebrow ? <div className="nav_mobile-sheet-eyebrow">{section.eyebrow}</div> : null}
+              <div className="nav_mobile-sheet-grid">
+                {compactItems.map((item) => {
+                  const href = item.href
+                    ? resolveItemHref(item, { isHomePath, profile, owner, localizedPath })
+                    : sectionHref;
+                  const external = href?.startsWith("http") || href?.startsWith("mailto:") || href?.startsWith("tel:");
+                  return (
+                    <a
+                      key={`${group.label}-${section.eyebrow}-${item.label}`}
+                      className="nav_mobile-sheet-item"
+                      href={href}
+                      target={external ? "_blank" : undefined}
+                      rel={external ? "noreferrer" : undefined}
+                      onClick={onClose}
+                    >
+                      <span className="nav_mobile-sheet-item-icon"><Icon type={item.icon} /></span>
+                      <span className="nav_mobile-sheet-item-label">{item.label}</span>
+                      <span className="nav_mobile-sheet-item-trailing">
+                        {item.badge ? <em>{item.badge}</em> : null}
+                        <span className="nav_mobile-sheet-chevron" aria-hidden="true">›</span>
+                      </span>
+                    </a>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    </>
+  );
+}
 
-      <nav className="dropdown-list-v2 w-dropdown-list" aria-label={t("language.title")}>
-        <div className="dropdown-inside-wrap">
-          <div className="dropdown-wrap">
-            <div className="dropdown-column">
-              <div className="dropdown-list-heading hide-tablet">{t("language.selectorLabel")}</div>
-              {options.map((option) => (
-                <button
-                  key={option.code}
-                  type="button"
-                  className="dropdown-link nav_language-dropdown-option"
-                  aria-pressed={language === option.code}
-                  onClick={() => {
-                    setLanguage(option.code);
-                    setActive(null);
-                  }}
-                >
-                  <span className="dropdown-link-icon"><Icon type="language" /></span>
-                  <span className="dropdown-link-copy">
-                    <span className="dropdown-link-title-row">
-                      <span className="dropdown-link-text">{option.label}</span>
-                      {language === option.code ? <span className="dropdown-link-badge">{t("nav.current")}</span> : null}
-                    </span>
-                    <span className="dropdown-link-description">{option.description}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
+function MobileBottomNavigation({
+  groups,
+  activeSection,
+  isHomePath,
+  owner,
+  profile,
+  localizedPath,
+  language,
+  setLanguage,
+  contactHref,
+  emailHref,
+  linkedinHref,
+  recruiterHref,
+  cvHref,
+  sheet,
+  setSheet,
+  isVisible,
+  t,
+}) {
+  const moreLabel = language === "en" ? "More" : "Plus";
+  const optionsLabel = language === "en" ? "Options" : "Options";
+  const primaryHrefs = new Set(["#profile", "#timeline", "#projects", "/engineering"]);
+  const primaryGroups = groups.filter((group) => primaryHrefs.has(group.href));
+  const expertiseGroup = groups.find((group) => group.href === "#skills");
+  const selectedGroup = groups.find((group) => sheet === `group:${group.href}`);
+  const moreOwnsActiveSection = Boolean(expertiseGroup && activeSection === expertiseGroup.label);
+  const moreSheetOpen = Boolean(sheet && (sheet === "more" || sheet === "contact" || sheet === "options" || sheet === "cv" || sheet === "recruiter" || sheet === `group:${expertiseGroup?.href}`));
+  const openSheet = (next) => setSheet((current) => current === next ? null : next);
+  const closeSheet = () => setSheet(null);
+  const sheetDialogLabel = selectedGroup?.label
+    || (sheet === "contact" ? t("nav.contact") : null)
+    || (sheet === "options" ? optionsLabel : null)
+    || (sheet === "cv" ? "CV" : null)
+    || (sheet === "recruiter" ? t("nav.recruiter") : null)
+    || moreLabel;
+
+  const renderMore = () => (
+    <>
+      <MobileSheetHeader icon="more" title={language === "en" ? "More" : "Plus"} eyebrow={t("nav.mainLabel")} onClose={closeSheet} />
+      <div className="nav_mobile-more-grid">
+        {expertiseGroup ? (
+          <button type="button" onClick={() => setSheet(`group:${expertiseGroup.href}`)}>
+            <span><Icon type="expertise" /></span><strong>{expertiseGroup.label}</strong>
+          </button>
+        ) : null}
+        {isVisible("global.navbar.contact") ? (
+          <button type="button" onClick={() => setSheet("contact")}>
+            <span><Icon type="contact" /></span><strong>{t("nav.contact")}</strong>
+          </button>
+        ) : null}
+        <button type="button" onClick={() => setSheet("options")}>
+          <span><Icon type="quality" /></span><strong>{optionsLabel}</strong>
+        </button>
+        {isVisible("global.navbar.cv") ? (
+          <button type="button" onClick={() => setSheet("cv")}>
+            <span><Icon type="document" /></span><strong>CV</strong>
+          </button>
+        ) : null}
+        {isVisible("global.navbar.recruiter") ? (
+          <button type="button" onClick={() => setSheet("recruiter")}>
+            <span><Icon type="briefcase" /></span><strong>{t("nav.recruiter")}</strong>
+          </button>
+        ) : null}
+      </div>
+    </>
+  );
+
+  const renderContact = () => (
+    <>
+      <MobileSheetHeader icon="contact" title={t("nav.contact")} eyebrow={language === "en" ? "Shortcuts" : "Raccourcis"} onClose={closeSheet} />
+      <div className="nav_mobile-sheet-grid is-actions">
+        <a className="nav_mobile-sheet-item" href={emailHref} onClick={closeSheet}><span className="nav_mobile-sheet-item-icon"><Icon type="email" /></span><span className="nav_mobile-sheet-item-label">Email</span><span className="nav_mobile-sheet-chevron" aria-hidden="true">›</span></a>
+        <a className="nav_mobile-sheet-item" href={linkedinHref} target={linkedinHref?.startsWith("http") ? "_blank" : undefined} rel={linkedinHref?.startsWith("http") ? "noreferrer" : undefined} onClick={closeSheet}><span className="nav_mobile-sheet-item-icon"><Icon type="linkedin" /></span><span className="nav_mobile-sheet-item-label">LinkedIn</span><span className="nav_mobile-sheet-chevron" aria-hidden="true">›</span></a>
+        <a className="nav_mobile-sheet-item" href={contactHref} onClick={closeSheet}><span className="nav_mobile-sheet-item-icon"><Icon type="contact" /></span><span className="nav_mobile-sheet-item-label">{t("hero.contact")}</span><span className="nav_mobile-sheet-chevron" aria-hidden="true">›</span></a>
+      </div>
+    </>
+  );
+
+  const renderOptions = () => (
+    <>
+      <MobileSheetHeader icon="quality" title={optionsLabel} eyebrow={language === "en" ? "Preferences" : "Préférences"} onClose={closeSheet} />
+      {isVisible("global.navbar.language") ? (
+        <div className="nav_mobile-dock-language is-sheet" role="group" aria-label={t("language.selectorLabel", { fallback: "Langue" })}>
+          <span><Icon type="language" /> {t("language.title")}</span>
+          <button type="button" aria-pressed={language === "fr"} onClick={() => setLanguage("fr")}>FR</button>
+          <button type="button" aria-pressed={language === "en"} onClick={() => setLanguage("en")}>EN</button>
         </div>
+      ) : null}
+      {isVisible("global.navbar.animations") ? <AnimationPreferences mobile /> : null}
+    </>
+  );
+
+  const renderCv = () => (
+    <>
+      <MobileSheetHeader icon="document" title="CV" eyebrow={language === "en" ? "Document" : "Document"} onClose={closeSheet} />
+      <a className="nav_mobile-cv-card" href={cvHref} target={cvHref?.startsWith("http") ? "_blank" : undefined} rel={cvHref?.startsWith("http") ? "noreferrer" : undefined} onClick={closeSheet}>
+        <span><Icon type="document" /></span>
+        <strong>{t("nav.downloadCv")}</strong>
+        <em aria-hidden="true">↗</em>
+      </a>
+    </>
+  );
+
+  const renderRecruiter = () => (
+    <>
+      <MobileSheetHeader
+        icon="briefcase"
+        title={t("nav.recruiter")}
+        eyebrow={language === "en" ? "Dedicated space" : "Espace dédié"}
+        actionHref={recruiterHref}
+        onAction={closeSheet}
+        onClose={closeSheet}
+      />
+      <div className="nav_mobile-sheet-grid is-actions">
+        <a className="nav_mobile-sheet-item" href={recruiterHref} onClick={closeSheet}>
+          <span className="nav_mobile-sheet-item-icon"><Icon type="briefcase" /></span>
+          <span className="nav_mobile-sheet-item-label">{language === "en" ? "Open workspace" : "Ouvrir l’espace"}</span>
+          <span className="nav_mobile-sheet-chevron" aria-hidden="true">›</span>
+        </a>
+      </div>
+    </>
+  );
+
+  return (
+    <div className="nav_mobile-dock-shell">
+      {sheet ? <button type="button" className="nav_mobile-sheet-backdrop" aria-label="Fermer" onClick={closeSheet} /> : null}
+      {sheet ? (
+        <section className="nav_mobile-dock-tools nav_mobile-command-sheet" role="dialog" aria-modal="true" aria-label={sheetDialogLabel}>
+          {selectedGroup ? <MobileGroupSheet group={selectedGroup} isHomePath={isHomePath} owner={owner} profile={profile} localizedPath={localizedPath} onClose={closeSheet} t={t} /> : null}
+          {sheet === "more" ? renderMore() : null}
+          {sheet === "contact" ? renderContact() : null}
+          {sheet === "options" ? renderOptions() : null}
+          {sheet === "cv" ? renderCv() : null}
+          {sheet === "recruiter" ? renderRecruiter() : null}
+        </section>
+      ) : null}
+
+      <nav className="nav_mobile-dock" aria-label={t("nav.mainLabel")}>
+        {primaryGroups.map((group) => {
+          const pageActive = activeSection === group.label;
+          const opened = sheet === `group:${group.href}`;
+          return (
+            <button
+              key={`dock-${group.label}`}
+              type="button"
+              className={`nav_mobile-dock-link${pageActive || opened ? " is-active" : ""}`}
+              aria-pressed={opened}
+              onClick={() => openSheet(`group:${group.href}`)}
+            >
+              <span className="nav_mobile-dock-icon"><Icon type={group.icon} /></span>
+              <span className="nav_mobile-dock-label">{group.label}</span>
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          className={`nav_mobile-dock-link nav_mobile-dock-more${moreSheetOpen || moreOwnsActiveSection ? " is-active" : ""}`}
+          aria-label={language === "en" ? "More options" : "Plus d’options"}
+          aria-expanded={Boolean(sheet)}
+          onClick={() => openSheet("more")}
+        >
+          <span className="nav_mobile-dock-icon"><Icon type="more" /></span>
+          <span className="nav_mobile-dock-label">{moreLabel}</span>
+        </button>
       </nav>
     </div>
   );
 }
 
-function MobileMenu({ opened, groups, isHomePath, owner, profile, localizedPath, recruiterHref, language, setLanguage, t, onClose, isVisible }) {
-  return (
-    <nav
-      id="portfolio-mobile-menu"
-      className={`nav_mobile-panel${opened ? " is-open" : ""}`}
-      aria-label={t("nav.mainLabel")}
-    >
-      {groups.map((group) => (
-        <div className="nav_mobile-group" key={`mobile-${group.label}`}>
-          <div className="nav_mobile-heading">{group.label}</div>
-          {group.sections.flatMap((section) => section.items).map((item) => (
-            <MegaMenuItem
-              key={`mobile-${group.label}-${item.label}`}
-              item={item}
-              isHomePath={isHomePath}
-              owner={owner}
-              profile={profile}
-              localizedPath={localizedPath}
-              onNavigate={onClose}
-            />
-          ))}
-        </div>
-      ))}
-      <div className="nav_mobile-utility-group" role="group" aria-label={t("nav.mainLabel")}>
-        {isVisible("global.navbar.recruiter") && <a href={recruiterHref} className="nav_mobile-direct-link" onClick={onClose}>
-          <span>{t("nav.recruiter")}</span>
-        </a>}
-        {isVisible("global.navbar.language") && <div className="nav_mobile-language-menu" role="group" aria-label={t("language.selectorLabel", { fallback: "Langue" })}>
-          <button
-            type="button"
-            className={`nav_mobile-language-option${language === "fr" ? " is-active" : ""}`}
-            onClick={() => {
-              setLanguage("fr");
-              onClose();
-            }}
-            aria-pressed={language === "fr"}
-          >
-            FR
-          </button>
-          <span className="nav_mobile-language-separator" aria-hidden="true">/</span>
-          <button
-            type="button"
-            className={`nav_mobile-language-option${language === "en" ? " is-active" : ""}`}
-            onClick={() => {
-              setLanguage("en");
-              onClose();
-            }}
-            aria-pressed={language === "en"}
-          >
-            EN
-          </button>
-        </div>}
-        {isVisible("global.navbar.animations") && <AnimationPreferences mobile />}
-      </div>
-    </nav>
-  );
-}
-
 export default function TopNavigation({ owner }) {
-  const compactNavigation = useCompactNavigation();
+  const mobileDockNavigation = useNavigationMedia(MOBILE_DOCK_QUERY);
   const { isVisible } = useItemVisibility();
   const { language, localizedPath, setLanguage, t } = useLanguage();
   const location = useLocation();
   const [active, setActive] = useState(null);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileSheet, setMobileSheet] = useState(null);
+  const [observedSection, setObservedSection] = useState(null);
+  const desktopMenuRef = useRef(null);
+  const desktopShellRef = useRef(null);
   const isHomePath = location.pathname === "/";
   const ownerName = getOwnerFullName(owner);
   const profile = owner?.prof ?? owner?.profile ?? {};
   const contactHref = isHomePath ? "#contact" : localizedPath("/#contact");
   const recruiterHref = localizedPath("/recruiter");
   const cvHref = normalizeUrl(profile?.cvUrl || "#profile");
+  const emailValue = getContactValue(owner, "EMAIL");
+  const emailHref = emailValue ? `mailto:${emailValue}` : contactHref;
+  const linkedinHref = normalizeUrl(getContactValue(owner, "LINKEDIN") || "#profile");
 
   const groups = useMemo(() => buildMenuGroups(owner, t, localizedPath).filter((group) => isVisible(group.visibilityKey)), [isVisible, localizedPath, owner, t]);
+  const routeSection = useMemo(() => {
+    if (location.pathname.startsWith("/engineering")) return groups.find((group) => group.href === "/engineering")?.label ?? null;
+    if (location.pathname.startsWith("/projects/")) return groups.find((group) => group.href === "#projects")?.label ?? null;
+    return null;
+  }, [groups, location.pathname]);
+  const activeSection = routeSection ?? observedSection ?? groups[0]?.label ?? null;
+
+  usePremiumNavigationMotion(desktopMenuRef, activeSection);
+  usePremiumNavigationShellMotion(desktopShellRef);
 
   useEffect(() => {
-    if (!compactNavigation || !mobileOpen) return undefined;
+    if (!isHomePath) return undefined;
 
+    const sections = groups
+      .filter((group) => group.href?.startsWith("#"))
+      .map((group) => ({ group, element: document.querySelector(group.href) }))
+      .filter(({ element }) => Boolean(element));
+
+    if (sections.length === 0) return undefined;
+
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (!visible) return;
+      const match = sections.find(({ element }) => element === visible.target);
+      if (match) setObservedSection(match.group.label);
+    }, { rootMargin: "-32% 0px -54% 0px", threshold: [0.01, 0.18, 0.42, 0.72] });
+
+    sections.forEach(({ element }) => observer.observe(element));
+    return () => observer.disconnect();
+  }, [groups, isHomePath]);
+
+
+  useEffect(() => {
+    if (!mobileDockNavigation || !mobileSheet) return undefined;
     const previousOverflow = document.body.style.overflow;
-    const closeOnEscape = (event) => {
-      if (event.key === "Escape") setMobileOpen(false);
-    };
-
+    const closeOnEscape = (event) => { if (event.key === "Escape") setMobileSheet(null); };
     document.body.style.overflow = "hidden";
-    document.documentElement.dataset.mobileMenu = "open";
     window.addEventListener("keydown", closeOnEscape);
-
     return () => {
       document.body.style.overflow = previousOverflow;
-      delete document.documentElement.dataset.mobileMenu;
       window.removeEventListener("keydown", closeOnEscape);
     };
-  }, [compactNavigation, mobileOpen]);
+  }, [mobileDockNavigation, mobileSheet]);
 
   return (
-    <div className="nav_fixed nav_fixed--portfolio">
-      <div className="nav_spacer v2 hide" />
-      <div data-wf--navbar--variant="base" data-animation="default" data-collapse="medium" data-duration="400" data-easing="ease" data-easing2="ease" role="banner" className="nav_component w-nav">
+    <div className={`nav_fixed nav_fixed--portfolio${mobileDockNavigation ? " is-mobile-dock-mode" : ""}`}>
+      {!mobileDockNavigation && <div className="nav_spacer v2 hide" />}
+      {!mobileDockNavigation && <div data-wf--navbar--variant="base" data-animation="default" data-collapse="medium" data-duration="400" data-easing="ease" data-easing2="ease" role="banner" className="nav_component w-nav" ref={desktopShellRef}>
         <div className="nav_container-v2">
-          <a href={isHomePath ? "#main-content" : localizedPath("/")} className="nav_brand w-nav-brand" aria-label={`${t("notFound.home")} — ${ownerName || "Idris ACHABOU"}`}>
-            <picture>
-              <source srcSet="/assets/identity/idris-navbar-logo.webp" type="image/webp" />
-              <img src={NAV_LOGO_SRC} alt={ownerName || "Idris ACHABOU"} className="nav_personal-logo" loading="eager" decoding="async" />
-            </picture>
+          <a href={isHomePath ? "#main-content" : localizedPath("/")} className="nav_brand nav_island nav_island--brand w-nav-brand" aria-label={`${t("notFound.home")} — ${ownerName || "Idris ACHABOU"}`} data-nav-zone="identity">
+            <SignatureCanvas name={(ownerName || "Idris ACHABOU").split(" ")[0]} fallbackSrc={NAV_LOGO_SRC} />
           </a>
 
-          {!compactNavigation && <nav role="navigation" className="nav_menu v2 w-nav-menu" aria-label={t("nav.mainLabel")}>
-            <div className="nav_menu-wrapper grid v2">
+          <nav role="navigation" className="nav_menu v2 nav_island nav_island--core w-nav-menu" aria-label={t("nav.mainLabel")} data-nav-zone="navigation">
+            <div className="nav_menu-wrapper grid v2" ref={desktopMenuRef}>
+              <span className="nav_primary-lens" data-nav-lens aria-hidden="true" />
               {groups.map((group) => (
                 <DesktopDropdown
                   key={group.label}
@@ -555,59 +703,48 @@ export default function TopNavigation({ owner }) {
                   owner={owner}
                   profile={profile}
                   localizedPath={localizedPath}
+                  sectionActive={activeSection === group.label}
                 />
               ))}
-              {isVisible("global.navbar.contact") && <a href={contactHref} className="nav_direct-link w-inline-block">{t("nav.contact")}</a>}
-              {isVisible("global.navbar.recruiter") && <a href={recruiterHref} className={`nav_direct-link nav_recruiter-menu-link w-inline-block${location.pathname === "/recruiter" ? " is-active" : ""}`}
-                aria-current={location.pathname === "/recruiter" ? "page" : undefined}
-              >
-                {t("nav.recruiter")}
-              </a>}
-              {isVisible("global.navbar.animations") && <AnimationPreferences active={active} setActive={setActive} compactTrigger />}
-              {isVisible("global.navbar.language") && <LanguageDropdown
-                active={active}
-                setActive={setActive}
-                language={language}
-                setLanguage={setLanguage}
-                t={t}
-              />}
             </div>
-          </nav>}
+          </nav>
 
-          {!compactNavigation && isVisible("global.navbar.cv") && <div className="nav_actions-wrap">
-            <a id="nav-download" href={cvHref} target={cvHref?.startsWith("http") ? "_blank" : undefined} rel={cvHref?.startsWith("http") ? "noreferrer" : undefined} className="nav_big-button button w-inline-block">
-              <span>{t("nav.downloadCv")}</span>
-            </a>
-          </div>}
-
-          {compactNavigation && <button
-            type="button"
-            className={`nav_button w-nav-button${mobileOpen ? " w--open" : ""}`}
-            aria-label={t("nav.mainLabel")}
-            aria-expanded={mobileOpen}
-            aria-controls="portfolio-mobile-menu"
-            onClick={() => setMobileOpen((value) => !value)}
-          >
-            <span className="hamburger_12_line" />
-            <span className="hamburger_12_line" />
-          </button>}
-
-          {compactNavigation && mobileOpen && <MobileMenu
-            opened={mobileOpen}
-            groups={groups}
-            isHomePath={isHomePath}
-            owner={owner}
-            profile={profile}
-            localizedPath={localizedPath}
+          <CommandUtilities
+            active={active}
+            setActive={setActive}
+            contactHref={contactHref}
+            emailHref={emailHref}
+            linkedinHref={linkedinHref}
             recruiterHref={recruiterHref}
+            cvHref={cvHref}
             language={language}
             setLanguage={setLanguage}
-            t={t}
             isVisible={isVisible}
-            onClose={() => setMobileOpen(false)}
-          />}
+            t={t}
+          />
         </div>
-      </div>
+      </div>}
+      {mobileDockNavigation && (
+        <MobileBottomNavigation
+          groups={groups}
+          activeSection={activeSection}
+          isHomePath={isHomePath}
+          owner={owner}
+          profile={profile}
+          localizedPath={localizedPath}
+          language={language}
+          setLanguage={setLanguage}
+          contactHref={contactHref}
+          emailHref={emailHref}
+          linkedinHref={linkedinHref}
+          recruiterHref={recruiterHref}
+          cvHref={cvHref}
+          sheet={mobileSheet}
+          setSheet={setMobileSheet}
+          isVisible={isVisible}
+          t={t}
+        />
+      )}
     </div>
   );
 }
