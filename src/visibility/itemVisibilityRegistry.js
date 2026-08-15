@@ -43,6 +43,7 @@ export const ITEM_VISIBILITY_TREE = Object.freeze([
     node("recruiter.skills", "Compétences", "section"),
     node("recruiter.experience", "Expériences", "section"),
     node("recruiter.projects", "Projets", "section"),
+    node("recruiter.education", "Formation", "section"),
     node("recruiter.contact", "Contact"),
   ]),
   node("cv", "Route CV", "route", [node("cv.heading", "En-tête CV"), node("cv.actions", "Actions CV"), node("cv.preview", "Aperçu CV")]),

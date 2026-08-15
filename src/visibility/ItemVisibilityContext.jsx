@@ -30,15 +30,50 @@ export function ItemVisibilityProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    const initialRefresh = window.setTimeout(refresh, 0);
-    const interval = window.setInterval(refresh, 30000);
-    const onVisibility = () => { if (!document.hidden) refresh(); };
-    const onPublished = () => refresh();
+    let disposed = false;
+    let refreshTimer = 0;
+    let inFlight = false;
+
+    const scheduleRefresh = () => {
+      window.clearTimeout(refreshTimer);
+      refreshTimer = disposed || document.hidden
+        ? 0
+        : window.setTimeout(runRefresh, 30000);
+    };
+
+    const runRefresh = async () => {
+      if (disposed || document.hidden || inFlight) return;
+      inFlight = true;
+      try {
+        await refresh();
+      } finally {
+        inFlight = false;
+        scheduleRefresh();
+      }
+    };
+
+    const refreshNow = () => {
+      window.clearTimeout(refreshTimer);
+      refreshTimer = 0;
+      runRefresh();
+    };
+    const onVisibility = () => {
+      if (document.hidden) {
+        window.clearTimeout(refreshTimer);
+        refreshTimer = 0;
+        return;
+      }
+      refreshNow();
+    };
+    const onPublished = () => refreshNow();
+
+    const initialRefresh = window.setTimeout(refreshNow, 0);
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("portfolio:visibility-updated", onPublished);
     return () => {
+      disposed = true;
       window.clearTimeout(initialRefresh);
-      window.clearInterval(interval);
+      window.clearTimeout(refreshTimer);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("portfolio:visibility-updated", onPublished);
     };

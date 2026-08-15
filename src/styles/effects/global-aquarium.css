@@ -1,143 +1,28 @@
-.global-aquarium {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  overflow: hidden;
-  pointer-events: none;
-  contain: strict;
-  isolation: isolate;
-}
-
-.ocean-world-canvas,
-.ocean-biome-transition-layer {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.ocean-world-canvas {
-  z-index: 2;
-  display: block;
-}
-
-.ocean-biome-transition-layer {
-  z-index: 1;
-  overflow: hidden;
-  transition: background-color .82s ease, opacity .82s ease;
-}
-
-.ocean-biome-transition-layer > span {
-  position: absolute;
-  inset: -12%;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity .82s ease, transform 1.05s cubic-bezier(.2,.7,.2,1);
-}
-
-.ocean-biome-haze {
-  background:
-    radial-gradient(ellipse at 50% 90%, rgba(0,8,18,.72), transparent 62%),
-    linear-gradient(180deg, rgba(2,44,68,.05), rgba(0,9,20,.54));
-}
-
-.ocean-biome-mineral {
-  background:
-    radial-gradient(circle at 50% 72%, rgba(154,34,8,.18), transparent 22%),
+@layer base, priority, critical;
+@layer base {
+.global-aquarium{position:fixed;inset:0;z-index:1;overflow:hidden;pointer-events:none;contain:strict;isolation:isolate;}
+.ocean-world-canvas, .ocean-biome-transition-layer{position:absolute;inset:0;width:100%;height:100%;}
+.ocean-world-canvas{z-index:2;display:block;}
+.ocean-biome-transition-layer{z-index:1;overflow:hidden;transition:background-color .82s ease, opacity .82s ease;}
+.ocean-biome-transition-layer > span{position:absolute;inset:-12%;pointer-events:none;opacity:0;transition:opacity .82s ease, transform 1.05s cubic-bezier(.2,.7,.2,1);}
+.ocean-biome-haze{background:radial-gradient(ellipse at 50% 90%, rgba(0,8,18,.72), transparent 62%),
+    linear-gradient(180deg, rgba(2,44,68,.05), rgba(0,9,20,.54));}
+.ocean-biome-mineral{background:radial-gradient(circle at 50% 72%, rgba(154,34,8,.18), transparent 22%),
     radial-gradient(ellipse at 18% 84%, rgba(121,71,24,.12), transparent 25%),
-    radial-gradient(ellipse at 84% 82%, rgba(127,46,17,.10), transparent 28%);
-  transform: scale3d(.94,.94,1);
-}
-
-.ocean-biome-project-light {
-  background:
-    radial-gradient(circle at 76% 22%, rgba(57,189,248,.16), transparent 30%),
-    linear-gradient(180deg, transparent 30%, rgba(7,89,133,.16) 76%, rgba(14,116,144,.10));
-  transform: translate3d(0,5%,0);
-}
-
-html[data-ocean-biome="deep"] .ocean-biome-haze,
-html[data-ocean-biome="caldera"] .ocean-biome-haze {
-  opacity: .68;
-}
-
-html[data-ocean-biome="caldera"] .ocean-biome-mineral {
-  opacity: .90;
-  transform: scale3d(1,1,1);
-}
-
-html[data-ocean-biome="projects"] .ocean-biome-haze {
-  opacity: .24;
-}
-
-html[data-ocean-biome="projects"] .ocean-biome-project-light {
-  opacity: .82;
-  transform: translate3d(0,0,0);
-}
-
-.global-aquarium.is-paused .ocean-world-canvas {
-  visibility: hidden;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ocean-biome-transition-layer,
-  .ocean-biome-transition-layer > span {
-    transition-duration: .01ms !important;
-  }
-}
-
-/* Exploration vehicle V20.9 — realistic narrow 60° inspection light with layered penumbra/core. */
-.timeline-exploration-drone {
-  --torch-strength: 0;
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 1;
-  width: clamp(172px, 15vw, 236px);
-  opacity: 0;
-  pointer-events: none;
-  will-change: transform, opacity;
-  transform: translate3d(0, 0, 0);
-  backface-visibility: hidden;
-}
-
-.timeline-exploration-drone-direction {
-  position: relative;
-  width: 100%;
-  transform-origin: 50% 50%;
-}
-
-.timeline-exploration-drone[data-facing="right"] .timeline-exploration-drone-direction {
-  transform: scaleX(-1);
-}
-
-.timeline-exploration-drone-float {
-  position: relative;
-  z-index: 2;
-  transform-origin: 52% 50%;
-  animation: exploration-drone-float 8.8s ease-in-out infinite alternate;
-}
-
-.timeline-exploration-drone-svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  overflow: visible;
-  filter: drop-shadow(0 14px 20px rgba(2, 24, 39, .28));
-}
-
-.timeline-inspection-torch {
-  position:absolute;
-  top:50%;
-  right:74%;
-  z-index:1;
-  width:clamp(240px,30vw,460px);
-  height:clamp(142px,17vw,248px);
-  opacity:clamp(0,calc(var(--torch-strength) * .94),1);
-  transform:translateY(-50%) translateZ(0);
-  transform-origin:100% 50%;
-  /* 60° outer cone: soft cyan penumbra with inverse-distance style attenuation. */
-  background:conic-gradient(
+    radial-gradient(ellipse at 84% 82%, rgba(127,46,17,.10), transparent 28%);transform:scale3d(.94,.94,1);}
+.ocean-biome-project-light{background:radial-gradient(circle at 76% 22%, rgba(57,189,248,.16), transparent 30%),
+    linear-gradient(180deg, transparent 30%, rgba(7,89,133,.16) 76%, rgba(14,116,144,.10));transform:translate3d(0,5%,0);}
+html[data-ocean-biome="deep"] .ocean-biome-haze, html[data-ocean-biome="caldera"] .ocean-biome-haze{opacity:.68;}
+html[data-ocean-biome="caldera"] .ocean-biome-mineral{opacity:.90;transform:scale3d(1,1,1);}
+html[data-ocean-biome="projects"] .ocean-biome-haze{opacity:.24;}
+html[data-ocean-biome="projects"] .ocean-biome-project-light{opacity:.82;}
+.global-aquarium.is-paused .ocean-world-canvas{visibility:hidden;}
+.timeline-exploration-drone{--torch-strength:0;position:absolute;top:0;left:0;z-index:1;width:clamp(172px, 15vw, 236px);opacity:0;pointer-events:none;will-change:transform, opacity;transform:translate3d(0, 0, 0);backface-visibility:hidden;}
+.timeline-exploration-drone-direction{position:relative;width:100%;transform-origin:50% 50%;}
+.timeline-exploration-drone[data-facing="right"] .timeline-exploration-drone-direction{transform:scaleX(-1);}
+.timeline-exploration-drone-float{position:relative;z-index:2;transform-origin:52% 50%;animation:exploration-drone-float 8.8s ease-in-out infinite alternate;}
+.timeline-exploration-drone-svg{display:block;width:100%;height:auto;overflow:visible;filter:drop-shadow(0 14px 20px rgba(2, 24, 39, .28));}
+.timeline-inspection-torch{position:absolute;top:50%;right:74%;z-index:1;width:clamp(240px,30vw,460px);height:clamp(142px,17vw,248px);opacity:clamp(0,calc(var(--torch-strength) * .94),1);transform:translateY(-50%) translateZ(0);transform-origin:100% 50%;background:conic-gradient(
     from 0deg at 100% 50%,
     transparent 0deg 240deg,
     rgba(34,211,238,.025) 240deg,
@@ -146,31 +31,9 @@ html[data-ocean-biome="projects"] .ocean-biome-project-light {
     rgba(103,232,249,.16) 291deg,
     rgba(34,211,238,.025) 300deg,
     transparent 300deg 360deg
-  );
-  -webkit-mask-image:radial-gradient(ellipse 116% 82% at 100% 50%,#000 0 10%,rgba(0,0,0,.98) 30%,rgba(0,0,0,.78) 56%,rgba(0,0,0,.30) 80%,transparent 100%);
-  mask-image:radial-gradient(ellipse 116% 82% at 100% 50%,#000 0 10%,rgba(0,0,0,.98) 30%,rgba(0,0,0,.78) 56%,rgba(0,0,0,.30) 80%,transparent 100%);
-  mix-blend-mode:screen;
-  filter:blur(1.2px) drop-shadow(0 0 16px rgba(34,211,238,.18));
-  transition:opacity .05s linear;
-}
-.timeline-inspection-torch::before {
-  content:"";
-  position:absolute;
-  right:-2px;
-  top:50%;
-  width:clamp(54px,5vw,84px);
-  height:clamp(54px,5vw,84px);
-  border-radius:50%;
-  transform:translateY(-50%);
-  background:radial-gradient(circle,rgba(240,253,255,.96) 0 7%,rgba(165,243,252,.70) 16%,rgba(34,211,238,.30) 38%,transparent 72%);
-  filter:blur(2px);
-}
-.timeline-inspection-torch::after {
-  content:"";
-  position:absolute;
-  inset:0;
-  /* Narrow luminous core nested inside the 60° penumbra. */
-  background:conic-gradient(
+  );-webkit-mask-image:radial-gradient(ellipse 116% 82% at 100% 50%,#000 0 10%,rgba(0,0,0,.98) 30%,rgba(0,0,0,.78) 56%,rgba(0,0,0,.30) 80%,transparent 100%);mask-image:radial-gradient(ellipse 116% 82% at 100% 50%,#000 0 10%,rgba(0,0,0,.98) 30%,rgba(0,0,0,.78) 56%,rgba(0,0,0,.30) 80%,transparent 100%);mix-blend-mode:screen;filter:blur(1.2px) drop-shadow(0 0 16px rgba(34,211,238,.18));transition:opacity .05s linear;}
+.timeline-inspection-torch::before{content:"";position:absolute;right:-2px;top:50%;width:clamp(54px,5vw,84px);height:clamp(54px,5vw,84px);border-radius:50%;transform:translateY(-50%);background:radial-gradient(circle,rgba(240,253,255,.96) 0 7%,rgba(165,243,252,.70) 16%,rgba(34,211,238,.30) 38%,transparent 72%);filter:blur(2px);}
+.timeline-inspection-torch::after{content:"";position:absolute;inset:0;background:conic-gradient(
     from 0deg at 100% 50%,
     transparent 0deg 257deg,
     rgba(165,243,252,.06) 257deg,
@@ -179,51 +42,22 @@ html[data-ocean-biome="projects"] .ocean-biome-project-light {
     rgba(224,251,255,.30) 276deg,
     rgba(165,243,252,.06) 283deg,
     transparent 283deg 360deg
-  );
-  -webkit-mask-image:radial-gradient(ellipse 108% 58% at 100% 50%,#000 0 8%,rgba(0,0,0,.92) 34%,rgba(0,0,0,.48) 64%,transparent 94%);
-  mask-image:radial-gradient(ellipse 108% 58% at 100% 50%,#000 0 8%,rgba(0,0,0,.92) 34%,rgba(0,0,0,.48) 64%,transparent 94%);
-  filter:blur(.8px);
-}
-
-.exploration-drone-rotor {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: exploration-drone-rotor .86s linear infinite;
-}
-
-.exploration-drone-rotor--reverse {
-  animation-direction: reverse;
-  animation-duration: .96s;
-}
-
-.exploration-drone-beam {
-  opacity: clamp(.06, calc(.08 + var(--torch-strength) * .28), .46);
-  transition: opacity .08s linear;
-}
-
-.exploration-drone-sonar { opacity: calc(.08 + var(--torch-strength) * .22); }
-.exploration-drone-lamp { opacity: clamp(.64, calc(.62 + var(--torch-strength) * .45), 1); filter:drop-shadow(0 0 5px rgba(207,250,254,.55)); }
-.exploration-drone-beacon,
-.exploration-drone-status { animation: exploration-drone-status 2.4s ease-in-out infinite; }
-.exploration-drone-level { fill: #baf7ff; opacity: calc(.18 + var(--torch-strength) * .72); }
-
-.exploration-drone-bubbles circle {
-  fill: rgba(224, 251, 255, .42);
-  stroke: rgba(103, 232, 249, .42);
-  stroke-width: 1;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: exploration-drone-bubble 5.2s ease-in-out infinite;
-}
-.exploration-drone-bubbles circle:nth-child(2) { animation-delay: -1.7s; }
-.exploration-drone-bubbles circle:nth-child(3) { animation-delay: -3.3s; }
-
+  );-webkit-mask-image:radial-gradient(ellipse 108% 58% at 100% 50%,#000 0 8%,rgba(0,0,0,.92) 34%,rgba(0,0,0,.48) 64%,transparent 94%);mask-image:radial-gradient(ellipse 108% 58% at 100% 50%,#000 0 8%,rgba(0,0,0,.92) 34%,rgba(0,0,0,.48) 64%,transparent 94%);filter:blur(.8px);}
+.exploration-drone-rotor{transform-box:fill-box;transform-origin:center;animation:exploration-drone-rotor .86s linear infinite;}
+.exploration-drone-rotor--reverse{animation-direction:reverse;animation-duration:.96s;}
+.exploration-drone-beam{opacity:clamp(.06, calc(.08 + var(--torch-strength) * .28), .46);transition:opacity .08s linear;}
+.exploration-drone-sonar{opacity:calc(.08 + var(--torch-strength) * .22);}
+.exploration-drone-lamp{opacity:clamp(.64, calc(.62 + var(--torch-strength) * .45), 1);filter:drop-shadow(0 0 5px rgba(207,250,254,.55));}
+.exploration-drone-beacon, .exploration-drone-status{animation:exploration-drone-status 2.4s ease-in-out infinite;}
+.exploration-drone-level{fill:#baf7ff;opacity:calc(.18 + var(--torch-strength) * .72);}
+.exploration-drone-bubbles circle{fill:rgba(224, 251, 255, .42);stroke:rgba(103, 232, 249, .42);stroke-width:1;transform-box:fill-box;transform-origin:center;animation:exploration-drone-bubble 5.2s ease-in-out infinite;}
+.exploration-drone-bubbles circle:nth-child(2){animation-delay:-1.7s;}
+.exploration-drone-bubbles circle:nth-child(3){animation-delay:-3.3s;}
 @keyframes exploration-drone-float {
   0% { transform: translate3d(0, -5px, 0); }
   50% { transform: translate3d(-3px, 3px, 0); }
   100% { transform: translate3d(2px, 8px, 0); }
 }
-
 @keyframes exploration-drone-rotor { to { transform: rotate(360deg); } }
 @keyframes exploration-drone-status { 0%,100% { opacity:.55; } 50% { opacity:1; } }
 @keyframes exploration-drone-bubble {
@@ -231,235 +65,50 @@ html[data-ocean-biome="projects"] .ocean-biome-project-light {
   48% { opacity:.48; }
   82% { opacity:.16; transform:translate3d(4px,-11px,0) scale(1.06); }
 }
-
-@media (max-width: 820px) {
-  .timeline-exploration-drone { width: clamp(94px, 27vw, 126px); }
-  .timeline-inspection-torch { width:clamp(190px,54vw,300px); height:clamp(118px,34vw,176px); filter:blur(1px) drop-shadow(0 0 13px rgba(34,211,238,.18)); }
-  .timeline-exploration-drone-float { animation-duration: 10.5s; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .timeline-exploration-drone *,
-  .timeline-exploration-drone-float { animation: none !important; }
-}
-
-/* V7 performance profiles */
-.global-aquarium.is-balanced .aquarium-fish-bob {
-  animation: none;
-  transform: translate3d(0, 0, 0);
-}
-
-/* V21.19 — GAME WORLD DIRECTOR
-   World boundaries are invisible gates. The cinematic itself is rendered in a
-   fixed viewport canvas so transitions feel like travel instead of DOM bands. */
-.ocean-world-gate {
-  position: relative;
-  left: 50%;
-  z-index: 0;
-  width: 1px;
-  height: 1px;
-  margin: 0 0 0 -0.5px;
-  padding: 0;
-  overflow: hidden;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.ocean-transition-stage {
-  position: fixed;
-  inset: 0;
-  z-index: 80;
-  width: 100vw;
-  height: 100vh;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  contain: strict;
-  transform: translateZ(0);
-}
-.ocean-transition-stage.is-active {
-  opacity: 1;
-  visibility: visible;
-}
-
-/* The global water remains continuous behind the cinematics. No large glass
-   separators are allowed between profile, abyss, caldera and project station. */
-.ocean-biome-surface-light {
-  background: radial-gradient(ellipse at 50% -8%, rgba(221,250,255,.34), transparent 48%);
-  transform: translate3d(0,-5%,0);
-}
-html[data-ocean-biome="deep"] .ocean-biome-surface-light { opacity:.10; transform:translate3d(0,-10%,0); }
-html[data-ocean-biome="caldera"] .ocean-biome-mineral { opacity:.42; }
-html[data-ocean-biome="projects"] .ocean-biome-project-light { opacity:.38; transform:translate3d(0,0,0); }
-html[data-ocean-biome="outro"] .ocean-biome-project-light { opacity:.12; }
-html[data-ocean-biome="outro"] .ocean-biome-haze { opacity:.24; }
-
-/* V21.19 — PROJECT WORLD = UNDERWATER RESEARCH STATION. */
-.projects-section[data-project-world="research-station"] {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  border-block: 1px solid rgba(119,224,244,.22);
-  background:
-    radial-gradient(ellipse at 50% -8%, rgba(76,214,239,.12), transparent 42%),
-    linear-gradient(180deg, rgba(2,18,29,.96) 0%, rgba(5,37,53,.98) 18%, rgba(3,22,35,.98) 63%, rgba(1,13,23,.99) 100%) !important;
-}
-.projects-section[data-project-world="research-station"] > :not(.project-station-decor) {
-  position: relative;
-  z-index: 3;
-}
-.project-station-decor {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  overflow: hidden;
-  pointer-events: none;
-}
-.project-station-decor::before {
-  content:"";
-  position:absolute;
-  inset:0;
-  opacity:.23;
-  background:
-    repeating-linear-gradient(90deg, transparent 0 12.5%, rgba(102,220,240,.11) 12.55% 12.65%, transparent 12.7% 25%),
-    repeating-linear-gradient(180deg, transparent 0 180px, rgba(112,226,243,.07) 181px 182px, transparent 183px 360px);
-  -webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,.82),rgba(0,0,0,.18) 32% 68%,rgba(0,0,0,.82));
-  mask-image:linear-gradient(90deg,rgba(0,0,0,.82),rgba(0,0,0,.18) 32% 68%,rgba(0,0,0,.82));
-}
-.project-station-ceiling {
-  position:absolute;
-  left:-5%;
-  right:-5%;
-  top:0;
-  height:clamp(100px,13vw,190px);
-  background:
-    linear-gradient(180deg,rgba(1,8,14,.98),rgba(3,20,31,.92) 60%,transparent),
-    repeating-linear-gradient(90deg,#071924 0 9%,#0a2633 9% 9.5%,#03121c 9.5% 18%);
-  clip-path:polygon(0 0,100% 0,93% 76%,77% 55%,70% 83%,52% 63%,35% 82%,27% 57%,7% 78%);
-  filter:drop-shadow(0 20px 18px rgba(0,0,0,.32));
-}
-.project-station-rail {
-  position:absolute;
-  top:clamp(90px,12vw,170px);
-  bottom:0;
-  width:clamp(34px,4.2vw,72px);
-  background:
-    linear-gradient(90deg,rgba(4,18,27,.98),rgba(16,55,68,.94) 48%,rgba(2,13,21,.98)),
-    repeating-linear-gradient(180deg,transparent 0 74px,rgba(111,225,241,.22) 75px 77px,transparent 78px 150px);
-  box-shadow:inset 0 0 0 1px rgba(130,230,245,.10),0 0 30px rgba(0,0,0,.30);
-}
-.project-station-rail--left { left:0; clip-path:polygon(0 0,100% 6%,72% 20%,100% 36%,72% 51%,100% 66%,70% 82%,100% 100%,0 100%); }
-.project-station-rail--right { right:0; transform:scaleX(-1); clip-path:polygon(0 0,100% 6%,72% 20%,100% 36%,72% 51%,100% 66%,70% 82%,100% 100%,0 100%); }
-.project-station-lightbar {
-  position:absolute;
-  top:clamp(116px,15vw,214px);
-  width:clamp(160px,22vw,360px);
-  height:3px;
-  background:linear-gradient(90deg,transparent,#73e8f8 22% 78%,transparent);
-  box-shadow:0 0 14px rgba(97,228,247,.58),0 0 34px rgba(42,188,215,.18);
-  opacity:.62;
-  animation:stationLightPulse 4.8s ease-in-out infinite alternate;
-}
-.project-station-lightbar--one { left:8%; }
-.project-station-lightbar--two { right:8%; animation-delay:-2.4s; }
-.project-station-window {
-  position:absolute;
-  top:clamp(330px,34vw,520px);
-  width:clamp(120px,15vw,230px);
-  aspect-ratio:1.38;
-  border:clamp(7px,1vw,14px) solid #071b26;
-  outline:1px solid rgba(144,234,247,.22);
-  border-radius:42% 42% 38% 38%;
-  overflow:hidden;
-  background:radial-gradient(circle at 45% 28%,rgba(71,191,218,.24),transparent 32%),linear-gradient(180deg,#063249,#031828 78%,#01111e);
-  box-shadow:inset 0 0 28px rgba(0,0,0,.55),0 0 0 1px rgba(144,234,247,.06),0 18px 50px rgba(0,0,0,.28);
-  opacity:.72;
-}
-.project-station-window--one { left:5.5%; }
-.project-station-window--two { right:5.5%; transform:scaleX(-1); }
-.project-station-window i {
-  position:absolute;
-  left:-34%;
-  top:54%;
-  width:44%;
-  height:15%;
-  border-radius:55% 45% 48% 52%;
-  background:rgba(115,207,225,.30);
-  animation:stationWindowFish 13s linear infinite;
-}
-.project-station-window i::after {
-  content:"";
-  position:absolute;
-  left:-22%;
-  top:8%;
-  width:30%;
-  height:84%;
-  clip-path:polygon(100% 50%,0 0,18% 50%,0 100%);
-  background:inherit;
-}
-.project-station-window b {
-  position:absolute;
-  left:18%;
-  bottom:0;
-  width:68%;
-  height:30%;
-  border-radius:50% 50% 0 0;
-  background:rgba(0,12,20,.62);
-}
-.project-station-status {
-  position:absolute;
-  right:clamp(80px,9vw,150px);
-  top:clamp(172px,20vw,270px);
-  color:rgba(126,234,249,.48);
-  font:700 clamp(.52rem,.62vw,.7rem)/1 ui-monospace,SFMono-Regular,Menlo,monospace;
-  letter-spacing:.16em;
-  text-shadow:0 0 12px rgba(85,217,239,.25);
-}
-html[data-ocean-biome="projects"] .projects-section[data-project-world="research-station"] {
-  box-shadow:inset 0 24px 70px rgba(34,211,238,.035),inset 0 -40px 100px rgba(0,0,0,.24);
-}
-
+@media (max-width: 820px){.timeline-exploration-drone{width:clamp(94px, 27vw, 126px);}
+.timeline-inspection-torch{width:clamp(190px,54vw,300px);height:clamp(118px,34vw,176px);filter:blur(1px) drop-shadow(0 0 13px rgba(34,211,238,.18));}
+.timeline-exploration-drone-float{animation-duration:10.5s;}}
+@media (prefers-reduced-motion: reduce){.timeline-exploration-drone *, .timeline-exploration-drone-float{animation:none !important;}}
+.global-aquarium.is-balanced .aquarium-fish-bob{animation:none;transform:translate3d(0, 0, 0);}
+.ocean-world-gate{position:relative;left:50%;z-index:0;width:1px;height:1px;margin:0 0 0 -0.5px;padding:0;overflow:hidden;opacity:0;pointer-events:none;}
+.ocean-transition-stage{position:fixed;inset:0;z-index:80;width:100vw;height:100vh;opacity:0;visibility:hidden;pointer-events:none;contain:strict;transform:translateZ(0);}
+.ocean-transition-stage.is-active{opacity:1;visibility:visible;}
+.ocean-biome-surface-light{background:radial-gradient(ellipse at 50% -8%, rgba(221,250,255,.34), transparent 48%);transform:translate3d(0,-5%,0);}
+html[data-ocean-biome="deep"] .ocean-biome-surface-light{opacity:.10;transform:translate3d(0,-10%,0);}
+html[data-ocean-biome="caldera"] .ocean-biome-mineral{opacity:.42;}
+html[data-ocean-biome="projects"] .ocean-biome-project-light{opacity:.38;transform:translate3d(0,0,0);}
+html[data-ocean-biome="outro"] .ocean-biome-project-light{opacity:.12;}
+html[data-ocean-biome="outro"] .ocean-biome-haze{opacity:.24;}
+.projects-section[data-project-world="research-station"]{position:relative;overflow:hidden;border-block:1px solid rgba(119,224,244,.22);}
+.projects-section[data-project-world="research-station"] > :not(.project-station-decor){position:relative;z-index:3;}
+.project-station-decor{position:absolute;inset:0;z-index:1;overflow:hidden;pointer-events:none;}
+.project-station-decor::before{content:"";position:absolute;inset:0;opacity:.23;background:repeating-linear-gradient(90deg, transparent 0 12.5%, rgba(102,220,240,.11) 12.55% 12.65%, transparent 12.7% 25%),
+    repeating-linear-gradient(180deg, transparent 0 180px, rgba(112,226,243,.07) 181px 182px, transparent 183px 360px);-webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,.82),rgba(0,0,0,.18) 32% 68%,rgba(0,0,0,.82));mask-image:linear-gradient(90deg,rgba(0,0,0,.82),rgba(0,0,0,.18) 32% 68%,rgba(0,0,0,.82));}
+.project-station-ceiling{position:absolute;left:-5%;right:-5%;top:0;height:clamp(100px,13vw,190px);background:linear-gradient(180deg,rgba(1,8,14,.98),rgba(3,20,31,.92) 60%,transparent),
+    repeating-linear-gradient(90deg,#071924 0 9%,#0a2633 9% 9.5%,#03121c 9.5% 18%);clip-path:polygon(0 0,100% 0,93% 76%,77% 55%,70% 83%,52% 63%,35% 82%,27% 57%,7% 78%);filter:drop-shadow(0 20px 18px rgba(0,0,0,.32));}
+.project-station-rail{position:absolute;top:clamp(90px,12vw,170px);bottom:0;width:clamp(34px,4.2vw,72px);background:linear-gradient(90deg,rgba(4,18,27,.98),rgba(16,55,68,.94) 48%,rgba(2,13,21,.98)),
+    repeating-linear-gradient(180deg,transparent 0 74px,rgba(111,225,241,.22) 75px 77px,transparent 78px 150px);box-shadow:inset 0 0 0 1px rgba(130,230,245,.10),0 0 30px rgba(0,0,0,.30);}
+.project-station-rail--left{left:0;clip-path:polygon(0 0,100% 6%,72% 20%,100% 36%,72% 51%,100% 66%,70% 82%,100% 100%,0 100%);}
+.project-station-rail--right{right:0;transform:scaleX(-1);clip-path:polygon(0 0,100% 6%,72% 20%,100% 36%,72% 51%,100% 66%,70% 82%,100% 100%,0 100%);}
+.project-station-lightbar{position:absolute;top:clamp(116px,15vw,214px);width:clamp(160px,22vw,360px);height:3px;background:linear-gradient(90deg,transparent,#73e8f8 22% 78%,transparent);box-shadow:0 0 14px rgba(97,228,247,.58),0 0 34px rgba(42,188,215,.18);opacity:.62;animation:stationLightPulse 4.8s ease-in-out infinite alternate;}
+.project-station-lightbar--one{left:8%;}
+.project-station-lightbar--two{right:8%;animation-delay:-2.4s;}
+.project-station-window{position:absolute;top:clamp(330px,34vw,520px);width:clamp(120px,15vw,230px);aspect-ratio:1.38;border:clamp(7px,1vw,14px) solid #071b26;outline:1px solid rgba(144,234,247,.22);border-radius:42% 42% 38% 38%;overflow:hidden;background:radial-gradient(circle at 45% 28%,rgba(71,191,218,.24),transparent 32%),linear-gradient(180deg,#063249,#031828 78%,#01111e);box-shadow:inset 0 0 28px rgba(0,0,0,.55),0 0 0 1px rgba(144,234,247,.06),0 18px 50px rgba(0,0,0,.28);opacity:.72;}
+.project-station-window--one{left:5.5%;}
+.project-station-window--two{right:5.5%;transform:scaleX(-1);}
+.project-station-window i{position:absolute;left:-34%;top:54%;width:44%;height:15%;border-radius:55% 45% 48% 52%;background:rgba(115,207,225,.30);animation:stationWindowFish 13s linear infinite;}
+.project-station-window i::after{content:"";position:absolute;left:-22%;top:8%;width:30%;height:84%;clip-path:polygon(100% 50%,0 0,18% 50%,0 100%);background:inherit;}
+.project-station-window b{position:absolute;left:18%;bottom:0;width:68%;height:30%;border-radius:50% 50% 0 0;background:rgba(0,12,20,.62);}
+.project-station-status{position:absolute;right:clamp(80px,9vw,150px);top:clamp(172px,20vw,270px);color:rgba(126,234,249,.48);font:700 clamp(.52rem,.62vw,.7rem)/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.16em;text-shadow:0 0 12px rgba(85,217,239,.25);}
+html[data-ocean-biome="projects"] .projects-section[data-project-world="research-station"]{box-shadow:inset 0 24px 70px rgba(34,211,238,.035),inset 0 -40px 100px rgba(0,0,0,.24);}
 @keyframes stationLightPulse { from{opacity:.35;filter:blur(.3px)} to{opacity:.82;filter:blur(0)} }
 @keyframes stationWindowFish { 0%{transform:translate3d(0,0,0);opacity:0} 12%{opacity:.5} 88%{opacity:.34} 100%{transform:translate3d(360%, -18%,0);opacity:0} }
-
-/* V21.21 — PROJECTS KEEP THE PROVEN CAROUSEL.
-   Only the world around it changes: the station becomes visible on arrival,
-   while the V21.19 carousel/card composition remains untouched. */
-.projects-section[data-project-world="research-station"]::before {
-  content:"";
-  position:absolute;
-  inset:0;
-  z-index:0;
-  pointer-events:none;
-  opacity:.52;
-  background:
-    radial-gradient(ellipse at 50% 12%,rgba(109,234,248,.11),transparent 28%),
-    linear-gradient(90deg,rgba(0,8,15,.42),transparent 17% 83%,rgba(0,8,15,.42));
-}
-.projects-section[data-project-world="research-station"]::after {
-  content:"";
-  position:absolute;
-  z-index:2;
-  left:-18%;
-  right:-18%;
-  top:clamp(150px,18vw,260px);
-  height:clamp(120px,16vw,220px);
-  pointer-events:none;
-  opacity:.20;
-  background:
-    repeating-linear-gradient(90deg,transparent 0 10%,rgba(103,230,247,.16) 10.05% 10.15%,transparent 10.2% 20%),
-    linear-gradient(180deg,rgba(18,72,89,.18),transparent);
-  transform:perspective(760px) rotateX(62deg) translateY(-14%);
-  transform-origin:50% 0;
-  -webkit-mask-image:linear-gradient(90deg,transparent,#000 18% 82%,transparent);
-  mask-image:linear-gradient(90deg,transparent,#000 18% 82%,transparent);
-}
-html[data-ocean-biome="projects"] .project-station-decor {
-  animation:stationArrivalDepth .78s cubic-bezier(.18,.78,.18,1) both;
-}
-html[data-ocean-biome="projects"] .projects-section[data-project-world="research-station"]::after {
-  animation:stationDeckReveal .82s cubic-bezier(.18,.78,.18,1) both;
-}
+.projects-section[data-project-world="research-station"]::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.52;background:radial-gradient(ellipse at 50% 12%,rgba(109,234,248,.11),transparent 28%),
+    linear-gradient(90deg,rgba(0,8,15,.42),transparent 17% 83%,rgba(0,8,15,.42));}
+.projects-section[data-project-world="research-station"]::after{content:"";position:absolute;z-index:2;left:-18%;right:-18%;top:clamp(150px,18vw,260px);height:clamp(120px,16vw,220px);pointer-events:none;opacity:.20;background:repeating-linear-gradient(90deg,transparent 0 10%,rgba(103,230,247,.16) 10.05% 10.15%,transparent 10.2% 20%),
+    linear-gradient(180deg,rgba(18,72,89,.18),transparent);transform:perspective(760px) rotateX(62deg) translateY(-14%);transform-origin:50% 0;-webkit-mask-image:linear-gradient(90deg,transparent,#000 18% 82%,transparent);mask-image:linear-gradient(90deg,transparent,#000 18% 82%,transparent);}
+html[data-ocean-biome="projects"] .project-station-decor{animation:stationArrivalDepth .78s cubic-bezier(.18,.78,.18,1) both;}
+html[data-ocean-biome="projects"] .projects-section[data-project-world="research-station"]::after{animation:stationDeckReveal .82s cubic-bezier(.18,.78,.18,1) both;}
 @keyframes stationArrivalDepth {
   from{opacity:.28;transform:scale(1.025)}
   to{opacity:1;transform:scale(1)}
@@ -468,164 +117,27 @@ html[data-ocean-biome="projects"] .projects-section[data-project-world="research
   from{opacity:0;transform:perspective(760px) rotateX(62deg) translateY(16%) scale(1.08)}
   to{opacity:.20;transform:perspective(760px) rotateX(62deg) translateY(-14%) scale(1)}
 }
-
-/* V21.21 — FINAL FOOTER = REALISTIC ABYSSAL TREASURE MINE.
-   Compact by design: this is a footer, not another full-screen chapter. */
-.simple-footer.ocean-outro.treasure-mine-footer {
-  position:relative;
-  left:50%;
-  width:100vw;
-  min-height:clamp(360px,42vh,460px);
-  margin-left:-50vw;
-  margin-top:0;
-  padding:0;
-  overflow:hidden;
-  isolation:isolate;
-  color:#f3f7f5;
-  background:#050707;
-  border-top:1px solid rgba(177,150,92,.20);
-  box-shadow:inset 0 28px 70px rgba(0,0,0,.42);
-}
-.treasure-mine-field {
-  position:absolute;
-  inset:0;
-  z-index:0;
-  overflow:hidden;
-  pointer-events:none;
-  background:
-    radial-gradient(ellipse at 77% 55%,rgba(124,148,131,.08),transparent 36%),
-    linear-gradient(180deg,#040707,#0c0d0b 58%,#050605);
-}
-.treasure-mine-canvas {
-  position:absolute;
-  inset:0;
-  display:block;
-  width:100%;
-  height:100%;
-}
-.mine-shaft-light {
-  position:absolute;
-  z-index:1;
-  right:7%;
-  top:-10%;
-  width:42%;
-  height:118%;
-  transform:skewX(-8deg);
-  background:linear-gradient(105deg,transparent 12%,rgba(198,232,225,.035) 34%,rgba(255,230,176,.075) 51%,rgba(181,223,224,.025) 68%,transparent 86%);
-  filter:blur(8px);
-  opacity:.56;
-  animation:mineShaftBreath 5.8s ease-in-out infinite alternate;
-}
-.mine-dust-overlay {
-  position:absolute;
-  inset:0;
-  z-index:3;
-  opacity:.20;
-  background-image:
-    radial-gradient(circle at 61% 28%,rgba(224,204,167,.55) 0 1px,transparent 1.5px),
+.simple-footer.ocean-outro.treasure-mine-footer{position:relative;left:50%;width:100vw;min-height:clamp(360px,42vh,460px);margin-left:-50vw;margin-top:0;padding:0;overflow:hidden;isolation:isolate;color:#f3f7f5;background:#050707;border-top:1px solid rgba(177,150,92,.20);box-shadow:inset 0 28px 70px rgba(0,0,0,.42);}
+.treasure-mine-field{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:radial-gradient(ellipse at 77% 55%,rgba(124,148,131,.08),transparent 36%),
+    linear-gradient(180deg,#040707,#0c0d0b 58%,#050605);}
+.treasure-mine-canvas{position:absolute;inset:0;display:block;width:100%;height:100%;}
+.mine-shaft-light{position:absolute;z-index:1;right:7%;top:-10%;width:42%;height:118%;transform:skewX(-8deg);background:linear-gradient(105deg,transparent 12%,rgba(198,232,225,.035) 34%,rgba(255,230,176,.075) 51%,rgba(181,223,224,.025) 68%,transparent 86%);filter:blur(8px);opacity:.56;animation:mineShaftBreath 5.8s ease-in-out infinite alternate;}
+.mine-dust-overlay{position:absolute;inset:0;z-index:3;opacity:.20;background-image:radial-gradient(circle at 61% 28%,rgba(224,204,167,.55) 0 1px,transparent 1.5px),
     radial-gradient(circle at 72% 64%,rgba(205,194,168,.46) 0 1px,transparent 1.5px),
     radial-gradient(circle at 88% 40%,rgba(218,209,185,.40) 0 1px,transparent 1.5px),
-    radial-gradient(circle at 54% 72%,rgba(199,190,164,.34) 0 1px,transparent 1.5px);
-  background-size:180px 150px,210px 170px,250px 210px,300px 240px;
-  animation:mineDustDrift 8s linear infinite;
-}
-.treasure-footer-content {
-  position:relative;
-  z-index:5;
-  width:min(1240px,100%);
-  min-height:clamp(360px,42vh,460px);
-  margin:0 auto;
-  padding:clamp(92px,10vh,116px) max(var(--layout-gutter,18px),calc((100vw - 1240px)/2)) 30px;
-  display:grid;
-  grid-template-columns:minmax(280px,480px) 1fr;
-  align-items:end;
-  gap:clamp(24px,4vw,64px);
-  pointer-events:none;
-}
-.treasure-footer-content::before {
-  content:"";
-  position:absolute;
-  z-index:-1;
-  left:0;
-  top:0;
-  bottom:0;
-  width:min(690px,58vw);
-  background:linear-gradient(90deg,rgba(1,3,3,.96) 0%,rgba(3,5,5,.86) 48%,rgba(3,5,5,.38) 76%,transparent 100%);
-  pointer-events:none;
-}
-.treasure-footer-copy { pointer-events:auto; }
-.treasure-footer-copy {
-  align-self:end;
-  display:grid;
-  gap:8px;
-  padding-bottom:2px;
-}
-.treasure-footer-title {
-  margin:0;
-  max-width:470px;
-  color:#f7faf7;
-  font-size:clamp(1.55rem,2.8vw,2.9rem);
-  line-height:.98;
-  letter-spacing:-.045em;
-  text-wrap:balance;
-  text-shadow:0 5px 20px rgba(0,0,0,.86);
-}
-.treasure-footer-description {
-  max-width:460px;
-  margin:0!important;
-  color:rgba(231,237,231,.78)!important;
-  font-size:clamp(.82rem,1vw,.96rem)!important;
-  line-height:1.46!important;
-  text-shadow:0 2px 10px rgba(0,0,0,.82);
-}
-.simple-footer-links.treasure-contact-links {
-  display:flex;
-  flex-wrap:wrap;
-  justify-content:flex-start;
-  gap:7px;
-}
-.treasure-contact {
-  min-height:36px;
-  padding:7px 12px;
-  border:1px solid rgba(227,202,138,.30);
-  border-radius:999px;
-  background:linear-gradient(180deg,rgba(62,49,28,.74),rgba(19,24,21,.78));
-  color:#fff5d8!important;
-  font-size:.82rem;
-  font-weight:760;
-  text-decoration:none!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 8px 20px rgba(0,0,0,.20);
-  backdrop-filter:blur(5px);
-  transition:transform .16s ease,border-color .16s ease,background-color .16s ease;
-}
-.treasure-contact:hover {
-  transform:translateY(-2px);
-  border-color:rgba(255,228,160,.68);
-  background:rgba(90,67,30,.82);
-}
-.treasure-footer-meta {
-  display:flex;
-  align-items:center;
-  flex-wrap:wrap;
-  gap:8px 16px;
-}
-.treasure-footer-name {
-  margin:0!important;
-  color:rgba(222,229,221,.52)!important;
-  font-size:.75rem!important;
-  letter-spacing:.035em;
-}
-.treasure-restart-link {
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  color:#bfeef0!important;
-  font-size:.78rem;
-  font-weight:760;
-  text-decoration:none!important;
-}
-.treasure-restart-link span { font-size:1.05em; }
-
+    radial-gradient(circle at 54% 72%,rgba(199,190,164,.34) 0 1px,transparent 1.5px);background-size:180px 150px,210px 170px,250px 210px,300px 240px;animation:mineDustDrift 8s linear infinite;}
+.treasure-footer-content{position:relative;z-index:5;width:min(1240px,100%);min-height:clamp(360px,42vh,460px);padding:clamp(92px,10vh,116px) max(var(--layout-gutter,18px),calc((100vw - 1240px)/2)) 30px;display:grid;grid-template-columns:minmax(280px,480px) 1fr;align-items:end;gap:clamp(24px,4vw,64px);}
+.treasure-footer-content::before{content:"";position:absolute;z-index:-1;left:0;top:0;bottom:0;width:min(690px,58vw);background:linear-gradient(90deg,rgba(1,3,3,.96) 0%,rgba(3,5,5,.86) 48%,rgba(3,5,5,.38) 76%,transparent 100%);pointer-events:none;}
+.treasure-footer-copy{align-self:end;gap:8px;padding-bottom:2px;}
+.treasure-footer-title{margin:0;max-width:470px;color:#f7faf7;font-size:clamp(1.55rem,2.8vw,2.9rem);letter-spacing:-.045em;text-wrap:balance;text-shadow:0 5px 20px rgba(0,0,0,.86);}
+.treasure-footer-description{max-width:460px;text-shadow:0 2px 10px rgba(0,0,0,.82);}
+.simple-footer-links.treasure-contact-links{justify-content:flex-start;}
+.treasure-contact{min-height:36px;padding:7px 12px;border:1px solid rgba(227,202,138,.30);border-radius:999px;background:linear-gradient(180deg,rgba(62,49,28,.74),rgba(19,24,21,.78));font-size:.82rem;font-weight:760;box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 8px 20px rgba(0,0,0,.20);backdrop-filter:blur(5px);transition:transform .16s ease,border-color .16s ease,background-color .16s ease;}
+.treasure-contact:hover{transform:translateY(-2px);border-color:rgba(255,228,160,.68);background:rgba(90,67,30,.82);}
+.treasure-footer-meta{display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px;}
+.treasure-footer-name{letter-spacing:.035em;}
+.treasure-restart-link{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:760;}
+.treasure-restart-link span{font-size:1.05em;}
 @keyframes mineShaftBreath {
   from{opacity:.30;transform:skewX(-8deg) translateX(-2%)}
   to{opacity:.63;transform:skewX(-8deg) translateX(2%)}
@@ -634,228 +146,80 @@ html[data-ocean-biome="projects"] .projects-section[data-project-world="research
   from{background-position:0 0,0 0,0 0,0 0}
   to{background-position:24px -20px,-18px -34px,30px -22px,-26px -38px}
 }
-
-@media (max-width:820px) {
-  .project-station-window { opacity:.34; width:105px; top:360px; }
-  .project-station-rail { width:26px; opacity:.72; }
-  .project-station-status { display:none; }
-  .simple-footer.ocean-outro.treasure-mine-footer { min-height:420px; }
-  .treasure-footer-content {
-    min-height:420px;
-    padding:96px 18px 24px;
-    grid-template-columns:1fr;
-    align-content:end;
-    gap:12px;
-  }
-  .treasure-footer-content::before {
-    width:100%;
-    background:linear-gradient(180deg,rgba(1,3,3,.06),rgba(1,3,3,.68) 38%,rgba(1,3,3,.96) 74%);
-  }
-  .treasure-footer-copy { max-width:520px; }
-  .treasure-footer-title { max-width:520px; font-size:clamp(1.55rem,7vw,2.35rem); }
-  .treasure-footer-description { max-width:560px; font-size:.80rem!important; }
-  .simple-footer-links.treasure-contact-links { gap:6px; }
-  .treasure-contact { min-height:34px; padding:6px 10px; font-size:.78rem; }
+@media (max-width:820px){.project-station-window{opacity:.34;width:105px;top:360px;}
+.project-station-rail{width:26px;opacity:.72;}
+.project-station-status{display:none;}
+.simple-footer.ocean-outro.treasure-mine-footer{min-height:420px;}
+.treasure-footer-content{min-height:420px;padding:96px 18px 24px;grid-template-columns:1fr;align-content:end;gap:12px;}
+.treasure-footer-content::before{width:100%;background:linear-gradient(180deg,rgba(1,3,3,.06),rgba(1,3,3,.68) 38%,rgba(1,3,3,.96) 74%);}
+.treasure-footer-copy{max-width:520px;}
+.treasure-footer-title{max-width:520px;font-size:clamp(1.55rem,7vw,2.35rem);}
+.treasure-footer-description{max-width:560px;}
+.simple-footer-links.treasure-contact-links{gap:6px;}
+.treasure-contact{min-height:34px;padding:6px 10px;font-size:.78rem;}}
+@media (prefers-reduced-motion:reduce){.project-station-lightbar,.project-station-window i,.project-station-decor,.projects-section[data-project-world="research-station"]::after,.mine-shaft-light,.mine-dust-overlay,.project-gallery-camera{animation:none !important;}
+.treasure-contact{transition:none;}}
+html[data-ocean-cinematic] .global-aquarium .ocean-world-canvas{opacity:0 !important;}
+.content-shell{--stack-gap:0px !important;}
+.projects-section[data-project-world="research-station"]{left:50%;width:100vw !important;isolation:isolate;}
+.project-station-decor{left:50% !important;right:auto !important;width:100vw !important;transform:translateX(-50%);opacity:.66;-webkit-mask-image:linear-gradient(180deg, transparent 0%, #000 8%, #000 91%, transparent 100%);mask-image:linear-gradient(180deg, transparent 0%, #000 8%, #000 91%, transparent 100%);}
+.project-station-decor::after{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(ellipse at 50% 20%, rgba(69, 205, 230, .10), transparent 37%),
+    linear-gradient(180deg, rgba(2, 28, 43, .18), rgba(1, 18, 30, .05) 45%, rgba(1, 11, 20, .24));}
+.project-station-ceiling{opacity:.72;}
+.project-station-rail{opacity:.66;}
+.project-station-window{opacity:.50;}
+.simple-footer.ocean-outro.treasure-mine-footer{color:#f3fbfc;}
+.mine-shaft-light{left:57%;top:-26%;width:31%;height:116%;opacity:.22;background:linear-gradient(180deg, rgba(205, 246, 250, .16), rgba(101, 203, 216, .04) 58%, transparent 86%);filter:blur(5px);}
+.mine-dust-overlay{opacity:.34;-webkit-mask-image:linear-gradient(90deg, transparent 0 35%, #000 48% 100%);mask-image:linear-gradient(90deg, transparent 0 35%, #000 48% 100%);}
+.treasure-footer-content{width:min(1500px, calc(100vw - 36px));margin:0 auto;pointer-events:none;}
+.treasure-footer-copy{position:relative;z-index:4;width:min(520px, 48vw);display:grid;gap:9px;padding:12px 8px 4px 0;pointer-events:auto;}
+.treasure-footer-copy::before{content:"";position:absolute;z-index:-1;inset:-42px -100px -34px -80px;background:radial-gradient(ellipse at 38% 60%, rgba(1, 11, 18, .58), rgba(1, 11, 18, .24) 48%, transparent 72%);pointer-events:none;}
+.treasure-footer-title{max-width:500px;color:#f3feff;font-size:clamp(1.75rem, 3.2vw, 3.2rem);line-height:.98;letter-spacing:-.048em;text-shadow:0 5px 22px rgba(0, 7, 13, .94), 0 0 28px rgba(59, 210, 229, .10);}
+.treasure-footer-description{max-width:480px;text-shadow:0 3px 15px rgba(0, 6, 12, .96);}
+.simple-footer-links.treasure-contact-links{margin-top:5px;display:flex;flex-wrap:wrap;gap:7px;}
+.treasure-contact{min-height:34px;padding:6px 11px;border:1px solid rgba(155, 231, 239, .34);background:rgba(2, 25, 36, .50);box-shadow:0 7px 22px rgba(0, 5, 10, .18), inset 0 1px 0 rgba(255,255,255,.05);backdrop-filter:blur(3px);}
+.treasure-contact:hover{border-color:rgba(199, 249, 255, .70);background:rgba(5, 52, 66, .62);}
+.treasure-footer-meta{margin-top:1px;}
+@media (max-width: 820px){.treasure-footer-content{width:calc(100vw - 32px);}
+.treasure-footer-copy{width:min(520px, 92vw);}
+.mine-shaft-light{left:52%;width:42%;}}
+.project-station-decor{animation:none !important;transform:translateX(-50%) !important;}
+html:has(.ocean-transition-stage.is-active) .global-aquarium .ocean-world-canvas{opacity:0 !important;}
+.treasure-mine-base-canvas{z-index:0;}
+.treasure-mine-fx-canvas{z-index:2;pointer-events:none;}
 }
-
-@media (prefers-reduced-motion:reduce) {
-  .ocean-transition-stage { display:none!important; }
-  .project-station-lightbar,.project-station-window i,.project-station-decor,.projects-section[data-project-world="research-station"]::after,.mine-shaft-light,.mine-dust-overlay,.project-gallery-camera { animation:none!important; }
-  .treasure-contact { transition:none; }
-}
-
-/* V21.22 — seamless world hand-offs + recruiter-first suspense. */
-html[data-ocean-cinematic] .global-aquarium .ocean-world-canvas {
-  opacity: 0 !important;
-}
-
-/* The public worlds touch each other physically. Invisible gates trigger the
-   cinematics but never create visual bands between sections. */
-.content-shell {
-  gap: 0 !important;
-  --stack-gap: 0px !important;
-}
-.volcano-field-section {
-  margin-block: 0 !important;
-  border: 0 !important;
-}
-.projects-section[data-project-world="research-station"] {
-  left: 50%;
-  width: 100vw !important;
-  margin-left: -50vw !important;
-  margin-top: -1px !important;
-  margin-bottom: 0 !important;
-  padding-inline: max(18px, calc((100vw - 1500px) / 2)) !important;
-  overflow: visible !important;
-  isolation: isolate;
-  border: 0 !important;
-  box-shadow: none !important;
-  background: transparent !important;
-}
-.projects-section[data-project-world="research-station"]::before,
-.projects-section[data-project-world="research-station"]::after {
-  display: none !important;
-  content: none !important;
-}
-.project-station-decor {
-  left: 50% !important;
-  right: auto !important;
-  width: 100vw !important;
-  transform: translateX(-50%);
-  opacity: .66;
-  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 8%, #000 91%, transparent 100%);
-  mask-image: linear-gradient(180deg, transparent 0%, #000 8%, #000 91%, transparent 100%);
-}
-.project-station-decor::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background:
-    radial-gradient(ellipse at 50% 20%, rgba(69, 205, 230, .10), transparent 37%),
-    linear-gradient(180deg, rgba(2, 28, 43, .18), rgba(1, 18, 30, .05) 45%, rgba(1, 11, 20, .24));
-}
-.project-station-ceiling { opacity: .72; }
-.project-station-rail { opacity: .66; }
-.project-station-window { opacity: .50; }
-.project-station-status { display: none !important; }
-
-/* Footer is a transparent continuation of the project-ocean world. Only the
-   irregular rock face and the uncovered valuables form the mine. */
-.simple-footer.ocean-outro.treasure-mine-footer {
-  min-height: clamp(300px, 35vh, 370px) !important;
-  margin-top: -1px !important;
-  color: #f3fbfc;
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-}
-.treasure-mine-field {
-  background: transparent !important;
-}
-.treasure-mine-field::before,
-.treasure-mine-field::after {
-  display: none !important;
-}
-.mine-shaft-light {
-  left: 57%;
-  top: -26%;
-  width: 31%;
-  height: 116%;
-  opacity: .22;
-  background: linear-gradient(180deg, rgba(205, 246, 250, .16), rgba(101, 203, 216, .04) 58%, transparent 86%);
-  filter: blur(5px);
-}
-.mine-dust-overlay {
-  opacity: .34;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0 35%, #000 48% 100%);
-  mask-image: linear-gradient(90deg, transparent 0 35%, #000 48% 100%);
-}
-.treasure-footer-content {
-  width: min(1500px, calc(100vw - 36px));
-  min-height: clamp(300px, 35vh, 370px) !important;
-  margin: 0 auto;
-  padding: clamp(58px, 7vh, 78px) 0 22px !important;
-  display: flex !important;
-  align-items: flex-end !important;
-  pointer-events: none;
-}
-.treasure-footer-content::before { display: none !important; }
-.treasure-footer-copy {
-  position: relative;
-  z-index: 4;
-  width: min(520px, 48vw);
-  display: grid;
-  gap: 9px;
-  padding: 12px 8px 4px 0;
-  pointer-events: auto;
-}
-.treasure-footer-copy::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  inset: -42px -100px -34px -80px;
-  background: radial-gradient(ellipse at 38% 60%, rgba(1, 11, 18, .58), rgba(1, 11, 18, .24) 48%, transparent 72%);
-  pointer-events: none;
-}
-.treasure-footer-title {
-  max-width: 500px;
-  color: #f3feff;
-  font-size: clamp(1.75rem, 3.2vw, 3.2rem);
-  line-height: .98;
-  letter-spacing: -.048em;
-  text-shadow: 0 5px 22px rgba(0, 7, 13, .94), 0 0 28px rgba(59, 210, 229, .10);
-}
-.treasure-footer-description {
-  max-width: 480px;
-  color: rgba(226, 248, 251, .86) !important;
-  font-size: clamp(.88rem, 1.05vw, 1rem) !important;
-  line-height: 1.45 !important;
-  text-shadow: 0 3px 15px rgba(0, 6, 12, .96);
-}
-.simple-footer-links.treasure-contact-links {
-  margin-top: 5px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-}
-.treasure-contact {
-  min-height: 34px;
-  padding: 6px 11px;
-  border: 1px solid rgba(155, 231, 239, .34);
-  background: rgba(2, 25, 36, .50);
-  color: #eaffff !important;
-  box-shadow: 0 7px 22px rgba(0, 5, 10, .18), inset 0 1px 0 rgba(255,255,255,.05);
-  backdrop-filter: blur(3px);
-}
-.treasure-contact:hover {
-  border-color: rgba(199, 249, 255, .70);
-  background: rgba(5, 52, 66, .62);
-}
-.treasure-footer-meta { margin-top: 1px; }
-.treasure-footer-name { color: rgba(215, 239, 242, .56) !important; }
-.treasure-restart-link { color: rgba(180, 239, 246, .82) !important; }
-
-@media (max-width: 820px) {
-  .projects-section[data-project-world="research-station"] {
-    padding-inline: var(--layout-gutter, 16px) !important;
-  }
-  .simple-footer.ocean-outro.treasure-mine-footer,
-  .treasure-footer-content { min-height: 340px !important; }
-  .treasure-footer-content {
-    width: calc(100vw - 32px);
-    padding: 76px 0 20px !important;
-    align-items: flex-end !important;
-  }
-  .treasure-footer-copy { width: min(520px, 92vw); }
-  .mine-shaft-light { left: 52%; width: 42%; }
-}
-
-/* Seam colours are shared at the exact boundaries; there is no spacer colour. */
-.volcano-field-section {
-  background:
-    radial-gradient(ellipse at 50% 8%, rgba(83,211,246,.08), transparent 34%),
+@layer priority {
+@media (prefers-reduced-motion: reduce){.ocean-biome-transition-layer, .ocean-biome-transition-layer > span{transition-duration:.01ms;}}
+.projects-section[data-project-world="research-station"]{background:radial-gradient(ellipse at 50% -8%, rgba(76,214,239,.12), transparent 42%),
+    linear-gradient(180deg, rgba(2,18,29,.96) 0%, rgba(5,37,53,.98) 18%, rgba(3,22,35,.98) 63%, rgba(1,13,23,.99) 100%);}
+.treasure-footer-description{margin:0;color:rgba(231,237,231,.78);font-size:clamp(.82rem,1vw,.96rem);line-height:1.46;}
+.treasure-contact{color:#fff5d8;text-decoration:none;}
+.treasure-footer-name{margin:0;color:rgba(222,229,221,.52);font-size:.75rem;}
+.treasure-restart-link{color:#bfeef0;text-decoration:none;}
+@media (max-width:820px){.treasure-footer-description{font-size:.80rem;}}
+@media (prefers-reduced-motion:reduce){.ocean-transition-stage{display:none;}}
+.content-shell{gap:0;}
+.volcano-field-section{margin-block:0;}
+.projects-section[data-project-world="research-station"]{margin-left:-50vw;margin-top:-1px;margin-bottom:0;padding-inline:max(18px, calc((100vw - 1500px) / 2));box-shadow:none;background:transparent;}
+.projects-section[data-project-world="research-station"]::before, .projects-section[data-project-world="research-station"]::after{display:none;content:none;}
+.project-station-status{display:none;}
+.simple-footer.ocean-outro.treasure-mine-footer{min-height:clamp(300px, 35vh, 370px);margin-top:-1px;background:transparent;box-shadow:none;}
+.treasure-mine-field{background:transparent;}
+.treasure-mine-field::before, .treasure-mine-field::after{display:none;}
+.treasure-footer-content{min-height:clamp(300px, 35vh, 370px);padding:clamp(58px, 7vh, 78px) 0 22px;display:flex;align-items:flex-end;}
+.treasure-footer-content::before{display:none;}
+.treasure-footer-description{color:rgba(226, 248, 251, .86);font-size:clamp(.88rem, 1.05vw, 1rem);line-height:1.45;}
+.treasure-contact{color:#eaffff;}
+.treasure-footer-name{color:rgba(215, 239, 242, .56);}
+.treasure-restart-link{color:rgba(180, 239, 246, .82);}
+@media (max-width: 820px){.projects-section[data-project-world="research-station"]{padding-inline:var(--layout-gutter, 16px);}
+.simple-footer.ocean-outro.treasure-mine-footer, .treasure-footer-content{min-height:340px;}
+.treasure-footer-content{padding:76px 0 20px;align-items:flex-end;}}
+.volcano-field-section{background:radial-gradient(ellipse at 50% 8%, rgba(83,211,246,.08), transparent 34%),
     radial-gradient(ellipse at 50% 72%, rgba(255,83,17,.07), transparent 28%),
-    linear-gradient(180deg, #00070d 0%, #021321 13%, #010713 94%, #010713 100%) !important;
+    linear-gradient(180deg, #00070d 0%, #021321 13%, #010713 94%, #010713 100%);}
+.project-station-decor{-webkit-mask-image:linear-gradient(180deg, #000 0%, #000 92%, transparent 100%);mask-image:linear-gradient(180deg, #000 0%, #000 92%, transparent 100%);}
+.project-station-decor::after{background:linear-gradient(180deg, rgba(1,7,19,.96) 0%, rgba(2,25,39,.70) 12%, rgba(3,47,66,.20) 48%, rgba(1,16,27,.32) 100%),
+    radial-gradient(ellipse at 50% 22%, rgba(69,205,230,.12), transparent 42%);}
 }
-.project-station-decor {
-  animation: none !important;
-  transform: translateX(-50%) !important;
-  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 92%, transparent 100%) !important;
-  mask-image: linear-gradient(180deg, #000 0%, #000 92%, transparent 100%) !important;
-}
-.project-station-decor::after {
-  background:
-    linear-gradient(180deg, rgba(1,7,19,.96) 0%, rgba(2,25,39,.70) 12%, rgba(3,47,66,.20) 48%, rgba(1,16,27,.32) 100%),
-    radial-gradient(ellipse at 50% 22%, rgba(69,205,230,.12), transparent 42%) !important;
-}
-html:has(.ocean-transition-stage.is-active) .global-aquarium .ocean-world-canvas {
-  opacity: 0 !important;
-}
-
-/* V22 — the mine terrain/excavation is baked once; only lightweight glints remain dynamic. */
-.treasure-mine-base-canvas { z-index: 0; }
-.treasure-mine-fx-canvas {
-  z-index: 2;
-  pointer-events: none;
-}
+@layer critical{.volcano-field-section{border:0}.projects-section[data-project-world="research-station"]{overflow:visible;border:0}.simple-footer.ocean-outro.treasure-mine-footer{border:0}}

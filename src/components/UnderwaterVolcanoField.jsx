@@ -222,10 +222,10 @@ function drawParticleField(context, particles, textures, viewport, elapsedSecond
       if (!isVent && layer === "hot" && textures.hotSmoke && lifeRatio < 0.70) {
         context.globalCompositeOperation = "source-over";
         context.globalAlpha = Math.min(
-          0.38,
+          0.18,
           particle.alpha * Math.max(0.10, 1 - lifeRatio * 1.15),
         );
-        context.drawImage(textures.hotSmoke, -size * 0.34, -size * 0.30, size * 0.68, size * 0.68);
+        context.drawImage(textures.hotSmoke, -size * 0.22, -size * 0.44, size * 0.44, size * 0.86);
       }
       context.restore();
       continue;

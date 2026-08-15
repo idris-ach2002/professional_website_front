@@ -123,7 +123,7 @@ if (!footer.includes("TreasureMineField") || !mine.includes('data-mine-field="ex
 for (const treasure of ["diamond", "emerald", "ruby", "sapphire", "gold", "amethyst", "opal", "aquamarine", "topaz", "red-coral", "black-pearl"]) {
   if (!mine.includes(`type: "${treasure}"`)) errors.push(`Missing precious mine object: ${treasure}.`);
 }
-if (!css.includes(".treasure-mine-footer") || !css.includes("min-height: clamp(300px, 35vh, 370px)")) {
+if (!css.includes(".treasure-mine-footer") || !/min-height\s*:\s*clamp\(300px,\s*35vh,\s*370px\)/.test(css)) {
   errors.push("Treasure mine must remain a compact footer rather than a full-height chapter.");
 }
 if (/ocean-ascent-vehicle|ascent-vehicle-silhouette|oceanVehicleAscent/.test(`${footer}\n${bridge}\n${css}`)) {
@@ -133,7 +133,7 @@ if (/ocean-ascent-vehicle|ascent-vehicle-silhouette|oceanVehicleAscent/.test(`${
 if (!css.includes('html[data-ocean-cinematic] .global-aquarium .ocean-world-canvas')) {
   errors.push("Marine fish must disappear during cinematic hand-offs to preserve suspense.");
 }
-if (!css.includes('background: transparent !important;') || !css.includes('.projects-section[data-project-world="research-station"]')) {
+if (!/background\s*:\s*transparent(?:\s*!important)?/.test(css) || !css.includes('.projects-section[data-project-world="research-station"]')) {
   errors.push("Projects must not reintroduce a dark station card behind the carousel.");
 }
 if (!transitionStage.includes("drawSuspenseVeil")) {

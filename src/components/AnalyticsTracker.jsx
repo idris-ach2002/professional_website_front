@@ -42,7 +42,7 @@ export default function AnalyticsTracker({ source }) {
 
     document.addEventListener("click", handleDocumentClick, { capture: true });
     return () => document.removeEventListener("click", handleDocumentClick, { capture: true });
-  }, [location.search]);
+  }, []);
 
   return null;
 }

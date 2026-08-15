@@ -216,7 +216,7 @@ void main() {
 
   // Irregular molten crater lake with a black fractured rim.
   vec2 craterP = vec2(p.x / 0.25, (p.y - 0.182) / 0.072);
-  float craterNoise = (noise2(craterP * 4.1 + vec2(t * 0.022, -t * 0.016)) - 0.5) * 0.15;
+  float craterNoise = (noise2(craterP * 4.1 + vec2(t * 0.022, -t * 0.016)) - 0.5) * 0.20;
   float craterR = length(craterP) + craterNoise;
   float outerRim = 1.0 - smoothstep(0.90, 1.20, craterR);
   float moltenLake = 1.0 - smoothstep(0.39, 0.83, craterR);
@@ -224,7 +224,7 @@ void main() {
   float craterEnergy = clamp(u_crater * lakePulse, 0.0, 1.90);
   vec3 lakeColor = mix(vec3(0.42, 0.006, 0.001), lavaOrange, smoothstep(0.26, 1.0, craterEnergy));
   lakeColor = mix(lakeColor, vec3(1.0, 0.92, 0.42), smoothstep(1.04, 1.62, craterEnergy));
-  rock = mix(rock, vec3(0.0005, 0.0015, 0.003), outerRim * 0.80);
+  rock = mix(rock, vec3(0.0005, 0.0015, 0.003), outerRim * 0.48);
   rock = mix(rock, lakeColor, moltenLake * clamp(0.42 + craterEnergy * 0.62, 0.0, 1.0));
 
   // Hydrothermal refraction around the crater and a true underwater shock front.
@@ -267,13 +267,14 @@ void main() {
 
   vec3 thermalBlue = vec3(0.035, 0.36, 0.54) * max(0.0, heatAlpha);
   vec3 blastWarm = vec3(1.0, 0.16, 0.012) * blastCore;
-  vec3 pressureColor = vec3(0.42, 0.90, 1.0) * (shockRing + echoRing);
+  float shockVisual = (shockRing + echoRing) * 0.035;
+  vec3 pressureColor = vec3(0.42, 0.90, 1.0) * shockVisual;
   vec3 canyonLight = vec3(1.0, 0.13, 0.008) * canyonWarm;
   vec3 wallHeat = vec3(1.0, 0.11, 0.004) * wallCrackHeat;
 
   vec3 color = rock + thermalBlue + blastWarm + pressureColor + canyonLight + wallHeat;
   float alpha = clamp(
-    rockMask + abs(heatAlpha) * 0.34 + blastCore * 0.40 + shockRing + echoRing + canyonWarm * 0.42 + wallCrackHeat * 0.72,
+    rockMask + abs(heatAlpha) * 0.34 + blastCore * 0.40 + shockVisual + canyonWarm * 0.42 + wallCrackHeat * 0.72,
     0.0,
     1.0
   );

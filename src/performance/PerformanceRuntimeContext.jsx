@@ -231,23 +231,32 @@ export default function PerformanceRuntimeProvider({ children }) {
 
   useEffect(() => {
     const root = document.documentElement;
+    let clearTimer = 0;
+
+    const clearInteraction = () => {
+      clearTimer = 0;
+      const remaining = interactionUntilRef.current - performance.now();
+      if (remaining > 0) {
+        clearTimer = window.setTimeout(clearInteraction, Math.ceil(remaining));
+        return;
+      }
+      delete root.dataset.runtimePriority;
+    };
+
     const markInteraction = () => {
       interactionUntilRef.current = performance.now() + INTERACTION_GUARD_MS;
       root.dataset.runtimePriority = "user-blocking";
-    };
-    const clearInteraction = () => {
-      if (performance.now() < interactionUntilRef.current) return;
-      delete root.dataset.runtimePriority;
+      window.clearTimeout(clearTimer);
+      clearTimer = window.setTimeout(clearInteraction, INTERACTION_GUARD_MS);
     };
 
     const interactionEvents = ["pointerdown", "keydown", "wheel", "touchstart"];
     interactionEvents.forEach((eventName) => {
       window.addEventListener(eventName, markInteraction, { capture: true, passive: true });
     });
-    const intervalId = window.setInterval(clearInteraction, 180);
 
     return () => {
-      window.clearInterval(intervalId);
+      window.clearTimeout(clearTimer);
       interactionEvents.forEach((eventName) => {
         window.removeEventListener(eventName, markInteraction, { capture: true });
       });
@@ -392,9 +401,9 @@ export default function PerformanceRuntimeProvider({ children }) {
     };
 
     const onFrame = (timestamp) => {
+      rafId = 0;
       if (document.hidden) {
         lastFrameAt = 0;
-        rafId = requestAnimationFrame(onFrame);
         return;
       }
 
@@ -414,6 +423,16 @@ export default function PerformanceRuntimeProvider({ children }) {
       rafId = requestAnimationFrame(onFrame);
     };
 
+    const syncFrameMonitorVisibility = () => {
+      if (document.hidden) {
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = 0;
+        lastFrameAt = 0;
+        return;
+      }
+      if (!rafId) rafId = requestAnimationFrame(onFrame);
+    };
+
     const supportedTypes = typeof PerformanceObserver === "undefined"
       ? []
       : PerformanceObserver.supportedEntryTypes ?? [];
@@ -428,10 +447,12 @@ export default function PerformanceRuntimeProvider({ children }) {
       observers.push(observer);
     }
 
-    rafId = requestAnimationFrame(onFrame);
+    document.addEventListener("visibilitychange", syncFrameMonitorVisibility);
+    syncFrameMonitorVisibility();
 
     return () => {
-      cancelAnimationFrame(rafId);
+      if (rafId) cancelAnimationFrame(rafId);
+      document.removeEventListener("visibilitychange", syncFrameMonitorVisibility);
       observers.forEach((observer) => observer.disconnect());
       worker?.terminate();
       workerLease?.release();
@@ -484,9 +505,32 @@ export default function PerformanceRuntimeProvider({ children }) {
       }
     };
 
+    let sampleTimer = 0;
+    const scheduleSample = () => {
+      window.clearTimeout(sampleTimer);
+      sampleTimer = document.hidden ? 0 : window.setTimeout(runSampleCycle, MEMORY_SAMPLE_MS);
+    };
+    const runSampleCycle = () => {
+      sampleTimer = 0;
+      sample();
+      scheduleSample();
+    };
+    const syncMemorySamplingVisibility = () => {
+      window.clearTimeout(sampleTimer);
+      sampleTimer = 0;
+      if (!document.hidden) {
+        sample();
+        scheduleSample();
+      }
+    };
+
     sample();
-    const intervalId = window.setInterval(sample, MEMORY_SAMPLE_MS);
-    return () => window.clearInterval(intervalId);
+    scheduleSample();
+    document.addEventListener("visibilitychange", syncMemorySamplingVisibility);
+    return () => {
+      window.clearTimeout(sampleTimer);
+      document.removeEventListener("visibilitychange", syncMemorySamplingVisibility);
+    };
   }, [recordDecision]);
 
   const evaluatePrefetch = useCallback((options = {}) => decideSmartPrefetch({
