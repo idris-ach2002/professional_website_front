@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const component = read("src/components/PortfolioTimeline.jsx");
+const fossilSurface = read("src/components/timeline/FossilTimelineSurface.jsx");
 const sectionTitle = read("src/components/SectionTitle.jsx");
 const inspection = read("src/animations/timelineInspectionEngine.js");
 const timelineMotion = read("src/animations/timelineMotion.js");
@@ -42,8 +43,28 @@ if (component.includes('reveal="fish"') || visualCss.includes("timeline-fish-ent
 if (!component.includes("playCardReveal") || !component.includes("progressForStep")) {
   errors.push("Timeline cards and line must reveal progressively from entry state using time, not scroll pixels.");
 }
-if (!component.includes("timeline-expedition-card") || !component.includes("TimelineCardReef") || !component.includes("timeline-card-reef-field")) {
-  errors.push("Timeline must keep expedition cards with the reef ecosystem background.");
+if (
+  !component.includes("timeline-expedition-card")
+  || !component.includes("timeline-fossil-card")
+  || !component.includes("FossilTimelineSurface")
+) {
+  errors.push("Timeline must keep expedition cards with the Canvas2D fossil surface.");
+}
+if (
+  !fossilSurface.includes('getContext("2d")')
+  || !fossilSurface.includes("requestAnimationFrame")
+  || !fossilSurface.includes("data-fossil-type")
+  || !fossilSurface.includes("timeline-fossil-canvas")
+) {
+  errors.push("Timeline fossils must use the event-driven Canvas2D renderer.");
+}
+if (
+  fossilSurface.includes("<svg")
+  || fossilSurface.includes("timeline-fossil-relief")
+  || component.includes("TimelineCardReef")
+  || component.includes("timeline-card-reef-field")
+) {
+  errors.push("Legacy card-local reef/SVG fossil layers must stay removed.");
 }
 if (component.includes("TimelineCardWave") || visualCss.includes("timeline-card-wave-field")) {
   errors.push("Legacy heartbeat-like card wave background must stay removed.");
@@ -75,10 +96,10 @@ if (!inspection.includes("INSPECTION_PHASES.INSPECT") || !component.includes("da
 if (!drone.includes("timeline-inspection-torch") || !drone.includes('data-facing="left"')) {
   errors.push("Exploration vehicle must expose the dedicated torch and discrete facing state.");
 }
-if (!droneCss.includes("60° outer cone") || !droneCss.includes("conic-gradient") || !droneCss.includes("240deg") || !droneCss.includes("300deg")) {
+if (!droneCss.includes("conic-gradient") || !droneCss.includes("240deg") || !droneCss.includes("300deg")) {
   errors.push("Exploration torch must keep the V20.9 narrow 60-degree physical light cone.");
 }
-if (!droneCss.includes("Narrow luminous core") || !droneCss.includes("257deg") || !droneCss.includes("283deg")) {
+if (!droneCss.includes("257deg") || !droneCss.includes("283deg")) {
   errors.push("Exploration torch must keep a narrower high-energy core inside the 60-degree penumbra.");
 }
 if (!visualCss.includes("saturate(1.55)") || !visualCss.includes("brightness(1.20)")) {
@@ -90,8 +111,14 @@ if (component.includes("timeline-card-inspection-light") || visualCss.includes("
 if (!component.includes("timeline-exit-sentinel") || !component.includes("timelineExit") || !visualCss.includes("data-timeline-exit=\"approaching\"")) {
   errors.push("Timeline must hide the inspection vehicles before the abyss volcano using the exit sentinel.");
 }
+if (!component.includes("terminalExitPending") || !component.includes("terminalExitTimer") || !component.includes("420")) {
+  errors.push("The terminal Timeline card must keep a fast 420ms inspection grace period before the volcano exit guard hides the vehicle.");
+}
+if (!component.includes("rearmInspectionFromBelow") || !component.includes("travelDirection") || !component.includes('timelineDirection')) {
+  errors.push("Timeline terminal inspection must rearm directionally when the visitor scrolls back up from the volcano.");
+}
 
-if (!visualCss.includes("margin-top:calc(var(--timeline-stage-height) * -1)") || visualCss.includes("margin-bottom:calc(var(--timeline-stage-height) * -1)")) {
+if (!/margin-top\s*:\s*calc\(var\(--timeline-stage-height\)\s*\*\s*-1\)/.test(visualCss) || /margin-bottom\s*:\s*calc\(var\(--timeline-stage-height\)\s*\*\s*-1\)/.test(visualCss)) {
   errors.push("Sticky Timeline stage must keep its full margin box; overlap belongs on the list so vehicles cannot paint past the section end.");
 }
 if (!visualCss.includes("height:clamp(160px,22vh,260px)") || !component.includes('rootMargin: "0px 0px -14% 0px"')) {
@@ -103,10 +130,10 @@ if (!visualCss.includes('data-timeline-scene="exiting"') || !visualCss.includes(
 if (!visualCss.includes("mask-image:linear-gradient") || !visualCss.includes("transparent 100%")) {
   errors.push("Abyss atmosphere must fade back to the global ocean before the next section.");
 }
-if (!visualCss.includes("margin-bottom: 0 !important") || !visualCss.includes("padding-bottom: 0 !important") || !visualCss.includes("margin-top: -2px !important")) {
+if (!/margin-bottom\s*:\s*0(?:\s*!important)?/.test(visualCss) || !/padding-bottom\s*:\s*0(?:\s*!important)?/.test(visualCss) || !/margin-top\s*:\s*-2px(?:\s*!important)?/.test(visualCss)) {
   errors.push("Timeline→caldera seam must remove the inherited page-section margin and overlap the caldera edge.");
 }
-if (!visualCss.includes("padding-bottom: clamp(220px, 18vw, 290px)") || !visualCss.includes("height: clamp(190px, 17vw, 275px)")) {
+if (!/padding-bottom\s*:\s*clamp\(220px,\s*18vw,\s*290px\)/.test(visualCss) || !/height\s*:\s*clamp\(190px,\s*17vw,\s*275px\)/.test(visualCss)) {
   errors.push("The final Timeline card must remain above a dedicated reef runway instead of colliding with foreground coral.");
 }
 if (/rotateY\(|createOrientationState|stepOrientation|createNavigationPilot|stepNavigationPilot/.test(component + inspection)) {
@@ -127,4 +154,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log("Timeline motion OK: V21.24 true caldera seam closure, protected reef runway and V20.9 autonomous inspection visuals.");
+console.log("Timeline motion OK: V30 autonomous inspection, Canvas2D fossils, true caldera seam closure and protected abyss runway.");

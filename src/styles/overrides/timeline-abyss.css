@@ -1,62 +1,11 @@
-/* V20.8 — abyss expedition timeline with bounded inspection scene and clean ocean exit. */
-.profile-island .hero-copy::before {
-  background:
-    radial-gradient(520px 240px at 8% 0%, rgb(var(--profile-calm-aura) / .14), transparent 68%),
-    radial-gradient(620px 300px at 94% 4%, rgb(255 255 255 / .52), transparent 72%),
-    linear-gradient(112deg, rgb(255 255 255 / .18), transparent 30%, rgb(var(--profile-calm-aura) / .07)) !important;
-  opacity: .50 !important;
-}
-
-.profile-island :is(.portrait-card.island-card,.availability-card.island-card,.contact-card.island-card)::before {
-  background:
-    radial-gradient(230px 150px at 8% 0%, rgb(var(--profile-calm-aura) / .10), transparent 72%),
-    linear-gradient(120deg, rgb(255 255 255 / .40), transparent 28%, transparent 76%, rgb(var(--profile-calm-aura) / .08)) !important;
-}
-
-.ocean-map {
-  left: -20vw !important;
-  right: auto !important;
-  width: 140vw !important;
-  max-width: none !important;
-  overflow: visible !important;
-}
-
-.ocean-static-layer { transform-origin: 50% 72%; }
-
-.timeline-dive-viewport,.timeline-dive-content {
-  position:relative;
-  z-index:1;
-  width:100%;
-  height:auto;
-  min-height:0;
-  overflow:visible;
-}
-
-.timeline-section.is-autonomous-timeline {
-  position:relative;
-  isolation:isolate;
-  width:100%;
-  height:auto;
-  min-height:0;
-  padding-block:clamp(42px,7vw,88px);
-  overflow:visible;
-  contain:style;
-}
-
-.timeline-abyss-atmosphere {
-  position:absolute;
-  left:50%;
-  top:clamp(-120px,-8vw,-64px);
-  bottom:0;
-  z-index:0;
-  width:100vw;
-  overflow:hidden;
-  transform:translateX(-50%);
-  pointer-events:none;
-  -webkit-mask-image:linear-gradient(180deg,transparent 0%,#000 5%,#000 88%,rgba(0,0,0,.84) 92%,transparent 100%);
-  mask-image:linear-gradient(180deg,transparent 0%,#000 5%,#000 88%,rgba(0,0,0,.84) 92%,transparent 100%);
-  background:
-    radial-gradient(900px 520px at 18% 16%,rgba(14,116,144,.18),transparent 68%),
+@layer base, priority, critical;
+@layer base {
+.profile-island .hero-copy::before{opacity:.50 !important;}
+.ocean-map{left:-20vw !important;right:auto !important;width:140vw !important;}
+.ocean-static-layer{transform-origin:50% 72%;}
+.timeline-dive-viewport,.timeline-dive-content{position:relative;z-index:1;width:100%;height:auto;min-height:0;overflow:visible;}
+.timeline-section.is-autonomous-timeline{position:relative;isolation:isolate;width:100%;height:auto;min-height:0;padding-block:clamp(42px,7vw,88px);overflow:visible;contain:style;}
+.timeline-abyss-atmosphere{position:absolute;left:50%;top:clamp(-120px,-8vw,-64px);bottom:0;z-index:0;width:100vw;overflow:hidden;transform:translateX(-50%);pointer-events:none;-webkit-mask-image:linear-gradient(180deg,transparent 0%,#000 5%,#000 88%,rgba(0,0,0,.84) 92%,transparent 100%);mask-image:linear-gradient(180deg,transparent 0%,#000 5%,#000 88%,rgba(0,0,0,.84) 92%,transparent 100%);background:radial-gradient(900px 520px at 18% 16%,rgba(14,116,144,.18),transparent 68%),
     radial-gradient(760px 540px at 84% 48%,rgba(8,145,178,.10),transparent 72%),
     linear-gradient(180deg,
       rgba(8,47,73,0) 0%,
@@ -66,307 +15,120 @@
       #031925 48%,
       #020e18 72%,
       #00070d 90%,
-      rgba(0,7,13,0) 100%);
-}
-.timeline-abyss-atmosphere::before {
-  content:"";
-  position:absolute;
-  inset:0;
-  opacity:.25;
-  background-image:
-    radial-gradient(circle at 16% 22%,rgba(224,251,255,.56) 0 1px,transparent 1.5px),
+      rgba(0,7,13,0) 100%);}
+.timeline-abyss-atmosphere::before{content:"";position:absolute;inset:0;opacity:.25;background-image:radial-gradient(circle at 16% 22%,rgba(224,251,255,.56) 0 1px,transparent 1.5px),
     radial-gradient(circle at 72% 42%,rgba(125,211,252,.40) 0 1px,transparent 1.4px),
-    radial-gradient(circle at 42% 78%,rgba(103,232,249,.28) 0 1px,transparent 1.4px);
-  background-size:230px 210px,310px 270px,370px 330px;
-  mask-image:linear-gradient(180deg,transparent 0%,#000 16%,#000 100%);
+    radial-gradient(circle at 42% 78%,rgba(103,232,249,.28) 0 1px,transparent 1.4px);background-size:230px 210px,310px 270px,370px 330px;mask-image:linear-gradient(180deg,transparent 0%,#000 16%,#000 100%);}
+.timeline-abyss-glow{position:absolute;border-radius:50%;filter:blur(24px);opacity:.20;}
+.timeline-abyss-glow--one{width:34vw;height:20vw;left:-8vw;top:26%;background:rgba(6,182,212,.16);}
+.timeline-abyss-glow--two{width:28vw;height:24vw;right:-5vw;bottom:18%;background:rgba(14,116,144,.13);}
+.timeline-abyss-seabed{position:absolute;left:50%;bottom:clamp(28px,4vw,64px);width:max(1180px,112vw);height:clamp(260px,30vw,520px);transform:translateX(-50%);background:url("/assets/ocean/timeline-reef-ecosystem.svg") center bottom/100% auto no-repeat;opacity:.72;filter:saturate(.84) brightness(.72);}
+.timeline-section.is-autonomous-timeline .section-heading{text-shadow:0 8px 34px rgba(34,211,238,.12);}
+.timeline-section.is-autonomous-timeline .timeline-subsea-track{position:relative;width:min(1320px,calc(100vw - 36px));margin-inline:auto;--timeline-stage-height:min(66vh,660px);perspective:1200px;}
+.timeline-section.is-autonomous-timeline .timeline-straight-line{z-index:1;width:3px;background:rgba(125,211,252,.12);box-shadow:0 0 20px rgba(34,211,238,.08);}
+.timeline-section.is-autonomous-timeline .timeline-straight-line-progress{background:linear-gradient(#a5f3fc,#22d3ee,#0284c7);box-shadow:0 0 16px rgba(34,211,238,.30);transition:transform .24s cubic-bezier(.22,.68,.25,1);will-change:transform;}
+.timeline-autonomous-stage{position:sticky;top:clamp(92px,14vh,152px);z-index:3;width:100%;height:var(--timeline-stage-height);margin-bottom:0;overflow:visible;pointer-events:none;contain:layout style;}
+.timeline-section.is-autonomous-timeline .timeline-list{position:relative;z-index:4;margin-top:calc(var(--timeline-stage-height) * -1);}
+.timeline-section.is-autonomous-timeline .timeline-exploration-drone, .timeline-section.is-autonomous-timeline .timeline-submarine{position:absolute;inset:0 auto auto 0;pointer-events:none;visibility:visible;}
+.timeline-section.is-autonomous-timeline .timeline-exploration-drone{z-index:2;opacity:0;}
+.timeline-section.is-autonomous-timeline .timeline-submarine{z-index:1;opacity:0;filter:drop-shadow(0 12px 18px rgba(2,15,27,.20));}
+.timeline-expedition-row{position:relative;min-height:250px;transform-style:flat;}
+.timeline-expedition-row::before{top:50% !important;width:clamp(72px,7vw,110px) !important;height:1px !important;border-radius:0;opacity:.60;animation:none;clip-path:none;}
+.timeline-expedition-row.is-left::before{left:calc(50% - clamp(112px,9vw,154px)) !important;}
+.timeline-expedition-row.is-right::before{left:calc(50% + 10px) !important;}
+.timeline-expedition-row::after{width:14px !important;height:14px !important;border:2px solid rgba(224,251,255,.86);background:#0891b2;box-shadow:0 0 0 5px rgba(34,211,238,.08),0 0 18px rgba(34,211,238,.24);animation:none;}
+.timeline-card.timeline-expedition-card{position:relative;isolation:isolate;overflow:hidden;width:min(560px,100%);filter:none !important;transform:none !important;}
+.timeline-card.timeline-expedition-card::before{content:"";position:absolute;inset:0 !important;width:auto !important;height:auto !important;border:0;border-radius:inherit;clip-path:none !important;pointer-events:none;}
+.timeline-card.timeline-expedition-card::after{content:"";position:absolute;right:14px;bottom:14px;z-index:1;width:26px;height:26px;border-right:1px solid rgba(103,232,249,.22);border-bottom:1px solid rgba(103,232,249,.22);clip-path:none !important;pointer-events:none;}
+.timeline-card.timeline-expedition-card > :not(.timeline-card-reef-field){position:relative;z-index:3;}
+.timeline-card-reef-field{position:absolute;inset:auto 0 0;z-index:1;height:52%;pointer-events:none;opacity:.22;background-image:linear-gradient(180deg,transparent 0%,rgba(2,15,27,.16) 34%,rgba(1,10,18,.72) 100%),
+    url("/assets/ocean/timeline-reef-ecosystem.svg");background-repeat:no-repeat,no-repeat;background-size:100% 100%,auto 118%;background-position:center bottom,50% 100%;filter:saturate(.72) brightness(.62);transform:translateZ(0);transition:opacity .18s ease,filter .18s ease;}
+.timeline-card-reef-field[data-reef-variant="1"]{background-position:center bottom,28% 100%;}
+.timeline-card-reef-field[data-reef-variant="2"]{background-position:center bottom,76% 100%;}
+.timeline-expedition-row[data-timeline-inspection="approaching"] .timeline-card-reef-field{opacity:.42;filter:saturate(1.10) brightness(.90) contrast(1.03);}
+.timeline-expedition-row[data-timeline-inspection="active"] .timeline-card-reef-field{opacity:.68;background-image:linear-gradient(180deg,transparent 0%,rgba(2,15,27,.05) 38%,rgba(1,10,18,.34) 100%),
+    url("/assets/ocean/timeline-reef-ecosystem.svg");filter:saturate(1.55) brightness(1.20) contrast(1.08);}
+.timeline-expedition-topline,.timeline-expedition-footer{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;}
+.timeline-expedition-date{text-align:right;}
+.timeline-expedition-heading{margin-bottom:12px;}
+.timeline-expedition-statuses{flex-wrap:wrap;}
+.timeline-expedition-card h2{text-wrap:balance;}
+.timeline-expedition-card .timeline-description{max-width:100%;}
+.timeline-expedition-card .timeline-image-preview-trigger{margin-top:14px;}
+.timeline-expedition-footer{margin-top:20px;padding-top:16px;border-top:1px solid rgba(103,232,249,.12);}
+.timeline-systems-block{display:grid;gap:8px;min-width:0;}
+.timeline-expedition-card .skill-badge{box-shadow:none;}
+.timeline-expedition-card .timeline-link{width:fit-content;margin-top:2px;}
+.timeline-section.is-autonomous-timeline[data-timeline-reveal="playing"] .timeline-row{opacity:0;transform:translate3d(0,28px,0) scale(.99);transition:opacity .54s cubic-bezier(.22,.68,.25,1),transform .66s cubic-bezier(.16,.76,.24,1);}
+.timeline-section.is-autonomous-timeline[data-timeline-reveal="playing"] .timeline-row[data-timeline-card-state="revealed"]{opacity:1;transform:none;}
+.timeline-section.is-autonomous-timeline:is([data-timeline-reveal="complete"],[data-timeline-reveal="ready"]) .timeline-row{opacity:1;transform:none;}
+.timeline-exit-sentinel{position:absolute;inset:auto 0 0;height:clamp(160px,22vh,260px);pointer-events:none;}
+.timeline-section.is-autonomous-timeline[data-timeline-exit="approaching"] :is(.timeline-exploration-drone,.timeline-submarine), .timeline-section.is-autonomous-timeline:is([data-timeline-scene="idle"],[data-timeline-scene="sleeping"],[data-timeline-scene="exiting"],[data-timeline-scene="paused"],[data-timeline-scene="static"]) :is(.timeline-exploration-drone,.timeline-submarine){opacity:0 !important;}
+@media (max-width:980px){.timeline-expedition-row,.timeline-expedition-row.is-left,.timeline-expedition-row.is-right{grid-template-columns:34px minmax(0,1fr);gap:14px;}
+.timeline-expedition-row .timeline-expedition-card{grid-column:2;justify-self:stretch;width:100%;}
+.timeline-section.is-autonomous-timeline .timeline-straight-line{left:16px;}
+.timeline-expedition-row::before{display:none;}
+.timeline-expedition-row::after{left:16px !important;}}
+@media (max-width:820px){.timeline-abyss-atmosphere{top:-52px;bottom:0;}
+.timeline-section.is-autonomous-timeline .timeline-subsea-track{width:calc(100vw - 24px);}
+.timeline-section.is-autonomous-timeline .timeline-subsea-track{--timeline-stage-height:min(56vh,520px);}
+.timeline-autonomous-stage{top:clamp(76px,11vh,112px);}
+.timeline-section.is-autonomous-timeline .timeline-exploration-drone{width:clamp(92px,26vw,124px);z-index:2;}
+.timeline-section.is-autonomous-timeline .timeline-submarine{width:clamp(60px,16vw,82px);opacity:.24;}
+.timeline-expedition-topline,.timeline-expedition-footer{gap:12px;}
+.timeline-expedition-date{max-width:46%;}}
+@media (max-width:560px){.timeline-expedition-footer{display:grid;}
+.timeline-expedition-date{max-width:50%;}}
+@media (prefers-reduced-motion:reduce){.timeline-section.is-autonomous-timeline .timeline-straight-line-progress, .timeline-section.is-autonomous-timeline .timeline-row, .timeline-card-reef-field{transition:none;}}
+.timeline-abyss-seabed{opacity:.96 !important;}
+.timeline-card-reef-field{opacity:.48 !important;filter:none !important;}
+.timeline-expedition-row[data-timeline-inspection="approaching"] .timeline-card-reef-field{opacity:.66 !important;filter:none !important;}
+.timeline-expedition-row[data-timeline-inspection="active"] .timeline-card-reef-field{opacity:.84 !important;filter:none !important;}
+.timeline-abyss-atmosphere{bottom:-1px !important;}
+.timeline-section.is-autonomous-timeline .timeline-list{padding-bottom:clamp(220px, 18vw, 290px);}
+.timeline-abyss-seabed{bottom:-2px !important;height:clamp(190px, 17vw, 275px) !important;opacity:1 !important;filter:none !important;}
+.timeline-abyss-atmosphere{bottom:-2px !important;}
+@media (max-width: 820px){.timeline-section.is-autonomous-timeline .timeline-list{padding-bottom:clamp(170px, 32vw, 230px);}
+.timeline-abyss-seabed{height:clamp(150px, 34vw, 220px) !important;}}
 }
-.timeline-abyss-glow { position:absolute; border-radius:50%; filter:blur(24px); opacity:.20; }
-.timeline-abyss-glow--one { width:34vw; height:20vw; left:-8vw; top:26%; background:rgba(6,182,212,.16); }
-.timeline-abyss-glow--two { width:28vw; height:24vw; right:-5vw; bottom:18%; background:rgba(14,116,144,.13); }
-.timeline-abyss-seabed {
-  position:absolute;
-  left:50%;
-  bottom:clamp(28px,4vw,64px);
-  width:max(1180px,112vw);
-  height:clamp(260px,30vw,520px);
-  transform:translateX(-50%);
-  background:url("/assets/ocean/timeline-reef-ecosystem.svg") center bottom/100% auto no-repeat;
-  opacity:.72;
-  filter:saturate(.84) brightness(.72);
-}
-
-.timeline-section.is-autonomous-timeline .section-heading { color:#ecfeff !important; text-shadow:0 8px 34px rgba(34,211,238,.12); }
-.timeline-section.is-autonomous-timeline .section-description { color:rgba(224,251,255,.74) !important; }
-.timeline-section.is-autonomous-timeline .section-eyebrow {
-  color:#a5f3fc !important;
-  border-color:rgba(103,232,249,.22) !important;
-  background:rgba(8,47,73,.50) !important;
-}
-
-.timeline-section.is-autonomous-timeline .timeline-subsea-track {
-  position:relative;
-  width:min(1320px,calc(100vw - 36px));
-  margin-inline:auto;
-  --timeline-stage-height:min(66vh,660px);
-  perspective:1200px;
-}
-.timeline-section.is-autonomous-timeline .timeline-straight-line {
-  z-index:1;
-  width:3px;
-  background:rgba(125,211,252,.12);
-  box-shadow:0 0 20px rgba(34,211,238,.08);
-}
-.timeline-section.is-autonomous-timeline .timeline-straight-line-progress {
-  background:linear-gradient(#a5f3fc,#22d3ee,#0284c7);
-  box-shadow:0 0 16px rgba(34,211,238,.30);
-  transition:transform .24s cubic-bezier(.22,.68,.25,1);
-  will-change:transform;
-}
-
-.timeline-autonomous-stage {
-  position:sticky;
-  top:clamp(92px,14vh,152px);
-  z-index:3;
-  width:100%;
-  height:var(--timeline-stage-height);
-  margin-bottom:0;
-  overflow:visible;
-  pointer-events:none;
-  contain:layout style;
-}
-.timeline-section.is-autonomous-timeline .timeline-list { position:relative; z-index:4; margin-top:calc(var(--timeline-stage-height) * -1); }
-.timeline-section.is-autonomous-timeline .timeline-exploration-drone,
-.timeline-section.is-autonomous-timeline .timeline-submarine {
-  position:absolute;
-  inset:0 auto auto 0;
-  pointer-events:none;
-  visibility:visible;
-}
-.timeline-section.is-autonomous-timeline .timeline-exploration-drone { z-index:2; opacity:0; }
-.timeline-section.is-autonomous-timeline .timeline-submarine { z-index:1; opacity:0; filter:drop-shadow(0 12px 18px rgba(2,15,27,.20)); }
-
-/* V21.23 — no creature crosses the Timeline title during a world hand-off.
-   The destination-specific full-screen cinematic owns the reveal. */
-
-/* Expedition modules — abyssal logbook over a static reef ecosystem texture. */
-.timeline-expedition-row { position:relative; min-height:250px; transform-style:flat; }
-.timeline-expedition-row::before {
-  top:50% !important;
-  width:clamp(72px,7vw,110px) !important;
-  height:1px !important;
-  border-radius:0;
-  background:linear-gradient(90deg,transparent,rgba(103,232,249,.50),rgba(224,251,255,.82)) !important;
-  opacity:.60;
-  animation:none;
-  clip-path:none;
-}
-.timeline-expedition-row.is-left::before { left:calc(50% - clamp(112px,9vw,154px)) !important; }
-.timeline-expedition-row.is-right::before { left:calc(50% + 10px) !important; }
-.timeline-expedition-row::after {
-  width:14px !important;
-  height:14px !important;
-  border:2px solid rgba(224,251,255,.86);
-  background:#0891b2;
-  box-shadow:0 0 0 5px rgba(34,211,238,.08),0 0 18px rgba(34,211,238,.24);
-  animation:none;
-}
-
-.timeline-card.timeline-expedition-card {
-  position:relative;
-  isolation:isolate;
-  overflow:hidden;
-  width:min(560px,100%);
-  padding:clamp(22px,2.5vw,32px) !important;
-  border:1px solid rgba(103,232,249,.18) !important;
-  border-radius:24px !important;
-  background:linear-gradient(145deg,rgba(6,37,55,.96),rgba(3,25,40,.94)) !important;
-  box-shadow:0 18px 52px rgba(1,12,22,.24),inset 0 1px rgba(224,251,255,.06) !important;
-  backdrop-filter:none !important;
-  filter:none !important;
-  transform:none !important;
-  transition:border-color .34s ease,box-shadow .34s ease,background .34s ease !important;
-}
-.timeline-card.timeline-expedition-card::before {
-  content:"";
-  position:absolute;
-  inset:0 !important;
-  z-index:0 !important;
-  width:auto !important;
-  height:auto !important;
-  border:0;
-  border-radius:inherit;
-  background:
-    linear-gradient(90deg,rgba(34,211,238,.58) 0 86px,rgba(103,232,249,.10) 86px 100%) 0 0/100% 3px no-repeat,
-    radial-gradient(320px 180px at 100% 0%,rgba(14,165,233,.08),transparent 72%) !important;
-  clip-path:none !important;
-  pointer-events:none;
-}
-.timeline-card.timeline-expedition-card::after {
-  content:"";
-  position:absolute;
-  right:14px;
-  bottom:14px;
-  z-index:1;
-  width:26px;
-  height:26px;
-  border-right:1px solid rgba(103,232,249,.22);
-  border-bottom:1px solid rgba(103,232,249,.22);
-  clip-path:none !important;
-  pointer-events:none;
-}
-.timeline-card.timeline-expedition-card > :not(.timeline-card-reef-field) { position:relative; z-index:3; }
-
-.timeline-card-reef-field {
-  position:absolute;
-  inset:auto 0 0;
-  z-index:1;
-  height:52%;
-  pointer-events:none;
-  opacity:.22;
-  background-image:
-    linear-gradient(180deg,transparent 0%,rgba(2,15,27,.16) 34%,rgba(1,10,18,.72) 100%),
-    url("/assets/ocean/timeline-reef-ecosystem.svg");
-  background-repeat:no-repeat,no-repeat;
-  background-size:100% 100%,auto 118%;
-  background-position:center bottom,50% 100%;
-  filter:saturate(.72) brightness(.62);
-  transform:translateZ(0);
-  transition:opacity .18s ease,filter .18s ease;
-}
-.timeline-card-reef-field[data-reef-variant="1"] { background-position:center bottom,28% 100%; }
-.timeline-card-reef-field[data-reef-variant="2"] { background-position:center bottom,76% 100%; }
-
-/* Card response to the external torch: preserve text contrast while restoring reef colours. */
-.timeline-expedition-row[data-timeline-inspection="approaching"] .timeline-expedition-card {
-  border-color:rgba(103,232,249,.30) !important;
-  box-shadow:0 18px 52px rgba(1,12,22,.24),0 0 20px rgba(34,211,238,.05) !important;
-}
-.timeline-expedition-row[data-timeline-inspection="approaching"] .timeline-card-reef-field {
-  opacity:.42;
-  filter:saturate(1.10) brightness(.90) contrast(1.03);
-}
-.timeline-expedition-row[data-timeline-inspection="active"] .timeline-expedition-card {
-  border-color:rgba(165,243,252,.42) !important;
-  background:linear-gradient(145deg,rgba(7,43,61,.97),rgba(3,28,43,.96)) !important;
-  box-shadow:0 20px 56px rgba(1,12,22,.30),0 0 24px rgba(34,211,238,.06) !important;
-}
-.timeline-expedition-row[data-timeline-inspection="active"] .timeline-card-reef-field {
-  opacity:.68;
-  background-image:
-    linear-gradient(180deg,transparent 0%,rgba(2,15,27,.05) 38%,rgba(1,10,18,.34) 100%),
-    url("/assets/ocean/timeline-reef-ecosystem.svg");
-  filter:saturate(1.55) brightness(1.20) contrast(1.08);
-}
-
-.timeline-expedition-topline,.timeline-expedition-footer { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; }
-.timeline-mission-id { display:grid; gap:3px; }
-.timeline-log-label,.timeline-systems-label,.timeline-depth-readout span {
-  color:rgba(165,243,252,.70) !important;
-  font:800 .62rem/1.2 ui-monospace,SFMono-Regular,Menlo,monospace !important;
-  letter-spacing:.14em !important;
-  text-transform:uppercase;
-}
-.timeline-mission-number { color:#cffafe; font:900 .84rem/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.08em; }
-.timeline-expedition-date { margin:0 !important; color:rgba(186,230,253,.68) !important; font:750 .75rem/1.35 ui-monospace,SFMono-Regular,Menlo,monospace !important; text-align:right; }
-.timeline-expedition-rule { height:1px; margin:16px 0 18px; background:linear-gradient(90deg,rgba(103,232,249,.26),rgba(34,211,238,.08),transparent); }
-.timeline-expedition-heading { margin-bottom:12px; }
-.timeline-expedition-statuses { flex-wrap:wrap; }
-.timeline-expedition-card h2 { margin:2px 0 0 !important; color:#ecfeff !important; font-size:clamp(1.35rem,2vw,2rem) !important; letter-spacing:-.04em !important; text-wrap:balance; }
-.timeline-expedition-card .timeline-org { color:#67e8f9 !important; font-weight:850 !important; }
-.timeline-expedition-card .timeline-summary { margin-top:14px !important; color:rgba(224,251,255,.90) !important; font-weight:760 !important; }
-.timeline-expedition-card .timeline-description { max-width:100%; margin:8px 0 0 !important; color:rgba(224,251,255,.72) !important; line-height:1.66 !important; }
-.timeline-expedition-card .timeline-image-preview-trigger { margin-top:14px; }
-.timeline-expedition-footer { margin-top:20px; padding-top:16px; border-top:1px solid rgba(103,232,249,.12); }
-.timeline-systems-block { display:grid; gap:8px; min-width:0; }
-.timeline-expedition-card .skill-row { margin:0 !important; }
-.timeline-expedition-card .skill-badge { min-height:22px !important; border-color:rgba(103,232,249,.20) !important; background:rgba(8,47,73,.52) !important; color:#cffafe !important; box-shadow:none; }
-.timeline-expedition-card .timeline-link { width:fit-content; margin-top:2px; color:#67e8f9 !important; }
-.timeline-depth-readout { flex:0 0 auto; display:grid; gap:4px; min-width:118px; padding-left:14px; border-left:1px solid rgba(103,232,249,.15); text-align:right; }
-.timeline-depth-readout strong { color:#a5f3fc; font:900 1rem/1.1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:-.03em; }
-.timeline-expedition-card .timeline-category { border-color:rgba(103,232,249,.20) !important; background:rgba(8,47,73,.62) !important; color:#cffafe !important; }
-.timeline-expedition-card .current-badge { background:rgba(13,148,136,.20) !important; color:#99f6e4 !important; }
-
-.timeline-section.is-autonomous-timeline[data-timeline-reveal="playing"] .timeline-row {
-  opacity:0;
-  transform:translate3d(0,28px,0) scale(.99);
-  transition:opacity .54s cubic-bezier(.22,.68,.25,1),transform .66s cubic-bezier(.16,.76,.24,1);
-}
-.timeline-section.is-autonomous-timeline[data-timeline-reveal="playing"] .timeline-row[data-timeline-card-state="revealed"] { opacity:1; transform:none; }
-.timeline-section.is-autonomous-timeline:is([data-timeline-reveal="complete"],[data-timeline-reveal="ready"]) .timeline-row { opacity:1; transform:none; }
-
-.timeline-exit-sentinel {
-  position:absolute;
-  inset:auto 0 0;
-  height:clamp(160px,22vh,260px);
-  pointer-events:none;
-}
-
-.timeline-section.is-autonomous-timeline[data-timeline-exit="approaching"] :is(.timeline-exploration-drone,.timeline-submarine),
-.timeline-section.is-autonomous-timeline:is([data-timeline-scene="idle"],[data-timeline-scene="sleeping"],[data-timeline-scene="exiting"],[data-timeline-scene="paused"],[data-timeline-scene="static"]) :is(.timeline-exploration-drone,.timeline-submarine) {
-  opacity:0 !important;
-  visibility:hidden !important;
-}
-
-@media (max-width:980px) {
-  .timeline-expedition-row,.timeline-expedition-row.is-left,.timeline-expedition-row.is-right { grid-template-columns:34px minmax(0,1fr); gap:14px; }
-  .timeline-expedition-row .timeline-expedition-card { grid-column:2; justify-self:stretch; width:100%; }
-  .timeline-section.is-autonomous-timeline .timeline-straight-line { left:16px; }
-  .timeline-expedition-row::before { display:none; }
-  .timeline-expedition-row::after { left:16px !important; }
-}
-
-@media (max-width:820px) {
-  .timeline-abyss-atmosphere { top:-52px; bottom:0; }
-  .timeline-section.is-autonomous-timeline .timeline-subsea-track { width:calc(100vw - 24px); }
-  .timeline-section.is-autonomous-timeline .timeline-subsea-track { --timeline-stage-height:min(56vh,520px); }
-  .timeline-autonomous-stage { top:clamp(76px,11vh,112px); }
-  .timeline-section.is-autonomous-timeline .timeline-exploration-drone { width:clamp(92px,26vw,124px); z-index:2; }
-  .timeline-section.is-autonomous-timeline .timeline-submarine { width:clamp(60px,16vw,82px); opacity:.24; }
-  .timeline-card.timeline-expedition-card { padding:20px !important; border-radius:20px !important; }
-  .timeline-expedition-topline,.timeline-expedition-footer { gap:12px; }
-  .timeline-expedition-date { max-width:46%; }
-  .timeline-depth-readout { min-width:102px; padding-left:10px; }
-}
-
-@media (max-width:560px) {
-  .timeline-expedition-footer { display:grid; }
-  .timeline-depth-readout { width:100%; padding:12px 0 0; border-left:0; border-top:1px solid rgba(103,232,249,.12); text-align:left; }
-  .timeline-expedition-date { max-width:50%; font-size:.69rem !important; }
-}
-
-@media (prefers-reduced-motion:reduce) {
-  .timeline-section.is-autonomous-timeline .timeline-straight-line-progress,
-  .timeline-section.is-autonomous-timeline .timeline-row,
-  .timeline-card-reef-field { transition:none; }
-}
-
-/* V21.22 — restore the reef's original colour and remove the muddy colour veil. */
-.timeline-abyss-atmosphere {
-  bottom: -2px !important;
-  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 4%, #000 100%) !important;
-  mask-image: linear-gradient(180deg, transparent 0%, #000 4%, #000 100%) !important;
-}
-.timeline-abyss-seabed {
-  opacity: .96 !important;
-  filter: none !important;
-  image-rendering: auto !important;
-}
-.timeline-card-reef-field {
-  opacity: .48 !important;
-  filter: none !important;
-  background-blend-mode: normal !important;
-}
-.timeline-expedition-row[data-timeline-inspection="approaching"] .timeline-card-reef-field {
-  opacity: .66 !important;
-  filter: none !important;
-}
-.timeline-expedition-row[data-timeline-inspection="active"] .timeline-card-reef-field {
-  opacity: .84 !important;
-  filter: none !important;
-}
-.timeline-abyss-atmosphere {
-  background:
-    radial-gradient(900px 520px at 18% 16%,rgba(14,116,144,.18),transparent 68%),
+@layer priority {
+.profile-island .hero-copy::before{background:radial-gradient(520px 240px at 8% 0%, rgb(var(--profile-calm-aura) / .14), transparent 68%),
+    radial-gradient(620px 300px at 94% 4%, rgb(255 255 255 / .52), transparent 72%),
+    linear-gradient(112deg, rgb(255 255 255 / .18), transparent 30%, rgb(var(--profile-calm-aura) / .07));}
+.profile-island :is(.portrait-card.island-card,.availability-card.island-card,.contact-card.island-card)::before{background:radial-gradient(230px 150px at 8% 0%, rgb(var(--profile-calm-aura) / .10), transparent 72%),
+    linear-gradient(120deg, rgb(255 255 255 / .40), transparent 28%, transparent 76%, rgb(var(--profile-calm-aura) / .08));}
+.ocean-map{max-width:none;}
+.timeline-section.is-autonomous-timeline .section-heading{color:#ecfeff;}
+.timeline-section.is-autonomous-timeline .section-description{color:rgba(224,251,255,.74);}
+.timeline-section.is-autonomous-timeline .section-eyebrow{color:#a5f3fc;background:rgba(8,47,73,.50);}
+.timeline-expedition-row::before{background:linear-gradient(90deg,transparent,rgba(103,232,249,.50),rgba(224,251,255,.82));}
+.timeline-card.timeline-expedition-card{padding:clamp(22px,2.5vw,32px);border-radius:24px;background:linear-gradient(145deg,rgba(6,37,55,.96),rgba(3,25,40,.94));box-shadow:0 18px 52px rgba(1,12,22,.24),inset 0 1px rgba(224,251,255,.06);backdrop-filter:none;transition:border-color .34s ease,box-shadow .34s ease,background .34s ease;}
+.timeline-card.timeline-expedition-card::before{z-index:0;background:linear-gradient(90deg,rgba(34,211,238,.58) 0 86px,rgba(103,232,249,.10) 86px 100%) 0 0/100% 3px no-repeat,
+    radial-gradient(320px 180px at 100% 0%,rgba(14,165,233,.08),transparent 72%);}
+.timeline-expedition-row[data-timeline-inspection="approaching"] .timeline-expedition-card{box-shadow:0 18px 52px rgba(1,12,22,.24),0 0 20px rgba(34,211,238,.05);}
+.timeline-expedition-row[data-timeline-inspection="active"] .timeline-expedition-card{background:linear-gradient(145deg,rgba(7,43,61,.97),rgba(3,28,43,.96));box-shadow:0 20px 56px rgba(1,12,22,.30),0 0 24px rgba(34,211,238,.06);}
+.timeline-expedition-date{margin:0;color:rgba(186,230,253,.68);font:750 .75rem/1.35 ui-monospace,SFMono-Regular,Menlo,monospace;}
+.timeline-expedition-card h2{margin:2px 0 0;color:#ecfeff;font-size:clamp(1.35rem,2vw,2rem);}
+.timeline-expedition-card .timeline-org{color:#67e8f9;font-weight:850;}
+.timeline-expedition-card .timeline-summary{margin-top:14px;color:rgba(224,251,255,.90);font-weight:760;}
+.timeline-expedition-card .timeline-description{margin:8px 0 0;color:rgba(224,251,255,.72);line-height:1.66;}
+.timeline-expedition-card .skill-row{margin:0;}
+.timeline-expedition-card .skill-badge{min-height:22px;background:rgba(8,47,73,.52);color:#cffafe;}
+.timeline-expedition-card .timeline-link{color:#67e8f9;}
+.timeline-expedition-card .timeline-category{background:rgba(8,47,73,.62);color:#cffafe;}
+.timeline-expedition-card .current-badge{background:rgba(13,148,136,.20);color:#99f6e4;}
+@media (max-width:820px){.timeline-card.timeline-expedition-card{padding:20px;border-radius:20px;}}
+@media (max-width:560px){.timeline-expedition-date{font-size:.69rem;}}
+.timeline-abyss-atmosphere{-webkit-mask-image:linear-gradient(180deg, transparent 0%, #000 4%, #000 100%);mask-image:linear-gradient(180deg, transparent 0%, #000 4%, #000 100%);}
+.timeline-abyss-seabed{image-rendering:auto;}
+.timeline-card-reef-field{background-blend-mode:normal;}
+.volcano-field-section{margin-top:-1px;}
+.timeline-section.is-autonomous-timeline{margin-bottom:0;padding-bottom:0;}
+.timeline-section.is-autonomous-timeline .timeline-subsea-track{padding-bottom:0;}
+.timeline-section.is-autonomous-timeline .timeline-expedition-row:last-child{margin-bottom:0;}
+.timeline-abyss-seabed{background:linear-gradient(180deg, transparent 0 55%, rgba(0,7,13,.18) 75%, #00070d 100%),
+    url("/assets/ocean/timeline-reef-ecosystem.svg") center bottom/100% auto no-repeat;}
+.timeline-abyss-atmosphere{background:radial-gradient(900px 520px at 18% 16%,rgba(14,116,144,.18),transparent 68%),
     radial-gradient(760px 540px at 84% 48%,rgba(8,145,178,.10),transparent 72%),
     linear-gradient(180deg,
       rgba(8,47,73,0) 0%,
@@ -376,73 +138,7 @@
       #031925 48%,
       #020e18 72%,
       #00070d 90%,
-      #00070d 100%) !important;
+      #00070d 100%);}
+.volcano-field-section{margin-top:-2px;}
 }
-
-/* V21.23 — close the only remaining physical seam before the caldera.
-   The Timeline reef now reaches the volcano boundary with no dead-water band. */
-.timeline-section.is-autonomous-timeline {
-  padding-bottom: 0 !important;
-}
-.timeline-section.is-autonomous-timeline .timeline-subsea-track {
-  padding-bottom: 0 !important;
-}
-.timeline-abyss-atmosphere {
-  bottom: -1px !important;
-}
-.volcano-field-section {
-  margin-top: -1px !important;
-}
-
-/* V21.24 — true Timeline→caldera seam closure + protected reef runway.
-   The inherited .page-section margin was the remaining blue strip visible in
-   Chromium. Reserve the coral ecosystem inside the Timeline instead of after it. */
-.timeline-section.is-autonomous-timeline {
-  margin-bottom: 0 !important;
-  padding-bottom: 0 !important;
-}
-.timeline-section.is-autonomous-timeline .timeline-subsea-track {
-  padding-bottom: 0 !important;
-}
-.timeline-section.is-autonomous-timeline .timeline-list {
-  padding-bottom: clamp(220px, 18vw, 290px);
-}
-.timeline-section.is-autonomous-timeline .timeline-expedition-row:last-child {
-  margin-bottom: 0 !important;
-}
-.timeline-abyss-seabed {
-  bottom: -2px !important;
-  height: clamp(190px, 17vw, 275px) !important;
-  opacity: 1 !important;
-  background:
-    linear-gradient(180deg, transparent 0 55%, rgba(0,7,13,.18) 75%, #00070d 100%),
-    url("/assets/ocean/timeline-reef-ecosystem.svg") center bottom/100% auto no-repeat !important;
-  filter: none !important;
-}
-.timeline-abyss-atmosphere {
-  bottom: -2px !important;
-  background:
-    radial-gradient(900px 520px at 18% 16%,rgba(14,116,144,.18),transparent 68%),
-    radial-gradient(760px 540px at 84% 48%,rgba(8,145,178,.10),transparent 72%),
-    linear-gradient(180deg,
-      rgba(8,47,73,0) 0%,
-      rgba(7,44,68,.30) 6%,
-      rgba(6,38,59,.72) 14%,
-      #052438 27%,
-      #031925 48%,
-      #020e18 72%,
-      #00070d 90%,
-      #00070d 100%) !important;
-}
-.volcano-field-section {
-  margin-top: -2px !important;
-}
-
-@media (max-width: 820px) {
-  .timeline-section.is-autonomous-timeline .timeline-list {
-    padding-bottom: clamp(170px, 32vw, 230px);
-  }
-  .timeline-abyss-seabed {
-    height: clamp(150px, 34vw, 220px) !important;
-  }
-}
+@layer critical{.ocean-map{overflow:visible}.timeline-section.is-autonomous-timeline .section-eyebrow{border-color:rgba(103,232,249,.22)}.timeline-card.timeline-expedition-card{border:1px solid rgba(103,232,249,.18)}.timeline-expedition-row[data-timeline-inspection="approaching"] .timeline-expedition-card{border-color:rgba(103,232,249,.30)}.timeline-expedition-row[data-timeline-inspection="active"] .timeline-expedition-card{border-color:rgba(165,243,252,.42)}.timeline-expedition-card h2{letter-spacing:-.04em}.timeline-expedition-card .skill-badge{border-color:rgba(103,232,249,.20)}.timeline-expedition-card .timeline-category{border-color:rgba(103,232,249,.20)}.timeline-section.is-autonomous-timeline[data-timeline-exit="approaching"] :is(.timeline-exploration-drone,.timeline-submarine), .timeline-section.is-autonomous-timeline:is([data-timeline-scene="idle"],[data-timeline-scene="sleeping"],[data-timeline-scene="exiting"],[data-timeline-scene="paused"],[data-timeline-scene="static"]) :is(.timeline-exploration-drone,.timeline-submarine){visibility:hidden}}

@@ -31,7 +31,7 @@ function dockingPoint(index, side, mobile, requestedY) {
   return {
     x: mobile
       ? facing === "right" ? 0.06 : 0.62
-      : facing === "right" ? 0.08 : 0.64,
+      : facing === "right" ? 0.035 : 0.72,
     y: Number.isFinite(Number(requestedY))
       ? clamp(Number(requestedY), mobile ? 0.18 : 0.14, mobile ? 0.78 : 0.82)
       : fallbackY,
@@ -127,13 +127,14 @@ export function requestInspectionTarget(state, target, {
   }
 
   if (state.opacity > 0.06 && state.facing !== requiredFacing) {
-    return {
-      ...state,
-      phase: INSPECTION_PHASES.VANISH,
-      phaseElapsed: 0,
-      pendingTarget: normalizedTarget,
-      torch: 0,
-    };
+    // Keep the inspection vessel visible while it crosses the timeline.
+    // The facing direction flips immediately, but the pilot physically travels
+    // from one side to the other instead of vanishing/reappearing.
+    return startTransit(
+      { ...state, facing: requiredFacing, pendingTarget: null },
+      normalizedTarget,
+      mobile,
+    );
   }
 
   const prepared = {

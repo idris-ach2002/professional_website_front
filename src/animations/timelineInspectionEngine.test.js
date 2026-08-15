@@ -15,21 +15,24 @@ function advance(state, seconds, fps = 120, options = {}) {
 }
 
 describe("timeline inspection engine", () => {
-  test("disparaît rapidement avant de changer de sens puis réapparaît correctement orienté", () => {
-    let state = createInspectionPilot({ facing: "left", x: 0.64, y: 0.4 });
+  test("reste visible lorsqu’il change de côté et traverse la timeline dans le bon sens", () => {
+    let state = createInspectionPilot({ facing: "left", x: 0.72, y: 0.4 });
     state = { ...state, opacity: 1, phase: INSPECTION_PHASES.INSPECT, targetIndex: 0 };
     state = requestInspectionTarget(state, { index: 1, side: "right" });
-    expect(state.phase).toBe(INSPECTION_PHASES.VANISH);
-    expect(state.facing).toBe("left");
 
-    state = advance(state, 0.075);
-    expect(state.phase).toBe(INSPECTION_PHASES.APPEAR);
-    expect(state.facing).toBe("right");
-    expect(state.opacity).toBeLessThan(0.05);
-
-    state = advance(state, 0.11);
     expect(state.phase).toBe(INSPECTION_PHASES.TRANSIT);
     expect(state.facing).toBe("right");
+    expect(state.opacity).toBe(1);
+    expect(state.targetX).toBeLessThan(state.startX);
+
+    const midway = advance(state, state.transitDuration * 0.5);
+    expect(midway.opacity).toBe(1);
+    expect(midway.x).toBeLessThan(state.startX);
+
+    state = advance(state, state.transitDuration + 0.1);
+    expect(state.phase).toBe(INSPECTION_PHASES.INSPECT);
+    expect(state.facing).toBe("right");
+    expect(state.opacity).toBe(1);
   });
 
   test("éclaire une carte presque immédiatement et termine l'approche en moins de deux secondes", () => {
