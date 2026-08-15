@@ -117,7 +117,7 @@ export default function AdminVersionPreviewPage() {
         Version {versionId} · actualisation automatique toutes les 2,5 s · dernière synchronisation {state.updatedAt ? new Date(state.updatedAt).toLocaleTimeString("fr-FR") : "—"}. Cet écran n’est jamais servi par l’API publique.
       </Alert>
       {state.error && <Alert color="yellow">Dernière actualisation en erreur : {state.error}. Le dernier snapshot valide reste affiché.</Alert>}
-      <ProfileHero owner={owner} profile={profile} projects={projects} experiences={experiences} />
+      <ProfileHero owner={owner} prof={profile} />
       <ProvenSkillsSection projects={projects} experiences={experiences} provenSkills={owner?.provenSkills} />
       <OceanWorldBridge variant="descent" />
       <Suspense fallback={<div className="section-skeleton">Chargement de la timeline…</div>}>

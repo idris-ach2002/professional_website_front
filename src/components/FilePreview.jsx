@@ -22,6 +22,7 @@ export function PreviewableImage({
   loading = "lazy",
   fetchPriority = "auto",
   sizes,
+  onImageLoad,
 }) {
   const [opened, setOpened] = useState(false);
   const fileUrl = normalizeFileUrl(src);
@@ -48,6 +49,7 @@ export function PreviewableImage({
           loading={loading}
           fetchPriority={fetchPriority}
           decoding="async"
+          onLoad={onImageLoad}
         />
         {showOverlay && <span className="file-preview-overlay">Voir l’image</span>}
       </button>
