@@ -11,8 +11,8 @@ import { skillVisibilityKey } from "../visibility/itemVisibilityRegistry";
 function normalizeApiSkill(skill, projects = [], experiences = [], defaultDescription) {
   if (!skill) return null;
 
-  const projectSlugs = skill.projectSlugs ?? skill.evidenceProjects ?? [];
-  const experienceTitles = skill.experienceTitles ?? skill.evidenceExperiences ?? [];
+  const projectSlugs = skill.projectSlugs ?? skill.evidenceProjects ?? skill.projectIds ?? [];
+  const experienceTitles = skill.experienceTitles ?? skill.evidenceExperiences ?? skill.experienceIds ?? [];
   const resolvedProjects = (skill.projects?.length ? skill.projects : [])
     .concat(projects.filter((project) => projectSlugs.includes(getProjectSlug(project))))
     .filter(Boolean);
@@ -36,15 +36,19 @@ function normalizeApiSkill(skill, projects = [], experiences = [], defaultDescri
     return true;
   });
 
-  const stacks = skill.stacks?.length
-    ? skill.stacks
+  const declaredStacks = skill.stacks ?? skill.tags ?? skill.technologies ?? [];
+  const stacks = declaredStacks?.length
+    ? declaredStacks
     : [...new Set(uniqueProjects.flatMap((project) => project.stacks ?? []))].slice(0, 8);
+  const label = skill.label ?? skill.title ?? skill.name;
+  const shortLabel = skill.shortLabel ?? skill.category ?? label;
+  const description = skill.description ?? skill.summary ?? skill.shortDescription ?? defaultDescription;
 
   return {
-    id: skill.id,
-    label: skill.label,
-    shortLabel: skill.shortLabel ?? skill.category ?? skill.label,
-    description: skill.description ?? skill.summary ?? defaultDescription,
+    id: skill.id ?? skill.slug ?? label,
+    label,
+    shortLabel,
+    description,
     evidenceCount: skill.evidenceCount ?? uniqueProjects.length + uniqueExperiences.length,
     projects: uniqueProjects.slice(0, 4),
     experiences: uniqueExperiences.slice(0, 3),
@@ -59,7 +63,7 @@ export default function ProvenSkillsSection({ projects = [], experiences = [], p
   const skills = useMemo(() => {
     const apiSkills = (provenSkills ?? [])
       .map((skill) => normalizeApiSkill(skill, projects, experiences, t("skills.description")))
-      .filter((skill) => skill && skill.evidenceCount > 0);
+      .filter((skill) => skill?.label && skill.evidenceCount > 0);
 
     const source = apiSkills.length > 0 ? apiSkills : buildProvenSkills(projects, experiences);
     return source.filter((skill) => isVisible(skillVisibilityKey(skill)));
