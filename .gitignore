@@ -57,3 +57,4 @@ test-results/
 
 # Generated public snapshots
 .cache/
+.cleanup-backup/
