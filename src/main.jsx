@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { MantineProvider, createTheme } from "@mantine/core";
-import "@mantine/core/styles.css";
+import "./styles/vendor/mantine-layer.css";
 import "./index.css";
 import App from "./App";
 import { AppErrorBoundary } from "./components/errors/ErrorBoundary";

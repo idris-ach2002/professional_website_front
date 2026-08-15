@@ -8,10 +8,8 @@ import OceanMorphBackground from "./components/OceanMorphBackground";
 import OceanWorldBridge from "./components/OceanWorldBridge";
 import OceanTransitionStage from "./components/OceanTransitionStage";
 import ProfileHero from "./components/ProfileHero";
-import ProjectsShowcase from "./components/ProjectsShowcase";
 import ProvenSkillsSection from "./components/ProvenSkillsSection";
 import SEOHead from "./components/MetadataHead";
-import SiteFooter from "./components/SiteFooter";
 import StatusBanner from "./components/StatusBanner";
 import TopNavigation from "./components/TopNavigation";
 import ViewportStability from "./components/ViewportStability";
@@ -28,6 +26,8 @@ import { ItemVisibilityProvider, VisibilityGate } from "./visibility/ItemVisibil
 
 
 const PortfolioTimeline = lazy(() => import("./components/PortfolioTimeline"));
+const ProjectsShowcase = lazy(() => import("./components/ProjectsShowcase"));
+const SiteFooter = lazy(() => import("./components/SiteFooter"));
 const loadUnderwaterVolcanoField = () => import("./components/UnderwaterVolcanoField");
 const UnderwaterVolcanoField = lazy(loadUnderwaterVolcanoField);
 const Admin = lazy(() => import("./components/Admin"));
@@ -47,7 +47,7 @@ function DeferredVolcanoField({ performanceMode, animationsPaused, runtimeQualit
   useEffect(() => {
     if (shouldLoad) return undefined;
     const result = requestPrefetch("underwater-volcano-module", loadUnderwaterVolcanoField, {
-      probability: 0.72,
+      probability: 0.60,
       cost: "high",
     });
     result.promise?.catch(() => {});
@@ -173,9 +173,7 @@ function Home({
 
         <VisibilityGate item="home.profile"><ProfileHero
           owner={owner}
-          profile={profile}
-          projects={projects}
-          experiences={experiences}
+          prof={profile}
         /></VisibilityGate>
 
         <VisibilityGate item="home.skills"><ProvenSkillsSection projects={projects} experiences={experiences} provenSkills={owner?.provenSkills} /></VisibilityGate>
@@ -206,9 +204,13 @@ function Home({
           <OceanWorldBridge variant="deep-projects" />
         )}
 
-        <VisibilityGate item="home.projects"><ProjectsShowcase projects={projects} /></VisibilityGate>
+        <Suspense fallback={<div className="section-skeleton">{t("app.routeLoading")}</div>}>
+          <VisibilityGate item="home.projects"><ProjectsShowcase projects={projects} /></VisibilityGate>
+        </Suspense>
         <OceanWorldBridge variant="crystal" />
-        <VisibilityGate item="home.footer"><SiteFooter owner={owner} /></VisibilityGate>
+        <Suspense fallback={null}>
+          <VisibilityGate item="home.footer"><SiteFooter owner={owner} /></VisibilityGate>
+        </Suspense>
       </Stack>
     </main>
   );
@@ -291,8 +293,11 @@ export default function App() {
 
   const owner = rawOwner;
   const profile = owner?.prof ?? {};
-  const projects = sortByDisplayOrder(owner?.projects ?? []);
-  const experiences = sortByDisplayOrder(owner?.timeline?.experiences ?? []);
+  const projects = useMemo(() => sortByDisplayOrder(owner?.projects ?? []), [owner?.projects]);
+  const experiences = useMemo(
+    () => sortByDisplayOrder(owner?.timeline?.experiences ?? []),
+    [owner?.timeline?.experiences],
+  );
 
   const isPortfolioLoading = state.loading || state.language !== language;
 
@@ -336,7 +341,7 @@ export default function App() {
   const recruiterElement = (
     <ErrorBoundary title={t("error.sectionTitle")}>
       <Suspense fallback={<div className="route-loading">{t("app.routeLoading")}</div>}>
-        <RecruiterPage owner={owner} profile={profile} projects={projects} experiences={experiences} />
+        <RecruiterPage owner={owner} />
       </Suspense>
     </ErrorBoundary>
   );

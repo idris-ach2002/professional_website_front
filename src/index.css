@@ -1,6 +1,4 @@
 /* Global stylesheet facade. Component rules live under src/styles/. */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
-
 @import "./styles/core/00-foundations.css";
 @import "./styles/components/01-public-shell.css";
 @import "./styles/components/02-file-preview.css";

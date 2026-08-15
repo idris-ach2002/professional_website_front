@@ -1,191 +1,39 @@
-/* Project showcase visual refinements. */
-/* ──────────────────────────────────────────────────────────────────────────
-   WOW PUBLIC CARDS — profile command deck + faceted timeline modules
-   Keeps the existing palette, navbar and data model. Pure public UI layer.
-────────────────────────────────────────────────────────────────────────── */
-:root {
-  --premium-card-ink: 8 47 73;
-  --premium-card-cyan: 125 211 252;
-  --premium-card-aqua: 34 211 238;
-  --premium-card-foam: 236 253 255;
-  --premium-card-deep: 2 6 23;
-}
-
-
-.profile-island .hero-copy {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  transform-origin: 50% 50%;
-  
-}
-
-.profile-island .hero-copy::before,
-.profile-island .hero-copy::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  border-radius: inherit;
-}
-
-
-.profile-island .hero-map-line {
-  z-index: 1;
-  
-  filter: drop-shadow(0 0 14px rgba(125, 211, 252, .22));
-}
-
-
-.profile-island .hero-lead {
-  position: relative;
-  
-  
-  
-  border: 1px solid rgba(255, 255, 255, .46);
-  
-  
-  
-}
-
-.profile-island .hero-description {
-  position: relative;
-  z-index: 2;
-  max-width: 940px;
-}
-
-.profile-island .hero-copy:hover {
-  
-  
-  filter: drop-shadow(0 36px 70px rgba(8, 47, 73, .20));
-}
-
-.hero-panel {
-  perspective: 1200px;
-}
-
-.portrait-card.island-card,
-.availability-card.island-card,
-
-
-.portrait-card.island-card {
-  
-  border-radius: 0 !important;
-}
-
-.availability-card.island-card {
-  
-  border-radius: 0 !important;
-}
-
-.contact-card.island-card {
-  
-  border-radius: 0 !important;
-}
-
-.portrait-card.island-card::before,
-.availability-card.island-card::before,
-
-
-.portrait-card.island-card::after,
-.availability-card.island-card::after,
-.contact-card.island-card::after {
-  
-  
-  
-  top: -42px;
-  
-  width: 136px;
-  
-  border: 1px solid rgba(236,253,255,.58);
-  border-radius: 999px;
-  
-  
-  pointer-events: none;
-  
-}
-
-.portrait-card.island-card > *,
-.availability-card.island-card > *,
-
-
-.portrait-preview-trigger,
-.portrait-placeholder,
-
-
-.portrait-content {
-  padding: 12px 18px;
-  
-  
-  
-  
-}
-
-.availability-card.island-card::before {
-  background:
-    linear-gradient(90deg, transparent 0%, rgba(125,211,252,.26) 42%, rgba(236,253,255,.66) 50%, rgba(125,211,252,.18) 58%, transparent 100%) -60% 88% / 42% 2px no-repeat,
+@layer base, priority, critical;
+@layer base {
+:root{--premium-card-ink:8 47 73;--premium-card-cyan:125 211 252;--premium-card-aqua:34 211 238;--premium-card-foam:236 253 255;--premium-card-deep:2 6 23;}
+.profile-island .hero-copy{transform-origin:50% 50%;}
+.profile-island .hero-copy::before, .profile-island .hero-copy::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;}
+.profile-island .hero-map-line{z-index:1;filter:drop-shadow(0 0 14px rgba(125, 211, 252, .22));}
+.profile-island .hero-lead{position:relative;border:1px solid rgba(255, 255, 255, .46);}
+.profile-island .hero-description{position:relative;z-index:2;max-width:940px;}
+.profile-island .hero-copy:hover{filter:drop-shadow(0 36px 70px rgba(8, 47, 73, .20));}
+.hero-panel{perspective:1200px;}
+.portrait-card.island-card::before, .availability-card.island-card::before, .portrait-card.island-card::after, .availability-card.island-card::after, .contact-card.island-card::after{top:-42px;width:136px;border:1px solid rgba(236,253,255,.58);border-radius:999px;pointer-events:none;}
+.portrait-card.island-card > *, .availability-card.island-card > *, .portrait-preview-trigger, .portrait-placeholder, .portrait-content{padding:12px 18px;}
+.availability-card.island-card::before{background:linear-gradient(90deg, transparent 0%, rgba(125,211,252,.26) 42%, rgba(236,253,255,.66) 50%, rgba(125,211,252,.18) 58%, transparent 100%) -60% 88% / 42% 2px no-repeat,
     linear-gradient(130deg, rgba(255,255,255,.46), transparent 24%, transparent 72%, rgba(8,47,73,.055)),
-    repeating-linear-gradient(100deg, rgba(8,47,73,.035) 0 1px, transparent 1px 36px);
-  animation: statusSignalSweep 5.6s cubic-bezier(.19, 1, .22, 1) infinite;
-}
-
-
-.contact-pill:hover {
-  transform: translateX(5px);
-  border-color: rgba(125,211,252,.34);
-}
-
-
+    repeating-linear-gradient(100deg, rgba(8,47,73,.035) 0 1px, transparent 1px 36px);animation:statusSignalSweep 5.6s cubic-bezier(.19, 1, .22, 1) infinite;}
+.contact-pill:hover{transform:translateX(5px);border-color:rgba(125,211,252,.34);}
 @keyframes profileDeckScan {
   0%, 28% { background-position: -55% 0, center, center; opacity: .35; }
   52% { background-position: 128% 0, center, center; opacity: .62; }
   100% { background-position: 170% 0, center, center; opacity: .35; }
 }
-
 @keyframes premiumOrbDrift {
   0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); opacity: .46; }
   50% { transform: translate3d(-12px, 10px, 0) rotate(8deg); opacity: .66; }
 }
-
 @keyframes statusSignalSweep {
   0%, 34% { background-position: -60% 88%, center, center; }
   70%, 100% { background-position: 160% 88%, center, center; }
 }
-
-
-@media (prefers-reduced-motion: reduce) {
-  .profile-island .hero-copy::after,
-  .portrait-card.island-card::after,
-  .availability-card.island-card::after,
-  .contact-card.island-card::after {
-    animation: none !important;
-  }
+@media (prefers-reduced-motion: reduce){.profile-island .hero-copy::after, .portrait-card.island-card::after, .availability-card.island-card::after, .contact-card.island-card::after{animation:none !important;}}
+@media (max-width: 980px){.profile-island .hero-copy, .portrait-card.island-card, .availability-card.island-card, .contact-card.island-card{clip-path:none !important;transform:none !important;}}
 }
-
-@media (max-width: 980px) {
-  .profile-island .hero-copy,
-  .portrait-card.island-card,
-  .availability-card.island-card,
-  .contact-card.island-card {
-    clip-path: none !important;
-    border-radius: 34px !important;
-    transform: none !important;
-  }
-
-}
-
-@media (max-width: 640px) {
-  .profile-island .hero-copy {
-    padding: 28px 22px !important;
-  }
-
+@layer priority {
+.portrait-card.island-card, .availability-card.island-card, .portrait-card.island-card{border-radius:0;}
+.availability-card.island-card{border-radius:0;}
+.contact-card.island-card{border-radius:0;}
+@media (max-width: 980px){.profile-island .hero-copy, .portrait-card.island-card, .availability-card.island-card, .contact-card.island-card{border-radius:34px;}}
+@media (max-width: 640px){.profile-island .hero-copy{padding:28px 22px;}}
 }
