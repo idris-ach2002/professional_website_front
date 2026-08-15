@@ -7,7 +7,23 @@ export function portfolioOwner(locale = "fr") {
     age: 23,
     active: true,
     address: "Île-de-France",
-    contacts: [],
+    contacts: [
+      {
+        id: 301,
+        type: "EMAIL",
+        value: "idris@example.test",
+      },
+      {
+        id: 302,
+        type: "PHONE_NUMBER",
+        value: "+33 6 00 00 00 00",
+      },
+      {
+        id: 303,
+        type: "LINKEDIN",
+        value: "https://www.linkedin.com/in/idris-test",
+      },
+    ],
     prof: {
       id: 10,
       title: english ? "Full Stack Java Developer" : "Développeur Java Full Stack",
@@ -17,7 +33,7 @@ export function portfolioOwner(locale = "fr") {
       description: english ? "Backend, frontend and quality." : "Backend, frontend et qualité.",
       location: "Île-de-France",
       availability: english ? "Available from September 2026" : "Disponible dès septembre 2026",
-      profileImageUrl: "",
+      profileImageUrl: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='800' viewBox='0 0 600 800'%3E%3Crect width='600' height='800' fill='%23d7e3e7'/%3E%3Ccircle cx='300' cy='270' r='118' fill='%239bb9c4'/%3E%3Cpath d='M120 760c24-190 115-286 180-286s156 96 180 286' fill='%2385aab8'/%3E%3C/svg%3E",
       logoUrl: "",
       cvUrl: "",
       portfolioUrl: "",

@@ -16,6 +16,7 @@ const ANALYTICS_EVENTS_ROUTE = /\/analytics\/events(?:\?.*)?$/;
 const GOOGLE_FONTS_CSS_ROUTE = /^https:\/\/fonts\.googleapis\.com\//;
 const GOOGLE_FONTS_BINARY_ROUTE = /^https:\/\/fonts\.gstatic\.com\//;
 const CLOUDINARY_ASSET_ROUTE = /^https:\/\/res\.cloudinary\.com\//;
+const ORGANIZATION_LOGO_ROUTE = /^(?:https:\/\/www\.google\.com\/s2\/favicons(?:\?|$)|https:\/\/commons\.wikimedia\.org\/wiki\/Special:Redirect\/file\/|https:\/\/upload\.wikimedia\.org\/)/;
 const HTTP_ROUTE = /^https?:\/\//;
 const TRANSPARENT_MEDIA_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-label="E2E media fixture"><rect width="1200" height="800" fill="transparent"/></svg>`;
 
@@ -65,6 +66,20 @@ export async function installHermeticNetworkContract(context) {
       at: Date.now(),
     });
     await route.abort("blockedbyclient");
+  });
+
+  await context.route(ORGANIZATION_LOGO_ROUTE, async (route) => {
+    const request = route.request();
+    if (request.resourceType() === "image") {
+      await route.fulfill({
+        status: 200,
+        contentType: "image/svg+xml",
+        headers: { "cache-control": "no-store" },
+        body: TRANSPARENT_MEDIA_SVG,
+      });
+      return;
+    }
+    await route.fulfill({ status: 204, body: "" });
   });
 
   await context.route(GOOGLE_FONTS_BINARY_ROUTE, async (route) => {

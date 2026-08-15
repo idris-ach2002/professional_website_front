@@ -24,9 +24,9 @@ const expectedViewports = [
   "430x932",
   "768x1024",
   "820x1180",
+  "966x768",
   "1024x768",
   "1366x768",
-  "1440x900",
   "1920x1080",
 ];
 for (const viewport of expectedViewports) {

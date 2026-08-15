@@ -14,14 +14,18 @@ async function selectAnimationMode(page, label, expectedPreference) {
     reduced: "lite",
     off: "ultra-lite",
   }[expectedPreference];
-  const control = page.locator(".animation-preferences-control");
-  const trigger = control.getByTestId("animation-preferences-trigger");
+  const trigger = page.getByTestId("command-options-trigger");
+  let panel = page.getByRole("dialog", { name: "Options" });
 
-  await trigger.hover();
+  if (!(await panel.isVisible().catch(() => false))) {
+    await trigger.click();
+    panel = page.getByRole("dialog", { name: "Options" });
+  }
 
-  const group = control.getByRole("group", {
-    name: "Niveau d’animations",
-  });
+  const group = panel.getByRole("group", { name: "Niveau d’animations" });
+  if (!(await group.isVisible().catch(() => false))) {
+    await panel.getByTestId("animation-preferences-trigger").click();
+  }
 
   await expect(group).toBeVisible();
   await group.getByRole("button", { name: new RegExp(label) }).click();
@@ -90,6 +94,7 @@ test("@stability garde la Timeline autonome, révèle les cartes puis coupe la s
 
   const timeline = page.locator("#timeline");
   const firstCard = timeline.locator(".timeline-row").first();
+  const lastCard = timeline.locator(".timeline-row").last();
   const drone = timeline.locator(".timeline-exploration-drone");
   const submarine = timeline.locator(".timeline-submarine");
   const exitSentinel = timeline.locator(".timeline-exit-sentinel");
@@ -132,6 +137,13 @@ test("@stability garde la Timeline autonome, révèle les cartes puis coupe la s
   await expect(timeline).toHaveAttribute("data-timeline-scene", "exiting");
   await expect(drone).toBeHidden();
   await expect(submarine).toBeHidden();
+
+  await lastCard.evaluate((element) => element.scrollIntoView({ block: "center", behavior: "auto" }));
+  await expect(timeline).toHaveAttribute("data-timeline-direction", "up");
+  await expect(timeline).toHaveAttribute("data-timeline-exit", "clear");
+  await expect(timeline).toHaveAttribute("data-timeline-scene", "active");
+  await expect(lastCard).toHaveAttribute("data-timeline-inspection", /approaching|active/, { timeout: 4_000 });
+  await expect(drone).toHaveAttribute("data-torch", "on", { timeout: 4_000 });
 
 });
 

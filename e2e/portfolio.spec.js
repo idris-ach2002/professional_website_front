@@ -28,20 +28,21 @@ test("rend le lien d’évitement accessible au clavier", async ({ page }) => {
 
 test("bascule du français vers l'anglais", async ({ page }) => {
   await openPortfolioContract(page, "fr");
-  await expect(page.getByRole("heading", { level: 1, name: "Développeur Java Full Stack" })).toBeVisible();
-
   const englishResponse = page.waitForResponse(
     (response) => isPublicWebsiteRequest(response.url(), "en") && response.status() === 200,
   );
-  const languageMenu = page.locator(".nav_language-dropdown");
-  const languageTrigger = languageMenu.getByRole("button", { name: "Langue" });
+
+  await page.getByTestId("command-options-trigger").click();
+  const commandPanel = page.getByRole("dialog", { name: "Options" });
+  await expect(commandPanel).toBeVisible();
+
+  const languageTrigger = commandPanel.getByRole("button", { name: /^Langue\b/ });
   await expect(languageTrigger).toBeVisible();
-  await expect(languageTrigger).not.toContainText("FR");
-  await expect(languageTrigger).not.toContainText("EN");
-  await languageTrigger.hover();
-  const languagePanel = languageMenu.getByRole("navigation", { name: "Langue" });
-  await expect(languagePanel).toBeVisible();
-  await languagePanel.getByRole("button", { name: /English/ }).click();
+  await languageTrigger.click();
+
+  const languageGroup = commandPanel.getByRole("group", { name: "Choisir la langue" });
+  await expect(languageGroup).toBeVisible();
+  await languageGroup.getByRole("button", { name: /English/ }).click();
   await englishResponse;
 
   await expect(page).toHaveURL(/\/en$/);
@@ -62,8 +63,11 @@ test("expose une route anglaise indexable", async ({ page }) => {
 test("piège le focus dans la modale projet et le restaure", async ({ page }) => {
   await openPortfolioContract(page, "fr");
 
-  const trigger = page.getByRole("button", { name: "Détails" }).first();
+  const projectsSection = page.locator("#projects");
+  await expect(projectsSection).toBeVisible();
+  const trigger = projectsSection.getByRole("button", { name: "Détails", exact: true }).first();
   await trigger.scrollIntoViewIfNeeded();
+  await expect(trigger).toBeVisible();
   await trigger.click();
 
   const dialog = page.getByRole("dialog", { name: /Projet.*Portfolio fiable/i });
@@ -132,8 +136,14 @@ test("expose les réglages d’animation dans le menu mobile", async ({ page }) 
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await openPortfolioContract(page, "fr");
 
-  await page.getByRole("button", { name: "Navigation principale" }).click();
-  const mobileSettings = page.locator(".animation-preferences-mobile");
+  await page.getByRole("button", { name: "Plus d’options" }).click();
+  const morePanel = page.getByRole("dialog", { name: "Plus" });
+  await expect(morePanel).toBeVisible();
+  await morePanel.getByRole("button", { name: "Options" }).click();
+
+  const optionsPanel = page.getByRole("dialog", { name: "Options" });
+  await expect(optionsPanel).toBeVisible();
+  const mobileSettings = optionsPanel.locator(".animation-preferences-mobile");
   await expect(mobileSettings).toBeVisible();
   await mobileSettings.getByRole("button", { name: "Désactivées" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-animation-preference", "off");
@@ -144,27 +154,29 @@ test("mémorise les préférences d’animation et active le mode ultra-léger",
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await openPortfolioContract(page, "fr");
 
-  const desktopControl = page.locator(".animation-preferences-control");
-  const animationNavItem = desktopControl.getByTestId("animation-preferences-trigger");
+  await page.getByTestId("command-options-trigger").click();
+  const commandPanel = page.getByRole("dialog", { name: "Options" });
+  const animationNavItem = commandPanel.getByTestId("animation-preferences-trigger");
   await expect(animationNavItem).toHaveAccessibleName("Animations");
   await expect(animationNavItem).toContainText("Animations");
   await expect(animationNavItem).not.toContainText("FX");
-  await animationNavItem.hover();
-  const settings = desktopControl.getByRole("group", { name: "Niveau d’animations" });
+  await animationNavItem.click();
+  const settings = commandPanel.getByRole("group", { name: "Niveau d’animations" });
   await expect(settings).toBeVisible();
-  await settings.getByRole("button", { name: /Réduites/ }).click();
+  await settings.getByRole("button", { name: /Réduit/ }).click();
   await expect(page.locator("html")).toHaveAttribute("data-performance-profile", "lite");
   await expect(page.locator("html")).toHaveAttribute("data-animation-preference", "reduced");
-  await page.getByRole("button", { name: "Mettre en pause" }).click();
+  await commandPanel.getByRole("switch", { name: "Mettre en pause" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-animation-state", "paused");
-  await page.getByRole("button", { name: "Reprendre" }).click();
+  await commandPanel.getByRole("switch", { name: "Reprendre" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-animation-state", "running");
 
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.locator("html")).toHaveAttribute("data-animation-preference", "reduced");
-  const reloadedAnimationControl = page.locator(".animation-preferences-control");
-  await reloadedAnimationControl.getByTestId("animation-preferences-trigger").hover();
-  await reloadedAnimationControl.getByRole("group", { name: "Niveau d’animations" }).getByRole("button", { name: /Désactivées/ }).click();
+  await page.getByTestId("command-options-trigger").click();
+  const reloadedCommandPanel = page.getByRole("dialog", { name: "Options" });
+  await reloadedCommandPanel.getByTestId("animation-preferences-trigger").click();
+  await reloadedCommandPanel.getByRole("group", { name: "Niveau d’animations" }).getByRole("button", { name: /Off|Désactivées/ }).click();
   await expect(page.locator("html")).toHaveAttribute("data-performance-profile", "ultra-lite");
   await expect(page.locator("html")).toHaveAttribute("data-animation-state", "off");
 });
@@ -245,7 +257,7 @@ test("@vitals respecte les budgets Web Vitals sur mobile", async ({ page, browse
   );
 
   // Warm the interaction path before starting the isolated INP sample.
-  const navigationButton = page.getByRole("button", { name: "Navigation principale" });
+  const navigationButton = page.getByRole("button", { name: "Plus d’options" });
   await navigationButton.click();
   await expect(navigationButton).toHaveAttribute("aria-expanded", "true");
   await navigationButton.click();

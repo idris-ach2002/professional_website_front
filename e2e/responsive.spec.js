@@ -7,9 +7,9 @@ const VIEWPORTS = [
   { name: "430x932", width: 430, height: 932, compact: true },
   { name: "768x1024", width: 768, height: 1024, compact: true },
   { name: "820x1180", width: 820, height: 1180, compact: true },
+  { name: "966x768", width: 966, height: 768, compact: false },
   { name: "1024x768", width: 1024, height: 768, compact: false },
   { name: "1366x768", width: 1366, height: 768, compact: false },
-  { name: "1440x900", width: 1440, height: 900, compact: false },
   { name: "1920x1080", width: 1920, height: 1080, compact: false },
 ];
 
@@ -91,8 +91,10 @@ for (const viewport of VIEWPORTS) {
         viewport.compact ? "compact" : "wide",
       );
 
+      const mobileBottomNavigation = viewport.width <= 1240;
+
       await expectInsideViewport(
-        page.locator(".nav_component"),
+        page.locator(mobileBottomNavigation ? ".nav_mobile-dock" : ".nav_component"),
         viewport,
       );
 
@@ -109,54 +111,86 @@ for (const viewport of VIEWPORTS) {
         `${viewport.name} initial`,
       );
 
-      const compactNavigation = viewport.width <= 1100;
+      await expect(page.locator(".profile-ios-ocean")).toBeVisible();
+      await expect(page.locator(".profile-discipline-grid [data-profile-discipline]")).toHaveCount(4);
+      await expect(page.locator(".profile-photo-widget")).toHaveCount(1);
+      await expect(page.locator(".profile-availability-widget")).toHaveCount(1);
+      await expect(page.locator(".profile-contacts-widget")).toHaveCount(1);
 
-      if (compactNavigation) {
-        const menuButton = page.getByRole("button", {
-          name: "Navigation principale",
-        });
+      const profileGeometry = await page.evaluate(() => {
+        const root = document.querySelector(".profile-ios-ocean");
+        const main = document.querySelector(".profile-ios-main");
+        const side = document.querySelector(".profile-ios-side-grid");
+        const photo = document.querySelector(".profile-photo-widget");
+        const availability = document.querySelector(".profile-availability-widget");
+        const contacts = document.querySelector(".profile-contacts-widget");
+        const portrait = document.querySelector(".profile-photo-widget .portrait-preview-trigger");
+        const availabilityIcon = document.querySelector(".profile-availability-icon");
+        if (!root || !main || !side || !photo || !availability || !contacts || !portrait || !availabilityIcon) return null;
+        const rect = (element) => element.getBoundingClientRect().toJSON();
+        return {
+          root: rect(root),
+          main: rect(main),
+          side: rect(side),
+          photo: rect(photo),
+          availability: rect(availability),
+          contacts: rect(contacts),
+          portrait: rect(portrait),
+          availabilityIcon: rect(availabilityIcon),
+        };
+      });
 
-        await expect(menuButton).toBeVisible();
+      expect(profileGeometry).not.toBeNull();
+      expect(profileGeometry.root.width).toBeLessThanOrEqual(viewport.width + 2);
 
-        await menuButton.click();
+      // Current profile contract:
+      // <= 780: photo / availability / contacts are a single full-width stack.
+      // 781..1240: photo + availability share a row; contacts spans the row below.
+      // > 1240: the right rail is a vertical desktop stack.
+      if (viewport.width <= 780) {
+        expect(Math.abs(profileGeometry.side.width - profileGeometry.main.width)).toBeLessThanOrEqual(2);
+        expect(Math.abs(profileGeometry.photo.width - profileGeometry.side.width)).toBeLessThanOrEqual(2);
+        expect(Math.abs(profileGeometry.availability.width - profileGeometry.side.width)).toBeLessThanOrEqual(2);
+        expect(Math.abs(profileGeometry.contacts.width - profileGeometry.side.width)).toBeLessThanOrEqual(2);
+        expect(profileGeometry.photo.y).toBeLessThan(profileGeometry.availability.y);
+        expect(profileGeometry.availability.y).toBeLessThan(profileGeometry.contacts.y);
+      } else if (viewport.width <= 1240) {
+        expect(Math.abs(profileGeometry.side.width - profileGeometry.main.width)).toBeLessThanOrEqual(2);
+        expect(Math.abs(profileGeometry.photo.width - profileGeometry.availability.width)).toBeLessThanOrEqual(2);
+        expect(profileGeometry.photo.x).toBeLessThan(profileGeometry.availability.x);
+        expect(profileGeometry.photo.y).toBeLessThan(profileGeometry.availability.y);
+        expect(profileGeometry.photo.y + profileGeometry.photo.height).toBeLessThanOrEqual(profileGeometry.contacts.y + 6);
+        expect(profileGeometry.availability.y + profileGeometry.availability.height).toBeLessThan(profileGeometry.contacts.y);
+        expect(profileGeometry.contacts.width).toBeGreaterThanOrEqual(profileGeometry.side.width - 2);
+      } else {
+        expect(profileGeometry.main.width).toBeGreaterThan(profileGeometry.side.width);
+        expect(profileGeometry.side.height).toBeGreaterThan(700);
+        expect(profileGeometry.photo.y).toBeLessThan(profileGeometry.availability.y);
+        expect(profileGeometry.availability.y).toBeLessThan(profileGeometry.contacts.y);
+        expect(profileGeometry.photo.height).toBeGreaterThanOrEqual(360);
+        expect(profileGeometry.photo.height).toBeLessThanOrEqual(400);
+      }
 
-        const panel = page.locator(".nav_mobile-panel.is-open");
+      expect(profileGeometry.portrait.width).toBeGreaterThanOrEqual(140);
+      expect(profileGeometry.portrait.width).toBeLessThanOrEqual(220);
+      expect(profileGeometry.portrait.width).toBeLessThan(profileGeometry.photo.width);
+      expect(profileGeometry.portrait.height).toBeGreaterThan(profileGeometry.portrait.width);
+      expect(profileGeometry.availabilityIcon.width).toBeGreaterThanOrEqual(40);
+      expect(profileGeometry.availabilityIcon.width).toBeLessThanOrEqual(70);
 
-        await expectInsideViewport(
-          panel,
-          viewport,
-        );
-
-        const panelBox = await panel.boundingBox();
-
-        expect(panelBox).not.toBeNull();
-
-        expect(
-          panelBox.height,
-        ).toBeLessThanOrEqual(
-          viewport.height - 60,
-        );
-
-        await expect(page.locator("body")).toHaveCSS(
-          "overflow",
-          "hidden",
-        );
-
-        await page.keyboard.press("Escape");
-
-        await expect(panel).toBeHidden();
-
-        await expect(page.locator("html")).not.toHaveAttribute(
-          "data-mobile-menu",
-          "open",
-        );
+      if (mobileBottomNavigation) {
+        const dock = page.locator(".nav_mobile-dock");
+        await expect(dock.locator(".nav_mobile-dock-link")).toHaveCount(5);
+        await expect(dock.locator(".nav_mobile-dock-link.is-active")).toHaveCount(1);
+        await expect(page.getByRole("button", { name: "Navigation principale" })).toHaveCount(0);
+        await expect(page.locator(".nav_mobile-panel")).toHaveCount(0);
       } else {
         await expect(
           page.locator(".nav_menu.v2"),
         ).toBeVisible();
 
         await expect(
-          page.getByTestId("animation-preferences-trigger"),
+          page.getByTestId("command-options-trigger"),
         ).toBeVisible();
       }
 
@@ -176,6 +210,34 @@ for (const viewport of VIEWPORTS) {
             `${viewport.name} ${selector}`,
           );
         }
+      }
+
+      const firstTimelineCard = page.locator("#timeline .timeline-expedition-card").first();
+      await firstTimelineCard.scrollIntoViewIfNeeded();
+      if (viewport.width <= 1240) {
+        await expect(firstTimelineCard.locator(".timeline-compact-open")).toBeVisible();
+        await expect(page.locator("#timeline .timeline-autonomous-stage")).toBeHidden();
+        const timelineGeometry = await page.evaluate(() => {
+          const card = document.querySelector("#timeline .timeline-expedition-card");
+          const row = card?.closest(".timeline-expedition-row");
+          const track = card?.closest(".timeline-subsea-track");
+          if (!card || !row || !track) return null;
+          const rect = (element) => element.getBoundingClientRect().toJSON();
+          return {
+            card: rect(card),
+            row: rect(row),
+            track: rect(track),
+          };
+        });
+
+        expect(timelineGeometry).not.toBeNull();
+        expect(timelineGeometry.card.width).toBeGreaterThan(0);
+        expect(timelineGeometry.card.x).toBeGreaterThanOrEqual(-1);
+        expect(timelineGeometry.card.right).toBeLessThanOrEqual(viewport.width + 1);
+        expect(timelineGeometry.card.width).toBeLessThanOrEqual(timelineGeometry.row.width + 2);
+        expect(timelineGeometry.row.width).toBeLessThanOrEqual(timelineGeometry.track.width + 2);
+      } else {
+        await expect(firstTimelineCard.locator(".timeline-compact-open")).toBeHidden();
       }
 
       if (viewport.width <= 430) {
@@ -201,13 +263,18 @@ for (const viewport of VIEWPORTS) {
           );
         }
 
-        const details = page
+        const projectsSection = page.locator("#projects");
+        await expect(projectsSection).toBeVisible();
+
+        const details = projectsSection
           .getByRole("button", {
             name: "Détails",
+            exact: true,
           })
           .first();
 
         await details.scrollIntoViewIfNeeded();
+        await expect(details).toBeVisible();
         await details.click();
 
         const dialog = page.getByRole("dialog", {
