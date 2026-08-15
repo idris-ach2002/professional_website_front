@@ -290,6 +290,7 @@ function StateMachine({ graph }) {
     if (observedCount <= 1) return undefined;
     let index = 0;
     const intervalId = window.setInterval(() => {
+      if (document.hidden) return;
       index = (index + 1) % observedCount;
       setPlayhead(index);
     }, 420);

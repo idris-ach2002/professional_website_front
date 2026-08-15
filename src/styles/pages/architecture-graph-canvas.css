@@ -1,72 +1,27 @@
-/* Architecture graph canvas — canonical paint layer.
-   One source of truth: the actual WebGL <canvas> is the visible painted surface.
-   mission-control.css owns layout/typography only; it must not redefine these backgrounds. */
-
-#architecture-system-canvas {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden !important;
-  background-color: var(--canvas-b, #5c6b63) !important;
-  border-color: color-mix(in srgb, var(--canvas-a, #6f7d75) 62%, rgba(255,255,255,.24)) !important;
+@layer base, priority, critical;
+@layer base {
+#architecture-system-canvas{position:relative;isolation:isolate;}
+#architecture-system-stage{position:relative;isolation:isolate;overflow:hidden;}
+#architecture-system-stage > canvas.architecture-webgl{inset:0 !important;width:100% !important;height:100% !important;opacity:1 !important;pointer-events:none;transition:background-color .2s ease, background-image .2s ease;}
 }
-
-#architecture-system-stage {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  background-color: var(--canvas-b, #5c6b63) !important;
-  background-image: var(--canvas-background) !important;
-  background-size:
-    var(--graph-grid-size, 34px) var(--graph-grid-size, 34px),
+@layer priority {
+#architecture-system-canvas{background-color:var(--canvas-b, #5c6b63);}
+#architecture-system-stage{background-color:var(--canvas-b, #5c6b63);background-image:var(--canvas-background);background-size:var(--graph-grid-size, 34px) var(--graph-grid-size, 34px),
     var(--graph-grid-size, 34px) var(--graph-grid-size, 34px),
     auto,
     auto,
-    auto !important;
-  background-position: 0 0, 0 0, center, center, center !important;
-  background-repeat: repeat, repeat, no-repeat, no-repeat, no-repeat !important;
-}
-
-/* IMPORTANT: this is the full-size layer the user actually sees.
-   Painting it removes every ambiguity caused by transparent WebGL compositing,
-   old parent backgrounds or CSS import order. */
-#architecture-system-stage > canvas.architecture-webgl {
-  position: absolute !important;
-  inset: 0 !important;
-  z-index: 0 !important;
-  display: block !important;
-  width: 100% !important;
-  height: 100% !important;
-  inline-size: 100% !important;
-  block-size: 100% !important;
-  max-inline-size: none !important;
-  opacity: 1 !important;
-  pointer-events: none;
-  background-color: var(--canvas-b, #5c6b63) !important;
-  background-image: var(--canvas-background) !important;
-  background-size:
-    var(--graph-grid-size, 34px) var(--graph-grid-size, 34px),
+    auto;background-position:0 0, 0 0, center, center, center;background-repeat:repeat, repeat, no-repeat, no-repeat, no-repeat;}
+#architecture-system-stage > canvas.architecture-webgl{position:absolute;z-index:0;display:block;inline-size:100%;block-size:100%;max-inline-size:none;background-color:var(--canvas-b, #5c6b63);background-image:var(--canvas-background);background-size:var(--graph-grid-size, 34px) var(--graph-grid-size, 34px),
     var(--graph-grid-size, 34px) var(--graph-grid-size, 34px),
     auto,
     auto,
-    auto !important;
-  background-position: 0 0, 0 0, center, center, center !important;
-  background-repeat: repeat, repeat, no-repeat, no-repeat, no-repeat !important;
-  transition: background-color .2s ease, background-image .2s ease;
+    auto;background-position:0 0, 0 0, center, center, center;background-repeat:repeat, repeat, no-repeat, no-repeat, no-repeat;}
+#architecture-system-canvas.no-grid #architecture-system-stage, #architecture-system-canvas.no-grid #architecture-system-stage > canvas.architecture-webgl{background-size:auto, auto, auto, auto, auto;}
+#architecture-system-stage > .architecture-community-layer{z-index:1;}
+#architecture-system-stage > .architecture-link-map{z-index:2;background:transparent;}
+#architecture-system-stage > .architecture-edge-label-layer{z-index:4;background:transparent;}
+#architecture-system-stage > .architecture-node-layer{z-index:6;background:transparent;}
+#architecture-system-stage > .architecture-layer-labels{z-index:7;background:transparent;}
+#architecture-system-stage > canvas.architecture-webgl[data-canvas-debug="red"]{background:#ff0000;}
 }
-
-#architecture-system-canvas.no-grid #architecture-system-stage,
-#architecture-system-canvas.no-grid #architecture-system-stage > canvas.architecture-webgl {
-  background-size: auto, auto, auto, auto, auto !important;
-}
-
-/* Stable layer stack: background/particles → communities → edges → labels → nodes. */
-#architecture-system-stage > .architecture-community-layer { z-index: 1 !important; }
-#architecture-system-stage > .architecture-link-map { z-index: 2 !important; background: transparent !important; }
-#architecture-system-stage > .architecture-edge-label-layer { z-index: 4 !important; background: transparent !important; }
-#architecture-system-stage > .architecture-node-layer { z-index: 6 !important; background: transparent !important; }
-#architecture-system-stage > .architecture-layer-labels { z-index: 7 !important; background: transparent !important; }
-
-/* Native test hook: changing this element's background in DevTools MUST be visible. */
-#architecture-system-stage > canvas.architecture-webgl[data-canvas-debug="red"] {
-  background: #ff0000 !important;
-}
+@layer critical{#architecture-system-canvas{overflow:hidden;border-color:color-mix(in srgb, var(--canvas-a, #6f7d75) 62%, rgba(255,255,255,.24))}}

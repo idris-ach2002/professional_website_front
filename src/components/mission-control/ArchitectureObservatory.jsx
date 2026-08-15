@@ -813,6 +813,7 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
     if (!selectedId || compact) return undefined;
     const startedAt = Date.now();
     const intervalId = window.setInterval(() => {
+      if (document.hidden) return;
       const remaining = Math.max(0, 10 - Math.floor((Date.now() - startedAt) / 1000));
       setCountdown(remaining);
       if (remaining === 0) {

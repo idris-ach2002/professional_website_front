@@ -83,7 +83,10 @@ export default function MissionControlPage({ owner, projects = [], experiences =
   useEffect(() => {
     const controller = new AbortController();
     queueMicrotask(() => { if (!controller.signal.aborted) refreshBackend(controller.signal, true).catch(() => {}); });
-    const intervalId = window.setInterval(() => refreshBackend(controller.signal, false).catch(() => {}), 2000);
+    const intervalId = window.setInterval(() => {
+      if (document.hidden) return;
+      refreshBackend(controller.signal, false).catch(() => {});
+    }, 2000);
     return () => { controller.abort(); window.clearInterval(intervalId); };
   }, [refreshBackend]);
 
@@ -91,7 +94,10 @@ export default function MissionControlPage({ owner, projects = [], experiences =
     const controller = new AbortController();
     const load = () => fetchPerformanceHistory(80, { signal: controller.signal }).then(setPerformanceHistory).catch(() => {});
     load();
-    const intervalId = window.setInterval(load, 30000);
+    const intervalId = window.setInterval(() => {
+      if (document.hidden) return;
+      load();
+    }, 30000);
     return () => { controller.abort(); window.clearInterval(intervalId); };
   }, []);
 
@@ -102,7 +108,10 @@ export default function MissionControlPage({ owner, projects = [], experiences =
       if (active) appMemoryRef.current = memory;
     };
     measure();
-    const intervalId = window.setInterval(measure, 6000);
+    const intervalId = window.setInterval(() => {
+      if (document.hidden) return;
+      measure();
+    }, 6000);
     return () => { active = false; window.clearInterval(intervalId); };
   }, []);
 
@@ -190,12 +199,16 @@ export default function MissionControlPage({ owner, projects = [], experiences =
       });
     };
     sample();
-    const intervalId = window.setInterval(sample, 500);
+    const intervalId = window.setInterval(() => {
+      if (document.hidden) return;
+      sample();
+    }, 500);
     return () => window.clearInterval(intervalId);
   }, [getRuntimeSnapshot]);
 
   useEffect(() => {
     const publish = () => {
+      if (document.hidden) return;
       const latest = samplesRef.current.at(-1);
       if (!latest || latest.fps <= 0) return;
       recordPerformanceSample({
