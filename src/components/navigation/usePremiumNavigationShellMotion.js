@@ -30,17 +30,24 @@ export default function usePremiumNavigationShellMotion(shellRef) {
       && !reducedMotionMedia.matches;
 
     let pointerFrame = 0;
+    let shellRect = shell.getBoundingClientRect();
+
+    const refreshShellGeometry = () => {
+      shellRect = shell.getBoundingClientRect();
+    };
 
     const updatePointer = (event) => {
       if (!canAnimate()) return;
       if (pointerFrame) window.cancelAnimationFrame(pointerFrame);
 
+      const clientX = event.clientX;
+      const clientY = event.clientY;
       pointerFrame = window.requestAnimationFrame(() => {
-        const rect = shell.getBoundingClientRect();
+        const rect = shellRect;
         if (!rect.width || !rect.height) return;
 
-        const ratioX = clamp((event.clientX - rect.left) / rect.width, 0, 1);
-        const ratioY = clamp((event.clientY - rect.top) / rect.height, 0, 1);
+        const ratioX = clamp((clientX - rect.left) / rect.width, 0, 1);
+        const ratioY = clamp((clientY - rect.top) / rect.height, 0, 1);
 
         shell.style.setProperty("--nav-shell-pointer-x", `${(ratioX * 100).toFixed(2)}%`);
         shell.style.setProperty("--nav-shell-pointer-y", `${(ratioY * 100).toFixed(2)}%`);
@@ -50,6 +57,7 @@ export default function usePremiumNavigationShellMotion(shellRef) {
 
     const onPointerEnter = (event) => {
       if (!canAnimate()) return;
+      refreshShellGeometry();
       shell.classList.add("is-shell-pointer-active");
       updatePointer(event);
     };
@@ -62,6 +70,10 @@ export default function usePremiumNavigationShellMotion(shellRef) {
     const onPreferenceChange = () => {
       if (!canAnimate()) resetShellPointer(shell);
     };
+
+    const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(refreshShellGeometry) : null;
+    resizeObserver?.observe(shell);
+    window.addEventListener("resize", refreshShellGeometry, { passive: true });
 
     resetShellPointer(shell);
     shell.addEventListener("pointerenter", onPointerEnter, { passive: true });
@@ -76,6 +88,8 @@ export default function usePremiumNavigationShellMotion(shellRef) {
       shell.removeEventListener("pointerleave", onPointerLeave);
       desktopMedia.removeEventListener?.("change", onPreferenceChange);
       reducedMotionMedia.removeEventListener?.("change", onPreferenceChange);
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", refreshShellGeometry);
       if (pointerFrame) window.cancelAnimationFrame(pointerFrame);
       resetShellPointer(shell);
     };

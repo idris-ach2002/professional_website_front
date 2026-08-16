@@ -51,6 +51,16 @@ export default function usePremiumNavigationMotion(rootRef, activeSection) {
     let activeItem = findActiveItem(items, activeSection);
     let pointedItem = null;
     let focusedItem = null;
+    let rootRect = null;
+    const geometry = new Map();
+
+    const refreshGeometry = () => {
+      // Read all geometry/computed accents before any lens/material write.
+      rootRect = root.getBoundingClientRect();
+      for (const item of items) {
+        geometry.set(item, { rect: item.getBoundingClientRect(), accent: readAccent(item) });
+      }
+    };
 
     const setLensTarget = (item, { hovered = false, instant = false } = {}) => {
       if (!item) {
@@ -58,14 +68,17 @@ export default function usePremiumNavigationMotion(rootRef, activeSection) {
         return;
       }
 
-      const rootRect = root.getBoundingClientRect();
-      const itemRect = item.getBoundingClientRect();
+      const cached = geometry.get(item);
+      if (!rootRect || !cached) refreshGeometry();
+      const itemGeometry = geometry.get(item);
+      if (!rootRect || !itemGeometry) return;
+      const itemRect = itemGeometry.rect;
 
       lens.style.setProperty("--nav-lens-x", `${itemRect.left - rootRect.left}px`);
       lens.style.setProperty("--nav-lens-y", `${itemRect.top - rootRect.top}px`);
       lens.style.setProperty("--nav-lens-width", `${itemRect.width}px`);
       lens.style.setProperty("--nav-lens-height", `${itemRect.height}px`);
-      lens.style.setProperty("--nav-lens-accent", readAccent(item));
+      lens.style.setProperty("--nav-lens-accent", itemGeometry.accent);
       lens.classList.toggle("is-hovered", hovered);
       lens.classList.add("is-visible");
 
@@ -92,12 +105,16 @@ export default function usePremiumNavigationMotion(rootRef, activeSection) {
       if (!canAnimate()) return;
       if (pointerFrame) window.cancelAnimationFrame(pointerFrame);
 
+      const clientX = event.clientX;
+      const clientY = event.clientY;
       pointerFrame = window.requestAnimationFrame(() => {
+        // Keep the original transformed-item geometry semantics for the magnetic
+        // pointer response; only stable lens geometry is cached.
         const rect = item.getBoundingClientRect();
         if (!rect.width || !rect.height) return;
 
-        const ratioX = clamp((event.clientX - rect.left) / rect.width, 0, 1);
-        const ratioY = clamp((event.clientY - rect.top) / rect.height, 0, 1);
+        const ratioX = clamp((clientX - rect.left) / rect.width, 0, 1);
+        const ratioY = clamp((clientY - rect.top) / rect.height, 0, 1);
         const shiftX = (ratioX - 0.5) * 2.4;
         const shiftY = (ratioY - 0.5) * 1.25;
 
@@ -116,6 +133,7 @@ export default function usePremiumNavigationMotion(rootRef, activeSection) {
 
       const onPointerEnter = () => {
         pointedItem = item;
+        refreshGeometry();
         syncLens();
       };
       const onPointerMove = (event) => updatePointerMaterial(item, event);
@@ -157,6 +175,7 @@ export default function usePremiumNavigationMotion(rootRef, activeSection) {
       if (resizeFrame) window.cancelAnimationFrame(resizeFrame);
       resizeFrame = window.requestAnimationFrame(() => {
         activeItem = findActiveItem(items, activeSection);
+        refreshGeometry();
         syncLens({ instant: true });
       });
     };

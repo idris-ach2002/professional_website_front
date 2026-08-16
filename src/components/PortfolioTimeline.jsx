@@ -420,6 +420,8 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
     let renderedInspectionIndex = -2;
     let renderedInspectionPhase = "";
     const visibleCards = new Map();
+    const visibleCardInfo = cards.map(() => ({ ratio: 0, centerDistance: Infinity, stageY: undefined }));
+    const cardRects = new Array(cards.length);
 
     let pilot = createInspectionPilot({
       x: isMobile ? 0.10 : 0.72,
@@ -480,25 +482,35 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
       );
     };
 
+    const visibleCandidates = [];
+    const visibleCandidatePool = cards.map(() => [0, null]);
+
     const selectBestVisibleCard = ({ force = false } = {}) => {
       if (!force && (exitZoneActive || terminalExitPending)) return;
-      const candidates = [...visibleCards.entries()]
-        .filter(([index, info]) => (
+      visibleCandidates.length = 0;
+      for (const [index, info] of visibleCards) {
+        if (
           info.ratio >= 0.05
           && cards[index]?.dataset.timelineCardState === "revealed"
-        ))
-        .sort((a, b) => {
-          const centerDelta = a[1].centerDistance - b[1].centerDistance;
-          if (Math.abs(centerDelta) > 24) return centerDelta;
-          return b[1].ratio - a[1].ratio;
-        });
+        ) {
+          const candidate = visibleCandidatePool[visibleCandidates.length];
+          candidate[0] = index;
+          candidate[1] = info;
+          visibleCandidates.push(candidate);
+        }
+      }
+      visibleCandidates.sort((a, b) => {
+        const centerDelta = a[1].centerDistance - b[1].centerDistance;
+        if (Math.abs(centerDelta) > 24) return centerDelta;
+        return b[1].ratio - a[1].ratio;
+      });
 
-      if (!candidates.length) return;
-      const nextIndex = Number(candidates[0][0]);
+      if (!visibleCandidates.length) return;
+      const nextIndex = Number(visibleCandidates[0][0]);
+      const nextInfo = visibleCandidates[0][1];
       if (!force && nextIndex === requestedTargetIndex) return;
 
       const currentInfo = visibleCards.get(requestedTargetIndex);
-      const nextInfo = candidates[0][1];
       if (
         !force
         && currentInfo
@@ -527,11 +539,15 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
     const refreshVisibleCardsFromLayout = ({ force = false } = {}) => {
       const viewportHeight = window.visualViewport?.height ?? window.innerHeight ?? 800;
       const viewportFocus = viewportHeight * (isMobile ? 0.46 : 0.50);
+      // Batch every layout read first; all dataset/style writes happen after this phase.
       const stageRect = stage.getBoundingClientRect();
+      for (let index = 0; index < cards.length; index += 1) {
+        cardRects[index] = cards[index].getBoundingClientRect();
+      }
       visibleCards.clear();
 
       cards.forEach((card, index) => {
-        const rect = card.getBoundingClientRect();
+        const rect = cardRects[index];
         const visibleTop = Math.max(0, rect.top);
         const visibleBottom = Math.min(viewportHeight, rect.bottom);
         const visibleHeight = Math.max(0, visibleBottom - visibleTop);
@@ -547,13 +563,13 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
             : 0;
         const fossilFocus = rect.top + Math.min(rect.height * 0.18, 148);
         const denominator = Math.max(1, Math.min(rect.height, viewportHeight));
-        visibleCards.set(index, {
-          ratio: clamp(visibleHeight / denominator, 0, 1),
-          centerDistance: focusDistance,
-          stageY: stageRect.height > 1
-            ? clamp((fossilFocus - stageRect.top) / stageRect.height, 0.14, 0.82)
-            : undefined,
-        });
+        const info = visibleCardInfo[index];
+        info.ratio = clamp(visibleHeight / denominator, 0, 1);
+        info.centerDistance = focusDistance;
+        info.stageY = stageRect.height > 1
+          ? clamp((fossilFocus - stageRect.top) / stageRect.height, 0.14, 0.82)
+          : undefined;
+        visibleCards.set(index, info);
       });
 
       if (isMobile) syncCompactInspection();
