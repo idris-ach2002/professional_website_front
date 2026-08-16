@@ -239,27 +239,17 @@ function drawRareEvent(context, event, viewport) {
   }
 }
 
-function chooseBiome(targets, currentBiome) {
+function chooseBiome(worldGeometry, currentBiome, scrollTop) {
   const focusY = Math.max(1, window.innerHeight) * 0.5;
   const anchors = [];
 
-  for (const target of targets) {
-    if (!target?.isConnected || !OCEAN_WORLD_ANCHOR_IDS.includes(target.id)) continue;
-    const rect = target.getBoundingClientRect();
-    if (!Number.isFinite(rect.top)) continue;
-    anchors.push({ id: target.id, top: rect.top });
+  for (const id of OCEAN_WORLD_ANCHOR_IDS) {
+    const geometry = worldGeometry.get(id);
+    if (!geometry) continue;
+    anchors.push({ id, top: geometry.documentTop - scrollTop });
   }
 
   return resolveViewportBiome(anchors, currentBiome, focusY);
-}
-
-function collectMountedWorldTargets() {
-  const targets = [];
-  for (const id of OBSERVED_SECTIONS) {
-    const target = document.getElementById(id);
-    if (target) targets.push(target);
-  }
-  return targets;
 }
 
 let activeWorldDirectorOwner = null;
@@ -448,8 +438,14 @@ export default function GlobalAquarium({
     const directorOwner = Symbol("ocean-world-director");
     const observed = new Set();
     const outroObserved = new Set();
+    const worldGeometry = new Map();
     let verificationFrame = 0;
     let verificationTimer = 0;
+    let resizeFrame = 0;
+    let geometryDirty = true;
+    let pendingGeometryMeasure = false;
+
+    const getScrollTop = () => (document.scrollingElement ?? document.documentElement).scrollTop;
 
     const commitBiome = (nextBiome) => {
       if (!nextBiome || activeWorldDirectorOwner !== directorOwner) return;
@@ -462,60 +458,81 @@ export default function GlobalAquarium({
       setBiome(nextBiome);
     };
 
-    const resolveOutroVisibility = () => {
-      const outro = document.getElementById("ocean-outro");
-      if (!outro?.isConnected) return false;
-
-      const rect = outro.getBoundingClientRect();
-      const viewportHeight = Math.max(1, window.innerHeight);
-      return rect.top < viewportHeight * 0.84 && rect.bottom > 0;
+    const measureWorldGeometry = () => {
+      const scrollTop = getScrollTop();
+      for (const id of OBSERVED_SECTIONS) {
+        const target = document.getElementById(id);
+        if (!target?.isConnected) {
+          worldGeometry.delete(id);
+          continue;
+        }
+        const rect = target.getBoundingClientRect();
+        worldGeometry.set(id, {
+          documentTop: rect.top + scrollTop,
+          height: rect.height,
+        });
+      }
+      geometryDirty = false;
     };
 
-    const selectViewportBiome = () => {
-      outroVisibleRef.current = resolveOutroVisibility();
+    const resolveOutroVisibility = (scrollTop) => {
+      const geometry = worldGeometry.get("ocean-outro");
+      if (!geometry) return false;
+
+      const top = geometry.documentTop - scrollTop;
+      const bottom = top + geometry.height;
+      const viewportHeight = Math.max(1, window.innerHeight);
+      return top < viewportHeight * 0.84 && bottom > 0;
+    };
+
+    const selectViewportBiome = ({ remeasure = false } = {}) => {
+      if (remeasure || geometryDirty) measureWorldGeometry();
+      const scrollTop = getScrollTop();
+      outroVisibleRef.current = resolveOutroVisibility(scrollTop);
       const nextBiome = outroVisibleRef.current
         ? OCEAN_BIOMES.OUTRO
-        : chooseBiome(collectMountedWorldTargets(), biomeRef.current);
+        : chooseBiome(worldGeometry, biomeRef.current, scrollTop);
       commitBiome(nextBiome);
       return nextBiome;
     };
 
-    // IntersectionObserver remains the primary trigger. Geometry is verified
-    // again after layout settles, but world choice is based on the viewport
-    // centre rather than stale observer ratios or decorative overlap.
-    const scheduleBandVerification = () => {
+    // IntersectionObserver remains the primary trigger. Geometry snapshots are
+    // kept in document coordinates so verification never needs a synchronous
+    // layout read after style/animation writes. The original double-RAF + 120ms
+    // reconciliation cadence is preserved to keep world hand-offs identical.
+    const scheduleBandVerification = ({ remeasure = false } = {}) => {
+      pendingGeometryMeasure = pendingGeometryMeasure || remeasure;
       window.cancelAnimationFrame(verificationFrame);
       window.clearTimeout(verificationTimer);
       verificationFrame = window.requestAnimationFrame(() => {
-        selectViewportBiome();
+        const shouldMeasure = pendingGeometryMeasure;
+        pendingGeometryMeasure = false;
+        selectViewportBiome({ remeasure: shouldMeasure });
         verificationFrame = window.requestAnimationFrame(selectViewportBiome);
       });
       verificationTimer = window.setTimeout(selectViewportBiome, 120);
     };
 
-    const observer = new IntersectionObserver(() => {
+    const handleObservedGeometry = () => {
       selectViewportBiome();
       scheduleBandVerification();
-    }, {
+    };
+
+    const observer = new IntersectionObserver(handleObservedGeometry, {
       rootMargin: "-48% 0px -48% 0px",
       threshold: [0, 0.01],
     });
 
     // A broad observer catches direct jumps/lazy mounts and commits the
     // viewport-centred world immediately before scheduling verification.
-    const visibilityObserver = new IntersectionObserver(() => {
-      selectViewportBiome();
-      scheduleBandVerification();
-    }, {
+    const visibilityObserver = new IntersectionObserver(handleObservedGeometry, {
       rootMargin: "18% 0px 18% 0px",
       threshold: [0, 0.01, 0.25, 0.5],
     });
 
     // The mine/footer is deliberately much shorter than a viewport. At the
     // maximum scroll position its centre remains below the viewport focus, so
-    // the generic band observer cannot ever select it reliably. Observe the
-    // actual footer in the lower viewport instead; this also handles direct
-    // scrollIntoView/hash jumps consistently in Chromium and Firefox.
+    // the generic band observer cannot ever select it reliably.
     const outroObserver = new IntersectionObserver(() => {
       selectViewportBiome();
     }, {
@@ -524,8 +541,7 @@ export default function GlobalAquarium({
     });
 
     // `scrollend` is a low-frequency reconciliation hook, not a scroll-driven
-    // animation source. It is especially useful for instant anchor/scrollIntoView
-    // navigation when a browser delays IntersectionObserver delivery under load.
+    // animation source. Cached document geometry makes this path layout-free.
     const handleScrollEnd = () => {
       selectViewportBiome();
       scheduleBandVerification();
@@ -535,38 +551,66 @@ export default function GlobalAquarium({
       selectViewportBiome();
     };
 
+    const resizeObserver = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(() => {
+          geometryDirty = true;
+          scheduleBandVerification({ remeasure: true });
+        })
+      : null;
+
+    const scheduleViewportMeasure = () => {
+      geometryDirty = true;
+      window.cancelAnimationFrame(resizeFrame);
+      resizeFrame = window.requestAnimationFrame(() => {
+        scheduleBandVerification({ remeasure: true });
+      });
+    };
+
     const discoverSections = () => {
+      let discovered = false;
       for (const id of OBSERVED_SECTIONS) {
         const target = document.getElementById(id);
         if (!target || observed.has(target)) continue;
         observed.add(target);
         observer.observe(target);
         visibilityObserver.observe(target);
-        scheduleBandVerification();
+        resizeObserver?.observe(target);
+        discovered = true;
         if (id === "ocean-outro" && !outroObserved.has(target)) {
           outroObserved.add(target);
           outroObserver.observe(target);
         }
       }
+      if (discovered) {
+        geometryDirty = true;
+        scheduleBandVerification({ remeasure: true });
+      }
     };
 
     const handleWorldMounted = () => discoverSections();
+    activeWorldDirectorOwner = directorOwner;
+    document.documentElement.dataset.oceanDirectorReady = "true";
     discoverSections();
     window.addEventListener(OCEAN_WORLD_MOUNTED_EVENT, handleWorldMounted);
     window.addEventListener(OCEAN_WORLD_RECONCILE_EVENT, handleExplicitReconcile);
     window.addEventListener("scrollend", handleScrollEnd, { passive: true });
-    activeWorldDirectorOwner = directorOwner;
-    document.documentElement.dataset.oceanDirectorReady = "true";
+    window.addEventListener("resize", scheduleViewportMeasure, { passive: true });
+    window.visualViewport?.addEventListener("resize", scheduleViewportMeasure, { passive: true });
+    measureWorldGeometry();
     selectViewportBiome();
 
     return () => {
       window.removeEventListener(OCEAN_WORLD_MOUNTED_EVENT, handleWorldMounted);
       window.removeEventListener(OCEAN_WORLD_RECONCILE_EVENT, handleExplicitReconcile);
       window.removeEventListener("scrollend", handleScrollEnd);
+      window.removeEventListener("resize", scheduleViewportMeasure);
+      window.visualViewport?.removeEventListener("resize", scheduleViewportMeasure);
       observer.disconnect();
       visibilityObserver.disconnect();
       outroObserver.disconnect();
+      resizeObserver?.disconnect();
       window.cancelAnimationFrame(verificationFrame);
+      window.cancelAnimationFrame(resizeFrame);
       window.clearTimeout(verificationTimer);
       outroVisibleRef.current = false;
       // React may mount a replacement director before an older effect cleanup

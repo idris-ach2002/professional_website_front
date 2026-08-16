@@ -13,19 +13,39 @@ export default function ViewportStability() {
     const visualViewport = window.visualViewport;
     const compactQuery = window.matchMedia(MOBILE_VIEWPORT_QUERY);
     let frame = 0;
+    const published = {
+      width: null,
+      height: null,
+      top: null,
+      scale: null,
+      mode: null,
+    };
+
+    const publishStyle = (property, key, value) => {
+      if (published[key] === value) return;
+      published[key] = value;
+      root.style.setProperty(property, value);
+    };
 
     const update = () => {
       frame = 0;
-      const viewportWidth = visualViewport?.width ?? window.innerWidth;
-      const viewportHeight = visualViewport?.height ?? window.innerHeight;
-      const viewportTop = visualViewport?.offsetTop ?? 0;
-      const viewportScale = visualViewport?.scale ?? 1;
+      const viewportWidth = `${Math.round(visualViewport?.width ?? window.innerWidth)}px`;
+      const viewportHeight = `${Math.round(visualViewport?.height ?? window.innerHeight)}px`;
+      const viewportTop = `${Math.round(visualViewport?.offsetTop ?? 0)}px`;
+      const viewportScale = String(visualViewport?.scale ?? 1);
+      const viewportMode = compactQuery.matches ? "compact" : "wide";
 
-      root.style.setProperty("--visual-viewport-width", `${Math.round(viewportWidth)}px`);
-      root.style.setProperty("--visual-viewport-height", `${Math.round(viewportHeight)}px`);
-      root.style.setProperty("--visual-viewport-top", `${Math.round(viewportTop)}px`);
-      root.style.setProperty("--visual-viewport-scale", String(viewportScale));
-      root.dataset.viewport = compactQuery.matches ? "compact" : "wide";
+      // visualViewport can dispatch scroll/resize events even when its rounded
+      // geometry did not change. Avoid rewriting <html> in that case: root
+      // custom-property writes invalidate style across most of the document.
+      publishStyle("--visual-viewport-width", "width", viewportWidth);
+      publishStyle("--visual-viewport-height", "height", viewportHeight);
+      publishStyle("--visual-viewport-top", "top", viewportTop);
+      publishStyle("--visual-viewport-scale", "scale", viewportScale);
+      if (published.mode !== viewportMode) {
+        published.mode = viewportMode;
+        root.dataset.viewport = viewportMode;
+      }
     };
 
     const scheduleUpdate = () => {

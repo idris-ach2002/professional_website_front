@@ -415,13 +415,17 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
     let resizeFrame = 0;
     let scrollFrame = 0;
     let lastGeometrySyncAt = 0;
+    let geometryDirty = true;
+    let pendingCardSyncForce = false;
+    let pendingGeometryMeasure = false;
     let revealTimers = [];
     let requestedTargetIndex = -1;
     let renderedInspectionIndex = -2;
     let renderedInspectionPhase = "";
     const visibleCards = new Map();
     const visibleCardInfo = cards.map(() => ({ ratio: 0, centerDistance: Infinity, stageY: undefined }));
-    const cardRects = new Array(cards.length);
+    const cachedCardGeometry = cards.map(() => ({ documentTop: 0, height: 0 }));
+    const stageGeometry = { documentTop: 0, height: 0 };
 
     let pilot = createInspectionPilot({
       x: isMobile ? 0.10 : 0.72,
@@ -528,46 +532,65 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
       cards.forEach((card, index) => {
         const info = visibleCards.get(index);
         const visible = Boolean(info && info.ratio >= 0.02 && card.dataset.timelineCardState === "revealed");
-        card.dataset.timelineInspection = "idle";
-        card.dataset.fossilCompactScan = visible ? "ambient" : "idle";
+        if (card.dataset.timelineInspection !== "idle") card.dataset.timelineInspection = "idle";
+        const scanState = visible ? "ambient" : "idle";
+        if (card.dataset.fossilCompactScan !== scanState) card.dataset.fossilCompactScan = scanState;
       });
 
-      root.dataset.timelineInspection = "ambient";
-      delete root.dataset.timelineInspectionCard;
+      if (root.dataset.timelineInspection !== "ambient") root.dataset.timelineInspection = "ambient";
+      if (root.hasAttribute("data-timeline-inspection-card")) delete root.dataset.timelineInspectionCard;
     };
 
-    const refreshVisibleCardsFromLayout = ({ force = false } = {}) => {
+    const measureCardGeometry = () => {
+      // This is the only Timeline geometry read phase. Positions are converted
+      // to document coordinates once and then projected into the viewport from
+      // scrollTop without forcing layout from the autonomous RAF hot path.
+      const scrollingElement = document.scrollingElement ?? document.documentElement;
+      const scrollTop = scrollingElement.scrollTop;
+      const stageRect = stage.getBoundingClientRect();
+      stageGeometry.documentTop = stageRect.top + scrollTop;
+      stageGeometry.height = stageRect.height;
+      for (let index = 0; index < cards.length; index += 1) {
+        const rect = cards[index].getBoundingClientRect();
+        const cached = cachedCardGeometry[index];
+        cached.documentTop = rect.top + scrollTop;
+        cached.height = rect.height;
+      }
+      geometryDirty = false;
+    };
+
+    const refreshVisibleCardsFromLayout = ({ force = false, remeasure = false } = {}) => {
+      if (geometryDirty || remeasure) measureCardGeometry();
       const viewportHeight = window.visualViewport?.height ?? window.innerHeight ?? 800;
       const viewportFocus = viewportHeight * (isMobile ? 0.46 : 0.50);
-      // Batch every layout read first; all dataset/style writes happen after this phase.
-      const stageRect = stage.getBoundingClientRect();
-      for (let index = 0; index < cards.length; index += 1) {
-        cardRects[index] = cards[index].getBoundingClientRect();
-      }
+      const scrollingElement = document.scrollingElement ?? document.documentElement;
+      const scrollTop = scrollingElement.scrollTop;
+      const stageTop = stageGeometry.documentTop - scrollTop;
       visibleCards.clear();
 
       cards.forEach((card, index) => {
-        const rect = cardRects[index];
-        const visibleTop = Math.max(0, rect.top);
-        const visibleBottom = Math.min(viewportHeight, rect.bottom);
+        const cached = cachedCardGeometry[index];
+        const rectTop = cached.documentTop - scrollTop;
+        const rectBottom = rectTop + cached.height;
+        const visibleTop = Math.max(0, rectTop);
+        const visibleBottom = Math.min(viewportHeight, rectBottom);
         const visibleHeight = Math.max(0, visibleBottom - visibleTop);
         if (visibleHeight <= 0) return;
 
-        // A tall experience must stay targetable for the whole time the viewport
-        // focus line crosses the card. Measuring only the card center caused the
-        // submarine torch to lag behind after the cards became taller.
-        const focusDistance = viewportFocus < rect.top
-          ? rect.top - viewportFocus
-          : viewportFocus > rect.bottom
-            ? viewportFocus - rect.bottom
+        // A tall experience stays targetable while the focus line crosses the
+        // card, exactly as before; only the source of the rectangle is cached.
+        const focusDistance = viewportFocus < rectTop
+          ? rectTop - viewportFocus
+          : viewportFocus > rectBottom
+            ? viewportFocus - rectBottom
             : 0;
-        const fossilFocus = rect.top + Math.min(rect.height * 0.18, 148);
-        const denominator = Math.max(1, Math.min(rect.height, viewportHeight));
+        const fossilFocus = rectTop + Math.min(cached.height * 0.18, 148);
+        const denominator = Math.max(1, Math.min(cached.height, viewportHeight));
         const info = visibleCardInfo[index];
         info.ratio = clamp(visibleHeight / denominator, 0, 1);
         info.centerDistance = focusDistance;
-        info.stageY = stageRect.height > 1
-          ? clamp((fossilFocus - stageRect.top) / stageRect.height, 0.14, 0.82)
+        info.stageY = stageGeometry.height > 1
+          ? clamp((fossilFocus - stageTop) / stageGeometry.height, 0.14, 0.82)
           : undefined;
         visibleCards.set(index, info);
       });
@@ -576,12 +599,18 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
       else selectBestVisibleCard({ force });
     };
 
-    const scheduleCardSync = ({ force = false } = {}) => {
+    const scheduleCardSync = ({ force = false, remeasure = false } = {}) => {
+      pendingCardSyncForce = pendingCardSyncForce || force;
+      pendingGeometryMeasure = pendingGeometryMeasure || remeasure;
       if (scrollFrame) return;
       scrollFrame = window.requestAnimationFrame(() => {
         scrollFrame = 0;
+        const nextForce = pendingCardSyncForce;
+        const nextRemeasure = pendingGeometryMeasure;
+        pendingCardSyncForce = false;
+        pendingGeometryMeasure = false;
         if (!sceneInRange || exitZoneActive) return;
-        refreshVisibleCardsFromLayout({ force });
+        refreshVisibleCardsFromLayout({ force: nextForce, remeasure: nextRemeasure });
       });
     };
 
@@ -611,7 +640,7 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
       }
 
       startLoop();
-      window.requestAnimationFrame(() => refreshVisibleCardsFromLayout({ force: true }));
+      scheduleCardSync({ force: true, remeasure: true });
     };
 
     const playCardReveal = () => {
@@ -632,7 +661,7 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
           card.dataset.timelineCardState = "revealed";
           lineProgress.style.transform = `scaleY(${progressForStep(index, total)})`;
           if (index === total - 1) root.dataset.timelineReveal = "complete";
-          scheduleCardSync();
+          scheduleCardSync({ remeasure: true });
         }, lead + index * interval);
         revealTimers.push(timer);
       });
@@ -749,7 +778,7 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
           if (enteringUpward) revealAllCards();
           else playCardReveal();
           startLoop();
-          window.requestAnimationFrame(() => refreshVisibleCardsFromLayout({ force: enteringUpward }));
+          scheduleCardSync({ force: enteringUpward, remeasure: true });
           return;
         }
 
@@ -879,6 +908,10 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
               }
             }
             observedCardTops.set(index, cardTop);
+            const scrollingElement = document.scrollingElement ?? document.documentElement;
+            const cached = cachedCardGeometry[index];
+            cached.documentTop = cardTop + scrollingElement.scrollTop;
+            cached.height = Number(entry.boundingClientRect?.height) || cached.height;
           }
         });
         // IntersectionObserver is only a wake-up signal. Exact targeting is
@@ -903,7 +936,8 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
       window.cancelAnimationFrame(resizeFrame);
       resizeFrame = window.requestAnimationFrame(() => {
         metrics = measure();
-        scheduleCardSync({ force: true });
+        geometryDirty = true;
+        scheduleCardSync({ force: true, remeasure: true });
       });
     };
 
@@ -913,9 +947,12 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
 
     metrics = measure();
     resizeObserver?.observe(stage);
+    resizeObserver?.observe(root);
+    cards.forEach((card) => resizeObserver?.observe(card));
+    if (document.body) resizeObserver?.observe(document.body);
     window.visualViewport?.addEventListener("resize", scheduleMeasure, { passive: true });
     document.addEventListener("visibilitychange", handleVisibility);
-    window.requestAnimationFrame(() => refreshVisibleCardsFromLayout({ force: true }));
+    scheduleCardSync({ force: true, remeasure: true });
 
     return () => {
       window.clearTimeout(terminalExitTimer);

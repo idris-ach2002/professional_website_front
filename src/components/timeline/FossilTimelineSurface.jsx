@@ -646,8 +646,9 @@ export default function FossilTimelineSurface({ category, index, label, immersiv
 
   useEffect(() => {
     const canvas = canvasRef.current;
+    const surface = canvas?.closest(".timeline-fossil-surface");
     const host = canvas?.closest(".timeline-expedition-row") ?? canvas?.closest(".timeline-card--zoom");
-    if (!canvas || !host) return undefined;
+    if (!canvas || !surface || !host) return undefined;
 
     const context = canvas.getContext("2d");
     if (!context) return undefined;
@@ -662,6 +663,8 @@ export default function FossilTimelineSurface({ category, index, label, immersiv
     let compactVisible = false;
     let surfaceVisible = false;
     let lastPaint = 0;
+    let sizeDirty = true;
+    let currentDpr = 0;
     const torchFromLeft = host.classList.contains("is-right");
     const compactMedia = window.matchMedia?.("(max-width: 1240px)");
 
@@ -674,18 +677,28 @@ export default function FossilTimelineSurface({ category, index, label, immersiv
       return .045;
     };
 
-    const draw = (progress, time = 0) => {
+    const syncCanvasSize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const rect = canvas.getBoundingClientRect();
+      // Geometry is sampled only when layout can actually have changed. The
+      // former renderer called getBoundingClientRect() every ~34 ms, which
+      // forced synchronous layout whenever Timeline/GSAP had pending writes.
+      const rect = surface.getBoundingClientRect();
       const nextWidth = Math.max(1, Math.round(rect.width));
       const nextHeight = Math.max(1, Math.round(rect.height));
+      const pixelWidth = Math.round(nextWidth * dpr);
+      const pixelHeight = Math.round(nextHeight * dpr);
 
-      if (nextWidth !== width || nextHeight !== height || canvas.width !== Math.round(nextWidth * dpr) || canvas.height !== Math.round(nextHeight * dpr)) {
-        width = nextWidth;
-        height = nextHeight;
-        canvas.width = Math.round(width * dpr);
-        canvas.height = Math.round(height * dpr);
-      }
+      width = nextWidth;
+      height = nextHeight;
+      currentDpr = dpr;
+      sizeDirty = false;
+      if (canvas.width !== pixelWidth) canvas.width = pixelWidth;
+      if (canvas.height !== pixelHeight) canvas.height = pixelHeight;
+    };
+
+    const draw = (progress, time = 0) => {
+      if (sizeDirty || width <= 0 || height <= 0 || currentDpr <= 0) syncCanvasSize();
+      const dpr = currentDpr;
 
       context.setTransform(dpr, 0, 0, dpr, 0, 0);
       context.clearRect(0, 0, width, height);
@@ -757,13 +770,19 @@ export default function FossilTimelineSurface({ category, index, label, immersiv
       }
     };
 
-    const mutationObserver = new MutationObserver(schedule);
+    const mutationObserver = new MutationObserver(() => {
+      sizeDirty = true;
+      schedule();
+    });
     mutationObserver.observe(host, { attributes: true, attributeFilter: ["data-timeline-inspection"] });
 
     const resizeObserver = typeof ResizeObserver !== "undefined"
-      ? new ResizeObserver(() => draw(currentProgress, performance.now()))
+      ? new ResizeObserver(() => {
+          sizeDirty = true;
+          schedule();
+        })
       : null;
-    resizeObserver?.observe(canvas);
+    resizeObserver?.observe(surface);
 
     const surfaceObserver = typeof IntersectionObserver !== "undefined"
       ? new IntersectionObserver((entries) => {
