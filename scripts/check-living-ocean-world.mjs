@@ -8,6 +8,8 @@ const app = read("src/App.jsx");
 const aquarium = read("src/components/GlobalAquarium.jsx");
 const bridge = read("src/components/OceanWorldBridge.jsx");
 const transitionStage = read("src/components/OceanTransitionStage.jsx");
+const transitionRenderer = read("src/rendering/oceanTransitionRenderer.js");
+const transitionWorker = read("src/workers/oceanTransitionRender.worker.js");
 const projects = read("src/components/ProjectsShowcase.jsx");
 const footer = read("src/components/SiteFooter.jsx");
 const mine = read("src/components/TreasureMineField.jsx");
@@ -88,7 +90,7 @@ if (!transitionStage.includes("position") && !css.includes(".ocean-transition-st
   errors.push("Transition stage must be a fixed viewport cinematic layer.");
 }
 for (const scene of ["surface-deep", "deep-caldera", "caldera-projects", "deep-projects", "projects-outro"]) {
-  if (!transitionStage.includes(`"${scene}"`)) errors.push(`Missing game-world cinematic: ${scene}.`);
+  if (!transitionRenderer.includes(`"${scene}"`)) errors.push(`Missing game-world cinematic: ${scene}.`);
 }
 for (const duration of [760, 480, 800, 500, 820, 520, 740, 780]) {
   if (!timings.includes(`: ${duration},`)) errors.push(`Missing centralized recruiter-first cinematic duration: ${duration}ms.`);
@@ -100,13 +102,17 @@ if (!transitionStage.includes("OCEAN_CINEMATIC_DURATIONS_MS") || !engine.include
   errors.push("World Director and cinematic renderer must share one transition timing source.");
 }
 for (const sceneFunction of ["drawPressureDescent", "drawSeismicRift", "drawStationPowerReveal", "drawMineralResonance", "drawRockShards", "drawPerspectiveGrid", "drawStationGeometry"]) {
-  if (!transitionStage.includes(sceneFunction)) errors.push(`Missing destination-linked suspense scene: ${sceneFunction}.`);
+  if (!transitionRenderer.includes(sceneFunction)) errors.push(`Missing destination-linked suspense scene: ${sceneFunction}.`);
 }
-if (transitionStage.includes("drawSubmarine") || transitionStage.includes("drawFish")) {
+if (transitionRenderer.includes("drawSubmarine") || transitionRenderer.includes("drawFish")) {
   errors.push("World cinematics must not reveal the next universe with a crossing fish or vehicle.");
 }
 if (!transitionStage.includes('data-reveal-engine="cinematic-world-reveal"')) {
   errors.push("Transition stage must expose the cinematic world-reveal engine marker.");
+}
+
+if (!transitionStage.includes("transferControlToOffscreen") || !transitionWorker.includes("drawScene(context, sceneKey")) {
+  errors.push("Ocean cinematics must retain their deterministic OffscreenCanvas worker path with main-thread fallback.");
 }
 if (!css.includes(".ocean-world-gate") || css.includes(".ocean-world-bridge{")) {
   errors.push("Legacy visible bridge bands must remain removed; only invisible gates are allowed.");
@@ -136,10 +142,10 @@ if (!css.includes('html[data-ocean-cinematic] .global-aquarium .ocean-world-canv
 if (!/background\s*:\s*transparent(?:\s*!important)?/.test(css) || !css.includes('.projects-section[data-project-world="research-station"]')) {
   errors.push("Projects must not reintroduce a dark station card behind the carousel.");
 }
-if (!transitionStage.includes("drawSuspenseVeil")) {
+if (!transitionRenderer.includes("drawSuspenseVeil")) {
   errors.push("World cinematics must keep the suspense veil before revealing the next universe.");
 }
-if (!transitionStage.includes("real plunge") || !transitionStage.includes("branching incandescent fault") || !transitionStage.includes("Airlock shutters") || !transitionStage.includes("Sonar-style resonance")) {
+if (!transitionRenderer.includes("real plunge") || !transitionRenderer.includes("branching incandescent fault") || !transitionRenderer.includes("Airlock shutters") || !transitionRenderer.includes("Sonar-style resonance")) {
   errors.push("Each primary destination must keep a layered world-specific cinematic language: plunge, seismic fault, airlock boot and mineral resonance.");
 }
 if (footer.includes("EXCAVATION COMPLETE") || mine.includes("SITE 07") || mine.includes("ABYSSAL VEIN")) {

@@ -13,6 +13,7 @@ export const RUNTIME_WATCHDOG_KEY = "__portfolioE2ERuntimeWatchdog";
 const PUBLIC_WEBSITE_PATH = "/website/default";
 export const PUBLIC_WEBSITE_ROUTE = /\/website\/default(?:\?.*)?$/;
 const ANALYTICS_EVENTS_ROUTE = /\/analytics\/events(?:\?.*)?$/;
+const ITEMS_VISIBILITY_ROUTE = /\/website\/items-visibility(?:\?.*)?$/;
 const GOOGLE_FONTS_CSS_ROUTE = /^https:\/\/fonts\.googleapis\.com\//;
 const GOOGLE_FONTS_BINARY_ROUTE = /^https:\/\/fonts\.gstatic\.com\//;
 const CLOUDINARY_ASSET_ROUTE = /^https:\/\/res\.cloudinary\.com\//;
@@ -132,6 +133,15 @@ export async function installPublicApiContract(context) {
 
   await context.route(ANALYTICS_EVENTS_ROUTE, async (route) => {
     await route.fulfill({ status: 204, body: "" });
+  });
+
+  await context.route(ITEMS_VISIBILITY_ROUTE, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers: { "cache-control": "no-store" },
+      body: JSON.stringify({ items: {} }),
+    });
   });
 }
 

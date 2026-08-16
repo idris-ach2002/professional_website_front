@@ -114,8 +114,12 @@ const aggressivePrefetch = decideSmartPrefetch({
 if (normalPrefetch.decision !== "skip") errors.push(`normal volcano prefetch should skip, got ${normalPrefetch.decision}`);
 if (aggressivePrefetch.decision !== "prefetch") errors.push(`aggressive volcano prefetch should remain enabled, got ${aggressivePrefetch.decision}`);
 
-if (pkg.scripts?.["check:final"] !== "npm run check:initial-source && node scripts/check-final-front-hardening.mjs && npm run check:main-thread") {
-  errors.push("check:final script missing or changed");
+const finalScript = pkg.scripts?.["check:final"] ?? "";
+if (!finalScript.startsWith("npm run check:initial-source && node scripts/check-final-front-hardening.mjs")) {
+  errors.push("check:final core script missing or reordered");
+}
+for (const required of ["npm run check:main-thread", "npm run check:transparent-performance"]) {
+  if (!finalScript.includes(required)) errors.push(`check:final missing ${required}`);
 }
 if (pkg.scripts?.["ci:release"] !== "npm run ci:full && npm run test:e2e:main-thread && npm run ci:soak") {
   errors.push("ci:release must run exactly one ci:full, one isolated main-thread lab, then one ci:soak");

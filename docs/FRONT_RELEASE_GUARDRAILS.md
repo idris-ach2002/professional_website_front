@@ -50,3 +50,18 @@ Budgets de sécurité par défaut :
 Les métriques RAF (`p50`, `p95`, `p99`, ratio > 34 ms) restent enregistrées et classées, mais ne sont pas des gates absolues : Chromium headless peut réduire la cadence de paint sans bloquer le thread JavaScript. Les gates de release reposent sur Long Task, LoAF/`blockingDuration` et retard event-loop. Un warm-up initial isole également le bootstrap, les fonts et l'intro de signature avant la mesure du profil.
 
 Ces seuils bloquent les régressions sévères sur runner CI, tandis que le rapport JSON `main-thread-laboratory.json` sert à comparer les sections et décider si un OffscreenCanvas Worker apporte réellement un gain. La CI ne doit pas workeriser un composant uniquement pour faire baisser un compteur.
+
+## Transparent performance pass
+
+The transparent performance contract may change execution placement, scheduling and allocation strategy, but it must not change the public visual contract:
+
+- no stylesheet, class name, visual value, animation duration, easing, particle count or responsive geometry is changed by this pass;
+- ocean cinematics keep the synchronous listener/component and the exact deterministic drawing formulas; only the compatible Canvas2D raster path may move to `OffscreenCanvas`;
+- volcano simulation, particle stepping and rockfall stepping remain on the main thread with the original delta/elapsed sequence; only Canvas2D rasterization is moved to a Worker;
+- volcano Worker frames use reusable transferable `Float64Array` buffers so draw state keeps JavaScript-number precision;
+- navigation and Timeline geometry are read in batches and cached, while the original Timeline ranking comparator is preserved;
+- Worker controllers are feature-split outside the static startup graph and initialized through background scheduling;
+- Worker code has no autonomous RAF/interval loop: hidden/off-viewport suspension remains controlled by the existing component lifecycle;
+- hot volcano pulse/reaction updates do not trigger React renders; DOM markers/events are updated directly.
+
+`npm run check:transparent-performance` locks these constraints, and `test:e2e:transparent-performance` verifies that supported Chromium sessions actually transfer the eligible Canvas surfaces while the public DOM contract remains intact.

@@ -8,6 +8,8 @@ const component = read("src/components/UnderwaterVolcanoField.jsx");
 const aquarium = read("src/components/GlobalAquarium.jsx");
 const engine = read("src/animations/volcanoSimulationEngine.js");
 const renderer = read("src/rendering/volcanoWebGLRenderer.js");
+const canvasRenderer = read("src/rendering/volcanoCanvasRenderer.js");
+const canvasWorker = read("src/workers/volcanoCanvasRender.worker.js");
 const smokeTexture = read("src/rendering/volcanoSmokeTexture.js");
 const worker = read("src/workers/volcanoTexture.worker.js");
 const environment = read("public/scenes/abyss-volcano-environment.svg");
@@ -34,14 +36,17 @@ const rockfall = read("src/animations/volcanoRockfallEngine.js");
 if (!rockfall.includes("stepVolcanoRockfall") || !rockfall.includes("settledCount")) {
   errors.push("Living caldera must use persistent non-recycled volcanic rockfall.");
 }
-if (!component.includes("data-volcano-pulse") || !component.includes("volcano-foreground-vector")) {
+if (!(component.includes("data-volcano-pulse") || component.includes("root.dataset.volcanoPulse")) || !component.includes("volcano-foreground-vector")) {
   errors.push("Volcano component must expose pulse state and render the asymmetric foreground rock layer.");
 }
 if (!component.includes("requestWorkerParticleTextures") || !component.includes("resolveRenderFps") || !component.includes("hotSmoke")) {
   errors.push("Volcano textures, layered hot smoke and render cadence must remain asynchronous/adaptive.");
 }
-if (!component.includes('layer === "diffuse"') || !component.includes('context.filter = "none"')) {
+if (!canvasRenderer.includes('layer === "diffuse"') || !canvasRenderer.includes('context.filter = "none"')) {
   errors.push("Smoke rendering must keep a visible hot/main/diffuse continuous plume without Canvas blur filters.");
+}
+if (!component.includes("transferControlToOffscreen") || !canvasWorker.includes("drawParticleField") || !canvasWorker.includes("drawRockfall")) {
+  errors.push("Volcano Canvas2D particles/debris must retain the OffscreenCanvas worker path with deterministic main-thread fallback.");
 }
 if (!engine.includes("smokeDensity") || !engine.includes("smokeFlow") || !engine.includes('"diffuse"')) {
   errors.push("Perpetual smoke must expose stable density/flow and a pre-warmed diffuse layer.");
