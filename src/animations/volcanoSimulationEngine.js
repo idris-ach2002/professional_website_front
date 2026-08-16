@@ -191,7 +191,7 @@ function resolvePulseEnvelope(simulation) {
   };
 }
 
-export function resolveVolcanoStageProfile(simulation) {
+export function resolveVolcanoStageProfileInto(simulation, target = {}) {
   const elapsed = simulation?.elapsed ?? 0;
   const breathing = perpetualBreathing(elapsed);
   const pulse = resolvePulseEnvelope(simulation);
@@ -199,32 +199,32 @@ export function resolveVolcanoStageProfile(simulation) {
   const megaBoost = pulse.kind === "mega" ? boost : 0;
   const burstBoost = pulse.kind === "burst" ? boost : 0;
 
-  return {
-    stage: "eruption",
-    pulseType: pulse.kind,
-    pulseProgress: pulse.progress,
-    pulse: boost,
-    lava: clamp(PERPETUAL_BASE.lava + breathing.lava * 0.12 + boost * 0.46, 0, 2.08),
-    crater: clamp(PERPETUAL_BASE.crater + breathing.lava * 0.11 + boost * 0.54, 0, 2.12),
-    plume: clamp(PERPETUAL_BASE.plume + breathing.plume * 0.08, 0.94, 1.16),
-    // Smoke is intentionally decoupled from eruption pulses in V21.14.
-    // The plume stays continuously visible and loops at a stable footprint so it
-    // never grows into a cloud that hides the volcano's crimson veins.
-    smokeDensity: PERPETUAL_BASE.smokeDensity,
-    smokeFlow: 1.0 + breathing.plume * 0.08,
-    bubbles: clamp(PERPETUAL_BASE.bubbles + breathing.slow * 0.10 + boost * 0.38, 0, 1.86),
-    embers: clamp(PERPETUAL_BASE.embers + burstBoost * 0.46 + megaBoost * 0.74 + breathing.lava * 0.08, 0, 2.16),
-    ash: clamp(PERPETUAL_BASE.ash + burstBoost * 0.28 + megaBoost * 0.72, 0, 1.82),
-    heat: clamp(PERPETUAL_BASE.heat + breathing.lava * 0.11 + boost * 0.46, 0, 2.04),
-    turbulence: clamp(PERPETUAL_BASE.turbulence + breathing.plume * 0.08 + boost * 0.35, 0, 1.88),
-    waterGlow: clamp(PERPETUAL_BASE.waterGlow + boost * 0.34, 0, 1.68),
-    eruption: clamp(PERPETUAL_BASE.eruption + boost * 0.70, 0, 2.10),
-    fracture: clamp(PERPETUAL_BASE.fracture + breathing.lava * 0.09 + boost * 0.34, 0, 1.68),
-    shock: pulse.shock,
-    sediment: clamp(0.12 + pulse.shock * 0.76 + megaBoost * 0.12, 0, 1.46),
-    debris: clamp(0.03 + pulse.shock * 0.82 + megaBoost * 0.24, 0, 1.72),
-    canyonLight: clamp(0.18 + boost * 0.52 + pulse.shock * 0.20, 0, 1.72),
-  };
+  target.stage = "eruption";
+  target.pulseType = pulse.kind;
+  target.pulseProgress = pulse.progress;
+  target.pulse = boost;
+  target.lava = clamp(PERPETUAL_BASE.lava + breathing.lava * 0.12 + boost * 0.46, 0, 2.08);
+  target.crater = clamp(PERPETUAL_BASE.crater + breathing.lava * 0.11 + boost * 0.54, 0, 2.12);
+  target.plume = clamp(PERPETUAL_BASE.plume + breathing.plume * 0.08, 0.94, 1.16);
+  target.smokeDensity = PERPETUAL_BASE.smokeDensity;
+  target.smokeFlow = 1.0 + breathing.plume * 0.08;
+  target.bubbles = clamp(PERPETUAL_BASE.bubbles + breathing.slow * 0.10 + boost * 0.38, 0, 1.86);
+  target.embers = clamp(PERPETUAL_BASE.embers + burstBoost * 0.46 + megaBoost * 0.74 + breathing.lava * 0.08, 0, 2.16);
+  target.ash = clamp(PERPETUAL_BASE.ash + burstBoost * 0.28 + megaBoost * 0.72, 0, 1.82);
+  target.heat = clamp(PERPETUAL_BASE.heat + breathing.lava * 0.11 + boost * 0.46, 0, 2.04);
+  target.turbulence = clamp(PERPETUAL_BASE.turbulence + breathing.plume * 0.08 + boost * 0.35, 0, 1.88);
+  target.waterGlow = clamp(PERPETUAL_BASE.waterGlow + boost * 0.34, 0, 1.68);
+  target.eruption = clamp(PERPETUAL_BASE.eruption + boost * 0.70, 0, 2.10);
+  target.fracture = clamp(PERPETUAL_BASE.fracture + breathing.lava * 0.09 + boost * 0.34, 0, 1.68);
+  target.shock = pulse.shock;
+  target.sediment = clamp(0.12 + pulse.shock * 0.76 + megaBoost * 0.12, 0, 1.46);
+  target.debris = clamp(0.03 + pulse.shock * 0.82 + megaBoost * 0.24, 0, 1.72);
+  target.canyonLight = clamp(0.18 + boost * 0.52 + pulse.shock * 0.20, 0, 1.72);
+  return target;
+}
+
+export function resolveVolcanoStageProfile(simulation) {
+  return resolveVolcanoStageProfileInto(simulation, {});
 }
 
 function createParticle(type, random, width, height, index) {

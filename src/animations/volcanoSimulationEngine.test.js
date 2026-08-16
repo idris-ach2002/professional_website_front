@@ -6,6 +6,7 @@ import {
   createVolcanoSimulation,
   resolveVolcanoParticleCounts,
   resolveVolcanoStageProfile,
+  resolveVolcanoStageProfileInto,
   stepVolcanoParticles,
   stepVolcanoSimulation,
 } from "./volcanoSimulationEngine";
@@ -113,6 +114,19 @@ describe("volcano perpetual eruption engine", () => {
     expect(VOLCANO_PULSE_TYPES).toEqual(expect.arrayContaining(["base", "surge", "burst", "mega"]));
     const intervals = starts.slice(1).map((item, index) => item.at - starts[index].at);
     expect(Math.max(...intervals) - Math.min(...intervals)).toBeGreaterThan(1.5);
+  });
+
+
+  it("réutilise un profil mutable sans changer aucune valeur visuelle", () => {
+    const simulation = createVolcanoSimulation(0x8218);
+    const reusable = {};
+    for (let frame = 0; frame < 300; frame += 1) {
+      stepVolcanoSimulation(simulation, 1 / 120);
+      const reference = resolveVolcanoStageProfile(simulation);
+      const result = resolveVolcanoStageProfileInto(simulation, reusable);
+      expect(result).toBe(reusable);
+      expect(result).toEqual(reference);
+    }
   });
 
   it("reste stable entre 60 et 120 Hz", () => {
