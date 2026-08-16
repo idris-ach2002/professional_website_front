@@ -12,6 +12,17 @@ const spec = read("e2e/main-thread-laboratory.spec.js");
 const packageJson = JSON.parse(read("package.json"));
 const workflow = read(".github/workflows/frontend-ci.yml");
 const guardrails = read("docs/FRONT_RELEASE_GUARDRAILS.md");
+const fossilSurface = read("src/components/timeline/FossilTimelineSurface.jsx");
+const timeline = read("src/components/PortfolioTimeline.jsx");
+const aquarium = read("src/components/GlobalAquarium.jsx");
+const viewport = read("src/components/ViewportStability.jsx");
+const ocean = read("src/components/OceanMorphBackground.jsx");
+const gsapRuntime = read("src/animations/useGsap.js");
+const sectionTitle = read("src/components/SectionTitle.jsx");
+const projectsShowcase = read("src/components/ProjectsShowcase.jsx");
+const volcanoField = read("src/components/UnderwaterVolcanoField.jsx");
+const profileHero = read("src/components/ProfileHero.jsx");
+const adminController = read("src/components/admin/useAdminController.jsx");
 
 const requireText = (source, fragment, message) => {
   if (!source.includes(fragment)) errors.push(message);
@@ -73,6 +84,48 @@ for (const fragment of [
 
 requireText(guardrails, "Main Thread Laboratory", "Release guardrails must document the Main Thread Laboratory.");
 requireText(guardrails, "250 ms", "Release guardrails must document the Long Task safety ceiling.");
+
+// V9 trace-derived invariants. These guards target the exact hot paths that
+// dominated forced style/layout in the production benchmark while keeping CSS
+// and animation formulas outside the optimization surface.
+requireText(fossilSurface, "const syncCanvasSize = () =>", "Fossil Canvas must cache geometry outside its paint cadence.");
+const fossilDraw = fossilSurface.slice(fossilSurface.indexOf("const draw = (progress"), fossilSurface.indexOf("const tick = (time)"));
+if (fossilDraw.includes("getBoundingClientRect")) errors.push("Fossil paint hot path must not read layout.");
+requireText(timeline, "const measureCardGeometry = () =>", "Timeline must keep a dedicated geometry read phase.");
+requireText(timeline, "cachedCardGeometry", "Timeline card geometry cache missing.");
+const timelineRefresh = timeline.slice(timeline.indexOf("const refreshVisibleCardsFromLayout"), timeline.indexOf("const scheduleCardSync"));
+if (timelineRefresh.includes("getBoundingClientRect")) errors.push("Timeline autonomous visibility refresh must use cached geometry, not live layout reads.");
+requireText(aquarium, "const worldGeometry = new Map()", "World Director geometry cache missing.");
+requireText(aquarium, "const measureWorldGeometry = () =>", "World Director must batch geometry reads outside selection.");
+requireText(aquarium, "new ResizeObserver", "World Director geometry cache must invalidate on layout-size changes.");
+const aquariumSelect = aquarium.slice(aquarium.indexOf("const selectViewportBiome"), aquarium.indexOf("const scheduleBandVerification"));
+if (aquariumSelect.includes("getBoundingClientRect")) errors.push("World Director selection hot path must remain layout-free.");
+requireText(viewport, "const publishStyle =", "Viewport root-property no-op deduplication missing.");
+requireText(ocean, "const scheduleDepthPaint =", "Ocean depth must use coalesced native RAF publication.");
+if (ocean.includes("ScrollTrigger.create")) errors.push("Global ocean depth must not reactivate a full-document ScrollTrigger.");
+requireText(ocean, "needsScrollTrigger: false", "Ocean background must stay on the GSAP core-only runtime.");
+requireText(gsapRuntime, "getGsapCoreRuntime", "GSAP core runtime split missing.");
+requireText(gsapRuntime, "getGsapScrollRuntime", "Optional ScrollTrigger runtime split missing.");
+requireText(spec, "context.addInitScript", "Hosted main-thread lab must seed animation preference at context level.");
+requireText(spec, 'toHaveAttribute("data-performance-profile", "full"', "Main-thread lab must prove the full visual world before sampling.");
+
+// Visual-motion invariants: V9 changes the wake-up mechanism, not what the
+// user sees. Keep the original scroll thresholds, animation values and depth
+// formula locked while removing the global ScrollTrigger work from steady state.
+requireText(ocean, "const GLOBAL_DEPTH_PAINT_FPS = 45", "Ocean depth publication cadence changed.");
+requireText(ocean, "clamp(Math.pow(progress * 1.5, 0.92), 0, 1)", "Ocean depth mapping formula changed.");
+requireText(sectionTitle, 'rootMargin: "0px 0px -24% 0px"', "Soft SectionTitle threshold must remain equivalent to top 76%.");
+requireText(sectionTitle, 'rect.top <= (window.innerHeight || 1) * 0.76', "Soft SectionTitle already-past-threshold fallback changed.");
+requireText(sectionTitle, 'duration: 0.9', "Soft SectionTitle copy duration changed.");
+requireText(sectionTitle, 'duration: 0.86', "Soft SectionTitle heading duration changed.");
+requireText(projectsShowcase, 'rootMargin: "0px 0px -28% 0px"', "Projects toolbar threshold must remain equivalent to top 72%.");
+requireText(projectsShowcase, 'duration: 0.56', "Projects toolbar entrance duration changed.");
+requireText(projectsShowcase, 'ease: "power3.out"', "Projects toolbar entrance easing changed.");
+requireText(volcanoField, 'rootMargin: "0px 0px -16% 0px"', "Volcano entrance threshold must remain equivalent to top 84%.");
+requireText(volcanoField, 'duration: performanceMode === "balanced" ? 0.54 : 0.72', "Volcano entrance duration changed.");
+requireText(volcanoField, 'ease: "expo.out"', "Volcano entrance easing changed.");
+requireText(profileHero, "needsScrollTrigger: false", "ProfileHero must not eagerly load ScrollTrigger when it does not use it.");
+requireText(adminController, "needsScrollTrigger: false", "Admin entrance must not eagerly load ScrollTrigger when it does not use it.");
 
 const syntheticSummary = summarizeMainThreadSnapshot({
   label: "contract-self-test",

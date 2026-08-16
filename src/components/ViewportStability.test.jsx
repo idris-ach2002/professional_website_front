@@ -39,4 +39,34 @@ describe("ViewportStability", () => {
     expect(document.documentElement).not.toHaveAttribute("data-viewport");
     expect(document.documentElement.style.getPropertyValue("--visual-viewport-height")).toBe("");
   });
+  it("ne republie pas les variables racine quand le visual viewport est inchangé", async () => {
+    const visualViewport = new VisualViewportMock();
+    Object.defineProperty(window, "visualViewport", {
+      configurable: true,
+      value: visualViewport,
+    });
+    window.matchMedia.mockReturnValue({
+      matches: true,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    });
+    const setProperty = vi.spyOn(document.documentElement.style, "setProperty");
+
+    const { unmount } = render(<ViewportStability />);
+    await waitFor(() => expect(setProperty).toHaveBeenCalledTimes(4));
+
+    visualViewport.dispatchEvent(new Event("scroll"));
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    expect(setProperty).toHaveBeenCalledTimes(4);
+
+    visualViewport.offsetTop = 18;
+    visualViewport.dispatchEvent(new Event("scroll"));
+    await waitFor(() => {
+      expect(document.documentElement.style.getPropertyValue("--visual-viewport-top")).toBe("18px");
+    });
+    expect(setProperty).toHaveBeenCalledTimes(5);
+
+    unmount();
+  });
+
 });

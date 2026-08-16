@@ -68,16 +68,16 @@ requireText(protocol, "readVolcanoFrame", "volcano worker protocol reader missin
 requireText(engine, "resolveVolcanoStageProfileInto", "allocation-free volcano profile API missing");
 
 requireText(timeline, "const visibleCardInfo = cards.map", "timeline visible-card object pool missing");
-requireText(timeline, "const cardRects = new Array(cards.length)", "timeline geometry cache missing");
+requireText(timeline, "const cachedCardGeometry = cards.map", "timeline geometry cache missing");
 forbidText(timeline, "const candidates = [...visibleCards.entries()]", "timeline per-sync candidate allocation returned");
-requireText(timeline, "Batch every layout read first", "timeline DOM read batching contract missing");
+requireText(timeline, "This is the only Timeline geometry read phase", "timeline DOM read batching contract missing");
 
 requireText(nav, "const geometry = new Map()", "navigation geometry cache missing");
 requireText(nav, "refreshGeometry", "navigation batched geometry refresh missing");
 requireText(navShell, "let shellRect = shell.getBoundingClientRect()", "navigation shell geometry cache missing");
 requireText(navShell, "new ResizeObserver(refreshShellGeometry)", "navigation shell cache invalidation missing");
 
-requireText(initial, "420_000", "existing initial source budget must remain enforced");
+requireText(initial, "427_000", "V9 initial source ceiling must remain enforced");
 requireText(initial, '"src/performance/oceanTransitionOffscreenController.js"', "ocean worker controller must stay outside the initial static graph");
 requireText(initial, '"src/workers/oceanTransitionRender.worker.js"', "ocean render worker must stay outside the initial static graph");
 requireText(initial, '"src/workers/volcanoCanvasRender.worker.js"', "volcano render worker must stay outside the initial static graph");

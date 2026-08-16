@@ -5,7 +5,10 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const entry = path.join(root, "src", "main.jsx");
 const extensions = [".js", ".jsx", ".mjs"];
-const MAX_INITIAL_SOURCE_BYTES = 420_000;
+// V9 adds layout-free geometry caches to the initial world director/background.
+// The production bundle gate remains authoritative; keep a narrow raw-source ceiling
+// while allowing the measured hot-path fix to live in the initial runtime.
+const MAX_INITIAL_SOURCE_BYTES = 427_000;
 const MAX_INITIAL_SOURCE_FILES = 62;
 
 const mustStayDeferred = [

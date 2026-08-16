@@ -25,7 +25,7 @@ const MAX_P99_FRAME_MS = positiveNumberEnv("MAIN_THREAD_MAX_P99_FRAME_MS", 120);
 const MAX_DROPPED_FRAME_RATIO = positiveNumberEnv("MAIN_THREAD_MAX_DROPPED_FRAME_RATIO", 0.45);
 const INITIAL_WARMUP_MS = Math.max(1_200, positiveNumberEnv("MAIN_THREAD_INITIAL_WARMUP_MS", 1_400));
 const STEADY_SETTLE_MS = Math.max(150, positiveNumberEnv("MAIN_THREAD_STEADY_SETTLE_MS", 300));
-const TEST_TIMEOUT_MS = Math.round(95_000 + SAMPLE_MS * 7 + INITIAL_WARMUP_MS);
+const TEST_TIMEOUT_MS = Math.round(165_000 + SAMPLE_MS * 7 + INITIAL_WARMUP_MS);
 
 const SECTION_PLAN = [
   { label: "profile", selector: "#profile", kind: "steady", workerCandidate: "none" },
@@ -93,7 +93,11 @@ test("@main-thread cartographie les goulets d'étranglement du thread principal"
   await installMainThreadLaboratory(context);
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  await page.addInitScript(() => {
+  // Context-level storage seeding is guaranteed to execute before every page
+  // document created by the fixture. On hosted runners page.addInitScript could
+  // race the E2E bootstrap and leave the automatic 2-CPU profile in `lite`,
+  // which legitimately removes the Caldera/volcano anchors.
+  await context.addInitScript(() => {
     try {
       localStorage.setItem("portfolio-animation-preference", "full");
       localStorage.setItem("portfolio-animation-paused", "false");
@@ -104,6 +108,17 @@ test("@main-thread cartographie les goulets d'étranglement du thread principal"
 
   await openPortfolioContract(page, "fr");
   await expect(page.locator("html")).toHaveAttribute("data-runtime-quality", /^(high|balanced|constrained)$/);
+  await expect(page.locator("html"), "profil d'animation full requis par le laboratoire")
+    .toHaveAttribute("data-performance-profile", "full", { timeout: CONTRACT_TIMEOUT_MS * 2 });
+
+  // Fail fast before the seven sequential samples if the full-world contract
+  // is not mounted. This turns the former 106s late timeout into an actionable
+  // precondition failure and keeps CI time separate from CPU safety budgets.
+  for (const selector of ["#profile", "#timeline", "#ocean-transition-caldera", "#ocean-transition-projects", "#projects", "#ocean-transition-outro"]) {
+    await expect(page.locator(selector), `précondition laboratoire: ${selector}`).toBeAttached({
+      timeout: CONTRACT_TIMEOUT_MS * 2,
+    });
+  }
 
   // Ne pas attribuer au profil le coût de bootstrap, des fonts ou de l'intro signature.
   await page.evaluate(async () => {
