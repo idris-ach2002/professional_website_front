@@ -11,13 +11,19 @@ import {
   createVolcanoParticles,
   createVolcanoSimulation,
   resolveVolcanoParticleCounts,
-  resolveVolcanoStageProfile,
+  resolveVolcanoStageProfileInto,
   stepVolcanoParticles,
   stepVolcanoSimulation,
 } from "../animations/volcanoSimulationEngine";
 import {
   createVolcanoWebGLRenderer,
 } from "../rendering/volcanoWebGLRenderer";
+import {
+  bakeSettledRock,
+  createSettledDebrisSurface,
+  drawParticleField,
+  drawRockfall,
+} from "../rendering/volcanoCanvasRenderer";
 import {
   createVolcanoRockfall,
   resolveRockfallLimit,
@@ -33,6 +39,10 @@ import {
   markRuntimeOwnerUnmounted,
   registerRuntimeResource,
 } from "../performance/resourceLifecycleRegistry";
+import {
+  requiredVolcanoFrameFloats,
+  writeVolcanoFrame,
+} from "../performance/volcanoWorkerProtocol";
 
 const VOLCANO_ENVIRONMENT_PATH = "/scenes/abyss-volcano-environment.svg";
 
@@ -52,21 +62,32 @@ function resolveRenderFps(performanceMode, runtimeQuality) {
   return 60;
 }
 
-function resizeCanvas(canvas, stage, dpr) {
+function measureStageViewport(stage, dpr) {
   const rect = stage.getBoundingClientRect();
-  const width = Math.max(1, Math.round(rect.width));
-  const height = Math.max(1, Math.round(rect.height));
-  const pixelWidth = Math.max(1, Math.round(width * dpr));
-  const pixelHeight = Math.max(1, Math.round(height * dpr));
+  return {
+    width: Math.max(1, Math.round(rect.width)),
+    height: Math.max(1, Math.round(rect.height)),
+    dpr,
+  };
+}
 
-  if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
-    canvas.width = pixelWidth;
-    canvas.height = pixelHeight;
+function applyCanvasViewport(canvas, viewport, { bitmap = true } = {}) {
+  const pixelWidth = Math.max(1, Math.round(viewport.width * viewport.dpr));
+  const pixelHeight = Math.max(1, Math.round(viewport.height * viewport.dpr));
+  if (bitmap) {
+    if (canvas.width !== pixelWidth) canvas.width = pixelWidth;
+    if (canvas.height !== pixelHeight) canvas.height = pixelHeight;
   }
+  canvas.style.width = `${viewport.width}px`;
+  canvas.style.height = `${viewport.height}px`;
+  return { pixelWidth, pixelHeight };
+}
 
-  canvas.style.width = `${width}px`;
-  canvas.style.height = `${height}px`;
-  return { width, height, dpr };
+function supportsVolcanoOffscreenRendering() {
+  return typeof Worker !== "undefined"
+    && typeof OffscreenCanvas !== "undefined"
+    && typeof HTMLCanvasElement !== "undefined"
+    && typeof HTMLCanvasElement.prototype.transferControlToOffscreen === "function";
 }
 
 function createTextureSurface(size) {
@@ -161,202 +182,6 @@ function requestWorkerParticleTextures() {
   });
 }
 
-function drawParticleField(context, particles, textures, viewport, elapsedSeconds, profile) {
-  const { width, height, dpr } = viewport;
-  context.setTransform(dpr, 0, 0, dpr, 0, 0);
-  context.clearRect(0, 0, width, height);
-  context.imageSmoothingEnabled = true;
-  context.imageSmoothingQuality = "high";
-
-  const smokeDensity = Math.min(1.5, profile?.smokeDensity ?? 1.34);
-  const emberStrength = Math.min(1.8, profile?.embers ?? 0.055);
-  const ashStrength = Math.min(1.65, profile?.ash ?? 0.01);
-  const bubbleStrength = Math.min(1.8, profile?.bubbles ?? 0.84);
-  const sedimentStrength = Math.min(1.5, profile?.sediment ?? 0.12);
-
-  for (const particle of particles) {
-    const lifeRatio = Math.min(1, particle.life / Math.max(0.001, particle.ttl));
-    const fade = Math.sin(Math.PI * lifeRatio);
-    const pulse = 0.84 + Math.sin(particle.phase + elapsedSeconds * 2.1) * 0.16;
-
-    if (particle.type === "smoke" || particle.type === "vent") {
-      const texture = textures.smoke[particle.variant % textures.smoke.length];
-      const isVent = particle.type === "vent";
-      const layer = isVent ? "vent" : particle.plumeLayer ?? "main";
-      const layerScale = layer === "vent"
-        ? 0.74
-        : layer === "hot"
-          ? 0.82
-          : layer === "diffuse"
-            ? 1.08
-            : 0.96;
-      const densityScale = isVent ? 1 : 0.94 + smokeDensity * 0.08;
-      const size = particle.size * layerScale * densityScale;
-      const horizontalStretch = layer === "diffuse" ? 1.10 : layer === "main" ? 1.02 : 0.96;
-      const verticalStretch = layer === "diffuse" ? 0.96 : 1.05;
-      const layerOpacity = layer === "hot"
-        ? 0.78
-        : layer === "main"
-          ? 0.68
-          : layer === "diffuse"
-            ? 0.46
-            : 0.42;
-
-      context.save();
-      context.translate(particle.x, particle.y);
-      context.rotate(particle.rotation);
-      context.scale(horizontalStretch, verticalStretch);
-      context.filter = "none";
-      context.globalCompositeOperation = "source-over";
-      const smokeFade = Math.min(
-        1,
-        Math.max(0, lifeRatio / 0.08),
-        Math.max(0, (1 - lifeRatio) / 0.12),
-      );
-      context.globalAlpha = Math.min(
-        0.82,
-        particle.alpha * Math.max(0.30, smokeFade) * layerOpacity * (0.92 + smokeDensity * 0.10),
-      );
-      context.drawImage(texture, -size / 2, -size / 2, size, size);
-
-      if (!isVent && layer === "hot" && textures.hotSmoke && lifeRatio < 0.70) {
-        context.globalCompositeOperation = "source-over";
-        context.globalAlpha = Math.min(
-          0.18,
-          particle.alpha * Math.max(0.10, 1 - lifeRatio * 1.15),
-        );
-        context.drawImage(textures.hotSmoke, -size * 0.22, -size * 0.44, size * 0.44, size * 0.86);
-      }
-      context.restore();
-      continue;
-    }
-
-    if (particle.type === "bubble") {
-      const wobble = Math.sin(particle.phase + elapsedSeconds * 2.4);
-      const size = particle.size * 2.25;
-      context.save();
-      context.translate(particle.x, particle.y);
-      context.rotate(wobble * 0.12);
-      context.scale(1 + wobble * 0.10, 1 - wobble * 0.07);
-      context.globalAlpha = particle.alpha * Math.max(0.12, fade) * (0.45 + bubbleStrength * 0.62);
-      context.drawImage(textures.bubble, -size / 2, -size / 2, size, size);
-      context.restore();
-      continue;
-    }
-
-    if (particle.type === "ash") {
-      if (ashStrength < 0.025) continue;
-      context.save();
-      context.translate(particle.x, particle.y);
-      context.rotate(particle.rotation);
-      context.globalAlpha = particle.alpha * Math.max(0.05, fade) * ashStrength;
-      context.fillStyle = "rgba(31,38,47,.76)";
-      context.beginPath();
-      context.ellipse(0, 0, particle.size * 1.45, particle.size * 0.55, 0, 0, Math.PI * 2);
-      context.fill();
-      context.restore();
-      continue;
-    }
-
-    if (particle.type === "sediment") {
-      if (sedimentStrength < 0.08) continue;
-      context.save();
-      context.translate(particle.x, particle.y);
-      context.globalAlpha = particle.alpha * Math.max(0.04, fade) * sedimentStrength;
-      context.fillStyle = "rgba(118,103,82,.54)";
-      context.beginPath();
-      context.arc(0, 0, particle.size, 0, Math.PI * 2);
-      context.fill();
-      context.restore();
-      continue;
-    }
-
-
-
-    const texture = particle.type === "ember" ? textures.ember : textures.bio;
-    const strength = particle.type === "ember" ? emberStrength : Math.max(0.45, 0.86 - (profile?.lava ?? 0) * 0.18);
-    if (strength < 0.02) continue;
-    const scale = particle.type === "ember" ? 4.1 : 4.2;
-    const size = particle.size * scale;
-    context.save();
-    context.globalAlpha = particle.alpha * Math.max(0.08, fade) * pulse * strength;
-    if (particle.type === "ember") context.globalCompositeOperation = "lighter";
-    context.drawImage(texture, particle.x - size / 2, particle.y - size / 2, size, size);
-    context.restore();
-  }
-}
-
-
-function createSettledDebrisSurface(pixelWidth, pixelHeight) {
-  const surface = document.createElement("canvas");
-  surface.width = pixelWidth;
-  surface.height = pixelHeight;
-  return surface;
-}
-
-function traceRock(context, rock, dpr = 1) {
-  const r = rock.size * dpr;
-  const shape = rock.shape ?? [0.8, 0.7, 0.78, 0.68];
-  context.beginPath();
-  context.moveTo(-r * shape[0], r * 0.18);
-  context.lineTo(-r * 0.26, -r * shape[1]);
-  context.lineTo(r * shape[2], -r * 0.32);
-  context.lineTo(r * 0.52, r * shape[3]);
-  context.closePath();
-}
-
-function bakeSettledRock(surface, rock, viewport) {
-  if (!surface) return;
-  const context = surface.getContext("2d", { alpha: true });
-  if (!context) return;
-  const { dpr } = viewport;
-  context.save();
-  context.translate(rock.x * dpr, rock.y * dpr);
-  context.rotate(rock.rotation);
-  context.globalAlpha = rock.kind === "dust" ? 0.58 : 1;
-  context.fillStyle = rock.kind === "dust" ? "rgba(76,72,67,.72)" : "rgba(7,13,18,.96)";
-  context.strokeStyle = rock.heat > 0.08 ? `rgba(174,31,8,${Math.min(.48, rock.heat * .44)})` : "rgba(74,92,96,.16)";
-  context.lineWidth = Math.max(0.55, dpr * (rock.kind === "mega" ? 0.95 : 0.7));
-  traceRock(context, rock, dpr);
-  context.fill();
-  context.stroke();
-  context.restore();
-}
-
-function drawRockfall(context, rockfall, settledSurface, viewport) {
-  const { width, height, dpr } = viewport;
-  context.setTransform(1, 0, 0, 1, 0, 0);
-  context.clearRect(0, 0, width * dpr, height * dpr);
-  if (settledSurface) context.drawImage(settledSurface, 0, 0);
-  context.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-  for (const rock of rockfall.active) {
-    context.save();
-    context.translate(rock.x, rock.y);
-    context.rotate(rock.rotation);
-    if (rock.kind === "dust") {
-      context.globalAlpha = 0.66;
-      context.fillStyle = "rgba(106,97,86,.76)";
-    } else {
-      context.fillStyle = rock.kind === "hot" || rock.kind === "mega" ? "rgba(10,12,14,.99)" : "rgba(6,12,17,.98)";
-    }
-    context.strokeStyle = rock.heat > 0.08 ? `rgba(226,52,12,${Math.min(.68, .18 + rock.heat * .54)})` : "rgba(82,103,108,.22)";
-    context.lineWidth = rock.kind === "mega" ? 1.25 : 0.85;
-    traceRock(context, rock, 1);
-    context.fill();
-    context.stroke();
-    if (rock.heat > 0.30 && rock.kind !== "dust") {
-      context.globalCompositeOperation = "lighter";
-      context.globalAlpha = Math.min(0.32, rock.heat * 0.24);
-      context.fillStyle = "rgba(255,72,12,.92)";
-      context.scale(0.48, 0.48);
-      traceRock(context, rock, 1);
-      context.fill();
-    }
-    context.restore();
-  }
-}
-
 function qualityScalar(runtimeQuality, performanceMode) {
   if (runtimeQuality === "constrained") return 0.45;
   if (runtimeQuality === "balanced" || performanceMode === "balanced") return 0.72;
@@ -388,8 +213,14 @@ export default function UnderwaterVolcanoField({
   const rendererRef = useRef(null);
   const particlesRef = useRef([]);
   const texturesRef = useRef(null);
+  const canvasWorkerRef = useRef(null);
+  const canvasWorkerOwnedRef = useRef(false);
+  const canvasWorkerPendingRef = useRef(false);
+  const canvasWorkerReadyRef = useRef(false);
+  const canvasWorkerBuffersRef = useRef([]);
   const viewportRef = useRef({ width: 1, height: 1, dpr: 1 });
   const simulationRef = useRef(createVolcanoSimulation(0x8218));
+  const profileRef = useRef({});
   const reportedPulseRef = useRef("base");
   const reportedReactionRef = useRef(false);
   const rafRef = useRef(0);
@@ -398,9 +229,8 @@ export default function UnderwaterVolcanoField({
   const unmountTimerRef = useRef(0);
   const [sceneReady, setSceneReady] = useState(false);
   const [insideActiveZone, setInsideActiveZone] = useState(false);
+  const [canvasWorkerEpoch, setCanvasWorkerEpoch] = useState(0);
   const [rendererKind, setRendererKind] = useState("webgl2");
-  const [pulseName, setPulseName] = useState("base");
-  const [eruptionReaction, setEruptionReaction] = useState(false);
   const [pageVisible, setPageVisible] = useState(() => typeof document === "undefined" ? true : !document.hidden);
 
   const counts = useMemo(() => {
@@ -413,6 +243,15 @@ export default function UnderwaterVolcanoField({
   const targetFps = Math.min(resolveRenderFps(performanceMode, runtimeQuality), Number(runtimeBudget?.volcanoFps || Infinity));
   const quality = qualityScalar(runtimeQuality, performanceMode);
   const rockfallLimit = resolveRockfallLimit(runtimeQuality, performanceMode);
+  const countsRef = useRef(counts);
+  const rockfallLimitRef = useRef(rockfallLimit);
+  const dprRef = useRef(dpr);
+
+  useEffect(() => {
+    countsRef.current = counts;
+    rockfallLimitRef.current = rockfallLimit;
+    dprRef.current = dpr;
+  }, [counts, rockfallLimit, dpr]);
 
   const rebuildParticles = useCallback(() => {
     const { width, height } = viewportRef.current;
@@ -427,14 +266,29 @@ export default function UnderwaterVolcanoField({
     const webglCanvas = webglCanvasRef.current;
     const stage = stageRef.current;
     if (!particleCanvas || !debrisCanvas || !webglCanvas || !stage) return;
-    const viewport = resizeCanvas(particleCanvas, stage, dpr);
-    resizeCanvas(debrisCanvas, stage, dpr);
+
+    // One layout read, then all canvas writes are batched from the cached viewport.
+    const viewport = measureStageViewport(stage, dpr);
     viewportRef.current = viewport;
+    applyCanvasViewport(webglCanvas, viewport);
     rendererRef.current?.resize(viewport.width, viewport.height, dpr);
-    settledDebrisSurfaceRef.current = createSettledDebrisSurface(debrisCanvas.width, debrisCanvas.height);
+
+    if (canvasWorkerOwnedRef.current) {
+      applyCanvasViewport(particleCanvas, viewport, { bitmap: false });
+      applyCanvasViewport(debrisCanvas, viewport, { bitmap: false });
+      canvasWorkerRef.current?.postMessage({ type: "resize", viewport });
+      settledDebrisSurfaceRef.current = null;
+    } else {
+      const particlePixels = applyCanvasViewport(particleCanvas, viewport);
+      applyCanvasViewport(debrisCanvas, viewport);
+      settledDebrisSurfaceRef.current = createSettledDebrisSurface(particlePixels.pixelWidth, particlePixels.pixelHeight);
+    }
+
+    // Preserve the exact main-thread simulation state/seed; only rasterization moves.
     rockfallRef.current = createVolcanoRockfall(0x7a31);
     rebuildParticles();
   }, [dpr, rebuildParticles]);
+
 
   useEffect(() => {
     const handleVisibility = () => setPageVisible(!document.hidden);
@@ -465,10 +319,19 @@ export default function UnderwaterVolcanoField({
     const root = rootRef.current;
     if (!root) return undefined;
 
+    // Runtime diagnostics are DOM-owned. Keeping these attributes outside JSX
+    // prevents React rerenders from overwriting Worker/pulse state.
+    root.dataset.volcanoCanvasRenderer = root.dataset.volcanoCanvasRenderer || "main";
+    root.dataset.volcanoPulse = root.dataset.volcanoPulse || "base";
+
     const preloadObserver = new IntersectionObserver(
       ([entry]) => {
         window.clearTimeout(unmountTimerRef.current);
         if (entry.isIntersecting) {
+          if (supportsVolcanoOffscreenRendering()) {
+            scheduleUserVisibleTask(() => setSceneReady(true)).catch(() => setSceneReady(true));
+            return;
+          }
           if (texturesRef.current) {
             scheduleUserVisibleTask(() => setSceneReady(true)).catch(() => setSceneReady(true));
             return;
@@ -502,6 +365,95 @@ export default function UnderwaterVolcanoField({
       activeObserver.disconnect();
     };
   }, []);
+
+  useEffect(() => {
+    if (!sceneReady || !supportsVolcanoOffscreenRendering()) return undefined;
+    const particleCanvas = particleCanvasRef.current;
+    const debrisCanvas = debrisCanvasRef.current;
+    const stage = stageRef.current;
+    if (!particleCanvas || !debrisCanvas || !stage || canvasWorkerOwnedRef.current) return undefined;
+
+    const controller = new AbortController();
+    let worker = null;
+    canvasWorkerPendingRef.current = true;
+
+    const initializeWorker = () => {
+      if (controller.signal.aborted || canvasWorkerOwnedRef.current) return;
+      try {
+        const viewport = measureStageViewport(stage, dprRef.current);
+        viewportRef.current = viewport;
+        applyCanvasViewport(particleCanvas, viewport);
+        applyCanvasViewport(debrisCanvas, viewport);
+        // Construct the Worker before transferring either canvas so constructor
+        // failure can still use the untouched main-thread fallback.
+        worker = new Worker(new URL("../workers/volcanoCanvasRender.worker.js", import.meta.url), { type: "module" });
+        const particleOffscreen = particleCanvas.transferControlToOffscreen();
+        const debrisOffscreen = debrisCanvas.transferControlToOffscreen();
+        canvasWorkerRef.current = worker;
+        canvasWorkerOwnedRef.current = true;
+        canvasWorkerReadyRef.current = false;
+        canvasWorkerBuffersRef.current = [];
+        worker.onmessage = (event) => {
+          if (event.data?.type === "ready") {
+            canvasWorkerPendingRef.current = false;
+            canvasWorkerReadyRef.current = true;
+            if (rootRef.current) rootRef.current.dataset.volcanoCanvasRenderer = "worker";
+            setCanvasWorkerEpoch((value) => value + 1);
+            const floats = requiredVolcanoFrameFloats(
+              particlesRef.current.length,
+              rockfallLimitRef.current,
+            );
+            canvasWorkerBuffersRef.current = Array.from(
+              { length: 3 },
+              () => new ArrayBuffer(floats * Float64Array.BYTES_PER_ELEMENT),
+            );
+            return;
+          }
+          if (event.data?.type === "buffer-return" && event.data.buffer instanceof ArrayBuffer) {
+            if (canvasWorkerBuffersRef.current.length < 3) {
+              canvasWorkerBuffersRef.current.push(event.data.buffer);
+            }
+          }
+        };
+        worker.onerror = () => {
+          canvasWorkerPendingRef.current = false;
+          canvasWorkerReadyRef.current = false;
+          if (rootRef.current) rootRef.current.dataset.volcanoCanvasRenderer = "worker-error";
+          setCanvasWorkerEpoch((value) => value + 1);
+        };
+        worker.postMessage({
+          type: "init",
+          particleCanvas: particleOffscreen,
+          debrisCanvas: debrisOffscreen,
+          viewport,
+        }, [particleOffscreen, debrisOffscreen]);
+      } catch {
+        worker?.terminate();
+        worker = null;
+        canvasWorkerRef.current = null;
+        canvasWorkerOwnedRef.current = false;
+        canvasWorkerPendingRef.current = false;
+        if (rootRef.current) rootRef.current.dataset.volcanoCanvasRenderer = "main";
+        canvasWorkerReadyRef.current = false;
+        canvasWorkerBuffersRef.current = [];
+        setCanvasWorkerEpoch((value) => value + 1);
+      }
+    };
+
+    // Deferring the transfer avoids StrictMode effect probing and uses idle time
+    // while the volcano is still in its 1100px preload zone.
+    scheduleBackgroundTask(initializeWorker, { signal: controller.signal }).catch(() => {});
+
+    return () => {
+      controller.abort();
+      worker?.terminate();
+      if (canvasWorkerRef.current === worker) canvasWorkerRef.current = null;
+      canvasWorkerOwnedRef.current = false;
+      canvasWorkerPendingRef.current = false;
+      canvasWorkerReadyRef.current = false;
+      canvasWorkerBuffersRef.current = [];
+    };
+  }, [sceneReady]);
 
   useEffect(() => {
     if (!sceneReady || !webglCanvasRef.current) return undefined;
@@ -553,14 +505,27 @@ export default function UnderwaterVolcanoField({
   useEffect(() => {
     if (!sceneReady) return;
     rebuildParticles();
-  }, [rebuildParticles, sceneReady]);
+  }, [counts, rebuildParticles, sceneReady]);
 
   useEffect(() => {
     const particleCanvas = particleCanvasRef.current;
     const debrisCanvas = debrisCanvasRef.current;
-    const context = particleCanvas?.getContext("2d", { alpha: true, desynchronized: true });
-    const debrisContext = debrisCanvas?.getContext("2d", { alpha: true, desynchronized: true });
-    if (!particleCanvas || !debrisCanvas || !context || !debrisContext || !active || !texturesRef.current) {
+    const workerOwned = canvasWorkerOwnedRef.current;
+    const workerPending = canvasWorkerPendingRef.current;
+    // Do not acquire a 2D context while the volcano is inactive. The debris
+    // canvas stays mounted while sceneReady is false; claiming its context here
+    // would make a later transferControlToOffscreen() permanently illegal in
+    // Firefox.
+    if (!particleCanvas || !debrisCanvas || !active || workerPending) {
+      cancelAnimationFrame(rafRef.current);
+      lastFrameRef.current = 0;
+      lastPaintRef.current = 0;
+      return undefined;
+    }
+    const context = workerOwned ? null : particleCanvas.getContext("2d", { alpha: true, desynchronized: true });
+    const debrisContext = workerOwned ? null : debrisCanvas.getContext("2d", { alpha: true, desynchronized: true });
+    const fallbackReady = (workerOwned && canvasWorkerReadyRef.current) || Boolean(!workerOwned && context && debrisContext && texturesRef.current);
+    if (!fallbackReady) {
       cancelAnimationFrame(rafRef.current);
       lastFrameRef.current = 0;
       lastPaintRef.current = 0;
@@ -579,20 +544,27 @@ export default function UnderwaterVolcanoField({
       lastFrameRef.current = timestamp;
 
       stepVolcanoSimulation(simulationRef.current, deltaSeconds);
-      const profile = resolveVolcanoStageProfile(simulationRef.current);
-      if (profile.pulseType !== reportedPulseRef.current) {
-        reportedPulseRef.current = profile.pulseType;
-        setPulseName(profile.pulseType);
-      }
+      const profile = resolveVolcanoStageProfileInto(simulationRef.current, profileRef.current);
       const reacting = profile.shock > 0.52 || (profile.pulseType === "mega" && profile.pulse > 0.92);
-      if (reacting !== reportedReactionRef.current) {
+      const pulseChanged = profile.pulseType !== reportedPulseRef.current;
+      const reactionChanged = reacting !== reportedReactionRef.current;
+      if (pulseChanged || reactionChanged) {
+        reportedPulseRef.current = profile.pulseType;
         reportedReactionRef.current = reacting;
-        setEruptionReaction(reacting);
+        if (rootRef.current) rootRef.current.dataset.volcanoPulse = profile.pulseType;
+        window.dispatchEvent(new CustomEvent("portfolio:volcano-stage", {
+          detail: { stage: "eruption", pulseType: profile.pulseType, reaction: reacting },
+        }));
       }
 
       if (!lastPaintRef.current || timestamp - lastPaintRef.current >= paintInterval - 0.5) {
         lastPaintRef.current = timestamp;
         const paintDelta = Math.min(0.05, Math.max(deltaSeconds, paintInterval / 1000));
+        rendererRef.current?.render(simulationRef.current.elapsed, profile, quality);
+
+        // Keep simulation on the main thread exactly as before. Only Canvas2D
+        // rasterization is offloaded, so particle trajectories and pulse timing
+        // remain bit-for-bit driven by the original delta/elapsed sequence.
         stepVolcanoParticles(
           particlesRef.current,
           paintDelta,
@@ -610,19 +582,46 @@ export default function UnderwaterVolcanoField({
           profile,
           rockfallLimit,
         );
-        for (const rock of settledRocks) {
-          bakeSettledRock(settledDebrisSurfaceRef.current, rock, viewportRef.current);
+
+        if (workerOwned) {
+          for (const rock of settledRocks) {
+            canvasWorkerRef.current?.postMessage({ type: "settled-rock", rock });
+          }
+          if (canvasWorkerReadyRef.current) {
+            let buffer = canvasWorkerBuffersRef.current.pop();
+            const requiredFloats = requiredVolcanoFrameFloats(
+              particlesRef.current.length,
+              rockfallRef.current.active.length,
+            );
+            if (buffer && buffer.byteLength < requiredFloats * Float64Array.BYTES_PER_ELEMENT) {
+              buffer = new ArrayBuffer(requiredFloats * Float64Array.BYTES_PER_ELEMENT);
+            }
+            if (buffer) {
+              const frameState = new Float64Array(buffer);
+              writeVolcanoFrame(
+                frameState,
+                paintDelta,
+                viewportRef.current,
+                simulationRef.current.elapsed,
+                profile,
+                particlesRef.current,
+                rockfallRef.current.active,
+              );
+              canvasWorkerRef.current?.postMessage({ type: "frame", buffer }, [buffer]);
+            }
+          }
+        } else {
+          for (const rock of settledRocks) bakeSettledRock(settledDebrisSurfaceRef.current, rock, viewportRef.current);
+          drawRockfall(debrisContext, rockfallRef.current, settledDebrisSurfaceRef.current, viewportRef.current);
+          drawParticleField(
+            context,
+            particlesRef.current,
+            texturesRef.current,
+            viewportRef.current,
+            simulationRef.current.elapsed,
+            profile,
+          );
         }
-        drawRockfall(debrisContext, rockfallRef.current, settledDebrisSurfaceRef.current, viewportRef.current);
-        rendererRef.current?.render(simulationRef.current.elapsed, profile, quality);
-        drawParticleField(
-          context,
-          particlesRef.current,
-          texturesRef.current,
-          viewportRef.current,
-          simulationRef.current.elapsed,
-          profile,
-        );
       }
       rafRef.current = requestAnimationFrame(tick);
     };
@@ -632,25 +631,27 @@ export default function UnderwaterVolcanoField({
       cancelAnimationFrame(rafRef.current);
       lastFrameRef.current = 0;
       lastPaintRef.current = 0;
+      if (workerOwned) canvasWorkerRef.current?.postMessage({ type: "clear" });
       rafLease.release();
     };
-  }, [active, quality, rockfallLimit, targetFps]);
+  }, [active, canvasWorkerEpoch, quality, rockfallLimit, targetFps]);
+
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
+    const pulseType = active ? reportedPulseRef.current : "base";
+    const reaction = active && reportedReactionRef.current;
+    if (rootRef.current) rootRef.current.dataset.volcanoPulse = pulseType;
     window.dispatchEvent(new CustomEvent("portfolio:volcano-stage", {
-      detail: {
-        stage: active ? "eruption" : "idle",
-        pulseType: active ? pulseName : "base",
-        reaction: active && eruptionReaction,
-      },
+      detail: { stage: active ? "eruption" : "idle", pulseType, reaction },
     }));
     return () => {
       window.dispatchEvent(new CustomEvent("portfolio:volcano-stage", {
         detail: { stage: "idle", pulseType: "base", reaction: false },
       }));
     };
-  }, [active, eruptionReaction, pulseName]);
+  }, [active]);
+
 
   useEffect(() => {
     let disposed = false;
@@ -698,7 +699,6 @@ export default function UnderwaterVolcanoField({
       id="abyss-volcano-field"
       className={`volcano-field-section${active ? " is-active" : ""}${sceneReady ? " is-mounted" : " is-suspended"}`}
       data-volcano-stage={active ? "eruption" : "idle"}
-      data-volcano-pulse={active ? pulseName : "base"}
       data-volcano-renderer={rendererKind}
       aria-hidden="true"
     >
@@ -713,9 +713,11 @@ export default function UnderwaterVolcanoField({
         />
         <div className="volcano-render-stack">
           <canvas ref={webglCanvasRef} className="volcano-webgl-canvas" />
-          <canvas ref={debrisCanvasRef} className="volcano-debris-canvas" />
           {sceneReady ? (
-            <canvas ref={particleCanvasRef} className="volcano-particle-canvas" />
+            <>
+              <canvas ref={debrisCanvasRef} className="volcano-debris-canvas" />
+              <canvas ref={particleCanvasRef} className="volcano-particle-canvas" />
+            </>
           ) : (
             <div className="volcano-field-placeholder" />
           )}
