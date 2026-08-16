@@ -87,9 +87,11 @@ export default function SectionTitle({ eyebrow, title, description, rightSlot, r
       return () => window.removeEventListener("resize", refreshOnResize);
     }
 
+    const softReveal = reveal === "soft";
     const timeline = gsap.timeline({
       defaults: { ease: "expo.out" },
-      scrollTrigger: ScrollTrigger
+      paused: softReveal,
+      scrollTrigger: ScrollTrigger && !softReveal
         ? {
             trigger: root,
             start: reveal === "bubbles" ? "top 82%" : "top 76%",
@@ -133,8 +135,34 @@ export default function SectionTitle({ eyebrow, title, description, rightSlot, r
 
     animateIfPresent(timeline, action, { y: 0, autoAlpha: 1, duration: 0.62 }, reveal === "bubbles" ? 0.78 : 0.72);
 
+    if (softReveal) {
+      let played = false;
+      const playOnce = () => {
+        if (played) return;
+        played = true;
+        timeline.play(0);
+        revealObserver?.disconnect();
+      };
+      const revealObserver = typeof IntersectionObserver !== "undefined"
+        ? new IntersectionObserver(([entry]) => {
+            if (entry?.isIntersecting) playOnce();
+          }, { rootMargin: "0px 0px -24% 0px", threshold: 0 })
+        : null;
+
+      revealObserver?.observe(root);
+      // ScrollTrigger's former `start: top 76%` also considered a section that
+      // was already past the threshold when the runtime attached. Preserve that
+      // behavior without keeping a global scroll plugin active.
+      const rect = root.getBoundingClientRect();
+      if (!revealObserver || rect.top <= (window.innerHeight || 1) * 0.76) playOnce();
+      return () => revealObserver?.disconnect();
+    }
+
     return undefined;
-  }, [title, description, reveal, managedMotion], { allowOnMobile: reveal === "fish" });
+  }, [title, description, reveal, managedMotion], {
+    allowOnMobile: reveal === "fish",
+    needsScrollTrigger: reveal === "fish" || reveal === "bubbles",
+  });
 
   return (
     <div ref={rootRef} className={`section-title section-title-${reveal}${managedMotion ? " is-managed-motion" : ""}`}>

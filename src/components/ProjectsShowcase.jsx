@@ -868,23 +868,38 @@ export default function ProjectsShowcase({ projects }) {
     });
   }, [publicProjects, query, selectedStacks, status]);
 
-  useGsap(rootRef, (gsap, ScrollTrigger) => {
+  useGsap(rootRef, (gsap) => {
     const root = rootRef.current;
-    if (!ScrollTrigger || !root) return undefined;
+    if (!root) return undefined;
 
     const toolbar = root.querySelector(".project-toolbar");
-    if (toolbar) {
-      gsap.from(toolbar, {
-        autoAlpha: 0,
-        y: 28,
-        duration: 0.56,
-        ease: "power3.out",
-        scrollTrigger: { trigger: root, start: "top 72%", toggleActions: "play none none none" },
-      });
-    }
+    if (!toolbar) return undefined;
 
-    return undefined;
-  }, []);
+    const animation = gsap.from(toolbar, {
+      autoAlpha: 0,
+      y: 28,
+      duration: 0.56,
+      ease: "power3.out",
+      paused: true,
+    });
+    let played = false;
+    const playOnce = () => {
+      if (played) return;
+      played = true;
+      animation.play(0);
+      observer?.disconnect();
+    };
+    const observer = typeof IntersectionObserver !== "undefined"
+      ? new IntersectionObserver(([entry]) => {
+          if (entry?.isIntersecting) playOnce();
+        }, { rootMargin: "0px 0px -28% 0px", threshold: 0 })
+      : null;
+    observer?.observe(root);
+    const rect = root.getBoundingClientRect();
+    if (!observer || rect.top <= (window.innerHeight || 1) * 0.72) playOnce();
+
+    return () => observer?.disconnect();
+  }, [], { needsScrollTrigger: false });
 
   const exportProjects = () => {
     downloadText("portfolio-projects.json", JSON.stringify(filteredProjects, null, 2), "application/json;charset=utf-8");

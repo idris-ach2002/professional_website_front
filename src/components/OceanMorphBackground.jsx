@@ -31,7 +31,7 @@ export default function OceanMorphBackground({
         ? BALANCED_PARTICLE_COUNT
         : FULL_PARTICLE_COUNT;
 
-  useGsap(rootRef, (gsap, ScrollTrigger) => {
+  useGsap(rootRef, (gsap) => {
     const root = rootRef.current;
     if (!root) return undefined;
 
@@ -74,7 +74,9 @@ export default function OceanMorphBackground({
       }));
     }
 
-    let depthTrigger;
+    let depthFrame = 0;
+    let rangeFrame = 0;
+    let maxScroll = 1;
     let lastGlobalPublish = 0;
     let lastDepth = Number.NaN;
     const minGlobalInterval = 1000 / GLOBAL_DEPTH_PAINT_FPS;
@@ -94,25 +96,62 @@ export default function OceanMorphBackground({
       }
     };
 
-    if (ScrollTrigger) {
-      depthTrigger = ScrollTrigger.create({
-        trigger: document.documentElement,
-        start: "top top",
-        end: "bottom bottom",
-        onUpdate: (self) => paintDepth(self.progress),
-        onRefresh: (self) => paintDepth(self.progress, true),
-      });
-      paintDepth(depthTrigger.progress, true);
-    }
+    const scrollingElement = document.scrollingElement ?? document.documentElement;
+    const readProgress = () => clamp(scrollingElement.scrollTop / Math.max(1, maxScroll), 0, 1);
+
+    const paintCurrentDepth = (force = false) => {
+      depthFrame = 0;
+      paintDepth(readProgress(), force);
+    };
+
+    const scheduleDepthPaint = () => {
+      if (depthFrame) return;
+      depthFrame = window.requestAnimationFrame(() => paintCurrentDepth(false));
+    };
+
+    const refreshScrollRange = () => {
+      rangeFrame = 0;
+      if (depthFrame) {
+        window.cancelAnimationFrame(depthFrame);
+        depthFrame = 0;
+      }
+      maxScroll = Math.max(1, scrollingElement.scrollHeight - (window.innerHeight || 1));
+      paintCurrentDepth(true);
+    };
+
+    const scheduleRangeRefresh = () => {
+      if (rangeFrame) return;
+      rangeFrame = window.requestAnimationFrame(refreshScrollRange);
+    };
+
+    // The global depth mapping is a simple document-scroll ratio. Running it
+    // through ScrollTrigger made every wheel event enter the plugin's global
+    // update path and was the largest forced-style/layout source in the V9
+    // trace. A passive scroll wake-up + one RAF preserves the exact formula and
+    // 45 FPS publication cap without a layout-querying trigger.
+    const documentResizeObserver = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(scheduleRangeRefresh)
+      : null;
+    documentResizeObserver?.observe(document.body);
+    window.addEventListener("scroll", scheduleDepthPaint, { passive: true });
+    window.addEventListener("resize", scheduleRangeRefresh, { passive: true });
+    window.visualViewport?.addEventListener("resize", scheduleRangeRefresh, { passive: true });
+    refreshScrollRange();
 
     return () => {
       animations.forEach((animation) => animation.kill());
-      depthTrigger?.kill();
+      documentResizeObserver?.disconnect();
+      window.removeEventListener("scroll", scheduleDepthPaint);
+      window.removeEventListener("resize", scheduleRangeRefresh);
+      window.visualViewport?.removeEventListener("resize", scheduleRangeRefresh);
+      window.cancelAnimationFrame(depthFrame);
+      window.cancelAnimationFrame(rangeFrame);
       document.documentElement.style.removeProperty("--global-ocean-depth");
     };
   }, [staticMode, depthOnly, performanceMode, runtimeQuality], {
     allowOnMobile: depthOnly,
     allowOnLite: depthOnly,
+    needsScrollTrigger: false,
   });
 
   return (

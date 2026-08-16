@@ -4,26 +4,39 @@ import useAnimationPreferences from "../contexts/useAnimationPreferences";
 const MOBILE_QUERY = "(max-width: 820px)";
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
-let runtimePromise = null;
+let coreRuntimePromise = null;
+let scrollRuntimePromise = null;
 let runtimeConfigured = false;
+let scrollRuntimeConfigured = false;
 
-async function getGsapRuntime() {
-  if (!runtimePromise) {
-    runtimePromise = Promise.all([import("gsap"), import("gsap/ScrollTrigger")]).then(([gsapModule, scrollModule]) => {
+async function getGsapCoreRuntime() {
+  if (!coreRuntimePromise) {
+    coreRuntimePromise = import("gsap").then((gsapModule) => {
       const gsap = gsapModule.gsap ?? gsapModule.default;
-      const ScrollTrigger = scrollModule.ScrollTrigger ?? scrollModule.default;
-      gsap.registerPlugin(ScrollTrigger);
       if (!runtimeConfigured) {
         // Keep GSAP attached to the browser's native requestAnimationFrame cadence.
         // Do not call ticker.fps(): that would only cap/skip ticks on high-refresh displays.
         gsap.ticker.lagSmoothing(240, 16);
         runtimeConfigured = true;
       }
-      return { gsap, ScrollTrigger };
+      return { gsap, ScrollTrigger: null };
     });
   }
+  return coreRuntimePromise;
+}
 
-  return runtimePromise;
+async function getGsapScrollRuntime() {
+  if (!scrollRuntimePromise) {
+    scrollRuntimePromise = Promise.all([getGsapCoreRuntime(), import("gsap/ScrollTrigger")]).then(([core, scrollModule]) => {
+      const ScrollTrigger = scrollModule.ScrollTrigger ?? scrollModule.default;
+      if (!scrollRuntimeConfigured) {
+        core.gsap.registerPlugin(ScrollTrigger);
+        scrollRuntimeConfigured = true;
+      }
+      return { gsap: core.gsap, ScrollTrigger };
+    });
+  }
+  return scrollRuntimePromise;
 }
 
 export function useGsap(rootRef, setup, deps = [], options = {}) {
@@ -41,8 +54,11 @@ export function useGsap(rootRef, setup, deps = [], options = {}) {
     let cancelled = false;
     let context = null;
     let localCleanup = () => {};
+    const runtimeLoader = options.needsScrollTrigger === false
+      ? getGsapCoreRuntime
+      : getGsapScrollRuntime;
 
-    getGsapRuntime().then(({ gsap, ScrollTrigger }) => {
+    runtimeLoader().then(({ gsap, ScrollTrigger }) => {
       if (cancelled || !rootRef.current) return;
       context = gsap.context(() => {
         const returnedCleanup = setup(gsap, ScrollTrigger);
@@ -61,6 +77,6 @@ export function useGsap(rootRef, setup, deps = [], options = {}) {
   }, [animationsEnabled, animationsPaused, performanceMode, ...deps]);
 }
 
-export function gsapReady() {
-  return getGsapRuntime();
+export function gsapReady({ scrollTrigger = false } = {}) {
+  return scrollTrigger ? getGsapScrollRuntime() : getGsapCoreRuntime();
 }

@@ -225,7 +225,7 @@ export default function ProfileHero({ owner, prof }) {
       .from(".profile-island .hero-copy", { autoAlpha: 0, y: 24, duration: 0.68 })
       .from(".hero-title-main, .profile-headline-card, .profile-skill-widget, .hero-actions .mantine-Button-root", { autoAlpha: 0, y: 16, stagger: 0.045, duration: 0.42 }, "-=0.42")
       .from(".hero-panel > *", { autoAlpha: 0, y: 18, stagger: 0.07, duration: 0.46 }, "-=0.32");
-  }, [fullName]);
+  }, [fullName], { needsScrollTrigger: false });
 
   return (
     <section ref={rootRef} id="profile" className="hero-grid island-section profile-island profile-ios-ocean">

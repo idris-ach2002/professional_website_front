@@ -660,9 +660,11 @@ export default function UnderwaterVolcanoField({
 
     gsapReady().then((runtime) => {
       if (disposed || !runtime?.gsap || !rootRef.current || !stageRef.current) return;
-      const { gsap, ScrollTrigger } = runtime;
+      const { gsap } = runtime;
+      const root = rootRef.current;
+      let observer = null;
       const context = gsap.context(() => {
-        gsap.fromTo(
+        const animation = gsap.fromTo(
           stageRef.current,
           { y: 34, autoAlpha: 0, scale: 0.994 },
           {
@@ -672,11 +674,29 @@ export default function UnderwaterVolcanoField({
             duration: performanceMode === "balanced" ? 0.54 : 0.72,
             ease: "expo.out",
             force3D: true,
-            scrollTrigger: ScrollTrigger ? { trigger: rootRef.current, start: "top 84%" } : undefined,
+            paused: true,
           },
         );
-      }, rootRef.current);
-      cleanup = () => context.revert();
+        let played = false;
+        const playOnce = () => {
+          if (played) return;
+          played = true;
+          animation.play(0);
+          observer?.disconnect();
+        };
+        observer = typeof IntersectionObserver !== "undefined"
+          ? new IntersectionObserver(([entry]) => {
+              if (entry?.isIntersecting) playOnce();
+            }, { rootMargin: "0px 0px -16% 0px", threshold: 0 })
+          : null;
+        observer?.observe(root);
+        const rect = root.getBoundingClientRect();
+        if (!observer || rect.top <= (window.innerHeight || 1) * 0.84) playOnce();
+      }, root);
+      cleanup = () => {
+        observer?.disconnect();
+        context.revert();
+      };
     });
 
     return () => {

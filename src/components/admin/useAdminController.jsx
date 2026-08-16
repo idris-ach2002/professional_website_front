@@ -106,7 +106,7 @@ export default function useAdminController() {
     if (cards.length > 0) gsap.from(cards, { y: 30, autoAlpha: 0, duration: 0.7, ease: "power3.out", stagger: 0.12, delay: 0.12 });
     if (orbs.length > 0) gsap.to(orbs, { y: -16, x: 12, duration: 5.5, repeat: -1, yoyo: true, ease: "sine.inOut", stagger: 0.45 });
     return undefined;
-  }, []);
+  }, [], { needsScrollTrigger: false });
 
   const state = {
     loading, setLoading, message, setMessage, error, setError,
