@@ -1,0 +1,24 @@
+@layer base, priority, critical;
+@layer base {
+/* V10 — legacy optimized Timeline card surface.
+   Intentional Timeline-only migration: no Canvas, portal, zoom sheet, or card-local RAF. */
+.timeline-mission-id{display:grid;gap:3px;}
+.timeline-log-label,.timeline-systems-label,.timeline-depth-readout span{
+  color:rgba(165,243,252,.70)!important;
+  font:800 .62rem/1.2 ui-monospace,SFMono-Regular,Menlo,monospace!important;
+  letter-spacing:.14em!important;
+  text-transform:uppercase;
+}
+.timeline-mission-number{color:#cffafe;font:900 .84rem/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;}
+.timeline-expedition-rule{height:1px;margin:16px 0 18px;background:linear-gradient(90deg,rgba(103,232,249,.26),rgba(34,211,238,.08),transparent);}
+.timeline-org{display:flex;align-items:center;flex-wrap:wrap;gap:7px;min-width:0;}
+.timeline-location{color:rgba(186,230,253,.72);font-weight:720;}
+.timeline-depth-readout{flex:0 0 auto;display:grid;gap:4px;min-width:118px;padding-left:14px;border-left:1px solid rgba(103,232,249,.15);text-align:right;}
+.timeline-depth-readout strong{color:#a5f3fc;font:900 1rem/1.1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:-.03em;}
+@media(max-width:820px){.timeline-depth-readout{min-width:102px;padding-left:10px;}}
+@media(max-width:560px){.timeline-depth-readout{width:100%;padding:12px 0 0;border-left:0;border-top:1px solid rgba(103,232,249,.12);text-align:left;}}
+}
+@layer critical {
+/* Depth readout alignment is part of the compact/mobile layout contract. */
+.timeline-depth-readout{box-sizing:border-box;}
+}
