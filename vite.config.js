@@ -112,7 +112,8 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks(id) {
             if (!id.includes('node_modules')) return undefined
-            if (id.includes('/gsap/')) return 'vendor-gsap'
+            if (id.includes('/gsap/ScrollTrigger') || id.includes('/gsap/Observer')) return 'vendor-gsap-scroll'
+            if (id.includes('/gsap/')) return 'vendor-gsap-core'
             if (id.includes('@mantine') || id.includes('@floating-ui') || id.includes('/clsx/') || id.includes('react-number-format') || id.includes('react-remove-scroll') || id.includes('react-remove-scroll-bar') || id.includes('react-style-singleton') || id.includes('use-callback-ref') || id.includes('use-sidecar') || id.includes('get-nonce') || id.includes('tabbable') || id.includes('detect-node-es') || id.includes('/tslib/')) return 'vendor-mantine'
             if (id.includes('react-router') || id.includes('/cookie/') || id.includes('set-cookie-parser')) return 'vendor-router'
             if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/scheduler/')) return 'vendor-react'

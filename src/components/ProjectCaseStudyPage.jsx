@@ -218,6 +218,9 @@ export default function ProjectCaseStudyPage({ owner, projects = [] }) {
               imageClassName="project-case-image"
               modalTitle={t("projects.modalTitle", { title: project.title })}
               showOverlay={false}
+              loading="eager"
+              fetchPriority="high"
+              sizes="(max-width: 780px) 92vw, (max-width: 1200px) 44vw, 560px"
             />
           )}
         </section></VisibilityGate>
