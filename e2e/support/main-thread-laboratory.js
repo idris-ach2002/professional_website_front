@@ -7,6 +7,22 @@ function percentile(values, percentileValue) {
   return sorted[index];
 }
 
+function interpolatedPercentile(values, percentileValue) {
+  if (!values.length) return 0;
+
+  const sorted = [...values].sort((a, b) => a - b);
+  if (sorted.length === 1) return sorted[0];
+
+  const rank = (percentileValue / 100) * (sorted.length - 1);
+  const lower = Math.floor(rank);
+  const upper = Math.ceil(rank);
+
+  if (lower === upper) return sorted[lower];
+
+  const weight = rank - lower;
+  return sorted[lower] + (sorted[upper] - sorted[lower]) * weight;
+}
+
 function round(value, digits = 2) {
   const factor = 10 ** digits;
   return Math.round((Number(value) || 0) * factor) / factor;
@@ -234,6 +250,7 @@ export function summarizeMainThreadSnapshot(snapshot) {
   const maxLongTaskMs = Math.max(0, ...longTasks.map((entry) => Number(entry.duration || 0)));
   const maxLoafMs = Math.max(0, ...longAnimationFrames.map((entry) => Number(entry.duration || 0)));
   const maxBlockingDurationMs = Math.max(0, ...longAnimationFrames.map((entry) => Number(entry.blockingDuration || 0)));
+  const p95EventLoopDelayMs = interpolatedPercentile(eventLoopDelays, 95);
   const maxEventLoopDelayMs = Math.max(0, ...eventLoopDelays);
   const droppedFrameRatio = frameDeltas.length
     ? frameDeltas.filter((delta) => delta > 34).length / frameDeltas.length
@@ -255,6 +272,7 @@ export function summarizeMainThreadSnapshot(snapshot) {
     longAnimationFrameCount: longAnimationFrames.length,
     maxLongAnimationFrameMs: round(maxLoafMs),
     maxBlockingDurationMs: round(maxBlockingDurationMs),
+    p95EventLoopDelayMs: round(p95EventLoopDelayMs),
     maxEventLoopDelayMs: round(maxEventLoopDelayMs),
     topScripts,
   };

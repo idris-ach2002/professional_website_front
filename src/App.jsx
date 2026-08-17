@@ -49,6 +49,7 @@ function DeferredVolcanoField({ performanceMode, animationsPaused, runtimeQualit
     const result = requestPrefetch("underwater-volcano-module", loadUnderwaterVolcanoField, {
       probability: 0.60,
       cost: "high",
+      critical: true,
     });
     result.promise?.catch(() => {});
     return undefined;

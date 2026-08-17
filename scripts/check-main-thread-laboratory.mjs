@@ -74,9 +74,9 @@ requireText(portfolioSpec, "requestAnimationFrame(settleFrame)", "Vitals warm-up
 requireText(portfolioSpec, "entry.startTime < (window.__portfolioPerformance.sampleStart ?? 0)", "Vitals INP sampling must reject late-delivered warm-up EventTiming entries.");
 requireText(portfolioSpec, "interactionDetails", "Vitals failures must expose input/processing/presentation timing diagnostics.");
 requireText(topNavigation, '!sheet || sheet === "more" ? renderMore() : null', "Mobile More sheet must remain warm-mounted so the measured click does not construct its DOM tree.");
-requireText(topNavigation, 'nav_mobile-command-sheet${sheet ? " is-open" : ""}', "Mobile command sheet must toggle visibility without remounting the shell.");
+requireText(topNavigation, 'nav_mobile-command-sheet${shown ? " is-open" : ""}', "Mobile command sheet must toggle its visual state without remounting the warm shell.");
 requireText(navigationCss, "mobile-sheet INP precomposition guard", "Mobile sheet precomposition guard marker missing.");
-requireText(topNavigation, "inert={!sheet ? true : undefined}", "Closed mobile command sheet must remain mounted but inert.");
+requireText(topNavigation, "inert={!shown ? true : undefined}", "Closed mobile command sheet must remain mounted but inert.");
 requireText(navigationCss, ".nav_mobile-dock-tools.nav_mobile-command-sheet{opacity:0;visibility:visible;pointer-events:none;animation:none!important", "Mobile command sheet must stay paintable/precomposed while closed.");
 requireText(navigationCss, "transition:opacity .08s linear,transform .08s cubic-bezier(.16,1,.3,1)", "Mobile command sheet compositor motion must stay below the INP presentation budget.");
 requireText(navigationCss, ".nav_mobile-sheet-backdrop{backdrop-filter:none!important;-webkit-backdrop-filter:none!important", "Full-viewport mobile backdrop blur must stay disabled on the measured INP path.");

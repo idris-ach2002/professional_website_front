@@ -463,6 +463,7 @@ function MobileBottomNavigation({
   t,
 }) {
   const [sheet, setSheet] = useState(null);
+  const [shown, setShown] = useState(false);
   const moreLabel = language === "en" ? "More" : "Plus";
   const optionsLabel = language === "en" ? "Options" : "Options";
   const primaryHrefs = new Set(["#profile", "#timeline", "#projects", "/engineering"]);
@@ -470,9 +471,9 @@ function MobileBottomNavigation({
   const expertiseGroup = groups.find((group) => group.href === "#skills");
   const selectedGroup = groups.find((group) => sheet === `group:${group.href}`);
   const moreOwnsActiveSection = Boolean(expertiseGroup && activeSection === expertiseGroup.label);
-  const moreSheetOpen = Boolean(sheet && (sheet === "more" || sheet === "contact" || sheet === "options" || sheet === "cv" || sheet === "recruiter" || sheet === `group:${expertiseGroup?.href}`));
-  const openSheet = (next) => setSheet((current) => current === next ? null : next);
-  const closeSheet = () => setSheet(null);
+  const moreSheetOpen = Boolean(shown && (sheet === "more" || sheet === "contact" || sheet === "options" || sheet === "cv" || sheet === "recruiter" || sheet === `group:${expertiseGroup?.href}`));
+  const closeSheet=()=>{setShown(false);setSheet(null)};
+  const openSheet=next=>sheet===next?closeSheet():(setShown(false),setSheet(next));
   const sheetDialogLabel = selectedGroup?.label
     || (sheet === "contact" ? t("nav.contact") : null)
     || (sheet === "options" ? optionsLabel : null)
@@ -567,17 +568,23 @@ function MobileBottomNavigation({
     </>
   );
 
-  useEffect(() => {
-    if (!sheet) return undefined;
-    const onKey = (event) => { if (event.key === "Escape") setSheet(null); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [sheet]);
+  useEffect(()=>{
+    if(!sheet)return;
+    const frame=requestAnimationFrame(()=>setShown(true));
+    return()=>cancelAnimationFrame(frame);
+  },[sheet]);
+
+  useEffect(()=>{
+    if(!sheet)return;
+    const onKey=e=>e.key==="Escape"&&closeSheet();
+    window.addEventListener("keydown",onKey);
+    return()=>window.removeEventListener("keydown",onKey);
+  },[sheet]);
 
   return (
     <div className="nav_mobile-dock-shell">
-      <button type="button" className={`nav_mobile-sheet-backdrop${sheet ? " is-open" : ""}`} aria-label="Fermer" tabIndex={sheet ? 0 : -1} onClick={closeSheet} />
-      <section className={`nav_mobile-dock-tools nav_mobile-command-sheet${sheet ? " is-open" : ""}`} role="dialog" aria-modal="true" aria-hidden={!sheet} inert={!sheet ? true : undefined} aria-label={sheetDialogLabel}>
+      <button type="button" className={`nav_mobile-sheet-backdrop${shown ? " is-open" : ""}`} aria-label="Fermer" tabIndex={shown ? 0 : -1} onClick={closeSheet} />
+      <section className={`nav_mobile-dock-tools nav_mobile-command-sheet${shown ? " is-open" : ""}`} role="dialog" aria-modal="true" aria-hidden={!shown} inert={!shown ? true : undefined} aria-label={sheetDialogLabel}>
         {selectedGroup ? <MobileGroupSheet group={selectedGroup} isHomePath={isHomePath} owner={owner} profile={profile} localizedPath={localizedPath} onClose={closeSheet} t={t} /> : null}
         {!sheet || sheet === "more" ? renderMore() : null}
         {sheet === "contact" ? renderContact() : null}

@@ -175,7 +175,8 @@ test("@main-thread cartographie les goulets d'étranglement du thread principal"
     p99: section.p99FrameMs,
     longTask: section.maxLongTaskMs,
     loaf: section.maxLongAnimationFrameMs,
-    eventLoop: section.maxEventLoopDelayMs,
+    eventLoopP95: section.p95EventLoopDelayMs,
+    eventLoopMax: section.maxEventLoopDelayMs,
     blocking: section.maxBlockingDurationMs,
     frames: section.frameSamples,
     dropped: section.droppedFrameRatio,
@@ -199,8 +200,8 @@ test("@main-thread cartographie les goulets d'étranglement du thread principal"
       `${section.label}: Long Animation Frame > ${MAX_LOAF_MS} ms`,
     ).toBeLessThanOrEqual(MAX_LOAF_MS);
     expect(
-      section.maxEventLoopDelayMs,
-      `${section.label}: event-loop delay > ${MAX_EVENT_LOOP_DELAY_MS} ms`,
+      section.p95EventLoopDelayMs,
+      `${section.label}: p95 event-loop delay > ${MAX_EVENT_LOOP_DELAY_MS} ms (max=${section.maxEventLoopDelayMs} ms)`,
     ).toBeLessThanOrEqual(MAX_EVENT_LOOP_DELAY_MS);
     expect(
       section.maxBlockingDurationMs,

@@ -8,6 +8,7 @@ import {
 
 assertRuntimeEnvironment();
 
+const isGitHubActions = process.env.GITHUB_ACTIONS === "true";
 const port = 4173;
 const workerPolicy = detectTestWorkerPolicy();
 assertTestWorkerEnvironment(workerPolicy);
@@ -35,7 +36,7 @@ export default defineConfig({
   expect: {
     timeout: process.env.CI ? 15_000 : 10_000,
   },
-  reporter: process.env.CI
+  reporter: isGitHubActions
     ? [["line"], ["html", { open: "never" }]]
     : [["list"], ["html", { open: "never" }]],
   outputDir: "test-results",

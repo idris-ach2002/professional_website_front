@@ -5,7 +5,6 @@ import OrganizationBrand from "./OrganizationBrand";
 import useLanguage from "../localization/useLanguage";
 import ExplorationDrone from "./ExplorationDrone";
 import TimelineDetailSheet from "./timeline/TimelineDetailSheet";
-import { PreviewableImage } from "./FilePreview";
 import { formatPeriod, slugify } from "../utils/portfolio";
 import useAnimationPreferences from "../contexts/useAnimationPreferences";
 import { clamp, progressForStep } from "../animations/timelineMotion";
@@ -134,8 +133,29 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
     let terminalExitTimer = 0;
     let pageVisible = !document.hidden;
     let travelDirection = "down";
-    let lastExitSentinelTop = null;
-    const observedCardTops = new Map();
+    let lastObservedScrollTop = (document.scrollingElement ?? document.documentElement).scrollTop;
+
+    const setTravelDirection = (nextDirection) => {
+      if (nextDirection !== "up" && nextDirection !== "down") return;
+      if (travelDirection === nextDirection && root.dataset.timelineDirection === nextDirection) return;
+      travelDirection = nextDirection;
+      root.dataset.timelineDirection = nextDirection;
+    };
+
+    const syncTravelDirectionFromScroll = (forcedDirection) => {
+      const scrollingElement = document.scrollingElement ?? document.documentElement;
+      const currentScrollTop = scrollingElement.scrollTop;
+
+      if (forcedDirection) {
+        lastObservedScrollTop = currentScrollTop;
+        setTravelDirection(forcedDirection);
+        return;
+      }
+
+      const delta = currentScrollTop - lastObservedScrollTop;
+      lastObservedScrollTop = currentScrollTop;
+      if (Math.abs(delta) >= 2) setTravelDirection(delta > 0 ? "down" : "up");
+    };
     let frame = 0;
     let lastTimestamp = 0;
     let metrics = null;
@@ -461,6 +481,8 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
 
         if (sceneInRange && !wasInRange) {
           const enteringUpward = (entry?.boundingClientRect?.top ?? 0) < 0;
+          syncTravelDirectionFromScroll(enteringUpward ? "up" : "down");
+
           exitZoneActive = false;
           terminalExitPending = false;
           window.clearTimeout(terminalExitTimer);
@@ -494,8 +516,7 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
           revealAllCards();
           root.dataset.timelineEntry = "none";
           visibleCards.clear();
-          observedCardTops.clear();
-          lastExitSentinelTop = null;
+          lastObservedScrollTop = (document.scrollingElement ?? document.documentElement).scrollTop;
           requestedTargetIndex = -1;
           clearInspection();
           if (explorationDrone) {
@@ -512,14 +533,7 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
     const exitObserver = exitSentinel ? new IntersectionObserver(
       ([entry]) => {
         const nextExitZone = Boolean(entry?.isIntersecting);
-        const sentinelTop = Number(entry?.boundingClientRect?.top);
-        if (Number.isFinite(sentinelTop)) {
-          if (Number.isFinite(lastExitSentinelTop) && Math.abs(sentinelTop - lastExitSentinelTop) >= 2) {
-            travelDirection = sentinelTop < lastExitSentinelTop ? "down" : "up";
-            root.dataset.timelineDirection = travelDirection;
-          }
-          lastExitSentinelTop = sentinelTop;
-        }
+        syncTravelDirectionFromScroll();
 
         if (travelDirection === "up") {
           if (sceneInRange && (nextExitZone || exitZoneActive || terminalExitPending)) {
@@ -598,16 +612,11 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
         entries.forEach((entry) => {
           const index = Number(entry.target.dataset.timelineCardIndex);
           const cardTop = Number(entry.boundingClientRect?.top);
-          const previousTop = observedCardTops.get(index);
+          syncTravelDirectionFromScroll();
+          if (travelDirection === "up" && (exitZoneActive || terminalExitPending)) {
+            rearmInspectionFromBelow();
+          }
           if (Number.isFinite(cardTop)) {
-            if (Number.isFinite(previousTop) && Math.abs(cardTop - previousTop) >= 2) {
-              travelDirection = cardTop < previousTop ? "down" : "up";
-              root.dataset.timelineDirection = travelDirection;
-              if (travelDirection === "up" && (exitZoneActive || terminalExitPending)) {
-                rearmInspectionFromBelow();
-              }
-            }
-            observedCardTops.set(index, cardTop);
             const scrollingElement = document.scrollingElement ?? document.documentElement;
             const cached = cachedCardGeometry[index];
             cached.documentTop = cardTop + scrollingElement.scrollTop;
@@ -816,10 +825,10 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
               })}
             </div>
             <div className="timeline-exit-sentinel" aria-hidden="true" />
-            <TimelineDetailSheet ref={detailSheetRef} />
           </div>
         </div>
       </div>
+      <TimelineDetailSheet ref={detailSheetRef} />
     </section>
   );
 }

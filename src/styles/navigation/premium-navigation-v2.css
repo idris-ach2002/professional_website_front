@@ -1284,4 +1284,6 @@
 .nav_mobile-dock-tools.nav_mobile-command-sheet{contain:layout style paint;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;transform:translateZ(0);backface-visibility:hidden;}
 }
 }
-@layer critical{@media(max-width:640px){.nav_fixed.nav_fixed--portfolio.is-mobile-dock-mode .nav_mobile-dock{contain:layout style paint;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}.nav_mobile-dock-more,.nav_mobile-dock-more .nav_mobile-dock-icon,.nav_mobile-dock-more .dropdown-link-icon-svg{transition:none!important}.nav_mobile-dock-more.is-active .nav_mobile-dock-icon{transform:none!important;box-shadow:none!important}.nav_mobile-dock-more .dropdown-link-icon-svg{pointer-events:none}}}
+@layer critical{@media(max-width:640px){.nav_fixed.nav_fixed--portfolio.is-mobile-dock-mode .nav_mobile-dock{contain:layout style paint;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}.nav_mobile-dock-more,.nav_mobile-dock-more .nav_mobile-dock-icon,.nav_mobile-dock-more .dropdown-link-icon-svg{transition:none!important}.nav_mobile-dock-more.is-active .nav_mobile-dock-icon{transform:none!important;box-shadow:none!important}.nav_mobile-dock-more .nav_mobile-dock-icon{pointer-events:none}}}
+
+

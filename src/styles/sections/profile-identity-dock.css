@@ -19,10 +19,10 @@
 .profile-ios-contact-row:active{transform:scale(.985);}
 .profile-ios-disclosure{display:grid;min-width:32px;min-height:32px;place-items:center;border-radius:50%;background:rgba(67,137,141,.07);}
 @keyframes profileAvailabilityPulse{0%,100%{opacity:.68;transform:scale(.84)}50%{opacity:1;transform:scale(1)}}
-@media(min-width:1241px){
-  .profile-identity-dock{gap:12px;}
-  .profile-identity-dock>.profile-ios-card{width:min(100%,400px);justify-self:end;}
-  .profile-identity-dock::before{left:calc(100% - min(100%,400px)/2);}
+@media (min-width: 1241px) {
+  .profile-identity-dock {width: min(100%, 400px); inline-size: min(100%, 400px); gap: 12px; justify-self: end; margin-inline-start: auto;}
+  .profile-identity-dock.profile-identity-dock > .profile-ios-card {width: 100%; inline-size: 100%; max-width: 100%; min-width: 0; justify-self: stretch;}
+  .profile-identity-dock::before {left: 50%;}
 }
 @media(max-width:1240px){
   .profile-identity-dock>.profile-ios-card{clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 15px),calc(100% - 15px) 100%,15px 100%,0 calc(100% - 15px),0 12px);}
