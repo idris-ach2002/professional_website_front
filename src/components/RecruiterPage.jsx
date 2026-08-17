@@ -31,6 +31,7 @@ import {
   getPrimaryContact,
 } from "../utils/portfolio";
 import "../styles/pages/recruiter-page.css";
+import "../styles/pages/recruiter-app-mode.css";
 
 async function copyCurrentUrl() {
   const url = window.location.href;
