@@ -577,7 +577,7 @@ function MobileBottomNavigation({
   return (
     <div className="nav_mobile-dock-shell">
       <button type="button" className={`nav_mobile-sheet-backdrop${sheet ? " is-open" : ""}`} aria-label="Fermer" tabIndex={sheet ? 0 : -1} onClick={closeSheet} />
-      <section className={`nav_mobile-dock-tools nav_mobile-command-sheet${sheet ? " is-open" : ""}`} role="dialog" aria-modal="true" aria-hidden={!sheet} aria-label={sheetDialogLabel}>
+      <section className={`nav_mobile-dock-tools nav_mobile-command-sheet${sheet ? " is-open" : ""}`} role="dialog" aria-modal="true" aria-hidden={!sheet} inert={!sheet ? true : undefined} aria-label={sheetDialogLabel}>
         {selectedGroup ? <MobileGroupSheet group={selectedGroup} isHomePath={isHomePath} owner={owner} profile={profile} localizedPath={localizedPath} onClose={closeSheet} t={t} /> : null}
         {!sheet || sheet === "more" ? renderMore() : null}
         {sheet === "contact" ? renderContact() : null}

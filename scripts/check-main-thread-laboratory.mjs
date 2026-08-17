@@ -67,11 +67,20 @@ if (spec.includes("toBeLessThanOrEqual(MAX_DROPPED_FRAME_RATIO)")) {
 }
 const portfolioSpec = read("e2e/portfolio.spec.js");
 const topNavigation = read("src/components/TopNavigation.jsx");
+const navigationCss = read("src/styles/navigation/premium-navigation-v2.css");
 requireText(portfolioSpec, "sampleStart: 0", "Vitals INP sampling must expose an explicit temporal boundary.");
+requireText(portfolioSpec, "let remaining = 4", "Vitals warm-up must drain several rendered frames before sampling INP.");
+requireText(portfolioSpec, "requestAnimationFrame(settleFrame)", "Vitals warm-up must use rendered frames rather than a fixed sleep before sampling INP.");
 requireText(portfolioSpec, "entry.startTime < (window.__portfolioPerformance.sampleStart ?? 0)", "Vitals INP sampling must reject late-delivered warm-up EventTiming entries.");
 requireText(portfolioSpec, "interactionDetails", "Vitals failures must expose input/processing/presentation timing diagnostics.");
 requireText(topNavigation, '!sheet || sheet === "more" ? renderMore() : null', "Mobile More sheet must remain warm-mounted so the measured click does not construct its DOM tree.");
 requireText(topNavigation, 'nav_mobile-command-sheet${sheet ? " is-open" : ""}', "Mobile command sheet must toggle visibility without remounting the shell.");
+requireText(navigationCss, "mobile-sheet INP precomposition guard", "Mobile sheet precomposition guard marker missing.");
+requireText(topNavigation, "inert={!sheet ? true : undefined}", "Closed mobile command sheet must remain mounted but inert.");
+requireText(navigationCss, ".nav_mobile-dock-tools.nav_mobile-command-sheet{opacity:0;visibility:visible;pointer-events:none;animation:none!important", "Mobile command sheet must stay paintable/precomposed while closed.");
+requireText(navigationCss, "transition:opacity .08s linear,transform .08s cubic-bezier(.16,1,.3,1)", "Mobile command sheet compositor motion must stay below the INP presentation budget.");
+requireText(navigationCss, ".nav_mobile-sheet-backdrop{backdrop-filter:none!important;-webkit-backdrop-filter:none!important", "Full-viewport mobile backdrop blur must stay disabled on the measured INP path.");
+requireText(navigationCss, ".nav_mobile-dock-tools.nav_mobile-command-sheet{contain:layout style paint;backdrop-filter:none!important;-webkit-backdrop-filter:none!important", "Mobile sheet must stay paint-contained and avoid first-open backdrop rasterization.");
 
 requireText(spec, "toBeLessThanOrEqual(MAX_BLOCKING_DURATION_MS)", "Blocking-duration safety gate missing.");
 
@@ -81,7 +90,7 @@ requireText(mainThreadScript, "--project=chromium", "Main-thread lab must run in
 requireText(mainThreadScript, "--workers=1", "Main-thread lab CLI must agree on one worker.");
 requireText(packageJson.scripts?.["check:main-thread"] ?? "", "check-main-thread-laboratory.mjs", "Missing check:main-thread contract.");
 requireText(packageJson.scripts?.["check:final"] ?? "", "check:main-thread", "Final static hardening must include the main-thread laboratory contract.");
-requireText(packageJson.scripts?.["ci:release"] ?? "", "test:e2e:main-thread", "Release gate must execute the main-thread laboratory.");
+requireText(packageJson.scripts?.["ci:full:chain"] ?? "", "ci:main-thread", "The complete blocking chain must execute the main-thread laboratory before release.");
 
 for (const fragment of [
   "main-thread:",

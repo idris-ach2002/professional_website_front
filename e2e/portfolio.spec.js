@@ -275,6 +275,18 @@ test("@vitals respecte les budgets Web Vitals sur mobile", async ({ page, browse
   await expect(navigationButton).toHaveAttribute("aria-expanded", "true");
   await navigationButton.click();
   await expect(navigationButton).toHaveAttribute("aria-expanded", "false");
+  // EventTiming timestamps isolate late observer delivery, but they do not drain
+  // presentation work already queued by the warm-up. Give the precomposed dock
+  // one full motion window plus two frames before starting the measured sample.
+  await page.evaluate(() => new Promise((resolve) => {
+    let remaining = 4;
+    const settleFrame = () => {
+      remaining -= 1;
+      if (remaining <= 0) resolve();
+      else requestAnimationFrame(settleFrame);
+    };
+    requestAnimationFrame(settleFrame);
+  }));
   // Start a real isolated sample. PerformanceObserver delivery is asynchronous:
   // warm-up EventTiming entries can arrive after the reset unless we reject entries
   // whose startTime predates this boundary.
