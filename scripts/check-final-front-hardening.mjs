@@ -121,8 +121,17 @@ if (!finalScript.startsWith("npm run check:initial-source && node scripts/check-
 for (const required of ["npm run check:main-thread", "npm run check:transparent-performance"]) {
   if (!finalScript.includes(required)) errors.push(`check:final missing ${required}`);
 }
-if (pkg.scripts?.["ci:release"] !== "npm run ci:full && npm run test:e2e:main-thread && npm run ci:soak") {
-  errors.push("ci:release must run exactly one ci:full, one isolated main-thread lab, then one ci:soak");
+if (pkg.scripts?.["ci:full"] !== "CI=1 npm run ci:full:chain") {
+  errors.push("ci:full must enforce GitHub-like CI semantics for local full verification");
+}
+if (!pkg.scripts?.["ci:full:chain"]?.includes("npm run ci:main-thread")) {
+  errors.push("ci:full:chain must include the isolated Main Thread Laboratory so local full and GitHub blocking gates stay identical");
+}
+if (!pkg.scripts?.["ci:full:chain"]?.includes("npm run ci:transparent-performance")) {
+  errors.push("ci:full:chain must include the transparent-performance browser contract");
+}
+if (pkg.scripts?.["ci:release"] !== "npm run ci:full && npm run ci:soak") {
+  errors.push("ci:release must run exactly one complete blocking ci:full, then the manual-style endurance soak");
 }
 if (!pkg.scripts?.build?.includes("npm run check:final")) errors.push("build must enforce check:final before Vite");
 if (!pkg.scripts?.["ci:preflight"]?.includes("npm run check:final")) errors.push("ci:preflight must enforce check:final");

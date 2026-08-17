@@ -45,11 +45,11 @@ if (authoritative) {
   }
 
   const jobs = authoritative.jobs ?? {};
-  for (const required of ["quality", "browser-contracts", "responsive", "concurrency-contract", "vitals", "main-thread", "verify", "soak", "deploy"]) {
+  for (const required of ["quality", "browser-contracts", "responsive", "concurrency-contract", "vitals", "main-thread", "transparent-performance", "verify", "soak", "deploy"]) {
     if (!jobs[required]) errors.push(`frontend-ci.yml: job requis manquant: ${required}.`);
   }
 
-  for (const jobName of ["browser-contracts", "responsive", "concurrency-contract", "vitals", "main-thread", "soak"]) {
+  for (const jobName of ["browser-contracts", "responsive", "concurrency-contract", "vitals", "main-thread", "transparent-performance", "soak"]) {
     const env = jobs[jobName]?.env ?? {};
     if (env.PLAYWRIGHT_PREBUILT !== "1") errors.push(`${jobName}: PLAYWRIGHT_PREBUILT=1 requis.`);
     if (env.E2E_ARTIFACT_REQUIRE_PREBUILT !== "1") errors.push(`${jobName}: E2E_ARTIFACT_REQUIRE_PREBUILT=1 requis.`);
@@ -78,15 +78,30 @@ if (authoritative) {
   if (mainThreadEnv.PLAYWRIGHT_WORKERS !== "1") {
     errors.push(`main-thread: PLAYWRIGHT_WORKERS=1 requis; reçu ${String(mainThreadEnv.PLAYWRIGHT_WORKERS)}.`);
   }
-  const mainThreadSteps = jobs["main-thread"]?.steps ?? [];
-  if (!mainThreadSteps.some((step) => step?.run === "npm run test:e2e:main-thread")) {
-    errors.push("main-thread: la gate GitHub doit exécuter test:e2e:main-thread.");
+  const expectedGateScripts = {
+    "browser-contracts": "npm run ci:browser-contracts",
+    responsive: "npm run ci:responsive",
+    "concurrency-contract": "npm run ci:concurrency:hosted",
+    vitals: "npm run ci:vitals",
+    "main-thread": "npm run ci:main-thread",
+    "transparent-performance": "npm run ci:transparent-performance",
+  };
+  for (const [jobName, command] of Object.entries(expectedGateScripts)) {
+    const steps = jobs[jobName]?.steps ?? [];
+    if (!steps.some((step) => step?.run === command)) {
+      errors.push(`${jobName}: la gate GitHub doit exécuter exactement ${command}.`);
+    }
+  }
+
+  const transparentEnv = jobs["transparent-performance"]?.env ?? {};
+  if (transparentEnv.PLAYWRIGHT_WORKERS !== "1") {
+    errors.push(`transparent-performance: PLAYWRIGHT_WORKERS=1 requis; reçu ${String(transparentEnv.PLAYWRIGHT_WORKERS)}.`);
   }
 
   const verifyNeeds = jobs.verify?.needs;
   const verifyNeedsList = Array.isArray(verifyNeeds) ? verifyNeeds : [verifyNeeds].filter(Boolean);
-  if (!verifyNeedsList.includes("main-thread")) {
-    errors.push(`verify: doit dépendre du Main Thread Laboratory; reçu ${JSON.stringify(verifyNeeds)}.`);
+  for (const requiredNeed of ["browser-contracts", "responsive", "concurrency-contract", "vitals", "main-thread", "transparent-performance"]) {
+    if (!verifyNeedsList.includes(requiredNeed)) errors.push(`verify: doit dépendre de ${requiredNeed}; reçu ${JSON.stringify(verifyNeeds)}.`);
   }
 
   const soakEnv = jobs.soak?.env ?? {};

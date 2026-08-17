@@ -116,6 +116,7 @@ for (const viewport of VIEWPORTS) {
       await expect(page.locator(".profile-photo-widget")).toHaveCount(1);
       await expect(page.locator(".profile-availability-widget")).toHaveCount(1);
       await expect(page.locator(".profile-contacts-widget")).toHaveCount(1);
+      await expect(page.locator('.profile-identity-dock[data-profile-module="identity-dock"]')).toHaveCount(1);
 
       const profileGeometry = await page.evaluate(() => {
         const root = document.querySelector(".profile-ios-ocean");
@@ -214,8 +215,10 @@ for (const viewport of VIEWPORTS) {
 
       const firstTimelineCard = page.locator("#timeline .timeline-expedition-card").first();
       await firstTimelineCard.scrollIntoViewIfNeeded();
+      await expect(firstTimelineCard).toHaveAttribute("data-mission-shape", "pressure-hull");
       await expect(firstTimelineCard.locator(".timeline-compact-open")).toHaveCount(0);
       await expect(firstTimelineCard.locator("canvas")).toHaveCount(0);
+      await expect(firstTimelineCard.getByRole("button", { name: "Détails", exact: true })).toBeVisible();
       if (viewport.width <= 1240) {
         const timelineGeometry = await page.evaluate(() => {
           const card = document.querySelector("#timeline .timeline-expedition-card");
@@ -239,6 +242,17 @@ for (const viewport of VIEWPORTS) {
       }
 
       if (viewport.width <= 430) {
+        const missionDetails = firstTimelineCard.getByRole("button", { name: "Détails", exact: true });
+        await missionDetails.click();
+        const missionDialog = page.getByRole("dialog", { name: /Mission/i });
+        await expect(missionDialog).toBeVisible();
+        const missionBox = await missionDialog.boundingBox();
+        expect(missionBox).not.toBeNull();
+        expect(missionBox.x).toBeGreaterThanOrEqual(-1);
+        expect(missionBox.x + missionBox.width).toBeLessThanOrEqual(viewport.width + 1);
+        await missionDialog.getByRole("button", { name: "Fermer le détail de la mission" }).click();
+        await expect(missionDialog).not.toBeVisible();
+
         const actions = page.locator(
           ".hero-actions .mantine-Button-root:visible",
         );
@@ -315,3 +329,23 @@ for (const viewport of VIEWPORTS) {
     },
   );
 }
+
+
+test("@responsive recruteur 390x844 conserve une composition app tactile", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/recruiter", { waitUntil: "domcontentloaded" });
+  await expect(page.locator(".recruiter-page-shell")).toBeVisible();
+  await expect(page.locator(".recruiter-hero-v2")).toBeVisible();
+  await expect(page.locator(".recruiter-hero-v2__identity")).toBeVisible();
+  await expect(page.locator(".recruiter-experience-secondary .recruiter-experience-row").first()).toBeVisible();
+  const actions = page.locator(".recruiter-hero-v2__actions .mantine-Button-root:visible");
+  const count = await actions.count();
+  expect(count).toBeGreaterThan(0);
+  for (let index = 0; index < count; index += 1) {
+    const box = await actions.nth(index).boundingBox();
+    expect(box).not.toBeNull();
+    expect(box.height).toBeGreaterThanOrEqual(44);
+  }
+  await expectNoHorizontalOverflow(page, "recruiter 390x844");
+});

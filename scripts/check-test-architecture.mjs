@@ -67,7 +67,9 @@ const requiredScripts = [
   "ci:preflight",
   "test:e2e:functional",
   "test:e2e:browser:ci",
+  "ci:browser-contracts",
   "test:e2e:responsive",
+  "ci:responsive",
   "test:e2e:stability",
   "test:e2e:stability:ci",
   "test:e2e:stability:repeat",
@@ -76,8 +78,12 @@ const requiredScripts = [
   "test:e2e:concurrency:smoke",
   "ci:concurrency:hosted",
   "test:e2e:vitals",
+  "ci:vitals",
   "test:e2e:soak",
   "test:e2e:main-thread",
+  "ci:main-thread",
+  "test:e2e:transparent-performance",
+  "ci:transparent-performance",
   "test:e2e:soak:ci",
   "test:workers",
   "check:main-thread",
@@ -92,6 +98,7 @@ const requiredScripts = [
   "ci:concurrency",
   "ci:soak",
   "ci:full",
+  "ci:full:chain",
 ];
 for (const script of requiredScripts) {
   if (!packageJson.scripts?.[script]) errors.push(`Missing npm script ${script}.`);
@@ -105,13 +112,27 @@ requireText(packageJson.scripts?.["ci:preflight"] ?? "", "check:test-architectur
 requireText(packageJson.scripts?.["ci:preflight"] ?? "", "test:workers", "ci:preflight must validate worker policy.");
 requireText(packageJson.scripts?.["ci:quality"] ?? "", "ci:preflight", "ci:quality must run the common preflight contract.");
 requireText(packageJson.scripts?.["ci:quality"] ?? "", "e2e:artifact:build", "ci:quality must build and stamp one hermetic E2E artifact.");
+requireText(packageJson.scripts?.["ci:quality"] ?? "", "test:leaks", "ci:quality must execute the async-leak detector before coverage/build.");
 requireText(packageJson.scripts?.["ci:concurrency"] ?? "", "PLAYWRIGHT_WORKERS=4 PLAYWRIGHT_STRESS=1 npm run ci:preflight", "Local intensive concurrency must validate its four-worker hardware precondition before launching browsers.");
 requireText(packageJson.scripts?.["ci:concurrency"] ?? "", "ci:preflight", "Standalone concurrency must run the common preflight contract.");
 requireText(packageJson.scripts?.["ci:soak"] ?? "", "ci:preflight", "Standalone soak must run the common preflight contract.");
 requireText(packageJson.scripts?.["ci:verify"] ?? "", "PLAYWRIGHT_WORKER_CAP=2", "Local ci:verify must use the same hardware-aware worker cap as hosted normal gates.");
 requireText(packageJson.scripts?.["ci:verify"] ?? "", "PLAYWRIGHT_PREBUILT=1", "ci:verify must reuse the artifact produced by ci:quality.");
 requireText(packageJson.scripts?.["ci:freeze"] ?? "", "test:e2e:concurrency:smoke", "ci:freeze must include a bounded hosted-runner-safe concurrency smoke gate.");
-forbidText(packageJson.scripts?.["ci:full"] ?? "", "soak", "ci:full must contain only reliable blocking gates; endurance remains an explicit standalone experiment.");
+if (packageJson.scripts?.["ci:full"] !== "CI=1 npm run ci:full:chain") {
+  errors.push("ci:full must force CI semantics locally and delegate to the single blocking chain.");
+}
+forbidText(packageJson.scripts?.["ci:full:chain"] ?? "", "soak", "ci:full must contain only reliable blocking gates; endurance remains an explicit standalone experiment.");
+for (const gate of ["ci:quality", "ci:browser-contracts", "ci:responsive", "ci:concurrency:hosted", "ci:vitals", "ci:main-thread", "ci:transparent-performance"]) {
+  requireText(packageJson.scripts?.["ci:full:chain"] ?? "", `npm run ${gate}`, `ci:full:chain must mirror the blocking GitHub chain and include ${gate}.`);
+}
+for (const gate of ["ci:browser-contracts", "ci:responsive", "ci:vitals", "ci:main-thread", "ci:transparent-performance"]) {
+  requireText(packageJson.scripts?.[gate] ?? "", "PLAYWRIGHT_PREBUILT=1", `${gate} must reuse the hermetic artifact built by ci:quality.`);
+  requireText(packageJson.scripts?.[gate] ?? "", "E2E_ARTIFACT_REQUIRE_PREBUILT=1", `${gate} must reject stale/missing hermetic artifacts.`);
+}
+requireText(packageJson.scripts?.["ci:browser-contracts"] ?? "", "PLAYWRIGHT_WORKER_CAP=2", "ci:browser-contracts must match the hosted browser worker policy.");
+requireText(packageJson.scripts?.["ci:responsive"] ?? "", "PLAYWRIGHT_WORKER_CAP=2", "ci:responsive must match the hosted responsive worker policy.");
+for (const gate of ["ci:vitals", "ci:main-thread", "ci:transparent-performance"]) requireText(packageJson.scripts?.[gate] ?? "", "PLAYWRIGHT_WORKERS=1", `${gate} must stay isolated to one worker.`);
 requireText(packageJson.scripts?.["test:e2e:concurrency"] ?? "", "PLAYWRIGHT_WORKERS=4", "Concurrency gate must force four workers.");
 requireText(packageJson.scripts?.["test:e2e:concurrency"] ?? "", "--project=chromium", "Concurrency gate must isolate scheduling pressure to Chromium.");
 requireText(packageJson.scripts?.["test:e2e:concurrency"] ?? "", "--repeat-each=5", "Concurrency gate must repeat each stability scenario five times.");
@@ -123,6 +144,8 @@ requireText(packageJson.scripts?.["test:e2e:concurrency:ci"] ?? "", "--repeat-ea
 requireText(packageJson.scripts?.["ci:concurrency:hosted"] ?? "", "PLAYWRIGHT_WORKERS=2 PLAYWRIGHT_STRESS=1 npm run ci:preflight", "Hosted concurrency must validate its two-worker hardware precondition before launching browsers.");
 requireText(packageJson.scripts?.["ci:concurrency:hosted"] ?? "", "ci:preflight", "Hosted concurrency must rerun environment/architecture preconditions on its fresh VM.");
 requireText(packageJson.scripts?.["ci:concurrency:hosted"] ?? "", "test:e2e:concurrency:ci", "Hosted concurrency must execute the two-worker hosted stress suite.");
+requireText(packageJson.scripts?.["ci:concurrency:hosted"] ?? "", "PLAYWRIGHT_PREBUILT=1", "Hosted concurrency must reuse the same hermetic artifact locally and on GitHub.");
+requireText(packageJson.scripts?.["ci:concurrency:hosted"] ?? "", "E2E_ARTIFACT_REQUIRE_PREBUILT=1", "Hosted concurrency must reject a stale/missing prebuilt artifact.");
 requireText(packageJson.scripts?.["test:e2e:concurrency:smoke"] ?? "", "PLAYWRIGHT_WORKERS=2", "Local freeze concurrency smoke must remain portable to the 2-vCPU hosted-runner floor.");
 requireText(packageJson.scripts?.["test:e2e:concurrency:smoke"] ?? "", "--repeat-each=2", "Local freeze concurrency smoke must stay bounded to two repetitions.");
 requireText(packageJson.scripts?.["test:e2e:browser:ci"] ?? "", "PLAYWRIGHT_WORKER_CAP=2", "Cross-browser CI contracts must use the hardware-aware two-worker cap.");
@@ -131,9 +154,12 @@ requireText(packageJson.scripts?.["test:e2e:soak:ci"] ?? "", "PLAYWRIGHT_WORKERS
 requireText(packageJson.scripts?.["test:e2e:soak:ci"] ?? "", "--workers=1", "Soak must remain a single-browser single-worker endurance test.");
 requireText(packageJson.scripts?.["test:e2e:vitals"] ?? "", "PLAYWRIGHT_WORKERS=1", "Web Vitals config and CLI must agree on one worker.");
 requireText(packageJson.scripts?.["test:e2e:vitals"] ?? "", "--workers=1", "Web Vitals must remain isolated on one worker.");
+requireText(packageJson.scripts?.["test:e2e:vitals"] ?? "", "--repeat-each=5", "Web Vitals INP gate must pass five isolated repetitions, not a single favorable run.");
 requireText(packageJson.scripts?.["test:e2e:main-thread"] ?? "", "PLAYWRIGHT_WORKERS=1", "Main Thread Laboratory must remain isolated on one worker.");
 requireText(packageJson.scripts?.["test:e2e:main-thread"] ?? "", "--workers=1", "Main Thread Laboratory CLI must remain isolated on one worker.");
 requireText(packageJson.scripts?.["test:e2e:main-thread"] ?? "", "--project=chromium", "Main Thread Laboratory requires Chromium PerformanceObserver coverage.");
+requireText(packageJson.scripts?.["test:e2e:transparent-performance"] ?? "", "PLAYWRIGHT_WORKERS=1", "Transparent performance must remain isolated on one worker.");
+requireText(packageJson.scripts?.["test:e2e:transparent-performance"] ?? "", "--project=chromium", "Transparent performance requires Chromium instrumentation.");
 requireText(packageJson.scripts?.["test:e2e:responsive"] ?? "", "--project=chromium", "Responsive matrix must run once in Chromium instead of duplicating layout checks cross-browser.");
 
 for (const threshold of ["statements: 82", "branches: 70", "functions: 85", "lines: 84"]) {
@@ -372,9 +398,16 @@ for (const contract of [
   "Responsive matrix",
   "Hosted concurrency contract",
   "Web Vitals",
+  "Main Thread Laboratory",
+  "Transparent performance contract",
   "Runtime soak",
   "Deploy Cloudflare",
+  "npm run ci:browser-contracts",
+  "npm run ci:responsive",
   "npm run ci:concurrency:hosted",
+  "npm run ci:vitals",
+  "npm run ci:main-thread",
+  "npm run ci:transparent-performance",
   "npm run ci:soak",
   "PLAYWRIGHT_PREBUILT: \"1\"",
   "E2E_ARTIFACT_REQUIRE_PREBUILT: \"1\"",

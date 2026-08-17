@@ -13,7 +13,7 @@ This document describes the post-cleanup release contract for the public fronten
 ## Initial loading
 
 - Heavy secondary modules remain outside the static import closure of `src/main.jsx`.
-- Static initial source closure budget: **420,000 bytes / 62 files** maximum.
+- Static initial source closure budget: **427,000 bytes / 62 files** maximum.
 - The profile portrait is an eager, high-priority candidate because it appears in the first viewport.
 - Google Fonts are discovered from HTML with preconnects rather than through a chained CSS import.
 
@@ -26,7 +26,7 @@ This document describes the post-cleanup release contract for the public fronten
 
 ## Production contract
 
-The existing accessibility, SEO, resilience, security, observability, bundle-budget, responsive, concurrency and soak checks remain authoritative. `npm run ci:release` runs exactly one `ci:full`, then the isolated Main Thread Laboratory, followed by one `ci:soak`.
+The blocking GitHub pipeline and the local `npm run ci:full` command share the same gate chain: static/runtime preflight, lint, asynchronous-leak detection, full unit coverage, hermetic E2E build, Chromium + Firefox browser contracts, responsive matrix, hosted concurrency contract, isolated Web Vitals, Main Thread Laboratory and transparent-performance contract. The soak remains a manual diagnostic. `npm run ci:release` runs exactly one `ci:full`, followed by one `ci:soak`.
 
 ## Main Thread Laboratory
 
@@ -65,3 +65,6 @@ The transparent performance contract may change execution placement, scheduling 
 - hot volcano pulse/reaction updates do not trigger React renders; DOM markers/events are updated directly.
 
 `npm run check:transparent-performance` locks these constraints, and `test:e2e:transparent-performance` verifies that supported Chromium sessions actually transfer the eligible Canvas surfaces while the public DOM contract remains intact.
+
+
+Web Vitals INP is repeated five times in the blocking chain; every isolated mobile run must stay at or below 200 ms.

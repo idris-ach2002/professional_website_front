@@ -19,6 +19,7 @@ npm run test:coverage
 npm run test:e2e
 npm run ci:quality
 npm run ci:verify
+npm run ci:full
 ```
 
 ## Stabilité navigateur et concurrence
@@ -32,12 +33,14 @@ responsive        → Chromium, 9 viewports
 stability         → Chromium + Firefox, scénarios sans retry
 concurrency local → Chromium, 4 workers, repeat-each=5
 concurrency CI    → Chromium, 2 workers, repeat-each=5
+Web Vitals INP   → Chromium, 1 worker, repeat-each=5
 vitals            → Chromium, 1 worker
+main-thread       → Chromium, 1 worker
+transparent perf  → Chromium, 1 worker
 soak manuel       → Chromium, 1 worker
 ```
 
-`ci:freeze` constitue la gate courte de référence. Le soak reste un diagnostic
-d’endurance volontaire : il ne bloque ni `ci:full` ni le déploiement GitHub.
+`ci:freeze` reste une gate locale courte de compatibilité. `ci:full` force aussi `CI=1` localement puis reproduit en séquence les gates bloquantes du workflow GitHub : qualité (préflight + lint + détection de fuites async + couverture + build hermétique), contrats Chromium/Firefox, responsive, concurrence hébergée, Web Vitals, Main Thread Laboratory et performance transparente. Le soak reste un diagnostic d’endurance volontaire : il ne bloque ni `ci:full` ni le déploiement GitHub.
 
 ```bash
 npm run ci:freeze

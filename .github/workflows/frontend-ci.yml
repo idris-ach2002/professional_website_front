@@ -32,7 +32,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint, worker policy, unit tests, coverage and build
+      - name: Lint, worker policy, leak detection, unit tests, coverage and build
         run: npm run ci:quality
 
       - name: Upload hermetic E2E build
@@ -85,7 +85,7 @@ jobs:
           path: dist
 
       - name: Run functional and stability browser contracts
-        run: npm run test:e2e:browser:ci
+        run: npm run ci:browser-contracts
 
       - name: Upload browser contract report
         if: always()
@@ -130,7 +130,7 @@ jobs:
           path: dist
 
       - name: Run responsive matrix
-        run: npm run test:e2e:responsive
+        run: npm run ci:responsive
 
       - name: Upload responsive report
         if: always()
@@ -221,7 +221,7 @@ jobs:
           path: dist
 
       - name: Run isolated Web Vitals
-        run: npm run test:e2e:vitals
+        run: npm run ci:vitals
 
       - name: Upload Web Vitals report
         if: always()
@@ -267,7 +267,7 @@ jobs:
           path: dist
 
       - name: Run Main Thread Laboratory
-        run: npm run test:e2e:main-thread
+        run: npm run ci:main-thread
 
       - name: Upload main-thread report
         if: always()
@@ -280,13 +280,58 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  transparent-performance:
+    name: Transparent performance contract
+    needs: quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      PLAYWRIGHT_PREBUILT: "1"
+      E2E_ARTIFACT_REQUIRE_PREBUILT: "1"
+      PLAYWRIGHT_WORKERS: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Download hermetic E2E build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-e2e-dist
+          path: dist
+
+      - name: Run transparent performance contract
+        run: npm run ci:transparent-performance
+
+      - name: Upload transparent performance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-transparent-performance-report
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
   verify:
     name: Frontend freeze gate
-    needs: [browser-contracts, responsive, concurrency-contract, vitals, main-thread]
+    needs: [browser-contracts, responsive, concurrency-contract, vitals, main-thread, transparent-performance]
     runs-on: ubuntu-24.04
     steps:
       - name: Confirm all gates
-        run: echo "Quality, browser, responsive, concurrency and Web Vitals contracts passed."
+        run: echo "Quality, browser, responsive, concurrency, Web Vitals, main-thread and transparent-performance contracts passed."
 
   soak:
     name: Runtime soak (manual diagnostic)
