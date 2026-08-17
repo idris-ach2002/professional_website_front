@@ -459,11 +459,10 @@ function MobileBottomNavigation({
   linkedinHref,
   recruiterHref,
   cvHref,
-  sheet,
-  setSheet,
   isVisible,
   t,
 }) {
+  const [sheet, setSheet] = useState(null);
   const moreLabel = language === "en" ? "More" : "Plus";
   const optionsLabel = language === "en" ? "Options" : "Options";
   const primaryHrefs = new Set(["#profile", "#timeline", "#projects", "/engineering"]);
@@ -568,19 +567,24 @@ function MobileBottomNavigation({
     </>
   );
 
+  useEffect(() => {
+    if (!sheet) return undefined;
+    const onKey = (event) => { if (event.key === "Escape") setSheet(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sheet]);
+
   return (
     <div className="nav_mobile-dock-shell">
-      {sheet ? <button type="button" className="nav_mobile-sheet-backdrop" aria-label="Fermer" onClick={closeSheet} /> : null}
-      {sheet ? (
-        <section className="nav_mobile-dock-tools nav_mobile-command-sheet" role="dialog" aria-modal="true" aria-label={sheetDialogLabel}>
-          {selectedGroup ? <MobileGroupSheet group={selectedGroup} isHomePath={isHomePath} owner={owner} profile={profile} localizedPath={localizedPath} onClose={closeSheet} t={t} /> : null}
-          {sheet === "more" ? renderMore() : null}
-          {sheet === "contact" ? renderContact() : null}
-          {sheet === "options" ? renderOptions() : null}
-          {sheet === "cv" ? renderCv() : null}
-          {sheet === "recruiter" ? renderRecruiter() : null}
-        </section>
-      ) : null}
+      <button type="button" className={`nav_mobile-sheet-backdrop${sheet ? " is-open" : ""}`} aria-label="Fermer" tabIndex={sheet ? 0 : -1} onClick={closeSheet} />
+      <section className={`nav_mobile-dock-tools nav_mobile-command-sheet${sheet ? " is-open" : ""}`} role="dialog" aria-modal="true" aria-hidden={!sheet} aria-label={sheetDialogLabel}>
+        {selectedGroup ? <MobileGroupSheet group={selectedGroup} isHomePath={isHomePath} owner={owner} profile={profile} localizedPath={localizedPath} onClose={closeSheet} t={t} /> : null}
+        {!sheet || sheet === "more" ? renderMore() : null}
+        {sheet === "contact" ? renderContact() : null}
+        {sheet === "options" ? renderOptions() : null}
+        {sheet === "cv" ? renderCv() : null}
+        {sheet === "recruiter" ? renderRecruiter() : null}
+      </section>
 
       <nav className="nav_mobile-dock" aria-label={t("nav.mainLabel")}>
         {primaryGroups.map((group) => {
@@ -620,7 +624,6 @@ export default function TopNavigation({ owner }) {
   const { language, localizedPath, setLanguage, t } = useLanguage();
   const location = useLocation();
   const [active, setActive] = useState(null);
-  const [mobileSheet, setMobileSheet] = useState(null);
   const [observedSection, setObservedSection] = useState(null);
   const desktopMenuRef = useRef(null);
   const desktopShellRef = useRef(null);
@@ -669,17 +672,6 @@ export default function TopNavigation({ owner }) {
   }, [groups, isHomePath]);
 
 
-  useEffect(() => {
-    if (!mobileDockNavigation || !mobileSheet) return undefined;
-    const previousOverflow = document.body.style.overflow;
-    const closeOnEscape = (event) => { if (event.key === "Escape") setMobileSheet(null); };
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", closeOnEscape);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", closeOnEscape);
-    };
-  }, [mobileDockNavigation, mobileSheet]);
 
   return (
     <div className={`nav_fixed nav_fixed--portfolio${mobileDockNavigation ? " is-mobile-dock-mode" : ""}`}>
@@ -739,8 +731,6 @@ export default function TopNavigation({ owner }) {
           linkedinHref={linkedinHref}
           recruiterHref={recruiterHref}
           cvHref={cvHref}
-          sheet={mobileSheet}
-          setSheet={setMobileSheet}
           isVisible={isVisible}
           t={t}
         />
