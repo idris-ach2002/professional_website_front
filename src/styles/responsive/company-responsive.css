@@ -87,6 +87,6 @@ html{scroll-padding-top:var(--nav-clearance);}
 .project-detail-modal-inner, .file-preview-pdf-frame-shell{max-block-size:calc(var(--visual-viewport-height) - 16px);}}
 @media (hover: none) and (pointer: coarse){:where(.project-link, .gallery-nav, .contact-pill, .dropdown-link, .proven-skill-button):hover{transform:none;}}
 @media (prefers-reduced-transparency: reduce){.nav_fixed.nav_fixed--portfolio .nav_container-v2, .island-card, .project-toolbar, .status-banner, .owner-select{backdrop-filter:none;-webkit-backdrop-filter:none;}}
-@media print{.nav_fixed.nav_fixed--portfolio, .global-aquarium, .ocean-background, .gallery-nav, .animation-preferences-control{display:none;}
+@media print{.nav_fixed.nav_fixed--portfolio, .global-aquarium, .ocean-background, .global-ocean-depth-overlay, .gallery-nav, .animation-preferences-control{display:none;}
 .content-shell{inline-size:100%;padding:0;}}
 }

@@ -449,10 +449,12 @@ export default function GlobalAquarium({
 
     const commitBiome = (nextBiome) => {
       if (!nextBiome || activeWorldDirectorOwner !== directorOwner) return;
-      // Reassert the observable decision even when the logical biome is
-      // unchanged. A React effect cleanup must never be able to leave the
-      // document without its current world marker.
-      document.documentElement.dataset.oceanBiome = nextBiome;
+      // Keep the marker observable without mutating <html> when the value is
+      // already correct. No-op dataset writes still trigger document-wide
+      // selector invalidation on a large portfolio DOM.
+      if (document.documentElement.dataset.oceanBiome !== nextBiome) {
+        document.documentElement.dataset.oceanBiome = nextBiome;
+      }
       if (nextBiome === biomeRef.current) return;
       biomeRef.current = nextBiome;
       setBiome(nextBiome);

@@ -19,6 +19,7 @@ export default function OceanMorphBackground({
   runtimeQuality = "high",
 }) {
   const rootRef = useRef(null);
+  const depthOverlayRef = useRef(null);
   const balancedMode = performanceMode === "balanced";
   const runtimeBalanced = runtimeQuality === "balanced";
   const runtimeConstrained = runtimeQuality === "constrained";
@@ -33,15 +34,14 @@ export default function OceanMorphBackground({
 
   useGsap(rootRef, (gsap) => {
     const root = rootRef.current;
-    if (!root) return undefined;
+    const depthOverlay = depthOverlayRef.current;
+    if (!root || !depthOverlay) return undefined;
 
     const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     gsap.set(root, { autoAlpha: 1, "--ocean-depth": 0, "--surface-opacity": 1 });
-    document.documentElement.style.setProperty("--global-ocean-depth", "0");
+    depthOverlay.style.opacity = "0.48";
 
-    if (staticMode) {
-      return () => document.documentElement.style.removeProperty("--global-ocean-depth");
-    }
+    if (staticMode) return undefined;
 
     const glows = root.querySelectorAll(".ocean-glow");
     const particles = root.querySelectorAll(".ocean-depth-particle");
@@ -92,7 +92,9 @@ export default function OceanMorphBackground({
 
       if (force || now - lastGlobalPublish >= minGlobalInterval || depth === 0 || depth === 1) {
         lastGlobalPublish = now;
-        document.documentElement.style.setProperty("--global-ocean-depth", String(depth));
+        // Keep the global depth veil compositor-local. Publishing an inherited
+        // custom property on <html> invalidated style across the whole portfolio.
+        depthOverlay.style.opacity = String(0.48 - depth * 0.34);
       }
     };
 
@@ -146,7 +148,6 @@ export default function OceanMorphBackground({
       window.visualViewport?.removeEventListener("resize", scheduleRangeRefresh);
       window.cancelAnimationFrame(depthFrame);
       window.cancelAnimationFrame(rangeFrame);
-      document.documentElement.style.removeProperty("--global-ocean-depth");
     };
   }, [staticMode, depthOnly, performanceMode, runtimeQuality], {
     allowOnMobile: depthOnly,
@@ -155,11 +156,13 @@ export default function OceanMorphBackground({
   });
 
   return (
-    <div
-      ref={rootRef}
-      className={`ocean-background${staticMode || depthOnly ? " is-static" : ""}${depthOnly ? " is-depth-only" : ""}${adaptiveBalanced ? " is-balanced" : ""}${runtimeConstrained ? " is-runtime-constrained" : ""}`}
-      aria-hidden="true"
-    >
+    <>
+      <div ref={depthOverlayRef} className="global-ocean-depth-overlay" aria-hidden="true" />
+      <div
+        ref={rootRef}
+        className={`ocean-background${staticMode || depthOnly ? " is-static" : ""}${depthOnly ? " is-depth-only" : ""}${adaptiveBalanced ? " is-balanced" : ""}${runtimeConstrained ? " is-runtime-constrained" : ""}`}
+        aria-hidden="true"
+      >
       <div className="ocean-depth-gradient" />
       <div className="ocean-surface-layer">
         <svg className="ocean-surface-waves" viewBox="0 0 2400 260" preserveAspectRatio="none">
@@ -201,7 +204,8 @@ export default function OceanMorphBackground({
           <path className="ocean-static-layer ocean-static-layer-2" d={STATIC_OCEAN_PATHS[1]} fill="url(#oceanStaticB)" />
         )}
       </svg>
-      <div className="ocean-abyss-floor" />
-    </div>
+        <div className="ocean-abyss-floor" />
+      </div>
+    </>
   );
 }

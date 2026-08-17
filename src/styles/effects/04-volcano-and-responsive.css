@@ -31,8 +31,8 @@ html[data-runtime-quality="constrained"] .volcano-field-section::before{opacity:
     radial-gradient(circle at 88% 8%, rgba(14, 165, 233, .12), transparent 26%),
     radial-gradient(circle at 76% 78%, rgba(20, 184, 166, .15), transparent 28%);opacity:calc(.54 - var(--ocean-depth) * .52) !important;}
 .ocean-deep-glow{filter:blur(2px);opacity:calc(.46 + var(--ocean-depth) * .94) !important;}
-:root{--ink:#082f49;--muted:#486b7a;--deep-ocean:#0369a1;--ocean:#0284c7;--lagoon:#38bdf8;--reef:#06b6d4;--kelp:#0f766e;--stroke:rgba(3, 105, 161, .18);--shadow:0 30px 95px rgba(3, 105, 161, .16);--shadow-strong:0 38px 120px rgba(8, 47, 73, .22);--global-ocean-depth:0;}
-body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:1;mix-blend-mode:normal;opacity:calc(.48 - var(--global-ocean-depth) * .34);}
+:root{--ink:#082f49;--muted:#486b7a;--deep-ocean:#0369a1;--ocean:#0284c7;--lagoon:#38bdf8;--reef:#06b6d4;--kelp:#0f766e;--stroke:rgba(3, 105, 161, .18);--shadow:0 30px 95px rgba(3, 105, 161, .16);--shadow-strong:0 38px 120px rgba(8, 47, 73, .22);}
+.global-ocean-depth-overlay{position:fixed;inset:0;pointer-events:none;z-index:1;mix-blend-mode:normal;opacity:.48;will-change:opacity;}
 .hero-lead{max-width:880px;}
 .hero-description{max-width:840px;}
 .section-title-fish{min-height:clamp(240px, 30vh, 340px);align-content:center;width:100vw !important;clip-path:none !important;}
@@ -267,7 +267,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:1;mix
 .ocean-deep-glow{background:radial-gradient(ellipse at 12% 84%, rgba(14, 165, 233, .11), transparent 32%),
     radial-gradient(ellipse at 78% 78%, rgba(20, 184, 166, .10), transparent 34%),
     radial-gradient(ellipse at 50% 102%, rgba(0, 2, 10, .98), transparent 62%);}
-body::before{background-image:radial-gradient(circle at 18% 20%, rgba(56, 189, 248, .22), transparent 28%),
+.global-ocean-depth-overlay{background-image:radial-gradient(circle at 18% 20%, rgba(56, 189, 248, .22), transparent 28%),
     radial-gradient(circle at 74% 4%, rgba(6, 182, 212, .16), transparent 24%),
     linear-gradient(115deg, rgba(255,255,255,.24), transparent 34%, rgba(6,182,212,.08));}
 .island-section{background:transparent;}
