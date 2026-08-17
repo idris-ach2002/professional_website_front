@@ -45,6 +45,8 @@ describe("ProfileHero", () => {
     );
 
     const image = screen.getByAltText("Idris ACHABOU");
+    const dock = image.closest(".profile-identity-dock");
+    expect(dock).toHaveAttribute("data-profile-module", "identity-dock");
     expect(image).toHaveAttribute("data-modal-title", "nav.profile — Idris ACHABOU");
     expect(screen.getByText("Idris ACHABOU")).toBeInTheDocument();
   });

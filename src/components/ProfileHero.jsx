@@ -11,10 +11,8 @@ import {
   getPrimaryContact,
 } from "../utils/portfolio";
 import "../styles/sections/profile-ios-v49.css";
-
-// Legacy global-CSS contract tokens retained until the frozen public-shell/profile styles are retired:
-// ghost-action hero-map-line ring-label hero-description profile-copy-stack profile-copy-card
-// profile-copy-card--lead profile-copy-card--description
+import "../styles/sections/profile-identity-dock.css";
+// CSS compatibility: ghost-action hero-map-line ring-label hero-description profile-copy-stack profile-copy-card profile-copy-card--lead profile-copy-card--description
 
 const PROFILE_VISUAL_CATEGORIES = [
   { key: "backend", icon: "server", label: "Backend" },
@@ -81,9 +79,6 @@ function resolveOwnerIdentity(owner) {
 }
 
 function resolveProfileViewModel(profile) {
-  // Strict MVC contract: App resolves API -> cache -> demoPortfolio and passes
-  // owner.prof as the only profile model. The view does not reconstruct profile
-  // copy from owner.profile, timeline, projects, proven skills or owner.address.
   const source = profile && typeof profile === "object" ? profile : {};
   const text = (value) => String(value ?? "").trim();
 
@@ -112,8 +107,6 @@ function ProfilePhotoCard({ owner, profile, t }) {
     const height = event.currentTarget?.naturalHeight || 0;
     const ratio = width > 0 && height > 0 ? width / height : .75;
     const aspect = ratio < .90 ? "portrait" : ratio > 1.25 ? "landscape" : "balanced";
-    // The frame always remains a standing ellipse. Its exact width/height ratio follows
-    // the real source image so API/demo replacements do not require a CSS rewrite.
     const frameRatio = Math.max(.66, Math.min(.86, ratio * .92));
     setPhotoMeta({ ready: true, aspect, ratio, frameRatio });
   };
@@ -279,7 +272,7 @@ export default function ProfileHero({ owner, prof }) {
 
       <VisibilityGate item="home.profile.panel">
         <aside className="hero-panel profile-ios-panel">
-          <div className="profile-ios-side-grid">
+          <div className="profile-ios-side-grid profile-identity-dock" data-profile-module="identity-dock">
             <ProfilePhotoCard owner={owner} profile={profileModel} t={t} />
             <ProfileAvailabilityCard profile={profileModel} t={t} />
             {contacts.length > 0 && (
