@@ -79,7 +79,7 @@ jobs:
         run: npx playwright install --with-deps chromium firefox
 
       - name: Download hermetic E2E build
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: frontend-e2e-dist
           path: dist
@@ -124,7 +124,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Download hermetic E2E build
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: frontend-e2e-dist
           path: dist
@@ -170,7 +170,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Download hermetic E2E build
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: frontend-e2e-dist
           path: dist
@@ -215,7 +215,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Download hermetic E2E build
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: frontend-e2e-dist
           path: dist
@@ -261,7 +261,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Download hermetic E2E build
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: frontend-e2e-dist
           path: dist
@@ -306,7 +306,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Download hermetic E2E build
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: frontend-e2e-dist
           path: dist
@@ -363,7 +363,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Download hermetic E2E build
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: frontend-e2e-dist
           path: dist
