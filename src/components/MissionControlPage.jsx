@@ -15,6 +15,7 @@ import { VisibilityGate } from "../visibility/ItemVisibilityContext";
 import { useItemVisibility } from "../visibility/useItemVisibility";
 import "../styles/pages/mission-control.css";
 import "../styles/pages/architecture-graph-canvas.css";
+import "../styles/pages/architecture-app-mode.css";
 
 const LOCAL_SAMPLE_LIMIT = 120;
 const BUILD_ID = import.meta.env.VITE_BUILD_ID ?? import.meta.env.VITE_COMMIT_SHA ?? "development";

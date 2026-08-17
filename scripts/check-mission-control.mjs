@@ -29,7 +29,10 @@ if (api.includes("/api/engineering/performance/routes") || api.includes("fetchDe
 
 if (architecture.includes("architecture-canvas-surface")) errors.push("Ancienne couche architecture-canvas-surface encore présente: le canvas WebGL doit être la surface peinte.");
 for (const token of ["architectureForceAtlas.worker.js", 'type: "compute"', "GRAPH_LAYOUTS", "semanticZoom", "Focus", "Départ chemin", "architecture-system-stage", "architecture-webgl", "paintStyle", 'useState("sage")', "CPU layout libéré"]) requireText(architecture, token, `Explorateur de graphe incomplet: ${token}`);
+for (const token of ["ArchitectureMobileFlow", "Explorer le graphe", "budgetMs: 20", "latencyMs <= 20", "heatLabel(telemetry.heat)"]) requireText(architecture, token, `Contrat App/latence Architecture incomplet: ${token}`);
+if (architecture.includes("budgetMs: 12") || architecture.includes("latencyMs <= 12")) errors.push("Le seuil visuel client doit rester à 20 ms; 12 ms est un objectif interne et non le seuil affiché.");
 for (const token of ["One-shot architecture layout worker", "semanticSeed", "flowSeed", "communitiesSeed", "radialSeed", "deploymentSeed", "compactSeed", 'message.type !== "compute"']) requireText(worker, token, `Moteur de disposition ponctuel incomplet: ${token}`);
+for (const token of ["Float64Array", "forces.fill(0)", "indexById"]) requireText(worker, token, `Optimisation du calcul one-shot absente: ${token}`);
 if (worker.includes("setInterval") || worker.includes('type === "update"') || worker.includes('type === "reheat"')) errors.push("Le worker de disposition ne doit plus tourner en continu.");
 for (const token of ["architecture-subnav", "architecture-subnav-orbit", "architecture-subnav-marker", "architecture-subnav-live"]) requireText(styles, token, `Navbar Architecture incomplète: ${token}`);
 for (const token of ["StateMachine", "layoutStateMachine", "Frameworks, plugins et services traversés", "traceMatchesFeature"]) requireText(liveTrace, token, `Live Trace incomplet: ${token}`);

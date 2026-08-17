@@ -210,95 +210,115 @@ function boundsFor(node, layout) {
 }
 
 function refine(nodes, links, seed, { width = 1400, height = 1580, layout = "architecture", iterations = 175 } = {}) {
-  const positions = structuredClone(seed);
-  const anchors = structuredClone(seed);
+  // Hot one-shot path: use packed numeric buffers so every iteration reuses the
+  // same memory instead of rebuilding {id:[x,y]} force/velocity objects.
+  const count = nodes.length;
+  const indexById = new Map(nodes.map((node, index) => [node.id, index]));
   const degree = degreeMap(nodes, links);
-  const velocities = Object.fromEntries(nodes.map((node) => [node.id, [0, 0]]));
+  const positions = new Float64Array(count * 2);
+  const anchors = new Float64Array(count * 2);
+  const velocities = new Float64Array(count * 2);
+  const forces = new Float64Array(count * 2);
+  const masses = new Float64Array(count);
+  const minYs = new Float64Array(count);
+  const maxYs = new Float64Array(count);
   const sx = Math.max(8, width / 100);
   const sy = Math.max(8, height / 100);
   const cardW = clamp(238 / sx, 13, 24);
   const cardH = clamp(132 / sy, 6.5, 11.5);
+  const anchorStrength = layout === "architecture" ? .018 : layout === "communities" ? .026 : .034;
+
+  nodes.forEach((node, index) => {
+    const point = seed[node.id] ?? [50, 50];
+    const offset = index * 2;
+    positions[offset] = anchors[offset] = point[0];
+    positions[offset + 1] = anchors[offset + 1] = point[1];
+    masses[index] = 1 + Math.sqrt(degree[node.id] || 0);
+    const bounds = boundsFor(node, layout);
+    minYs[index] = bounds[0];
+    maxYs[index] = bounds[1];
+  });
+
+  const linkData = links.map((link) => ({
+    source: indexById.get(link.source),
+    target: indexById.get(link.target),
+    distance: link.flows?.includes("deploy") ? 285 : 235,
+  })).filter((link) => Number.isInteger(link.source) && Number.isInteger(link.target));
 
   for (let iteration = 0; iteration < iterations; iteration += 1) {
     const cooling = Math.max(.12, 1 - iteration / iterations);
-    const forces = Object.fromEntries(nodes.map((node) => [node.id, [0, 0]]));
+    forces.fill(0);
 
-    nodes.forEach((node) => {
-      const point = positions[node.id] ?? [50, 50];
-      const anchor = anchors[node.id] ?? point;
-      const anchorStrength = layout === "architecture" ? .018 : layout === "communities" ? .026 : .034;
-      forces[node.id][0] += (anchor[0] - point[0]) * anchorStrength;
-      forces[node.id][1] += (anchor[1] - point[1]) * anchorStrength;
-    });
+    for (let i = 0; i < count; i += 1) {
+      const offset = i * 2;
+      forces[offset] += (anchors[offset] - positions[offset]) * anchorStrength;
+      forces[offset + 1] += (anchors[offset + 1] - positions[offset + 1]) * anchorStrength;
+    }
 
-    for (let i = 0; i < nodes.length; i += 1) {
-      for (let j = i + 1; j < nodes.length; j += 1) {
-        const a = nodes[i];
-        const b = nodes[j];
-        const pa = positions[a.id];
-        const pb = positions[b.id];
-        if (!pa || !pb) continue;
-        let dx = pb[0] - pa[0];
-        let dy = pb[1] - pa[1];
+    for (let i = 0; i < count; i += 1) {
+      const ai = i * 2;
+      for (let j = i + 1; j < count; j += 1) {
+        const bi = j * 2;
+        let dx = positions[bi] - positions[ai];
+        let dy = positions[bi + 1] - positions[ai + 1];
         if (Math.abs(dx) < .01 && Math.abs(dy) < .01) { dx = (j - i) * .04; dy = .03; }
         const distancePx = Math.max(22, Math.hypot(dx * sx, dy * sy));
-        const mass = (1 + Math.sqrt(degree[a.id] || 0)) * (1 + Math.sqrt(degree[b.id] || 0));
-        const repulsion = Math.min(.16, (17000 * mass / (distancePx * distancePx)) * .012) * cooling;
+        const repulsion = Math.min(.16, (17000 * masses[i] * masses[j] / (distancePx * distancePx)) * .012) * cooling;
         const ux = dx * sx / distancePx;
         const uy = dy * sy / distancePx;
-        forces[a.id][0] -= ux * repulsion;
-        forces[a.id][1] -= uy * repulsion;
-        forces[b.id][0] += ux * repulsion;
-        forces[b.id][1] += uy * repulsion;
+        const fx = ux * repulsion;
+        const fy = uy * repulsion;
+        forces[ai] -= fx; forces[ai + 1] -= fy;
+        forces[bi] += fx; forces[bi + 1] += fy;
 
         const overlapX = cardW - Math.abs(dx);
         const overlapY = cardH - Math.abs(dy);
         if (overlapX > 0 && overlapY > 0) {
           if (overlapX < overlapY) {
-            const direction = dx >= 0 ? 1 : -1;
-            forces[a.id][0] -= direction * overlapX * .15;
-            forces[b.id][0] += direction * overlapX * .15;
+            const push = (dx >= 0 ? 1 : -1) * overlapX * .15;
+            forces[ai] -= push; forces[bi] += push;
           } else {
-            const direction = dy >= 0 ? 1 : -1;
-            forces[a.id][1] -= direction * overlapY * .15;
-            forces[b.id][1] += direction * overlapY * .15;
+            const push = (dy >= 0 ? 1 : -1) * overlapY * .15;
+            forces[ai + 1] -= push; forces[bi + 1] += push;
           }
         }
       }
     }
 
-    links.forEach((link) => {
-      const a = positions[link.source];
-      const b = positions[link.target];
-      if (!a || !b) return;
-      const dx = b[0] - a[0];
-      const dy = b[1] - a[1];
+    for (let index = 0; index < linkData.length; index += 1) {
+      const link = linkData[index];
+      const ai = link.source * 2;
+      const bi = link.target * 2;
+      const dx = positions[bi] - positions[ai];
+      const dy = positions[bi + 1] - positions[ai + 1];
       const distancePx = Math.max(1, Math.hypot(dx * sx, dy * sy));
-      const target = link.flows?.includes("deploy") ? 285 : 235;
-      const error = (distancePx - target) / target;
-      const ux = dx * sx / distancePx;
-      const uy = dy * sy / distancePx;
+      const error = (distancePx - link.distance) / link.distance;
       const strength = .05 * cooling;
-      forces[link.source][0] += ux * error * strength;
-      forces[link.source][1] += uy * error * strength;
-      forces[link.target][0] -= ux * error * strength;
-      forces[link.target][1] -= uy * error * strength;
-    });
+      const fx = dx * sx / distancePx * error * strength;
+      const fy = dy * sy / distancePx * error * strength;
+      forces[ai] += fx; forces[ai + 1] += fy;
+      forces[bi] -= fx; forces[bi + 1] -= fy;
+    }
 
-    nodes.forEach((node) => {
-      const velocity = velocities[node.id];
-      velocity[0] = (velocity[0] + forces[node.id][0]) * .72;
-      velocity[1] = (velocity[1] + forces[node.id][1]) * .72;
-      const speed = Math.hypot(velocity[0], velocity[1]);
-      const limit = speed > 1 ? 1 / speed : 1;
-      velocity[0] *= limit;
-      velocity[1] *= limit;
-      const [minY, maxY] = boundsFor(node, layout);
-      const point = positions[node.id] ?? [50, 50];
-      positions[node.id] = [clamp(point[0] + velocity[0], 8, 92), clamp(point[1] + velocity[1], minY, maxY)];
-    });
+    for (let i = 0; i < count; i += 1) {
+      const offset = i * 2;
+      let vx = (velocities[offset] + forces[offset]) * .72;
+      let vy = (velocities[offset + 1] + forces[offset + 1]) * .72;
+      const speed = Math.hypot(vx, vy);
+      if (speed > 1) { vx /= speed; vy /= speed; }
+      velocities[offset] = vx;
+      velocities[offset + 1] = vy;
+      positions[offset] = clamp(positions[offset] + vx, 8, 92);
+      positions[offset + 1] = clamp(positions[offset + 1] + vy, minYs[i], maxYs[i]);
+    }
   }
-  return positions;
+
+  const result = {};
+  nodes.forEach((node, index) => {
+    const offset = index * 2;
+    result[node.id] = [positions[offset], positions[offset + 1]];
+  });
+  return result;
 }
 
 function compute(layout, nodes, links, width, height) {

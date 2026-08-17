@@ -93,6 +93,18 @@ test("@mission reste utilisable sans débordement sur mobile", async ({ page }) 
   await mockMissionApis(page);
   await page.goto("/engineering", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { level: 1, name: "Architecture technique du portfolio" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Architecture mobile synthétique" })).toBeVisible();
+  await expect(page.locator("#architecture-system-stage")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Explorer le graphe/i })).toBeVisible();
+
+  await page.getByRole("button", { name: /Explorer le graphe/i }).click();
+  await expect(page.locator("#architecture-system-stage")).toBeVisible();
+  await expect(page.getByText("Graphe complet", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /React 19.*Déplacer le nœud/i }).click();
+  const reactDialog = page.getByRole("dialog", { name: /Détails React 19/i });
+  await expect(reactDialog).toBeVisible();
+  await expect(reactDialog.getByText("Budget UI")).toBeVisible();
+  await expect(reactDialog.getByText("< 20 ms")).toBeVisible();
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);

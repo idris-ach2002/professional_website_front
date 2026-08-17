@@ -307,6 +307,10 @@ function statusLabel(status) {
   return status === "degraded" ? "dégradé" : "en attente";
 }
 
+function heatLabel(heat) {
+  return { healthy: "Sain", watch: "Surveillance", pressure: "Pression", critical: "Saturé", unknown: "Inconnu" }[heat] ?? heat;
+}
+
 function nodeActivity(node, sample) {
   if (Number.isFinite(Number(node.activity))) return Number(node.activity);
   if (["visitor", "browser", "react", "edge"].includes(node.id)) return Math.min(1, Number(sample?.fps || 0) / 60);
@@ -328,8 +332,8 @@ function telemetryFor(node, snapshot, sample) {
   };
   const configurations = {
     visitor: { saturation: sample?.uiThreadLoad, metric: `${clampPercent(sample?.uiThreadLoad).toFixed(0)} % thread UI`, throughput: Number(sample?.fps || 0), unit: "fps" },
-    browser: { saturation: sample?.frameBudgetUsed, metric: `${Number(sample?.p95 || 0).toFixed(1)} ms rendu`, throughput: Number(sample?.fps || 0), unit: "fps" },
-    react: { saturation: sample?.frameBudgetUsed, metric: `${Number(sample?.p95 || 0).toFixed(1)} ms p95`, throughput: Number(sample?.fps || 0), unit: "fps" },
+    browser: { clientLatency: true, budgetMs: 20, saturation: Number(sample?.p95 || 0) / 20 * 100, metric: `${Number(sample?.p95 || 0).toFixed(1)} ms rendu`, throughput: Number(sample?.fps || 0), unit: "fps" },
+    react: { clientLatency: true, budgetMs: 20, saturation: Number(sample?.p95 || 0) / 20 * 100, metric: `${Number(sample?.p95 || 0).toFixed(1)} ms p95`, throughput: Number(sample?.fps || 0), unit: "fps" },
     security: { saturation: sample?.systemCpu, metric: snapshot ? `${Number(sample?.apiLatency || 0).toFixed(0)} ms API` : "télémétrie requise", throughput: Number(sample?.apiRequestCount || 0), unit: "sondes" },
     api: { saturation: sample?.systemCpu, metric: snapshot ? `${clampPercent(sample?.systemCpu).toFixed(0)} % CPU` : "API en attente", throughput: Number(sample?.apiRequestCount || 0), unit: "sondes" },
     services: { saturation: sample?.processCpu, metric: snapshot ? `${clampPercent(sample?.processCpu).toFixed(0)} % Java` : "API en attente", throughput: Number(sample?.apiRequestCount || 0), unit: "sondes" },
@@ -341,6 +345,11 @@ function telemetryFor(node, snapshot, sample) {
   };
   const result = configurations[node.id] ?? { saturation: node.status === "degraded" ? 86 : 0, metric: node.status === "configured" ? "configuré" : "signal discret", throughput: 0, unit: "ops" };
   const saturation = clampPercent(result.saturation);
+  if (result.clientLatency) {
+    const latencyMs = Math.max(0, Number(sample?.p95 || 0));
+    const heat = latencyMs <= 20 ? "healthy" : latencyMs <= 26 ? "watch" : latencyMs <= 36 ? "pressure" : "critical";
+    return { ...result, saturation, heat, latencyMs, marginMs: Math.max(0, Number(result.budgetMs || 20) - latencyMs) };
+  }
   return { ...result, saturation, heat: saturation >= 85 ? "critical" : saturation >= 65 ? "pressure" : saturation >= 38 ? "watch" : isHealthy(node.status) ? "healthy" : "unknown" };
 }
 
@@ -630,8 +639,52 @@ function GraphLinks({ links, positions, compact, activeTrace = null, scope = "al
   );
 }
 
+function ArchitectureMobileFlow({ nodes, snapshot, liveSample, onSelect, onExplore }) {
+  const flowGroups = [
+    { label: "Frontend", ids: ["visitor", "browser", "react", "edge"] },
+    { label: "Backend", ids: ["security", "api", "services", "postgres"] },
+    { label: "Livraison", ids: ["frontRepo", "frontCi", "backCi", "docker"] },
+  ];
+  return (
+    <section className="architecture-mobile-flow" aria-label="Architecture mobile synthétique">
+      <header className="architecture-mobile-flow__header">
+        <div><span>SYSTÈME</span><h3>Architecture</h3><p>Lecture compacte du chemin critique. Le graphe complet reste disponible à la demande.</p></div>
+        <strong><i /> Sain</strong>
+      </header>
+      <div className="architecture-mobile-flow__groups">
+        {flowGroups.map((group) => (
+          <article className="architecture-mobile-flow__group" key={group.label}>
+            <span className="architecture-mobile-flow__label">{group.label}</span>
+            <div className="architecture-mobile-flow__stack">
+              {group.ids.map((id, index) => {
+                const node = nodes.find((item) => item.id === id);
+                if (!node) return null;
+                const telemetry = telemetryFor(node, snapshot, liveSample);
+                return (
+                  <div className="architecture-mobile-flow__step" key={id}>
+                    <button type="button" className={`heat-${telemetry.heat}`} onClick={() => onSelect(id)}>
+                      <span className="architecture-mobile-flow__symbol" aria-hidden="true">{node.technology.slice(0, 2).toUpperCase()}</span>
+                      <span><strong>{node.technology}</strong><small>{node.role}</small></span>
+                      <em>{heatLabel(telemetry.heat)}</em>
+                      <b>{telemetry.metric}</b>
+                    </button>
+                    {index < group.ids.length - 1 && <i className="architecture-mobile-flow__connector" aria-hidden="true">↓</i>}
+                  </div>
+                );
+              })}
+            </div>
+          </article>
+        ))}
+      </div>
+      <button type="button" className="architecture-mobile-explore" onClick={onExplore}>Explorer le graphe <span aria-hidden="true">↗</span></button>
+    </section>
+  );
+}
+
 export default function ArchitectureObservatory({ snapshot, liveSample, activeTrace = null, compact = false }) {
   const normalized = useMemo(() => normalizeGraph(snapshot), [snapshot]);
+  const [isAppViewport, setIsAppViewport] = useState(() => typeof window !== "undefined" && window.matchMedia?.("(max-width: 820px)").matches);
+  const [mobileExplore, setMobileExplore] = useState(false);
   const basePositions = compact ? COMPACT_POSITIONS : AUTO_POSITIONS;
   const [positions, setPositions] = useState(() => ({ ...basePositions }));
   const [scope, setScope] = useState("all");
@@ -720,6 +773,18 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
   // V28: same canvas model as V20. The graph background belongs directly to
   // the stage; there is no full-size intermediary surface that can mask it.
 
+  useEffect(() => {
+    if (typeof window === "undefined" || compact) return undefined;
+    const query = window.matchMedia("(max-width: 820px)");
+    const sync = () => {
+      setIsAppViewport(query.matches);
+      if (!query.matches) setMobileExplore(false);
+    };
+    sync();
+    query.addEventListener?.("change", sync);
+    return () => query.removeEventListener?.("change", sync);
+  }, [compact]);
+
   useEffect(() => { positionsRef.current = positions; }, [positions]);
 
   const animateToPositions = useCallback((target, duration = 430) => {
@@ -743,6 +808,7 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
   }, []);
 
   const requestLayout = useCallback((nextLayout = layoutId, force = false) => {
+    if (isAppViewport && !mobileExplore && !compact) return;
     if (compact) {
       setPositions({ ...COMPACT_POSITIONS });
       return;
@@ -794,15 +860,15 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
       width,
       height,
     });
-  }, [animateToPositions, compact, layoutId, nodes, scope, scopeLinks]);
+  }, [animateToPositions, compact, isAppViewport, layoutId, mobileExplore, nodes, scope, scopeLinks]);
 
   useEffect(() => {
-    if (compact) return undefined;
+    if (compact || (isAppViewport && !mobileExplore)) return undefined;
     const frame = requestAnimationFrame(() => requestLayout(layoutId));
     return () => cancelAnimationFrame(frame);
     // Layout is recomputed only after an explicit graph-scope change, never on telemetry polling.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [compact, scope]);
+  }, [compact, isAppViewport, mobileExplore, scope]);
 
   useEffect(() => () => {
     cancelAnimationFrame(animationFrameRef.current);
@@ -915,10 +981,11 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
 
   const selectedEdgeSource = selectedEdge ? nodes.find((node) => node.id === selectedEdge.source) : null;
   const selectedEdgeTarget = selectedEdge ? nodes.find((node) => node.id === selectedEdge.target) : null;
+  const showGraph = compact || !isAppViewport || mobileExplore;
 
   return (
-    <div className={`architecture-observatory${compact ? " is-compact" : ""} density-${effectiveDensity}`} aria-label="Graphe exploratoire de l’architecture réelle du portfolio">
-      {!compact && <VisibilityGate item="architecture.system.toolbar"><div className="architecture-graph-toolbar architecture-graph-toolbar-v25">
+    <div className={`architecture-observatory${compact ? " is-compact" : ""}${isAppViewport && !compact ? " is-app-view" : ""}${mobileExplore ? " is-mobile-exploring" : ""} density-${effectiveDensity}`} aria-label="Graphe exploratoire de l’architecture réelle du portfolio">
+      {!compact && !isAppViewport && <VisibilityGate item="architecture.system.toolbar"><div className="architecture-graph-toolbar architecture-graph-toolbar-v25">
         <div className="architecture-toolbar-primary">
           <div className="architecture-scope-tabs" role="group" aria-label="Choisir le flux architectural">
             {SCOPES.map((item) => <button type="button" key={item.id} className={scope === item.id ? "is-active" : ""} onClick={() => setScope(item.id)}>{item.label}</button>)}
@@ -977,18 +1044,27 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
         </div>
       </div></VisibilityGate>}
 
-      {!compact && showLayoutHelp && <div className="architecture-layout-explainer"><strong>{layoutDefinition.label}</strong><p>{layoutDefinition.description} Après le calcul, les positions sont mises en cache et le Web Worker est détruit : seules les interactions, le rendu des flux et les données live restent actives.</p></div>}
+      {!compact && isAppViewport && !mobileExplore && <ArchitectureMobileFlow
+        nodes={nodes}
+        snapshot={snapshot}
+        liveSample={liveSample}
+        onSelect={(id) => { setCountdown(10); setSelectedEdge(null); setSelectedId(id); }}
+        onExplore={() => { setSelectedId(null); setMobileExplore(true); }}
+      />}
+      {!compact && isAppViewport && mobileExplore && <div className="architecture-mobile-explorer-bar"><button type="button" onClick={() => setMobileExplore(false)}>← Vue synthétique</button><strong>Graphe complet</strong><span>pan · zoom · nodes</span></div>}
 
-      {!compact && (pathStartId || focusId) && <div className="architecture-focus-bar" aria-live="polite">
+      {!compact && !isAppViewport && showLayoutHelp && <div className="architecture-layout-explainer"><strong>{layoutDefinition.label}</strong><p>{layoutDefinition.description} Après le calcul, les positions sont mises en cache et le Web Worker est détruit : seules les interactions, le rendu des flux et les données live restent actives.</p></div>}
+
+      {!compact && !isAppViewport && (pathStartId || focusId) && <div className="architecture-focus-bar" aria-live="polite">
         {pathStartId && !pathEndId && <><span>Chemin</span><strong>{nodes.find((node) => node.id === pathStartId)?.technology} → choisissez une arrivée</strong></>}
         {pathResult && <><span>Chemin calculé</span><strong>{pathResult.nodes.map((id) => nodes.find((node) => node.id === id)?.technology ?? id).join(" → ")}</strong><b>{pathResult.edges.length} transition{pathResult.edges.length > 1 ? "s" : ""}</b></>}
         {pathStartId && pathEndId && !pathResult && <><span>Chemin</span><strong>Aucun chemin dans la vue {scopeLabel.toLowerCase()}</strong></>}
         {!pathStartId && focusId && <><span>Focus</span><strong>{nodes.find((node) => node.id === focusId)?.technology}</strong><b>{focusNodeIds?.size ?? 1} composants reliés</b></>}
       </div>}
 
-      {!compact && <div className="architecture-heat-legend" aria-label="Légende de saturation"><span className="is-healthy">Sain</span><span className="is-watch">Surveillance</span><span className="is-pressure">Pression</span><span className="is-critical">Saturé</span><span className="is-unknown">Inconnu</span><b>particules = débit · points = file</b></div>}
+      {!compact && !isAppViewport && <div className="architecture-heat-legend" aria-label="Légende de saturation"><span className="is-healthy">Sain</span><span className="is-watch">Surveillance</span><span className="is-pressure">Pression</span><span className="is-critical">Saturé</span><span className="is-unknown">Inconnu</span><b>particules = débit · points = file</b></div>}
 
-      <VisibilityGate item="architecture.system.graph"><div id="architecture-system-canvas" ref={scrollRef} className={`architecture-scroll${showGrid ? " has-grid" : " no-grid"}`} data-canvas-shade={canvasShade} style={{ "--canvas-b": palette.b }}>
+      {showGraph && <VisibilityGate item="architecture.system.graph"><div id="architecture-system-canvas" ref={scrollRef} className={`architecture-scroll${showGrid ? " has-grid" : " no-grid"}`} data-canvas-shade={canvasShade} style={{ "--canvas-b": palette.b }}>
         <div id="architecture-system-stage" className="architecture-stage" data-canvas-shade={canvasShade} ref={stageRef} style={canvasStyle}>
           {!compact && showCommunities && <div className="architecture-community-layer" aria-hidden="true">
             <div className="architecture-community is-front"><span>COMMUNAUTÉ FRONTEND</span><strong>professional_website_front</strong><small>React · Vite · Cloudflare · CI frontend</small></div>
@@ -1004,7 +1080,7 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
             const runtimeDimmed = renderMode === "runtime" && !link.active;
             return <button type="button" key={`${link.source}-${link.target}-${index}`} className={`flow-${flow}${link.active ? " is-active" : ""}${highlighted ? " is-path-highlighted" : ""}${runtimeDimmed ? " is-runtime-dimmed" : ""}`} style={{ left: `${(start[0] + end[0]) / 2}%`, top: `${(start[1] + end[1]) / 2}%` }} onClick={() => { setSelectedId(null); setSelectedEdge(link); }}>{link.channel}</button>;
           })}</div>}
-          <ArchitectureCanvas nodes={nodes} links={scopeLinks} positions={positions} sample={liveSample} onStatus={setWebglStatus} showParticles={showParticles} paintStyle={canvasStyle} />
+          <ArchitectureCanvas nodes={nodes} links={scopeLinks} positions={positions} sample={liveSample} onStatus={setWebglStatus} showParticles={showParticles && (!isAppViewport || mobileExplore)} paintStyle={canvasStyle} />
           <div className="architecture-node-layer">
             {nodes.map((node) => {
               const telemetry = telemetryFor(node, snapshot, liveSample);
@@ -1034,7 +1110,7 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
                 >
                   <span className="architecture-node-symbol" aria-hidden="true">{node.technology.slice(0, 2).toUpperCase()}</span>
                   <span className="architecture-node-copy"><strong>{node.technology}</strong><small>{node.role}</small></span>
-                  <em>{telemetry.heat === "unknown" ? statusLabel(node.status) : telemetry.heat}</em>
+                  <em>{telemetry.heat === "unknown" ? statusLabel(node.status) : heatLabel(telemetry.heat)}</em>
                   <span className="architecture-node-metric">{telemetry.metric}</span>
                   <span className="architecture-node-extra">Entrantes {degree.in} · Sortantes {degree.out} · {node.layer}</span>
                   <span className="architecture-node-load" aria-hidden="true"><i style={{ width: `${Math.max(4, telemetry.saturation)}%` }} /></span>
@@ -1044,7 +1120,7 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
             })}
           </div>
         </div>
-      </div></VisibilityGate>
+      </div></VisibilityGate>}
 
       {!compact && selectedNode && (
         <div className="architecture-popup" role="dialog" aria-modal="false" aria-label={`Détails ${selectedNode.technology}`} aria-live="polite">
@@ -1054,9 +1130,11 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
           <p>{selectedNode.detail}</p>
           <dl>
             <div><dt>Rôle</dt><dd>{selectedNode.role}</dd></div>
-            <div><dt>État</dt><dd>{statusLabel(selectedNode.status)}</dd></div>
-            <div><dt>Pression</dt><dd>{telemetryFor(selectedNode, snapshot, liveSample).saturation.toFixed(0)} %</dd></div>
+            <div><dt>État</dt><dd>{heatLabel(telemetryFor(selectedNode, snapshot, liveSample).heat)}</dd></div>
+            <div><dt>Métrique</dt><dd>{telemetryFor(selectedNode, snapshot, liveSample).metric}</dd></div>
             <div><dt>Connexions</dt><dd>{(graphDegrees[selectedNode.id]?.in ?? 0) + (graphDegrees[selectedNode.id]?.out ?? 0)}</dd></div>
+            {telemetryFor(selectedNode, snapshot, liveSample).budgetMs && <div><dt>Budget UI</dt><dd>&lt; {telemetryFor(selectedNode, snapshot, liveSample).budgetMs} ms</dd></div>}
+            {telemetryFor(selectedNode, snapshot, liveSample).budgetMs && <div><dt>Marge</dt><dd>{telemetryFor(selectedNode, snapshot, liveSample).marginMs.toFixed(1)} ms</dd></div>}
           </dl>
           <div className="architecture-popup-actions">
             <button type="button" className={focusId === selectedNode.id ? "is-active" : ""} onClick={() => setFocusId((value) => value === selectedNode.id ? null : selectedNode.id)}>{focusId === selectedNode.id ? "Quitter le focus" : "Focus"}</button>
@@ -1081,7 +1159,7 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
         </div>
       )}
 
-      {!compact && <VisibilityGate item="architecture.system.analysis"><ObservabilityGuide
+      {!compact && (!isAppViewport || mobileExplore) && <VisibilityGate item="architecture.system.analysis"><ObservabilityGuide
         title="Analyse de la topologie"
         analysis={`${scopeLabel} : ${activeLinks} liaison${activeLinks > 1 ? "s" : ""} active${activeLinks > 1 ? "s" : ""} sur ${scopeLinks.length}. La disposition « ${layoutDefinition.label} » est calculée ponctuellement puis figée : elle ne consomme plus de CPU une fois les positions obtenues. ${renderMode === "runtime" ? "Le mode Runtime atténue les composants qui ne participent pas à l’activité actuellement observée." : "Le mode Architecture conserve la topologie complète, y compris les dépendances configurées mais momentanément inactives."} ${pathResult ? `Le chemin sélectionné traverse ${pathResult.nodes.length} composants et ${pathResult.edges.length} transitions.` : focusId ? `Le focus isole ${focusNodeIds?.size ?? 1} composants autour de ${nodes.find((node) => node.id === focusId)?.technology ?? focusId}.` : "Le graphe reste stable pour conserver une carte mentale du système ; les données live modifient uniquement l’état visuel et les flux."}`}
         note={`canvas ${palette.label.toLowerCase()} · ${layoutDefinition.label.toLowerCase()} · ${layoutStats.state}`}
