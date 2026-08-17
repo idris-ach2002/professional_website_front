@@ -12,6 +12,19 @@ function normalizeHidden(payload) {
   return new Set(Object.entries(payload?.items ?? {}).filter(([, visible]) => visible === false).map(([key]) => key));
 }
 
+function setsEqual(left, right) {
+  if (left === right) return true;
+  if (left.size !== right.size) return false;
+  for (const value of left) {
+    if (!right.has(value)) return false;
+  }
+  return true;
+}
+
+function publishHidden(setHidden, nextHidden) {
+  setHidden((current) => (setsEqual(current, nextHidden) ? current : nextHidden));
+}
+
 export function ItemVisibilityProvider({ children }) {
   const [hidden, setHidden] = useState(() => new Set());
   const [ready, setReady] = useState(false);
@@ -20,10 +33,10 @@ export function ItemVisibilityProvider({ children }) {
     try {
       const response = await fetch(`${API_BASE_URL}/website/items-visibility`, { headers: { Accept: "application/json" } });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      setHidden(normalizeHidden(await response.json()));
+      publishHidden(setHidden, normalizeHidden(await response.json()));
     } catch {
       // Visibility is fail-open: a configuration outage must never blank the site.
-      setHidden(new Set());
+      publishHidden(setHidden, new Set());
     } finally {
       setReady(true);
     }
