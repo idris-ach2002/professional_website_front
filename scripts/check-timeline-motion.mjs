@@ -10,6 +10,8 @@ const inspection = read("src/animations/timelineInspectionEngine.js");
 const timelineMotion = read("src/animations/timelineMotion.js");
 const responsiveCss = read("src/styles/responsive/company-responsive.css");
 const visualCss = read("src/styles/overrides/timeline-abyss.css");
+const missionCss = read("src/styles/sections/timeline-mission-ui.css");
+const detailSheet = read("src/components/timeline/TimelineDetailSheet.jsx");
 const droneCss = read("src/styles/effects/global-aquarium.css");
 const drone = read("src/components/ExplorationDrone.jsx");
 const app = read("src/App.jsx");
@@ -47,6 +49,18 @@ if (!component.includes("timeline-expedition-card") || !component.includes("Time
 }
 if (/FossilTimelineSurface|timeline-fossil-canvas|getContext\(["']2d["']\)|createPortal|useState/.test(component)) {
   errors.push("Timeline must stay Canvas-free, portal-free and local-state-free after the V10 migration.");
+}
+if (!component.includes("TimelineDetailSheet") || !detailSheet.includes("useImperativeHandle") || detailSheet.includes("createPortal") || detailSheet.includes('document.body.style.overflow')) {
+  errors.push("Mission details must use the shared pre-mounted local sheet without portals or body layout mutation.");
+}
+if (!component.includes('data-mission-shape="pressure-hull"') || !component.includes("timeline-mission-capsule") || !missionCss.includes("clip-path:polygon")) {
+  errors.push("Timeline experiences must keep the approved pressure-hull mission capsule silhouette.");
+}
+if (!component.includes("timeline-bathymeter") || !component.includes("timeline-depth-tick") || !missionCss.includes("timeline-bathymeter")) {
+  errors.push("Timeline must keep the lightweight bathymetric rail and depth markers.");
+}
+if (component.includes("pingPongState") || /submarine[^\n]{0,160}requestAnimationFrame|requestAnimationFrame[^\n]{0,160}submarine/.test(component)) {
+  errors.push("The small submarine must not reintroduce per-frame ping-pong geometry; the existing inspection RAF is reserved for the inspection drone.");
 }
 if (component.includes("TimelineCardWave") || visualCss.includes("timeline-card-wave-field")) {
   errors.push("Legacy heartbeat-like card wave background must stay removed.");

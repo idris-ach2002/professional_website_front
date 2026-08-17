@@ -4,10 +4,11 @@ import SectionTitle from "./SectionTitle";
 import OrganizationBrand from "./OrganizationBrand";
 import useLanguage from "../localization/useLanguage";
 import ExplorationDrone from "./ExplorationDrone";
+import TimelineDetailSheet from "./timeline/TimelineDetailSheet";
 import { PreviewableImage } from "./FilePreview";
-import { formatPeriod, normalizeUrl, slugify } from "../utils/portfolio";
+import { formatPeriod, slugify } from "../utils/portfolio";
 import useAnimationPreferences from "../contexts/useAnimationPreferences";
-import { clamp, pingPongState, progressForStep } from "../animations/timelineMotion";
+import { clamp, progressForStep } from "../animations/timelineMotion";
 import {
   createInspectionPilot,
   INSPECTION_PHASES,
@@ -18,6 +19,7 @@ import { announceOceanWorldMounted } from "../ocean/oceanWorldRegistration";
 import { useItemVisibility } from "../visibility/useItemVisibility";
 import { experienceVisibilityKey } from "../visibility/itemVisibilityRegistry";
 import "../styles/sections/timeline-legacy-optimized.css";
+import "../styles/sections/timeline-mission-ui.css";
 
 const categoryClasses = {
   SCHOOL: "timeline-school",
@@ -68,6 +70,7 @@ function TimelineCardReef({ variant = 0 }) {
 
 export default function PortfolioTimeline({ timeline, experiences = [], performanceMode = "full" }) {
   const rootRef = useRef(null);
+  const detailSheetRef = useRef(null);
   const { isVisible } = useItemVisibility();
   const visibleExperiences = experiences.filter((experience, index) => isVisible(experienceVisibilityKey(experience, index)));
 
@@ -135,7 +138,6 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
     const observedCardTops = new Map();
     let frame = 0;
     let lastTimestamp = 0;
-    let elapsedMs = 0;
     let metrics = null;
     let resizeFrame = 0;
     let scrollFrame = 0;
@@ -176,8 +178,6 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
       const height = stage.clientHeight || Math.min(window.innerHeight * 0.66, 680);
       const droneWidth = explorationDrone?.offsetWidth ?? 0;
       const droneHeight = explorationDrone?.offsetHeight ?? 0;
-      const submarineWidth = submarine?.offsetWidth ?? 0;
-      const submarineHeight = submarine?.offsetHeight ?? 0;
       const sideMargin = isMobile
         ? clamp(width * 0.02, 6, 14)
         : clamp(width * 0.04, 24, 64);
@@ -187,8 +187,6 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
         height,
         droneWidth,
         droneHeight,
-        submarineWidth,
-        submarineHeight,
         droneRangeX: Math.max(0, width - droneWidth - sideMargin * 2),
         droneRangeY: Math.max(0, height - droneHeight - 18),
         sideMargin,
@@ -422,7 +420,6 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
       if (!lastTimestamp) lastTimestamp = timestamp;
       const deltaSeconds = clamp((timestamp - lastTimestamp) / 1000, 0, 0.05);
       lastTimestamp = timestamp;
-      elapsedMs += deltaSeconds * 1000;
       const activeMetrics = metrics ?? measure();
 
       if (explorationDrone && !isMobile) {
@@ -439,18 +436,6 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
         updateInspectionUI();
       }
 
-      if (submarine && !isMobile) {
-        const subMotion = pingPongState(elapsedMs + 4_200, 23_500);
-        const verticalRange = Math.max(0, activeMetrics.height - activeMetrics.submarineHeight - 24);
-        const centerX = activeMetrics.width * 0.51 - activeMetrics.submarineWidth / 2;
-        const sway = Math.sin((elapsedMs / 1000) * 0.36) * 6;
-        const y = 12 + verticalRange * subMotion.progress;
-        submarine.style.transform = `translate3d(${(centerX + sway).toFixed(2)}px, ${y.toFixed(2)}px, 0)`;
-        submarine.style.opacity = "0.42";
-      } else if (submarine) {
-        submarine.style.opacity = "0";
-      }
-
       frame = window.requestAnimationFrame(renderFrame);
     };
 
@@ -458,6 +443,7 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
       if (frame || !sceneInRange || exitZoneActive || !pageVisible || !autonomousEnabled) return;
       lastTimestamp = 0;
       root.dataset.timelineScene = "active";
+      if (submarine) submarine.style.opacity = isMobile ? "0.68" : "0.58";
       frame = window.requestAnimationFrame(renderFrame);
     };
 
@@ -724,8 +710,12 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
           />
 
           <div className="timeline-subsea-track">
-            <div className="timeline-straight-line" aria-hidden="true">
+            <div className="timeline-straight-line timeline-bathymeter" aria-hidden="true">
               <span className="timeline-straight-line-progress" />
+              <span className="timeline-depth-tick timeline-depth-tick--1">−180</span>
+              <span className="timeline-depth-tick timeline-depth-tick--2">−760</span>
+              <span className="timeline-depth-tick timeline-depth-tick--3">−1 580</span>
+              <span className="timeline-depth-tick timeline-depth-tick--4">−2 700</span>
             </div>
 
             <div className="timeline-autonomous-stage" aria-hidden="true">
@@ -750,6 +740,9 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
                   experience.currentPosition,
                   locale,
                 );
+                const skills = experience.skills ?? [];
+                const visibleSkills = skills.slice(0, 5);
+                const hiddenSkillCount = Math.max(0, skills.length - visibleSkills.length);
 
                 return (
                   <article
@@ -761,31 +754,26 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
                     data-timeline-inspection="idle"
                     data-timeline-travel-side={side}
                   >
-                    <Card className="timeline-card island-card timeline-expedition-card" radius="xl">
+                    <Card className="timeline-card island-card timeline-expedition-card timeline-mission-capsule" radius="xl" data-mission-shape="pressure-hull">
                       <TimelineCardReef variant={index} />
+                      <span className="timeline-capsule-port" aria-hidden="true" />
+                      <span className="timeline-capsule-rivet timeline-capsule-rivet--a" aria-hidden="true" />
+                      <span className="timeline-capsule-rivet timeline-capsule-rivet--b" aria-hidden="true" />
                       <div className="timeline-expedition-topline">
                         <div className="timeline-mission-id">
-                          <Text component="span" className="timeline-log-label">
-                            {t("timeline.expeditionLog")}
-                          </Text>
-                          <Text component="strong" className="timeline-mission-number">
-                            {t("timeline.mission")} {missionNumber}
-                          </Text>
+                          <Text component="span" className="timeline-log-label">{t("timeline.expeditionLog")}</Text>
+                          <Text component="strong" className="timeline-mission-number">{t("timeline.mission")} {missionNumber}</Text>
                         </div>
                         <Text className="timeline-expedition-date">{period}</Text>
                       </div>
 
                       <div className="timeline-expedition-rule" aria-hidden="true" />
 
-                      <Group justify="space-between" align="flex-start" gap="md" className="timeline-expedition-heading">
-                        <Stack gap={8} className="timeline-main-copy">
+                      <div className="timeline-expedition-heading">
+                        <Stack gap={7} className="timeline-main-copy">
                           <Group gap={8} className="timeline-expedition-statuses">
-                            <Badge className="timeline-category" radius="xl">
-                              {t(`category.${experience.category}`, { fallback: experience.category })}
-                            </Badge>
-                            {experience.currentPosition && (
-                              <Badge className="current-badge">{t("timeline.current")}</Badge>
-                            )}
+                            <Badge className="timeline-category" radius="xl">{t(`category.${experience.category}`, { fallback: experience.category })}</Badge>
+                            {experience.currentPosition && <Badge className="current-badge">{t("timeline.current")}</Badge>}
                           </Group>
                           <Title order={2}>{experience.title}</Title>
                           <div className="timeline-org">
@@ -793,55 +781,34 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
                             {experience.location && <span className="timeline-location">· {experience.location}</span>}
                           </div>
                         </Stack>
-                      </Group>
-
-                      {experience.imageUrl && (
-                        <PreviewableImage
-                          src={experience.imageUrl}
-                          alt={experience.title}
-                          className="timeline-image-preview-trigger"
-                          imageClassName="timeline-image"
-                          modalTitle={`${t("nav.journey")} — ${experience.title}`}
-                        />
-                      )}
-
-                      {experience.summary && <Text className="timeline-summary">{experience.summary}</Text>}
-                      {experience.description && (
-                        <Text className="timeline-description">{experience.description}</Text>
-                      )}
-
-                      <div className="timeline-expedition-footer">
-                        <div className="timeline-systems-block">
-                          {experience.skills?.length > 0 && (
-                            <>
-                              <Text component="span" className="timeline-systems-label">
-                                {t("timeline.systems")}
-                              </Text>
-                              <Group gap={8} className="skill-row">
-                                {experience.skills.map((skill) => (
-                                  <Badge key={skill} variant="outline" className="skill-badge">
-                                    {skill}
-                                  </Badge>
-                                ))}
-                              </Group>
-                            </>
-                          )}
-                          {experience.websiteUrl && (
-                            <Anchor
-                              href={normalizeUrl(experience.websiteUrl)}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="timeline-link"
-                            >
-                              {t("projects.resources")}
-                            </Anchor>
-                          )}
-                        </div>
-
                         <div className="timeline-depth-readout" aria-label={`${t("timeline.depth")} ${depth}`}>
                           <Text component="span">{t("timeline.depth")}</Text>
                           <Text component="strong">{depth}</Text>
                         </div>
+                      </div>
+
+                      {experience.summary && <Text className="timeline-summary">{experience.summary}</Text>}
+
+                      <div className="timeline-expedition-footer">
+                        <div className="timeline-systems-block">
+                          {visibleSkills.length > 0 && (
+                            <>
+                              <Text component="span" className="timeline-systems-label">{t("timeline.systems")}</Text>
+                              <Group gap={8} className="skill-row">
+                                {visibleSkills.map((skill) => <Badge key={skill} variant="outline" className="skill-badge">{skill}</Badge>)}
+                                {hiddenSkillCount > 0 && <Badge variant="outline" className="skill-badge timeline-skill-more" aria-label={`${hiddenSkillCount} ${t("timeline.moreSystems")}`}>+{hiddenSkillCount}</Badge>}
+                              </Group>
+                            </>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          className="timeline-details-trigger"
+                          aria-haspopup="dialog"
+                          onClick={(event) => detailSheetRef.current?.open(experience, { missionNumber, period, depth }, event.currentTarget)}
+                        >
+                          {t("timeline.details")} <span aria-hidden="true">→</span>
+                        </button>
                       </div>
                     </Card>
                   </article>
@@ -849,6 +816,7 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
               })}
             </div>
             <div className="timeline-exit-sentinel" aria-hidden="true" />
+            <TimelineDetailSheet ref={detailSheetRef} />
           </div>
         </div>
       </div>
