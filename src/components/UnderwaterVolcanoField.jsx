@@ -442,7 +442,7 @@ export default function UnderwaterVolcanoField({
 
     // Deferring the transfer avoids StrictMode effect probing and uses idle time
     // while the volcano is still in its 1100px preload zone.
-    scheduleBackgroundTask(initializeWorker, { signal: controller.signal }).catch(() => {});
+    scheduleUserVisibleTask(initializeWorker, { signal: controller.signal }).catch(() => {});
 
     return () => {
       controller.abort();
