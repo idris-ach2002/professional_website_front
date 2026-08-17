@@ -8,6 +8,7 @@ const forbidText = (source, token, message) => { if (source.includes(token)) err
 const app = read("src/App.jsx");
 const volcano = read("src/components/UnderwaterVolcanoField.jsx");
 const ocean = read("src/components/OceanTransitionStage.jsx");
+const oceanMorph = read("src/components/OceanMorphBackground.jsx");
 const timeline = read("src/components/PortfolioTimeline.jsx");
 const nav = read("src/components/navigation/usePremiumNavigationMotion.js");
 const navShell = read("src/components/navigation/usePremiumNavigationShellMotion.js");
@@ -71,6 +72,10 @@ requireText(timeline, "const visibleCardInfo = cards.map", "timeline visible-car
 requireText(timeline, "const cachedCardGeometry = cards.map", "timeline geometry cache missing");
 forbidText(timeline, "const candidates = [...visibleCards.entries()]", "timeline per-sync candidate allocation returned");
 requireText(timeline, "This is the only Timeline geometry read phase", "timeline DOM read batching contract missing");
+forbidText(timeline, "FossilTimelineSurface", "legacy V10 Timeline must stay Canvas-free");
+forbidText(timeline, "resizeObserver?.observe(document.body)", "Timeline must not invalidate geometry from unrelated body resizes");
+requireText(oceanMorph, "global-ocean-depth-overlay", "ocean global depth overlay isolation missing");
+forbidText(oceanMorph, "--global-ocean-depth", "ocean depth must not invalidate the document root with inherited custom properties");
 
 requireText(nav, "const geometry = new Map()", "navigation geometry cache missing");
 requireText(nav, "refreshGeometry", "navigation batched geometry refresh missing");
@@ -117,4 +122,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log("Transparent performance contract OK: render-only Offscreen workers, transferable Float64 buffers, simulation-preserving allocation/geometry reuse, feature splitting and idle scheduling are locked without CSS changes.");
+console.log("Transparent performance contract OK: render-only Offscreen workers, transferable Float64 buffers, simulation-preserving allocation/geometry reuse, feature splitting and idle scheduling are locked while V10 keeps render formulas and non-Timeline visual geometry under an explicit UI contract.");

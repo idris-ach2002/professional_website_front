@@ -12,7 +12,6 @@ const spec = read("e2e/main-thread-laboratory.spec.js");
 const packageJson = JSON.parse(read("package.json"));
 const workflow = read(".github/workflows/frontend-ci.yml");
 const guardrails = read("docs/FRONT_RELEASE_GUARDRAILS.md");
-const fossilSurface = read("src/components/timeline/FossilTimelineSurface.jsx");
 const timeline = read("src/components/PortfolioTimeline.jsx");
 const aquarium = read("src/components/GlobalAquarium.jsx");
 const viewport = read("src/components/ViewportStability.jsx");
@@ -66,6 +65,14 @@ if (spec.includes("toBeLessThanOrEqual(MAX_P99_FRAME_MS)")) {
 if (spec.includes("toBeLessThanOrEqual(MAX_DROPPED_FRAME_RATIO)")) {
   errors.push("Headless dropped-frame ratio must remain diagnostic, not a hard release gate.");
 }
+const portfolioSpec = read("e2e/portfolio.spec.js");
+const topNavigation = read("src/components/TopNavigation.jsx");
+requireText(portfolioSpec, "sampleStart: 0", "Vitals INP sampling must expose an explicit temporal boundary.");
+requireText(portfolioSpec, "entry.startTime < (window.__portfolioPerformance.sampleStart ?? 0)", "Vitals INP sampling must reject late-delivered warm-up EventTiming entries.");
+requireText(portfolioSpec, "interactionDetails", "Vitals failures must expose input/processing/presentation timing diagnostics.");
+requireText(topNavigation, '!sheet || sheet === "more" ? renderMore() : null', "Mobile More sheet must remain warm-mounted so the measured click does not construct its DOM tree.");
+requireText(topNavigation, 'nav_mobile-command-sheet${sheet ? " is-open" : ""}', "Mobile command sheet must toggle visibility without remounting the shell.");
+
 requireText(spec, "toBeLessThanOrEqual(MAX_BLOCKING_DURATION_MS)", "Blocking-duration safety gate missing.");
 
 const mainThreadScript = packageJson.scripts?.["test:e2e:main-thread"] ?? "";
@@ -88,9 +95,10 @@ requireText(guardrails, "250 ms", "Release guardrails must document the Long Tas
 // V9 trace-derived invariants. These guards target the exact hot paths that
 // dominated forced style/layout in the production benchmark while keeping CSS
 // and animation formulas outside the optimization surface.
-requireText(fossilSurface, "const syncCanvasSize = () =>", "Fossil Canvas must cache geometry outside its paint cadence.");
-const fossilDraw = fossilSurface.slice(fossilSurface.indexOf("const draw = (progress"), fossilSurface.indexOf("const tick = (time)"));
-if (fossilDraw.includes("getBoundingClientRect")) errors.push("Fossil paint hot path must not read layout.");
+requireText(timeline, "TimelineCardReef", "V10 Timeline must use the lightweight legacy reef card surface.");
+if (/FossilTimelineSurface|timeline-fossil-canvas|getContext\(["']2d["']\)/.test(timeline)) {
+  errors.push("V10 Timeline must remain Canvas-free.");
+}
 requireText(timeline, "const measureCardGeometry = () =>", "Timeline must keep a dedicated geometry read phase.");
 requireText(timeline, "cachedCardGeometry", "Timeline card geometry cache missing.");
 const timelineRefresh = timeline.slice(timeline.indexOf("const refreshVisibleCardsFromLayout"), timeline.indexOf("const scheduleCardSync"));
@@ -100,8 +108,13 @@ requireText(aquarium, "const measureWorldGeometry = () =>", "World Director must
 requireText(aquarium, "new ResizeObserver", "World Director geometry cache must invalidate on layout-size changes.");
 const aquariumSelect = aquarium.slice(aquarium.indexOf("const selectViewportBiome"), aquarium.indexOf("const scheduleBandVerification"));
 if (aquariumSelect.includes("getBoundingClientRect")) errors.push("World Director selection hot path must remain layout-free.");
-requireText(viewport, "const publishStyle =", "Viewport root-property no-op deduplication missing.");
+requireText(viewport, "VIEWPORT_TARGET_SELECTOR", "Viewport values must be scoped to their real consumers.");
+if (viewport.includes("root.style.setProperty")) errors.push("Viewport geometry must not publish inherited custom properties on <html>.");
 requireText(ocean, "const scheduleDepthPaint =", "Ocean depth must use coalesced native RAF publication.");
+requireText(ocean, "global-ocean-depth-overlay", "Global ocean depth must use a dedicated compositor-local overlay.");
+if (ocean.includes("--global-ocean-depth") || ocean.includes("document.documentElement.style.setProperty")) {
+  errors.push("Global ocean depth must not publish inherited style state on <html>.");
+}
 if (ocean.includes("ScrollTrigger.create")) errors.push("Global ocean depth must not reactivate a full-document ScrollTrigger.");
 requireText(ocean, "needsScrollTrigger: false", "Ocean background must stay on the GSAP core-only runtime.");
 requireText(gsapRuntime, "getGsapCoreRuntime", "GSAP core runtime split missing.");

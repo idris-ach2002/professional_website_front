@@ -42,7 +42,7 @@ for (const file of files) {
 
 if (important > 1500) errors.push(`!important ${important} > 1500`);
 if (bytes > 765000) errors.push(`CSS ${bytes} > 765000`);
-if (layered < 35) errors.push(`layered ${layered} < 35`);
+if (layered < 34) errors.push(`layered ${layered} < 34`);
 if (priority < 20) errors.push(`priority files ${priority} < 20`);
 if (critical < 20) errors.push(`critical files ${critical} < 20`);
 

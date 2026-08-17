@@ -203,6 +203,8 @@ test("@vitals respecte les budgets Web Vitals sur mobile", async ({ page, browse
       lcpSupported: supportedEntryTypes.includes("largest-contentful-paint"),
       lcpSamples: 0,
       interactions: {},
+      interactionDetails: {},
+      sampleStart: 0,
     };
 
     if (window.__portfolioPerformance.lcpSupported) {
@@ -228,15 +230,26 @@ test("@vitals respecte les budgets Web Vitals sur mobile", async ({ page, browse
       new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
           if (!entry.interactionId || !entry.duration) continue;
+          if (entry.startTime < (window.__portfolioPerformance.sampleStart ?? 0)) continue;
           const key = String(entry.interactionId);
-          window.__portfolioPerformance.interactions[key] = Math.max(
-            window.__portfolioPerformance.interactions[key] ?? 0,
-            entry.duration,
-          );
-          window.__portfolioPerformance.inp = Math.max(
-            window.__portfolioPerformance.inp,
-            window.__portfolioPerformance.interactions[key],
-          );
+          const duration = Math.max(window.__portfolioPerformance.interactions[key] ?? 0, entry.duration);
+          window.__portfolioPerformance.interactions[key] = duration;
+          const inputDelay = Math.max(0, entry.processingStart - entry.startTime);
+          const processing = Math.max(0, entry.processingEnd - entry.processingStart);
+          const presentation = Math.max(0, entry.duration - (entry.processingEnd - entry.startTime));
+          const previous = window.__portfolioPerformance.interactionDetails[key];
+          if (!previous || entry.duration >= previous.duration) {
+            window.__portfolioPerformance.interactionDetails[key] = {
+              name: entry.name,
+              duration: entry.duration,
+              inputDelay,
+              processing,
+              presentation,
+              target: entry.target instanceof Element ? (entry.target.getAttribute("class") || entry.target.tagName) : null,
+              startTime: entry.startTime,
+            };
+          }
+          window.__portfolioPerformance.inp = Math.max(window.__portfolioPerformance.inp, duration);
         }
       }).observe({ type: "event", durationThreshold: 16, buffered: true });
     }
@@ -262,9 +275,14 @@ test("@vitals respecte les budgets Web Vitals sur mobile", async ({ page, browse
   await expect(navigationButton).toHaveAttribute("aria-expanded", "true");
   await navigationButton.click();
   await expect(navigationButton).toHaveAttribute("aria-expanded", "false");
+  // Start a real isolated sample. PerformanceObserver delivery is asynchronous:
+  // warm-up EventTiming entries can arrive after the reset unless we reject entries
+  // whose startTime predates this boundary.
   await page.evaluate(() => {
+    window.__portfolioPerformance.sampleStart = performance.now();
     window.__portfolioPerformance.inp = 0;
     window.__portfolioPerformance.interactions = {};
+    window.__portfolioPerformance.interactionDetails = {};
   });
 
   await navigationButton.click();
@@ -291,6 +309,7 @@ test("@vitals respecte les budgets Web Vitals sur mobile", async ({ page, browse
   expect(metrics.lcp).toBeLessThanOrEqual(2500);
   expect(metrics.cls).toBeLessThanOrEqual(0.1);
   expect(metrics.interactionSamples).toBeGreaterThan(0);
-  expect(metrics.inp).toBeLessThanOrEqual(200);
+  const slowestInteraction = Object.values(metrics.interactionDetails ?? {}).sort((a, b) => b.duration - a.duration)[0] ?? null;
+  expect(metrics.inp, `INP breakdown: ${JSON.stringify(slowestInteraction)}`).toBeLessThanOrEqual(200);
   expect(metrics.resources).toBeLessThanOrEqual(50);
 });

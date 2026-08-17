@@ -214,9 +214,9 @@ for (const viewport of VIEWPORTS) {
 
       const firstTimelineCard = page.locator("#timeline .timeline-expedition-card").first();
       await firstTimelineCard.scrollIntoViewIfNeeded();
+      await expect(firstTimelineCard.locator(".timeline-compact-open")).toHaveCount(0);
+      await expect(firstTimelineCard.locator("canvas")).toHaveCount(0);
       if (viewport.width <= 1240) {
-        await expect(firstTimelineCard.locator(".timeline-compact-open")).toBeVisible();
-        await expect(page.locator("#timeline .timeline-autonomous-stage")).toBeHidden();
         const timelineGeometry = await page.evaluate(() => {
           const card = document.querySelector("#timeline .timeline-expedition-card");
           const row = card?.closest(".timeline-expedition-row");
@@ -236,8 +236,6 @@ for (const viewport of VIEWPORTS) {
         expect(timelineGeometry.card.right).toBeLessThanOrEqual(viewport.width + 1);
         expect(timelineGeometry.card.width).toBeLessThanOrEqual(timelineGeometry.row.width + 2);
         expect(timelineGeometry.row.width).toBeLessThanOrEqual(timelineGeometry.track.width + 2);
-      } else {
-        await expect(firstTimelineCard.locator(".timeline-compact-open")).toBeHidden();
       }
 
       if (viewport.width <= 430) {

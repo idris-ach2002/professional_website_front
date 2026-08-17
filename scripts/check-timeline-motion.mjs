@@ -5,7 +5,6 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const component = read("src/components/PortfolioTimeline.jsx");
-const fossilSurface = read("src/components/timeline/FossilTimelineSurface.jsx");
 const sectionTitle = read("src/components/SectionTitle.jsx");
 const inspection = read("src/animations/timelineInspectionEngine.js");
 const timelineMotion = read("src/animations/timelineMotion.js");
@@ -16,8 +15,8 @@ const drone = read("src/components/ExplorationDrone.jsx");
 const app = read("src/App.jsx");
 const errors = [];
 
-if (!component.includes('data-motion-engine="abyss-expedition-inspection-v20-9"')) {
-  errors.push("Timeline must expose the V20.9 abyss expedition inspection engine marker.");
+if (!component.includes('data-motion-engine="abyss-expedition-inspection-v10-legacy-optimized"')) {
+  errors.push("Timeline must expose the V10 legacy-optimized inspection engine marker.");
 }
 if (!component.includes('data-motion-source="time-and-intersection-state"')) {
   errors.push("Timeline motion must be driven by time and discrete intersection state, not scroll coordinates.");
@@ -43,28 +42,11 @@ if (component.includes('reveal="fish"') || visualCss.includes("timeline-fish-ent
 if (!component.includes("playCardReveal") || !component.includes("progressForStep")) {
   errors.push("Timeline cards and line must reveal progressively from entry state using time, not scroll pixels.");
 }
-if (
-  !component.includes("timeline-expedition-card")
-  || !component.includes("timeline-fossil-card")
-  || !component.includes("FossilTimelineSurface")
-) {
-  errors.push("Timeline must keep expedition cards with the Canvas2D fossil surface.");
+if (!component.includes("timeline-expedition-card") || !component.includes("TimelineCardReef") || !component.includes("timeline-card-reef-field")) {
+  errors.push("Timeline must use the lightweight legacy expedition-card reef surface.");
 }
-if (
-  !fossilSurface.includes('getContext("2d")')
-  || !fossilSurface.includes("requestAnimationFrame")
-  || !fossilSurface.includes("data-fossil-type")
-  || !fossilSurface.includes("timeline-fossil-canvas")
-) {
-  errors.push("Timeline fossils must use the event-driven Canvas2D renderer.");
-}
-if (
-  fossilSurface.includes("<svg")
-  || fossilSurface.includes("timeline-fossil-relief")
-  || component.includes("TimelineCardReef")
-  || component.includes("timeline-card-reef-field")
-) {
-  errors.push("Legacy card-local reef/SVG fossil layers must stay removed.");
+if (/FossilTimelineSurface|timeline-fossil-canvas|getContext\(["']2d["']\)|createPortal|useState/.test(component)) {
+  errors.push("Timeline must stay Canvas-free, portal-free and local-state-free after the V10 migration.");
 }
 if (component.includes("TimelineCardWave") || visualCss.includes("timeline-card-wave-field")) {
   errors.push("Legacy heartbeat-like card wave background must stay removed.");
@@ -154,4 +136,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log("Timeline motion OK: V30 autonomous inspection, Canvas2D fossils, true caldera seam closure and protected abyss runway.");
+console.log("Timeline motion OK: V10 legacy cards are Canvas-free while autonomous inspection, caldera seam closure and protected abyss runway remain locked.");
