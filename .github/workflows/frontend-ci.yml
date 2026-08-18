@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Node
         uses: actions/setup-node@v4
@@ -64,7 +64,7 @@ jobs:
       PLAYWRIGHT_WORKER_CAP: "2"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Node
         uses: actions/setup-node@v4
@@ -109,7 +109,7 @@ jobs:
       PLAYWRIGHT_WORKER_CAP: "2"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Node
         uses: actions/setup-node@v4
@@ -155,7 +155,7 @@ jobs:
       PLAYWRIGHT_STRESS: "1"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Node
         uses: actions/setup-node@v4
@@ -201,7 +201,7 @@ jobs:
       PLAYWRIGHT_WORKERS: "1"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Node
         uses: actions/setup-node@v4
@@ -248,7 +248,7 @@ jobs:
       MAIN_THREAD_SAMPLE_MS: "1400"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Node
         uses: actions/setup-node@v4
@@ -293,7 +293,7 @@ jobs:
       PLAYWRIGHT_WORKERS: "1"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Node
         uses: actions/setup-node@v4
@@ -350,7 +350,7 @@ jobs:
       SOAK_STRUCTURE_EVERY: "3"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Node
         uses: actions/setup-node@v4
@@ -399,7 +399,7 @@ jobs:
       STATIC_SNAPSHOT_REQUIRED: "true"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Node
         uses: actions/setup-node@v4
