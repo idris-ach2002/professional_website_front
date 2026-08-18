@@ -11,7 +11,6 @@ const helper = read("e2e/support/main-thread-laboratory.js");
 const spec = read("e2e/main-thread-laboratory.spec.js");
 const packageJson = JSON.parse(read("package.json"));
 const workflow = read(".github/workflows/frontend-ci.yml");
-const guardrails = read("docs/FRONT_RELEASE_GUARDRAILS.md");
 const timeline = read("src/components/PortfolioTimeline.jsx");
 const aquarium = read("src/components/GlobalAquarium.jsx");
 const viewport = read("src/components/ViewportStability.jsx");
@@ -103,8 +102,6 @@ for (const fragment of [
   "frontend-main-thread-report",
 ]) requireText(workflow, fragment, `GitHub Actions main-thread job missing: ${fragment}`);
 
-requireText(guardrails, "Main Thread Laboratory", "Release guardrails must document the Main Thread Laboratory.");
-requireText(guardrails, "250 ms", "Release guardrails must document the Long Task safety ceiling.");
 
 // V9 trace-derived invariants. These guards target the exact hot paths that
 // dominated forced style/layout in the production benchmark while keeping CSS

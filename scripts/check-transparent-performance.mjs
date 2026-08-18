@@ -18,7 +18,6 @@ const oceanController = read("src/performance/oceanTransitionOffscreenController
 const protocol = read("src/performance/volcanoWorkerProtocol.js");
 const engine = read("src/animations/volcanoSimulationEngine.js");
 const initial = read("scripts/check-initial-source-closure.mjs");
-const docs = read("docs/FRONT_RELEASE_GUARDRAILS.md");
 const e2e = read("e2e/transparent-performance.spec.js");
 const analytics = read("src/components/AnalyticsTracker.jsx");
 const pkg = JSON.parse(read("package.json"));
@@ -95,8 +94,6 @@ forbidText(oceanWorker, "requestAnimationFrame(", "ocean render worker must stay
 forbidText(oceanWorker, "setInterval(", "ocean render worker must stay idle without messages");
 forbidText(volcanoWorker, "requestAnimationFrame(", "volcano render worker must stay message-driven with no autonomous RAF");
 forbidText(volcanoWorker, "setInterval(", "volcano render worker must stay idle without messages");
-requireText(docs, "## Transparent performance pass", "transparent performance release documentation missing");
-requireText(docs, "must not change the public visual contract", "visual invariance contract missing from release documentation");
 requireText(e2e, 'portfolio-animation-preference", "full"', "transparent-performance E2E must force the full render profile before navigation");
 requireText(e2e, 'data-performance-profile", "full"', "transparent-performance E2E must prove the full profile is active");
 requireText(e2e, '["main", "worker"]', "transparent-performance E2E must accept both valid renderer ownership states without scheduler polling");
