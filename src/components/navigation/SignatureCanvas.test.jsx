@@ -1,4 +1,4 @@
-import { render, waitFor } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import SignatureCanvas from "./SignatureCanvas";
 
@@ -70,7 +70,7 @@ describe("SignatureCanvas", () => {
     getContextSpy?.mockRestore();
   });
 
-  it("dessine une signature statique et conserve un fallback image", async () => {
+  it("dessine une signature statique et conserve un fallback image", () => {
     const { container } = render(<SignatureCanvas name="Idris" fallbackSrc="/logo.png" />);
 
     const signature = container.querySelector(".nav_signature");
@@ -84,7 +84,7 @@ describe("SignatureCanvas", () => {
     expect(wordmark).toHaveClass("is-static");
     expect(container.querySelectorAll(".nav-signature-letter")).toHaveLength(5);
 
-    await waitFor(() => expect(signature).toHaveAttribute("data-canvas-ready", "true"));
+    expect(signature).toHaveAttribute("data-canvas-ready", "true");
     expect(signature).toHaveAttribute("data-signature-quality", "static");
     expect(signature).toHaveAttribute("data-signature-event", "idle");
     expect(getContextSpy).toHaveBeenCalledWith("2d", { alpha: true, desynchronized: true });

@@ -9,10 +9,10 @@ vi.mock("../../services/authApi", () => ({
   isConcurrencyConflictError: vi.fn(() => false),
 }));
 
-function futureLocalInput(hours = 24) {
-  const date = new Date(Date.now() + hours * 60 * 60 * 1000);
-  const pad = (part) => String(part).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+function futureLocalInput() {
+  // Explicitly future relative to the production validation horizon; no wall
+  // clock sampling is part of the test precondition.
+  return "2099-01-15T12:00";
 }
 
 function context(overrides = {}) {

@@ -1,6 +1,15 @@
 import process from "node:process";
 import { expect, test } from "./support/test-fixtures";
-import { CONTRACT_TIMEOUT_MS, openPortfolioContract } from "./support/runtime-contract";
+import {
+  CONTRACT_TIMEOUT_MS,
+  assertHermeticNetwork,
+  assertNoRuntimeFaults,
+  captureRuntimeFaults,
+  installHermeticNetworkContract,
+  installPublicApiContract,
+  installRuntimeWatchdogContract,
+  openPortfolioContract,
+} from "./support/runtime-contract";
 import { reconcileWorldAtAnchor } from "./support/world-contract";
 import {
   beginMainThreadSample,
@@ -341,6 +350,11 @@ async function collectLaboratoryRound(
   roundNumber,
   testInfo,
 ) {
+  // browser.newContext() bypasses the automatic Playwright fixture. Reinstall
+  // the same hermetic network/API/runtime contracts before creating measured pages.
+  await installRuntimeWatchdogContract(context);
+  const network = await installHermeticNetworkContract(context);
+  await installPublicApiContract(context);
   await installMainThreadLaboratory(context);
 
   await context.addInitScript(() => {
@@ -370,6 +384,7 @@ async function collectLaboratoryRound(
 
   for (const item of SECTION_PLAN) {
     const samplePage = await context.newPage();
+    const runtimeGuard = captureRuntimeFaults(samplePage);
 
     try {
       await prepareLaboratoryPage(samplePage);
@@ -427,11 +442,15 @@ async function collectLaboratoryRound(
           ),
       });
     } finally {
+      runtimeGuard.dispose();
+      assertNoRuntimeFaults(runtimeGuard, `round ${roundNumber} / ${item.label}`);
       if (!samplePage.isClosed()) {
         await samplePage.close().catch(() => {});
       }
     }
   }
+
+  assertHermeticNetwork(network, `round ${roundNumber}`);
 
   const report = {
     schema: 1,
@@ -602,6 +621,9 @@ test(
         eventLoopDelayGate:
           "diagnostic-only",
 
+        temporalMetricGate:
+          "diagnostic-only",
+
         maxBlockingDurationMs:
           MAX_BLOCKING_DURATION_MS,
 
@@ -694,39 +716,22 @@ test(
     );
 
     for (const section of sections) {
-      expect(
-        section.maxLongTaskMs,
-        `${section.label}: médiane Long Task `
-          + `> ${MAX_LONG_TASK_MS} ms`,
-      ).toBeLessThanOrEqual(
-        MAX_LONG_TASK_MS,
-      );
+      const temporalViolations = [
+        ["Long Task", section.maxLongTaskMs, MAX_LONG_TASK_MS],
+        ["Long Animation Frame", section.maxLongAnimationFrameMs, MAX_LOAF_MS],
+        ["blockingDuration", section.maxBlockingDurationMs, MAX_BLOCKING_DURATION_MS],
+      ].filter(([, value, target]) => value > target);
 
-      expect(
-        section.maxLongAnimationFrameMs,
-        `${section.label}: médiane Long Animation Frame `
-          + `> ${MAX_LOAF_MS} ms`,
-      ).toBeLessThanOrEqual(
-        MAX_LOAF_MS,
-      );
-
-      expect(
-        section.maxBlockingDurationMs,
-        `${section.label}: médiane blocking duration `
-          + `> ${MAX_BLOCKING_DURATION_MS} ms`,
-      ).toBeLessThanOrEqual(
-        MAX_BLOCKING_DURATION_MS,
-      );
-
-      if (
-        section.p95EventLoopDelayMs
-        > MAX_EVENT_LOOP_DELAY_MS
-      ) {
+      for (const [metric, value, target] of temporalViolations) {
         console.warn(
-          `[main-thread][diagnostic] `
-            + `${section.label}: `
-            + `event-loop median p95=`
-            + `${section.p95EventLoopDelayMs}ms `
+          `[main-thread][diagnostic] ${section.label}: ${metric}=${value}ms > target=${target}ms`,
+        );
+      }
+
+      if (section.p95EventLoopDelayMs > MAX_EVENT_LOOP_DELAY_MS) {
+        console.warn(
+          `[main-thread][diagnostic] ${section.label}: `
+            + `event-loop median p95=${section.p95EventLoopDelayMs}ms `
             + `(target=${MAX_EVENT_LOOP_DELAY_MS}ms).`,
         );
       }

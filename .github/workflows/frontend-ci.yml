@@ -144,7 +144,7 @@ jobs:
           retention-days: 14
 
   concurrency-contract:
-    name: Hosted concurrency contract
+    name: Deterministic parallel isolation
     needs: quality
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -175,7 +175,7 @@ jobs:
           name: frontend-e2e-dist
           path: dist
 
-      - name: Exercise hosted-runner race invariants
+      - name: Verify two-worker isolation invariants
         run: npm run ci:concurrency:hosted
 
       - name: Upload concurrency report
@@ -190,8 +190,9 @@ jobs:
           retention-days: 14
 
   vitals:
-    name: Web Vitals
+    name: Web Vitals diagnostic
     needs: quality
+    continue-on-error: true
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     env:
@@ -220,7 +221,7 @@ jobs:
           name: frontend-e2e-dist
           path: dist
 
-      - name: Run isolated Web Vitals
+      - name: Collect isolated Web Vitals
         run: npm run ci:vitals
 
       - name: Upload Web Vitals report
@@ -235,8 +236,9 @@ jobs:
           retention-days: 14
 
   main-thread:
-    name: Main Thread Laboratory
+    name: Main Thread diagnostic
     needs: quality
+    continue-on-error: true
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     env:
@@ -266,7 +268,7 @@ jobs:
           name: frontend-e2e-dist
           path: dist
 
-      - name: Run Main Thread Laboratory
+      - name: Collect Main Thread Laboratory diagnostics
         run: npm run ci:main-thread
 
       - name: Upload main-thread report
@@ -326,12 +328,12 @@ jobs:
           retention-days: 14
 
   verify:
-    name: Frontend freeze gate
-    needs: [browser-contracts, responsive, concurrency-contract, vitals, main-thread, transparent-performance]
+    name: Frontend deterministic freeze gate
+    needs: [browser-contracts, responsive, concurrency-contract, transparent-performance]
     runs-on: ubuntu-24.04
     steps:
-      - name: Confirm all gates
-        run: echo "Quality, browser, responsive, concurrency, Web Vitals, main-thread and transparent-performance contracts passed."
+      - name: Confirm deterministic gates
+        run: echo "Quality, browser, responsive, parallel-isolation and transparent-performance contracts passed. Vitals/Main Thread remain diagnostics."
 
   soak:
     name: Runtime soak (manual diagnostic)

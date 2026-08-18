@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { MantineProvider } from "@mantine/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import AdminVersionPreviewPage from "./AdminVersionPreviewPage";
@@ -50,6 +50,14 @@ function ownerSnapshot() {
   };
 }
 
+async function flushControlledMicrotasks(turns = 4) {
+  await act(async () => {
+    for (let index = 0; index < turns; index += 1) {
+      await Promise.resolve();
+    }
+  });
+}
+
 describe("AdminVersionPreviewPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -80,7 +88,8 @@ describe("AdminVersionPreviewPage", () => {
       </MantineProvider>,
     );
 
-    await screen.findByText("APERÇU DRAFT — privé");
+    await flushControlledMicrotasks();
+    expect(screen.getByText("APERÇU DRAFT — privé")).toBeInTheDocument();
     expect(apiRequest).toHaveBeenCalledWith(
       "GET",
       "/manager/1/versions/2/preview?locale=fr",
@@ -92,10 +101,8 @@ describe("AdminVersionPreviewPage", () => {
 
     view.unmount();
 
-    await waitFor(() => {
-      expect(document.title).toBe("Portfolio");
-      expect(document.querySelector('meta[name="robots"]')).toHaveAttribute("content", "index,follow");
-    });
+    expect(document.title).toBe("Portfolio");
+    expect(document.querySelector('meta[name="robots"]')).toHaveAttribute("content", "index,follow");
   });
 
   it("keeps the last valid snapshot visible when a later refresh fails", async () => {
@@ -116,15 +123,18 @@ describe("AdminVersionPreviewPage", () => {
       </MantineProvider>,
     );
 
-    await screen.findByText("APERÇU DRAFT — privé");
+    await flushControlledMicrotasks();
+    expect(screen.getByText("APERÇU DRAFT — privé")).toBeInTheDocument();
     expect(intervalTick).toEqual(expect.any(Function));
     await act(async () => {
       intervalTick();
-      await Promise.resolve();
+      for (let index = 0; index < 4; index += 1) {
+        await Promise.resolve();
+      }
     });
 
-    await waitFor(() => expect(apiRequest).toHaveBeenCalledTimes(2));
-    await screen.findByText(/Dernière actualisation en erreur : network down/);
+    expect(apiRequest).toHaveBeenCalledTimes(2);
+    expect(screen.getByText(/Dernière actualisation en erreur : network down/)).toBeInTheDocument();
     expect(screen.getByText("APERÇU DRAFT — privé")).toBeInTheDocument();
     view.unmount();
   });

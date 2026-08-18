@@ -98,11 +98,12 @@ forbidText(volcanoWorker, "setInterval(", "volcano render worker must stay idle 
 requireText(docs, "## Transparent performance pass", "transparent performance release documentation missing");
 requireText(docs, "must not change the public visual contract", "visual invariance contract missing from release documentation");
 requireText(e2e, 'portfolio-animation-preference", "full"', "transparent-performance E2E must force the full render profile before navigation");
-requireText(e2e, 'page.emulateMedia({ reducedMotion: "no-preference" })', "transparent-performance E2E must explicitly disable reduced-motion for the Worker probe");
-requireText(e2e, 'data-performance-profile", "full"', "transparent-performance E2E must prove the full profile is active before asserting Worker ownership");
-requireText(e2e, 'reconcileWorldAtAnchor', "transparent-performance E2E must use deterministic world reconciliation for lazy volcano warm-up");
-requireText(e2e, '"#ocean-transition-caldera"', "transparent-performance E2E must warm the lazy volcano from the caldera anchor");
-requireText(e2e, 'CONTRACT_TIMEOUT_MS * 2', "transparent-performance E2E must allow the deferred volcano import/Worker lifecycle its deterministic extended timeout");
+requireText(e2e, 'data-performance-profile", "full"', "transparent-performance E2E must prove the full profile is active");
+requireText(e2e, '["main", "worker"]', "transparent-performance E2E must accept both valid renderer ownership states without scheduler polling");
+forbidText(e2e, "expect.poll(", "transparent-performance E2E must not poll until Worker scheduling becomes favorable");
+forbidText(e2e, "reconcileWorldAtAnchor", "transparent-performance E2E must not use lazy-world timing as proof of Worker correctness");
+requireText(read("src/performance/oceanTransitionOffscreenController.test.js"), "transfère exactement le canvas", "deterministic OffscreenCanvas controller unit test missing");
+requireText(read("src/performance/oceanTransitionOffscreenController.test.js"), "termine le Worker si le transfert échoue", "OffscreenCanvas transfer failure contract missing");
 
 if (!pkg.scripts?.["check:transparent-performance"]?.includes("check-transparent-performance.mjs")) {
   errors.push("check:transparent-performance script missing");

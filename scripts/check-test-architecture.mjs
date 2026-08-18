@@ -15,6 +15,9 @@ const forbidText = (source, fragment, message) => {
 const requireMatch = (source, pattern, message) => {
   if (!pattern.test(source)) errors.push(message);
 };
+const forbidMatch = (source, pattern, message) => {
+  if (pattern.test(source)) errors.push(message);
+};
 
 const packageJson = JSON.parse(read("package.json"));
 const playwright = read("playwright.config.js");
@@ -27,6 +30,10 @@ const world = read("e2e/support/world-contract.js");
 const functional = read("e2e/portfolio.spec.js");
 const responsive = read("e2e/responsive.spec.js");
 const stability = read("e2e/stability.spec.js");
+const runtimeSpec = read("e2e/runtime-intelligence.spec.js");
+const missionSpec = read("e2e/mission-control.spec.js");
+const transparentSpec = read("e2e/transparent-performance.spec.js");
+const vitalsDiagnostic = read("e2e/vitals-diagnostic.spec.js");
 const soak = read("e2e/soak.spec.js");
 const mainThreadLab = read("e2e/main-thread-laboratory.spec.js");
 const mainThreadHelper = read("e2e/support/main-thread-laboratory.js");
@@ -72,7 +79,6 @@ const requiredScripts = [
   "ci:responsive",
   "test:e2e:stability",
   "test:e2e:stability:ci",
-  "test:e2e:stability:repeat",
   "test:e2e:concurrency",
   "test:e2e:concurrency:ci",
   "test:e2e:concurrency:smoke",
@@ -96,6 +102,7 @@ const requiredScripts = [
   "ci:verify",
   "ci:freeze",
   "ci:concurrency",
+  "ci:diagnostics",
   "ci:soak",
   "ci:full",
   "ci:full:chain",
@@ -113,53 +120,55 @@ requireText(packageJson.scripts?.["ci:preflight"] ?? "", "test:workers", "ci:pre
 requireText(packageJson.scripts?.["ci:quality"] ?? "", "ci:preflight", "ci:quality must run the common preflight contract.");
 requireText(packageJson.scripts?.["ci:quality"] ?? "", "e2e:artifact:build", "ci:quality must build and stamp one hermetic E2E artifact.");
 requireText(packageJson.scripts?.["ci:quality"] ?? "", "test:leaks", "ci:quality must execute the async-leak detector before coverage/build.");
-requireText(packageJson.scripts?.["ci:concurrency"] ?? "", "PLAYWRIGHT_WORKERS=4 PLAYWRIGHT_STRESS=1 npm run ci:preflight", "Local intensive concurrency must validate its four-worker hardware precondition before launching browsers.");
+requireText(packageJson.scripts?.["ci:concurrency"] ?? "", "PLAYWRIGHT_WORKERS=4 PLAYWRIGHT_STRESS=1 npm run ci:preflight", "Local concurrency must validate its four-worker hardware precondition before launching browsers.");
 requireText(packageJson.scripts?.["ci:concurrency"] ?? "", "ci:preflight", "Standalone concurrency must run the common preflight contract.");
 requireText(packageJson.scripts?.["ci:soak"] ?? "", "ci:preflight", "Standalone soak must run the common preflight contract.");
 requireText(packageJson.scripts?.["ci:verify"] ?? "", "PLAYWRIGHT_WORKER_CAP=2", "Local ci:verify must use the same hardware-aware worker cap as hosted normal gates.");
 requireText(packageJson.scripts?.["ci:verify"] ?? "", "PLAYWRIGHT_PREBUILT=1", "ci:verify must reuse the artifact produced by ci:quality.");
-requireText(packageJson.scripts?.["ci:freeze"] ?? "", "test:e2e:concurrency:smoke", "ci:freeze must include a bounded hosted-runner-safe concurrency smoke gate.");
+requireText(packageJson.scripts?.["ci:freeze"] ?? "", "test:e2e:concurrency:smoke", "ci:freeze must include one deterministic parallel-isolation smoke gate.");
 if (packageJson.scripts?.["ci:full"] !== "CI=1 npm run ci:full:chain") {
   errors.push("ci:full must force CI semantics locally and delegate to the single blocking chain.");
 }
-forbidText(packageJson.scripts?.["ci:full:chain"] ?? "", "soak", "ci:full must contain only reliable blocking gates; endurance remains an explicit standalone experiment.");
-for (const gate of ["ci:quality", "ci:browser-contracts", "ci:responsive", "ci:concurrency:hosted", "ci:vitals", "ci:main-thread", "ci:transparent-performance"]) {
-  requireText(packageJson.scripts?.["ci:full:chain"] ?? "", `npm run ${gate}`, `ci:full:chain must mirror the blocking GitHub chain and include ${gate}.`);
+for (const diagnostic of ["ci:vitals", "ci:main-thread", "ci:soak"]) {
+  forbidText(packageJson.scripts?.["ci:full:chain"] ?? "", diagnostic, `ci:full must not block release on diagnostic experiment ${diagnostic}.`);
+}
+for (const gate of ["ci:quality", "ci:browser-contracts", "ci:responsive", "ci:concurrency:hosted", "ci:transparent-performance"]) {
+  requireText(packageJson.scripts?.["ci:full:chain"] ?? "", `npm run ${gate}`, `ci:full:chain must include deterministic gate ${gate}.`);
 }
 for (const gate of ["ci:browser-contracts", "ci:responsive", "ci:vitals", "ci:main-thread", "ci:transparent-performance"]) {
   requireText(packageJson.scripts?.[gate] ?? "", "PLAYWRIGHT_PREBUILT=1", `${gate} must reuse the hermetic artifact built by ci:quality.`);
   requireText(packageJson.scripts?.[gate] ?? "", "E2E_ARTIFACT_REQUIRE_PREBUILT=1", `${gate} must reject stale/missing hermetic artifacts.`);
 }
+requireText(packageJson.scripts?.["ci:diagnostics"] ?? "", "ci:vitals", "ci:diagnostics must expose Web Vitals collection.");
+requireText(packageJson.scripts?.["ci:diagnostics"] ?? "", "ci:main-thread", "ci:diagnostics must expose Main Thread collection.");
 requireText(packageJson.scripts?.["ci:browser-contracts"] ?? "", "PLAYWRIGHT_WORKER_CAP=2", "ci:browser-contracts must match the hosted browser worker policy.");
 requireText(packageJson.scripts?.["ci:responsive"] ?? "", "PLAYWRIGHT_WORKER_CAP=2", "ci:responsive must match the hosted responsive worker policy.");
 for (const gate of ["ci:vitals", "ci:main-thread", "ci:transparent-performance"]) requireText(packageJson.scripts?.[gate] ?? "", "PLAYWRIGHT_WORKERS=1", `${gate} must stay isolated to one worker.`);
-requireText(packageJson.scripts?.["test:e2e:concurrency"] ?? "", "PLAYWRIGHT_WORKERS=4", "Concurrency gate must force four workers.");
-requireText(packageJson.scripts?.["test:e2e:concurrency"] ?? "", "--project=chromium", "Concurrency gate must isolate scheduling pressure to Chromium.");
-requireText(packageJson.scripts?.["test:e2e:concurrency"] ?? "", "--repeat-each=5", "Concurrency gate must repeat each stability scenario five times.");
-requireText(packageJson.scripts?.["test:e2e:concurrency"] ?? "", "PLAYWRIGHT_STRESS=1", "Concurrency gate must disable nonessential video encoding pressure.");
-forbidText(packageJson.scripts?.["test:e2e:concurrency"] ?? "", "PLAYWRIGHT_PREBUILT=1", "Direct concurrency must be self-contained locally; GitHub supplies strict prebuilt mode through job env.");
-requireText(packageJson.scripts?.["test:e2e:concurrency:ci"] ?? "", "PLAYWRIGHT_WORKERS=2", "Hosted concurrency must use the standard private-repository Linux runner floor of two workers.");
-requireText(packageJson.scripts?.["test:e2e:concurrency:ci"] ?? "", "PLAYWRIGHT_STRESS=1", "Hosted concurrency must exercise the stress instrumentation policy.");
-requireText(packageJson.scripts?.["test:e2e:concurrency:ci"] ?? "", "--repeat-each=5", "Hosted concurrency must repeat stability scenarios five times.");
-requireText(packageJson.scripts?.["ci:concurrency:hosted"] ?? "", "PLAYWRIGHT_WORKERS=2 PLAYWRIGHT_STRESS=1 npm run ci:preflight", "Hosted concurrency must validate its two-worker hardware precondition before launching browsers.");
+
+// Parallel execution is allowed to prove test isolation, but repetition is never
+// accepted as evidence of correctness. One deterministic scenario = one verdict.
+requireText(packageJson.scripts?.["test:e2e:concurrency"] ?? "", "PLAYWRIGHT_WORKERS=4", "Local concurrency must force four workers.");
+requireText(packageJson.scripts?.["test:e2e:concurrency"] ?? "", "--project=chromium", "Local concurrency must isolate parallel execution to Chromium.");
+requireText(packageJson.scripts?.["test:e2e:concurrency"] ?? "", "PLAYWRIGHT_STRESS=1", "Local concurrency must exercise the stress instrumentation policy.");
+requireText(packageJson.scripts?.["test:e2e:concurrency:ci"] ?? "", "PLAYWRIGHT_WORKERS=2", "Hosted concurrency must use two workers.");
+requireText(packageJson.scripts?.["test:e2e:concurrency:ci"] ?? "", "--workers=2", "Hosted concurrency CLI must use exactly two workers.");
+requireText(packageJson.scripts?.["test:e2e:concurrency:smoke"] ?? "", "--workers=2", "Freeze concurrency smoke must use exactly two workers.");
+for (const [name, command] of Object.entries(packageJson.scripts ?? {})) {
+  if (command.includes("--repeat-each")) errors.push(`${name} must not use --repeat-each as a correctness gate.`);
+}
 requireText(packageJson.scripts?.["ci:concurrency:hosted"] ?? "", "ci:preflight", "Hosted concurrency must rerun environment/architecture preconditions on its fresh VM.");
-requireText(packageJson.scripts?.["ci:concurrency:hosted"] ?? "", "test:e2e:concurrency:ci", "Hosted concurrency must execute the two-worker hosted stress suite.");
-requireText(packageJson.scripts?.["ci:concurrency:hosted"] ?? "", "PLAYWRIGHT_PREBUILT=1", "Hosted concurrency must reuse the same hermetic artifact locally and on GitHub.");
-requireText(packageJson.scripts?.["ci:concurrency:hosted"] ?? "", "E2E_ARTIFACT_REQUIRE_PREBUILT=1", "Hosted concurrency must reject a stale/missing prebuilt artifact.");
-requireText(packageJson.scripts?.["test:e2e:concurrency:smoke"] ?? "", "PLAYWRIGHT_WORKERS=2", "Local freeze concurrency smoke must remain portable to the 2-vCPU hosted-runner floor.");
-requireText(packageJson.scripts?.["test:e2e:concurrency:smoke"] ?? "", "--repeat-each=2", "Local freeze concurrency smoke must stay bounded to two repetitions.");
+requireText(packageJson.scripts?.["ci:concurrency:hosted"] ?? "", "test:e2e:concurrency:ci", "Hosted concurrency must execute the deterministic two-worker suite.");
+requireText(packageJson.scripts?.["ci:concurrency:hosted"] ?? "", "PLAYWRIGHT_PREBUILT=1", "Hosted concurrency must reuse the hermetic artifact.");
+requireText(packageJson.scripts?.["ci:concurrency:hosted"] ?? "", "E2E_ARTIFACT_REQUIRE_PREBUILT=1", "Hosted concurrency must reject stale/missing artifacts.");
 requireText(packageJson.scripts?.["test:e2e:browser:ci"] ?? "", "PLAYWRIGHT_WORKER_CAP=2", "Cross-browser CI contracts must use the hardware-aware two-worker cap.");
 requireText(packageJson.scripts?.["test:e2e:stability:ci"] ?? "", "PLAYWRIGHT_WORKER_CAP=2", "Cross-browser CI stability must use the hardware-aware two-worker cap.");
 requireText(packageJson.scripts?.["test:e2e:soak:ci"] ?? "", "PLAYWRIGHT_WORKERS=1", "Soak config and CLI must agree on one worker.");
 requireText(packageJson.scripts?.["test:e2e:soak:ci"] ?? "", "--workers=1", "Soak must remain a single-browser single-worker endurance test.");
-requireText(packageJson.scripts?.["test:e2e:vitals"] ?? "", "PLAYWRIGHT_WORKERS=1", "Web Vitals config and CLI must agree on one worker.");
-requireText(packageJson.scripts?.["test:e2e:vitals"] ?? "", "--workers=1", "Web Vitals must remain isolated on one worker.");
-requireText(packageJson.scripts?.["test:e2e:vitals"] ?? "", "--repeat-each=5", "Web Vitals INP gate must pass five isolated repetitions, not a single favorable run.");
-requireText(packageJson.scripts?.["test:e2e:main-thread"] ?? "", "PLAYWRIGHT_WORKERS=1", "Main Thread Laboratory must remain isolated on one worker.");
-requireText(packageJson.scripts?.["test:e2e:main-thread"] ?? "", "--workers=1", "Main Thread Laboratory CLI must remain isolated on one worker.");
-requireText(packageJson.scripts?.["test:e2e:main-thread"] ?? "", "--project=chromium", "Main Thread Laboratory requires Chromium PerformanceObserver coverage.");
-requireText(packageJson.scripts?.["test:e2e:transparent-performance"] ?? "", "PLAYWRIGHT_WORKERS=1", "Transparent performance must remain isolated on one worker.");
-requireText(packageJson.scripts?.["test:e2e:transparent-performance"] ?? "", "--project=chromium", "Transparent performance requires Chromium instrumentation.");
+requireText(packageJson.scripts?.["test:e2e:vitals"] ?? "", "e2e/vitals-diagnostic.spec.js", "Web Vitals must live in a dedicated diagnostic spec.");
+requireText(packageJson.scripts?.["test:e2e:vitals"] ?? "", "--workers=1", "Web Vitals diagnostics must remain isolated on one worker.");
+requireText(packageJson.scripts?.["test:e2e:main-thread"] ?? "", "--workers=1", "Main Thread diagnostics must remain isolated on one worker.");
+requireText(packageJson.scripts?.["test:e2e:main-thread"] ?? "", "--project=chromium", "Main Thread diagnostics require Chromium PerformanceObserver coverage.");
+requireText(packageJson.scripts?.["test:e2e:transparent-performance"] ?? "", "--project=chromium", "Transparent performance smoke requires Chromium instrumentation.");
 requireText(packageJson.scripts?.["test:e2e:responsive"] ?? "", "--project=chromium", "Responsive matrix must run once in Chromium instead of duplicating layout checks cross-browser.");
 
 for (const threshold of ["statements: 82", "branches: 70", "functions: 85", "lines: 84"]) {
@@ -268,31 +277,60 @@ for (const contract of [
   "reconcileWorldAtAnchor",
   'root.style.setProperty("scroll-behavior", "auto", "important")',
   '"portfolio:ocean-world-reconcile"',
-  "requestAnimationFrame(() => requestAnimationFrame(resolve))",
+  "getBoundingClientRect()",
   "scrollError",
   "centerError",
 ]) {
   requireText(world, contract, `World navigation contract missing: ${contract}.`);
 }
 
-const e2eSpecs = [
+const blockingE2eSpecs = [
   ["portfolio.spec.js", functional],
   ["responsive.spec.js", responsive],
   ["stability.spec.js", stability],
-  ["soak.spec.js", soak],
+  ["runtime-intelligence.spec.js", runtimeSpec],
+  ["mission-control.spec.js", missionSpec],
+  ["transparent-performance.spec.js", transparentSpec],
 ];
-for (const [name, source] of e2eSpecs) {
+for (const [name, source] of blockingE2eSpecs) {
   requireText(source, 'from "./support/test-fixtures"', `${name} must use the shared automatic fixture.`);
   forbidText(source, 'from "@playwright/test"', `${name} must not bypass the shared E2E fixture.`);
-  forbidText(source, "page.waitForTimeout(", `${name} must use observable postconditions instead of fixed sleeps.`);
+  forbidText(source, "page.waitForTimeout(", `${name} must use causal postconditions instead of fixed sleeps.`);
+  forbidText(source, "expect.poll(", `${name} must not poll until a scheduler-dependent state becomes favorable.`);
+  forbidText(source, "page.mouse.wheel(", `${name} must not use wheel timing as proof of a functional state transition.`);
+  forbidText(source, "requestAnimationFrame(", `${name} must not predict paint cadence in a blocking browser gate.`);
   forbidText(source, 'waitUntil: "networkidle"', `${name} must not use networkidle as an application readiness signal.`);
   forbidText(source, "unrouteAll(", `${name} must not destroy shared hermetic routing contracts.`);
 }
 
+const deterministicUnitFiles = fs.readdirSync(path.join(root, "src"), { recursive: true })
+  .filter((entry) => /\.test\.(?:js|jsx|ts|tsx)$/.test(String(entry)))
+  .map((entry) => {
+    const relative = `src/${String(entry).replaceAll("\\", "/")}`;
+    return [relative, read(relative)];
+  });
+
+for (const [name, source] of deterministicUnitFiles) {
+  forbidMatch(source, /Date\.now\s*\(/, `${name} must use a fixed test instant instead of the wall clock.`);
+  forbidMatch(source, /new\s+Promise\s*\([^)]*=>[\s\S]{0,120}setTimeout\s*\(/, `${name} must not sleep to let asynchronous work settle.`);
+  forbidMatch(source, /new\s+Promise\s*\([^)]*=>[\s\S]{0,160}requestAnimationFrame\s*\(/, `${name} must control RAF explicitly instead of waiting for real paint frames.`);
+  forbidMatch(source, /\bwaitFor\s*\(/, `${name} must use an explicit async barrier instead of Testing Library polling.`);
+  forbidMatch(source, /\.findBy[A-Z][A-Za-z0-9_]*\s*\(/, `${name} must use explicit controlled completion before synchronous getBy assertions.`);
+}
+
+for (const [name, source] of [["soak.spec.js", soak], ["vitals-diagnostic.spec.js", vitalsDiagnostic]]) {
+  requireText(source, 'from "./support/test-fixtures"', `${name} must use the shared automatic fixture.`);
+  forbidText(source, 'from "@playwright/test"', `${name} must not bypass the shared E2E fixture.`);
+}
+
 requireMatch(stability, /test\.describe\.configure\(\{\s*mode:\s*"parallel"[\s\S]*?timeout:\s*\d[\d_]*\s*\}\)/, "Stability scenarios must be explicitly parallel with a bounded scenario timeout.");
 requireText(stability, "expectWorldBiome", "Stability world sequencing must use the shared deterministic anchor contract.");
+requireText(stability, 'presetAnimationRuntime(page, { preference: "full", paused: true })', "Timeline stability must use an explicit paused precondition instead of racing IntersectionObserver/scroll timing.");
+requireText(stability, 'data-timeline-scene", "paused"', "Timeline stability must assert the causal paused-state postcondition.");
 forbidText(stability, "captureRuntimeFaults", "Stability specs must rely on the automatic runtime fixture.");
 forbidText(stability, "setTimeout(", "Stability scenarios must not contain fixed-duration sleeps.");
+forbidText(stability, "page.mouse.wheel(", "Timeline stability must not infer direction from scheduler-sensitive wheel timing.");
+forbidText(world, "requestAnimationFrame(", "World navigation must use geometry reads plus explicit reconciliation, not paint-frame prediction.");
 
 for (const contract of [
   "runtimeGuard",
@@ -320,7 +358,9 @@ forbidText(soak, "scrollIntoView(", "Soak must navigate only through persistent 
 
 const responsiveCases = (responsive.match(/name:\s*"\d+x\d+"/g) ?? []).length;
 if (responsiveCases !== 9) errors.push(`Responsive matrix must retain 9 viewports; found ${responsiveCases}.`);
-requireText(functional, "@vitals", "Functional spec must retain the isolated Web Vitals scenario.");
+forbidText(functional, "@vitals", "Functional browser contracts must not contain hardware-dependent Web Vitals gates.");
+requireText(vitalsDiagnostic, "@vitals", "Dedicated Web Vitals diagnostic scenario missing.");
+requireText(vitalsDiagnostic, "[vitals][diagnostic]", "Web Vitals thresholds must be reported as diagnostics.");
 requireText(functional, "page.route(\"**/website/default**\"", "API fallback test must override only its page-level route.");
 requireText(functional, "allowHttpResponse", "Expected HTTP failures must be explicitly declared by the scenario.");
 requireText(faultPolicy, "classifyConsoleError", "Runtime fault policy must distinguish browser-generated resource console noise from application console errors.");
@@ -396,9 +436,9 @@ for (const contract of [
   "name: frontend-e2e-dist",
   "Browser contracts",
   "Responsive matrix",
-  "Hosted concurrency contract",
-  "Web Vitals",
-  "Main Thread Laboratory",
+  "Deterministic parallel isolation",
+  "Web Vitals diagnostic",
+  "Main Thread diagnostic",
   "Transparent performance contract",
   "Runtime soak",
   "Deploy Cloudflare",
@@ -432,6 +472,12 @@ requireMatch(
   /concurrency-contract:[\s\S]*?PLAYWRIGHT_WORKERS:\s*"2"[\s\S]*?npm run ci:concurrency:hosted/,
   "GitHub concurrency must target the 2-worker standard hosted-runner floor without oversubscribing private-repository VMs.",
 );
+requireMatch(workflow, /vitals:[\s\S]*?continue-on-error:\s*true/, "Web Vitals must be a non-blocking diagnostic job.");
+requireMatch(workflow, /main-thread:[\s\S]*?continue-on-error:\s*true/, "Main Thread Laboratory must be a non-blocking diagnostic job.");
+requireMatch(workflow, /verify:[\s\S]*?needs:\s*\[browser-contracts, responsive, concurrency-contract, transparent-performance\]/, "verify must depend only on deterministic blocking jobs.");
+forbidText(workflow.match(/verify:[\s\S]*?(?=\n  soak:)/)?.[0] ?? "", "vitals", "verify must not depend on Web Vitals diagnostics.");
+forbidText(workflow.match(/verify:[\s\S]*?(?=\n  soak:)/)?.[0] ?? "", "main-thread", "verify must not depend on Main Thread diagnostics.");
+
 for (const contract of [
   'SOAK_DURATION_MS: "60000"',
   'SOAK_HEARTBEAT_MS: "5000"',
@@ -452,6 +498,6 @@ if (errors.length > 0) {
 
 console.log(
   "Test architecture OK: hermetic fixtures, observable pre/postconditions, isolated browser contexts, "
-  + "pinned Node/npm runtime, hermetic build+browser network, hardware-aware normal worker caps, portable two-worker hosted race gate plus four-worker local stress, "
-  + "single-flight steady-state soak probes without synthetic lifecycle assumptions, single-worker vitals/soak/main-thread diagnostics, and one authoritative CI/CD workflow.",
+  + "pinned Node/npm runtime, hermetic build+browser network, hardware-aware worker caps, deterministic parallel-isolation gates without repeat-each, "
+  + "single-flight soak plus non-blocking vitals/main-thread diagnostics, and one authoritative CI/CD workflow.",
 );

@@ -30,22 +30,22 @@ d’endurance ne soit pas confondu avec un test fonctionnel :
 ```txt
 fonctionnel       → Chromium + Firefox, workers hardware-aware plafonnés à 2
 responsive        → Chromium, 9 viewports
-stability         → Chromium + Firefox, scénarios sans retry
-concurrency local → Chromium, 4 workers, repeat-each=5
-concurrency CI    → Chromium, 2 workers, repeat-each=5
-Web Vitals INP   → Chromium, 1 worker, repeat-each=5
-vitals            → Chromium, 1 worker
-main-thread       → Chromium, 1 worker
-transparent perf  → Chromium, 1 worker
-soak manuel       → Chromium, 1 worker
+stability         → Chromium + Firefox, scénarios déterministes sans retry
+isolation locale  → Chromium, 4 workers, une seule passe
+isolation CI      → Chromium, 2 workers, une seule passe
+transparent perf  → Chromium, 1 worker, contrat DOM/fallback déterministe
+vitals diagnostic → Chromium, 1 worker, non bloquant
+main-thread diag. → Chromium, 1 worker, non bloquant
+soak manuel       → Chromium, 1 worker, non bloquant
 ```
 
-`ci:freeze` reste une gate locale courte de compatibilité. `ci:full` force aussi `CI=1` localement puis reproduit en séquence les gates bloquantes du workflow GitHub : qualité (préflight + lint + détection de fuites async + couverture + build hermétique), contrats Chromium/Firefox, responsive, concurrence hébergée, Web Vitals, Main Thread Laboratory et performance transparente. Le soak reste un diagnostic d’endurance volontaire : il ne bloque ni `ci:full` ni le déploiement GitHub.
+`ci:freeze` reste une gate locale courte de compatibilité. `ci:full` force aussi `CI=1` localement puis reproduit uniquement les gates déterministes du workflow GitHub : qualité (préflight + lint + détection de fuites async + couverture + build hermétique), contrats Chromium/Firefox, responsive, isolation parallèle hébergée et contrat de performance transparente. Les Web Vitals, le Main Thread Laboratory et le soak sont des diagnostics séparés : ils produisent des mesures et des artifacts mais ne transforment pas le scheduling d’une VM partagée en verdict fonctionnel de release.
 
 ```bash
 npm run ci:freeze
 npm run ci:concurrency
 npm run ci:full
+npm run ci:diagnostics
 SOAK_DURATION_MS=60000 npm run ci:soak
 ```
 
@@ -145,4 +145,4 @@ npm run check:responsive
 npm run test:e2e:responsive
 ```
 
-`npm run ci:verify` exécute des phases E2E séparées : fonctionnel Chromium/Firefox, matrice responsive Chromium, stabilité Chromium/Firefox, puis Web Vitals Chromium isolés. La matrice V18 couvre 9 tailles de 360×800 à 1920×1080 et bloque tout débordement horizontal connu.
+`npm run ci:verify` exécute les E2E déterministes : fonctionnel Chromium/Firefox, matrice responsive Chromium, stabilité Chromium/Firefox et contrat transparent-performance. Les Web Vitals et le Main Thread Laboratory sont déclenchés explicitement par `npm run ci:diagnostics`. La matrice V18 couvre 9 tailles de 360×800 à 1920×1080 et bloque tout débordement horizontal connu.

@@ -69,14 +69,14 @@ if (spec.includes("toBeLessThanOrEqual(MAX_P99_FRAME_MS)")) {
 if (spec.includes("toBeLessThanOrEqual(MAX_DROPPED_FRAME_RATIO)")) {
   errors.push("Headless dropped-frame ratio must remain diagnostic, not a hard release gate.");
 }
-const portfolioSpec = read("e2e/portfolio.spec.js");
+const vitalsDiagnostic = read("e2e/vitals-diagnostic.spec.js");
 const topNavigation = read("src/components/TopNavigation.jsx");
 const navigationCss = read("src/styles/navigation/premium-navigation-v2.css");
-requireText(portfolioSpec, "sampleStart: 0", "Vitals INP sampling must expose an explicit temporal boundary.");
-requireText(portfolioSpec, "let remaining = 4", "Vitals warm-up must drain several rendered frames before sampling INP.");
-requireText(portfolioSpec, "requestAnimationFrame(settleFrame)", "Vitals warm-up must use rendered frames rather than a fixed sleep before sampling INP.");
-requireText(portfolioSpec, "entry.startTime < (window.__portfolioPerformance.sampleStart ?? 0)", "Vitals INP sampling must reject late-delivered warm-up EventTiming entries.");
-requireText(portfolioSpec, "interactionDetails", "Vitals failures must expose input/processing/presentation timing diagnostics.");
+requireText(vitalsDiagnostic, "sampleStart: 0", "Vitals INP sampling must expose an explicit temporal boundary.");
+requireText(vitalsDiagnostic, "let remaining = 4", "Vitals warm-up must drain several rendered frames before sampling INP.");
+requireText(vitalsDiagnostic, "requestAnimationFrame(settleFrame)", "Vitals warm-up must use rendered frames rather than a fixed sleep before sampling INP.");
+requireText(vitalsDiagnostic, "entry.startTime < (window.__portfolioPerformance.sampleStart ?? 0)", "Vitals INP sampling must reject late-delivered warm-up EventTiming entries.");
+requireText(vitalsDiagnostic, "interactionDetails", "Vitals failures must expose input/processing/presentation timing diagnostics.");
 requireText(topNavigation, '!sheet || sheet === "more" ? renderMore() : null', "Mobile More sheet must remain warm-mounted so the measured click does not construct its DOM tree.");
 requireText(topNavigation, 'nav_mobile-command-sheet${shown ? " is-open" : ""}', "Mobile command sheet must toggle its visual state without remounting the warm shell.");
 requireText(navigationCss, "mobile-sheet INP precomposition guard", "Mobile sheet precomposition guard marker missing.");
@@ -86,11 +86,6 @@ requireText(navigationCss, "transition:opacity .08s linear,transform .08s cubic-
 requireText(navigationCss, ".nav_mobile-sheet-backdrop{backdrop-filter:none!important;-webkit-backdrop-filter:none!important", "Full-viewport mobile backdrop blur must stay disabled on the measured INP path.");
 requireText(navigationCss, ".nav_mobile-dock-tools.nav_mobile-command-sheet{contain:layout style paint;backdrop-filter:none!important;-webkit-backdrop-filter:none!important", "Mobile sheet must stay paint-contained and avoid first-open backdrop rasterization.");
 
-requirePattern(
-  spec,
-  /\.toBeLessThanOrEqual\s*\(\s*MAX_BLOCKING_DURATION_MS\s*,?\s*\)/,
-  "Blocking-duration safety gate missing.",
-);
 
 const mainThreadScript = packageJson.scripts?.["test:e2e:main-thread"] ?? "";
 requireText(mainThreadScript, "PLAYWRIGHT_WORKERS=1", "Main-thread lab must force one Playwright worker.");
@@ -98,11 +93,13 @@ requireText(mainThreadScript, "--project=chromium", "Main-thread lab must run in
 requireText(mainThreadScript, "--workers=1", "Main-thread lab CLI must agree on one worker.");
 requireText(packageJson.scripts?.["check:main-thread"] ?? "", "check-main-thread-laboratory.mjs", "Missing check:main-thread contract.");
 requireText(packageJson.scripts?.["check:final"] ?? "", "check:main-thread", "Final static hardening must include the main-thread laboratory contract.");
-requireText(packageJson.scripts?.["ci:full:chain"] ?? "", "ci:main-thread", "The complete blocking chain must execute the main-thread laboratory before release.");
+if ((packageJson.scripts?.["ci:full:chain"] ?? "").includes("ci:main-thread")) {
+  errors.push("Main Thread Laboratory must remain diagnostic and outside the blocking release chain.");
+}
 
 for (const fragment of [
   "main-thread:",
-  "Run Main Thread Laboratory",
+  "Collect Main Thread Laboratory diagnostics",
   "frontend-main-thread-report",
 ]) requireText(workflow, fragment, `GitHub Actions main-thread job missing: ${fragment}`);
 
@@ -217,6 +214,21 @@ requirePattern(
   "Main-thread event-loop timer must remain explicit diagnostic telemetry.",
 );
 
+requirePattern(
+  spec,
+  /temporalMetricGate\s*:\s*["']diagnostic-only["']/,
+  "Main-thread temporal metrics must remain diagnostic-only on shared/headless runners.",
+);
+requireText(spec, "installHermeticNetworkContract(context)", "Main-thread manual contexts must reinstall the hermetic network contract.");
+requireText(spec, "installPublicApiContract(context)", "Main-thread manual contexts must reinstall the public API contract.");
+requireText(spec, "assertHermeticNetwork(network", "Main-thread diagnostic must prove its auxiliary contexts stayed hermetic.");
+requireText(spec, "assertNoRuntimeFaults(runtimeGuard", "Main-thread diagnostic must keep runtime safety as a hard invariant.");
+for (const threshold of ["MAX_LONG_TASK_MS", "MAX_LOAF_MS", "MAX_BLOCKING_DURATION_MS"]) {
+  if (new RegExp(`toBeLessThanOrEqual\\s*\\(\\s*${threshold}`).test(spec)) {
+    errors.push(`${threshold} must not be an absolute release assertion in headless diagnostics.`);
+  }
+}
+
 if (
   spec.includes(
     ".toBeLessThanOrEqual(MAX_EVENT_LOOP_DELAY_MS)",
@@ -267,19 +279,19 @@ requireText(
 requireText(
   spec,
   'medianMetric(samples, "maxLongTaskMs")',
-  "Main-thread Long Task decision must use the three-round median.",
+  "Main-thread report must aggregate Long Task telemetry by median.",
 );
 
 requirePattern(
   spec,
   /medianMetric\s*\(\s*samples\s*,\s*["']maxLongAnimationFrameMs["']\s*,?\s*\)/,
-  "Main-thread LoAF decision must use the three-round median.",
+  "Main-thread report must aggregate LoAF telemetry by median.",
 );
 
 requirePattern(
   spec,
   /medianMetric\s*\(\s*samples\s*,\s*["']maxBlockingDurationMs["']\s*,?\s*\)/,
-  "Main-thread blocking decision must use the three-round median.",
+  "Main-thread report must aggregate blocking telemetry by median.",
 );
 
 if (errors.length) {
@@ -289,5 +301,5 @@ if (errors.length) {
 
 console.log(
   "Main Thread Laboratory contract OK: RAF cadence is diagnostic in headless; "
-  + "Long Task/LoAF/blocking gates plus diagnostic event-loop telemetry, warm-up isolation, worker recommendations and a single-worker Chromium release gate are wired.",
+  + "Long Task/LoAF/blocking/event-loop telemetry is diagnostic; hermetic runtime/network invariants, warm-up isolation and single-worker Chromium collection are wired.",
 );

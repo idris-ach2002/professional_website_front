@@ -3,8 +3,8 @@ import { CONTRACT_TIMEOUT_MS } from "./runtime-contract";
 
 /**
  * Deterministically place a persistent world anchor at the decision point,
- * wait for real paint barriers, then request synchronous World Director
- * reconciliation. No fixed-duration sleep is involved.
+ * force layout through explicit geometry reads, then request synchronous World
+ * Director reconciliation. No scheduler/painter deadline is part of the proof.
  */
 export async function reconcileWorldAtAnchor(page, selector, {
   align = "center",
@@ -27,9 +27,6 @@ export async function reconcileWorldAtAnchor(page, selector, {
     const previousRootPriority = root.style.getPropertyPriority("scroll-behavior");
     const previousBodyBehavior = body?.style.getPropertyValue("scroll-behavior") ?? "";
     const previousBodyPriority = body?.style.getPropertyPriority("scroll-behavior") ?? "";
-    const nextPaint = () => new Promise((resolve) => {
-      requestAnimationFrame(() => requestAnimationFrame(resolve));
-    });
     const restoreScrollBehavior = () => {
       if (previousRootBehavior) root.style.setProperty("scroll-behavior", previousRootBehavior, previousRootPriority);
       else root.style.removeProperty("scroll-behavior");
@@ -57,8 +54,10 @@ export async function reconcileWorldAtAnchor(page, selector, {
         const expectedScrollTop = Math.max(0, Math.min(maxScroll, requestedTop));
 
         scrollingElement.scrollTop = expectedScrollTop;
-        await nextPaint();
 
+        // getBoundingClientRect is the causal layout barrier: once this read
+        // returns, the postcondition is evaluated against the actual scroll
+        // position rather than a guessed number of paint frames.
         const settledRect = element.getBoundingClientRect();
         const settledMaxScroll = Math.max(0, scrollingElement.scrollHeight - viewportHeight);
         const scrollTop = scrollingElement.scrollTop;
@@ -94,7 +93,6 @@ export async function reconcileWorldAtAnchor(page, selector, {
       window.dispatchEvent(new CustomEvent("portfolio:ocean-world-reconcile", {
         detail: { reason: navigation.reason, ...navigation.metadata },
       }));
-      await nextPaint();
 
       return {
         ...geometry,

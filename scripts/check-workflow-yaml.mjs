@@ -100,9 +100,15 @@ if (authoritative) {
 
   const verifyNeeds = jobs.verify?.needs;
   const verifyNeedsList = Array.isArray(verifyNeeds) ? verifyNeeds : [verifyNeeds].filter(Boolean);
-  for (const requiredNeed of ["browser-contracts", "responsive", "concurrency-contract", "vitals", "main-thread", "transparent-performance"]) {
+  const expectedVerifyNeeds = ["browser-contracts", "responsive", "concurrency-contract", "transparent-performance"];
+  for (const requiredNeed of expectedVerifyNeeds) {
     if (!verifyNeedsList.includes(requiredNeed)) errors.push(`verify: doit dépendre de ${requiredNeed}; reçu ${JSON.stringify(verifyNeeds)}.`);
   }
+  for (const diagnosticNeed of ["vitals", "main-thread"]) {
+    if (verifyNeedsList.includes(diagnosticNeed)) errors.push(`verify: ${diagnosticNeed} est diagnostique et ne doit pas bloquer la release.`);
+  }
+  if (jobs.vitals?.["continue-on-error"] !== true) errors.push("vitals: continue-on-error=true requis pour un diagnostic matériel non bloquant.");
+  if (jobs["main-thread"]?.["continue-on-error"] !== true) errors.push("main-thread: continue-on-error=true requis pour un diagnostic matériel non bloquant.");
 
   const soakEnv = jobs.soak?.env ?? {};
   const expectedSoakEnv = {

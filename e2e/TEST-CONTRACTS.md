@@ -48,7 +48,7 @@ Interdits dans les specs :
 
 On attend uniquement un état observable : attribut DOM, réponse ciblée, géométrie, nombre d'instances, métrique ou événement runtime.
 
-`requestAnimationFrame` est utilisé comme barrière de peinture lorsque le contrat porte réellement sur la géométrie. Le `setTimeout` du soak est différent : il représente la **durée expérimentale** de l'endurance, pas une attente de readiness.
+Pour les gates bloquantes, la géométrie est synchronisée par une lecture de layout (`getBoundingClientRect`) suivie d'une réconciliation explicite du runtime ; aucun nombre de frames peintes n'est utilisé comme prédiction de readiness. Le `setTimeout` du soak est différent : il représente la **durée expérimentale** de l'endurance, pas une attente de readiness.
 
 ## 5. Navigation du Living Ocean World
 
@@ -57,9 +57,8 @@ On attend uniquement un état observable : attribut DOM, réponse ciblée, géom
 - vérifie que l'ancre est montée et unique ;
 - neutralise temporairement le smooth-scroll ;
 - positionne `document.scrollingElement` ;
-- attend deux barrières de peinture ;
-- recalcule la géométrie si le layout a bougé ;
-- demande une réconciliation explicite au World Director ;
+- force une lecture de géométrie après le positionnement ;
+- demande ensuite une réconciliation explicite au World Director ;
 - vérifie la position, le biome et les métadonnées runtime après action.
 
 La stabilité ne doit donc pas dépendre d'une durée supposée d'animation ou de la vitesse du runner.
@@ -82,15 +81,13 @@ Neuf viewports sur Chromium. Contrats de débordement, navigation compacte/deskt
 
 Scénarios indépendants explicitement parallèles. Ils stressent routes, changements rapides d'état, Timeline, sauts de scroll et biomes.
 
-### Concurrency race gate
+### Parallel isolation contract
 
-Deux profils sont volontairement séparés. La gate GitHub standard utilise **2 workers réels** avec `repeat-each=5`, sans retry et sans vidéo : c'est le plancher commun aux runners Linux standard des dépôts publics et privés. La commande développeur `ci:concurrency` force **4 workers** pour une contention plus agressive lorsqu'une machine possède réellement au moins 4 CPU logiques et assez de RAM.
+GitHub exécute les scénarios Stability **une seule fois** avec 2 workers réels ; le profil développeur peut utiliser 4 workers. Le but n'est plus de provoquer une race par répétition, mais de prouver que des scénarios déterministes restent isolés lorsqu'ils s'exécutent simultanément. `--repeat-each` est interdit comme mécanisme de preuve.
 
-Les deux profils sont Chromium uniquement et cherchent les races/suppositions de scheduling. Ils restent distincts de la compatibilité Firefox.
+### Web Vitals diagnostic
 
-### Web Vitals
-
-Chromium, 1 worker. Une métrique de performance ne doit pas être contaminée par plusieurs navigateurs concurrents sur la même machine. Trace et vidéo sont coupées dans ce mode afin de ne pas mesurer le coût de l'instrumentation Playwright.
+Chromium, 1 worker. LCP/CLS/INP sont collectés et attachés au rapport, mais leurs budgets absolus ne sont pas des postconditions fonctionnelles sur une VM headless partagée. Les hard assertions portent uniquement sur la disponibilité/cohérence de la collecte. Les dépassements de cibles sont des diagnostics.
 
 ### Soak
 
@@ -111,7 +108,7 @@ Le mode normal calcule un budget CPU **et** mémoire sous un **cap de 2 workers*
 
 Le mode `PLAYWRIGHT_STRESS=1` exige désormais une valeur `PLAYWRIGHT_WORKERS` explicite, au moins 2 workers, interdit de dépasser le nombre de CPU logiques disponibles et vérifie un budget mémoire proportionnel au nombre de renderers. Il n'y a donc plus d'hypothèse codée en dur « stress = 4 CPU ».
 
-`ci:freeze` utilise un smoke de concurrence à 2 workers. `ci:concurrency` reste la gate locale intensive à 4 workers. GitHub utilise `ci:concurrency:hosted` à 2 workers. Vitals et soak restent à 1 worker par définition expérimentale.
+`ci:freeze` utilise une passe d'isolation à 2 workers. `ci:concurrency` exécute une seule passe parallèle à 4 workers. GitHub utilise `ci:concurrency:hosted` à 2 workers. Vitals, Main Thread et soak restent à 1 worker par définition expérimentale.
 
 `PLAYWRIGHT_WORKER_CAP` borne le mode automatique. `PLAYWRIGHT_WORKERS` représente au contraire une surcharge explicite pour une gate contrôlée.
 
@@ -133,13 +130,14 @@ Cela évite qu'un `ci:freeze` local teste accidentellement un ancien serveur ou 
 
 Il existe un seul workflow frontend autoritatif :
 
-1. `quality` — lint, politique workers, Vitest/coverage, contrats statiques, build ;
-2. en parallèle après le build : `browser-contracts`, `responsive`, `concurrency-contract`, `vitals` ;
-3. `verify` agrège les gates courtes ;
-4. `soak` est **manuel** (`workflow_dispatch`) tant que l’expérience longue reste diagnostique ;
-5. le déploiement production dépend uniquement de `verify`, c’est-à-dire des gates courtes et reproductibles.
+1. `quality` — lint, politique workers, Vitest/coverage, contrats statiques, build hermétique ;
+2. gates bloquantes en parallèle : `browser-contracts`, `responsive`, `concurrency-contract` (isolation 2 workers, une passe) et `transparent-performance` déterministe ;
+3. diagnostics non bloquants : `vitals` et `main-thread`, avec artifacts ;
+4. `verify` dépend uniquement des gates déterministes ;
+5. `soak` reste manuel (`workflow_dispatch`) ;
+6. le déploiement production dépend uniquement de `verify`.
 
-Le workflow est épinglé sur `ubuntu-24.04`, annule les runs obsolètes de la même branche et transfère `dist` par artifact plutôt que de le reconstruire dans chaque job de test.
+La règle est explicite : aucune release ne dépend d'un `repeat-each`, d'un délai de Worker/IntersectionObserver, d'un paint headless ou d'un percentile matériel aléatoire.
 
 ## 10. Commandes locales
 

@@ -22,6 +22,7 @@ const metadata = read("src/components/MetadataHead.jsx");
 const errorBoundary = read("src/components/errors/ErrorBoundary.jsx");
 const headers = read("public/_headers");
 const portfolioE2e = read("e2e/portfolio.spec.js");
+const vitalsDiagnostic = read("e2e/vitals-diagnostic.spec.js");
 const pkg = JSON.parse(read("package.json"));
 
 function requireFragment(source, fragment, message) {
@@ -94,9 +95,12 @@ const languageBlock = languageStart >= 0
 if (!languageBlock) errors.push("FR→EN E2E scenario missing");
 if (languageBlock.includes("Développeur Java Full Stack")) errors.push("redundant flaky French H1 precondition returned to language E2E");
 if (!languageBlock.includes("Full Stack Java Developer")) errors.push("English H1 postcondition missing from language E2E");
-for (const fragment of ["Aller au contenu principal", "toBeFocused", "focus trap", "@vitals"]) {
+for (const fragment of ["Aller au contenu principal", "toBeFocused", "focus trap"]) {
   if (!portfolioE2e.includes(fragment)) errors.push(`E2E hardening coverage missing: ${fragment}`);
 }
+forbidFragment(portfolioE2e, "@vitals", "hardware-dependent Web Vitals must not be part of the blocking functional E2E spec");
+requireFragment(vitalsDiagnostic, "@vitals", "dedicated Web Vitals diagnostic scenario missing");
+requireFragment(vitalsDiagnostic, "[vitals][diagnostic]", "Web Vitals thresholds must stay diagnostic-only");
 
 // The high-cost volcano must not prefetch on a normal budget, but remains available to aggressive profiles.
 const normalPrefetch = decideSmartPrefetch({
@@ -124,14 +128,22 @@ for (const required of ["npm run check:main-thread", "npm run check:transparent-
 if (pkg.scripts?.["ci:full"] !== "CI=1 npm run ci:full:chain") {
   errors.push("ci:full must enforce GitHub-like CI semantics for local full verification");
 }
-if (!pkg.scripts?.["ci:full:chain"]?.includes("npm run ci:main-thread")) {
-  errors.push("ci:full:chain must include the isolated Main Thread Laboratory so local full and GitHub blocking gates stay identical");
+for (const diagnostic of ["ci:main-thread", "ci:vitals", "ci:soak"]) {
+  if (pkg.scripts?.["ci:full:chain"]?.includes(diagnostic)) {
+    errors.push(`ci:full:chain must keep ${diagnostic} outside the deterministic blocking release gate`);
+  }
 }
 if (!pkg.scripts?.["ci:full:chain"]?.includes("npm run ci:transparent-performance")) {
   errors.push("ci:full:chain must include the transparent-performance browser contract");
 }
-if (pkg.scripts?.["ci:release"] !== "npm run ci:full && npm run ci:soak") {
-  errors.push("ci:release must run exactly one complete blocking ci:full, then the manual-style endurance soak");
+if (pkg.scripts?.["ci:release"] !== "npm run ci:full") {
+  errors.push("ci:release must be identical to the deterministic blocking ci:full gate");
+}
+const diagnosticsScript = pkg.scripts?.["ci:diagnostics"] ?? "";
+for (const diagnostic of ["ci:vitals", "ci:main-thread"]) {
+  if (!diagnosticsScript.includes(diagnostic)) {
+    errors.push(`ci:diagnostics must expose ${diagnostic} outside the release gate`);
+  }
 }
 if (!pkg.scripts?.build?.includes("npm run check:final")) errors.push("build must enforce check:final before Vite");
 if (!pkg.scripts?.["ci:preflight"]?.includes("npm run check:final")) errors.push("ci:preflight must enforce check:final");

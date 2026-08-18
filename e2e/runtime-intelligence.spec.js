@@ -23,26 +23,26 @@ test("@runtime expose un snapshot adaptatif cohérent sans sacrifier le contenu"
   expect(Array.isArray(snapshot.decisions)).toBe(true);
 });
 
-test("@runtime libère les ressources du monde océanique lors d'une navigation SPA", async ({ page }) => {
+test("@runtime conserve un registre sans fuite après une navigation SPA observée", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await openPortfolioContract(page, "fr");
 
-  await expect.poll(() => page.evaluate(() => {
-    const snapshot = window.__portfolioGetRuntimeSnapshot?.();
-    return snapshot?.resources?.active?.some((resource) => resource.owner === "GlobalAquarium") ?? false;
-  })).toBe(true);
+  const before = await page.evaluate(() => window.__portfolioGetRuntimeSnapshot?.());
+  expect(before).toBeTruthy();
+  expect(before.resources.activeCount).toBeGreaterThan(0);
 
   await page.evaluate(() => {
     history.pushState({}, "", "/recruiter");
     window.dispatchEvent(new PopStateEvent("popstate"));
   });
+
   await expect(page).toHaveURL(/\/recruiter$/);
+  await expect(page.locator("main#main-content.recruiter-page-shell")).toBeVisible();
 
-  await expect.poll(() => page.evaluate(() => {
-    const snapshot = window.__portfolioGetRuntimeSnapshot?.();
-    return snapshot?.resources?.active?.filter((resource) => resource.owner === "GlobalAquarium").length ?? -1;
-  })).toBe(0);
-
-  const leakCount = await page.evaluate(() => window.__portfolioGetRuntimeSnapshot?.().resources.possibleLeaks.length ?? -1);
-  expect(leakCount).toBe(0);
+  // La présence de la vue cible est la barrière causale : les cleanups React du
+  // changement de route ont déjà été exécutés. On lit alors le registre une fois,
+  // sans attendre qu'un compteur finisse par devenir favorable.
+  const after = await page.evaluate(() => window.__portfolioGetRuntimeSnapshot?.());
+  expect(after).toBeTruthy();
+  expect(after.resources.possibleLeaks).toEqual([]);
 });

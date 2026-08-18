@@ -1,5 +1,5 @@
-import { render, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { act, render } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ItemVisibilityProvider } from "./ItemVisibilityContext";
 import { useItemVisibility } from "./useItemVisibility";
 
@@ -9,8 +9,28 @@ function Probe({ onRender }) {
   return <span data-testid="ready">{String(state.ready)}</span>;
 }
 
+async function flushMicrotasks() {
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+}
+
+async function runInitialRefresh() {
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(0);
+  });
+  await flushMicrotasks();
+}
+
 describe("ItemVisibilityProvider", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
@@ -29,14 +49,15 @@ describe("ItemVisibilityProvider", () => {
       </ItemVisibilityProvider>,
     );
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(renders.at(-1)?.ready).toBe(true));
+    await runInitialRefresh();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(renders.at(-1)?.ready).toBe(true);
     const stableRenderCount = renders.length;
     const stableHidden = renders.at(-1).hidden;
 
-    window.dispatchEvent(new Event("portfolio:visibility-updated"));
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    act(() => window.dispatchEvent(new Event("portfolio:visibility-updated")));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    await flushMicrotasks();
 
     expect(renders.length).toBe(stableRenderCount);
     expect(renders.at(-1).hidden).toBe(stableHidden);
@@ -53,14 +74,15 @@ describe("ItemVisibilityProvider", () => {
       </ItemVisibilityProvider>,
     );
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(renders.at(-1)?.ready).toBe(true));
+    await runInitialRefresh();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(renders.at(-1)?.ready).toBe(true);
     const stableRenderCount = renders.length;
     const stableHidden = renders.at(-1).hidden;
 
-    window.dispatchEvent(new Event("portfolio:visibility-updated"));
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    act(() => window.dispatchEvent(new Event("portfolio:visibility-updated")));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    await flushMicrotasks();
 
     expect(renders.length).toBe(stableRenderCount);
     expect(renders.at(-1).hidden).toBe(stableHidden);
