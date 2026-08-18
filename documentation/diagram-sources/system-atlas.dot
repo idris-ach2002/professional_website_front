@@ -1,0 +1,69 @@
+digraph G {
+  graph [rankdir=LR, bgcolor="transparent", pad="0.4", nodesep="0.52", ranksep="0.85", splines=ortho, fontname="Inter", label="Architecture complète du système", labelloc=t, fontsize=26, fontcolor="#d8f7ff"];
+  node [shape=box, style="rounded,filled", fontname="Inter", fontsize=12, margin="0.18,0.11", color="#2f6f88", fillcolor="#0b1f2d", fontcolor="#e8fbff", penwidth=1.3];
+  edge [fontname="Inter", fontsize=10, color="#5fbcd3", fontcolor="#a8ddea", arrowsize=0.75, penwidth=1.2];
+
+  subgraph cluster_actor {
+    label="Utilisateurs"; color="#264b5a"; style="rounded,dashed"; fontcolor="#9bd7e7";
+    browser [label="Navigateur\nPortfolio public / Admin / Engineering", fillcolor="#102b3c"];
+    recruiter [label="Recruteur / visiteur", fillcolor="#102b3c"];
+    admin [label="Administrateur", fillcolor="#102b3c"];
+    recruiter -> browser [style=dashed, label="navigation"];
+    admin -> browser [style=dashed, label="session protégée"];
+  }
+
+  subgraph cluster_edge {
+    label="Edge & Frontend"; color="#1e7895"; style="rounded"; fontcolor="#7ee0f7";
+    cloudflare [label="Cloudflare\nDNS · TLS · Workers Assets", fillcolor="#073044"];
+    react [label="React SPA\nRoutes · Admin · Portfolio · Recruiter", fillcolor="#09384d"];
+    runtime [label="Runtime adaptatif\nVisibility · Scheduler · Resources", fillcolor="#09384d"];
+    renderers [label="Rendu\nDOM · Canvas · WebGL · OffscreenCanvas", fillcolor="#09384d"];
+    workers [label="Web Workers\nSimulation · rendu · textures", fillcolor="#09384d"];
+    browser -> cloudflare [label="HTTPS"];
+    cloudflare -> react [label="assets statiques"];
+    react -> runtime [label="providers"];
+    runtime -> renderers [label="budgets / qualité"];
+    renderers -> workers [dir=both, label="buffers transférables"];
+  }
+
+  subgraph cluster_backend {
+    label="Backend applicatif"; color="#7664c9"; style="rounded"; fontcolor="#c9c1ff";
+    render [label="Render\nConteneur Spring Boot", fillcolor="#211c47", color="#8070d5"];
+    security [label="Spring Security\nSession · CSRF · CORS · ETag", fillcolor="#292151", color="#8070d5"];
+    controllers [label="Controllers\nPublic · Manager · Engineering", fillcolor="#292151", color="#8070d5"];
+    services [label="Services métier\nPublication · Localisation · Analytics", fillcolor="#292151", color="#8070d5"];
+    async [label="Asynchrone fiable\nJobs · Outbox · Audit", fillcolor="#292151", color="#8070d5"];
+    cache [label="Cache Caffeine\nSnapshots publics", fillcolor="#292151", color="#8070d5"];
+    render -> security -> controllers -> services;
+    services -> async [label="événements"];
+    services -> cache [label="lecture publique"];
+  }
+
+  react -> render [label="HTTPS API\ncredentials + JSON", color="#a47ef2", fontcolor="#d1c1ff"];
+
+  subgraph cluster_data {
+    label="Données & services externes"; color="#2b7b69"; style="rounded"; fontcolor="#8ce8d1";
+    postgres [label="PostgreSQL managé\nDonnées relationnelles", fillcolor="#103b34", color="#3b9b82"];
+    cloudinary [label="Cloudinary\nImages · PDF · CV", fillcolor="#103b34", color="#3b9b82"];
+    translate [label="LibreTranslate privé\nTraduction administrée", fillcolor="#103b34", color="#3b9b82"];
+    services -> postgres [label="JPA / transactions"];
+    async -> postgres [label="états persistés"];
+    services -> cloudinary [label="stockage"];
+    services -> translate [label="traduction"];
+  }
+
+  subgraph cluster_delivery {
+    label="Delivery & exploitation"; color="#8a6330"; style="rounded"; fontcolor="#f0c57d";
+    git [label="GitHub\nbranches · pull requests", fillcolor="#3a2b16", color="#a87939"];
+    frontci [label="CI Frontend\nGates déterministes", fillcolor="#3a2b16", color="#a87939"];
+    diagnostics [label="Diagnostics navigateur\nVitals · Main Thread", fillcolor="#3a2b16", color="#a87939"];
+    backci [label="CI Backend\nTests · PostgreSQL · package", fillcolor="#3a2b16", color="#a87939"];
+    deployfront [label="Déploiement Front\nWrangler → Cloudflare", fillcolor="#3a2b16", color="#a87939"];
+    deployback [label="Déploiement Back\nHook → Render", fillcolor="#3a2b16", color="#a87939"];
+    git -> frontci -> deployfront;
+    frontci -> diagnostics [style=dashed, label="non bloquant"];
+    git -> backci -> deployback;
+    deployfront -> cloudflare [style=dashed];
+    deployback -> render [style=dashed];
+  }
+}

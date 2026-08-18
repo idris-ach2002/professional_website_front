@@ -1,0 +1,19 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="transparent", pad="0.35", nodesep="0.48", ranksep="0.58", splines=ortho, fontname="Inter", label="Chaîne CI/CD complète", labelloc=t, fontsize=24, fontcolor="#f5dfb4"];
+  node [shape=box, style="rounded,filled", fontname="Inter", fontsize=10.5, color="#9a7038", fillcolor="#372913", fontcolor="#fff8e8"];
+  edge [color="#d0a35f", fontcolor="#ecd3a6", fontname="Inter", fontsize=9];
+  push [label="Push / Pull Request"];
+  fq [label="Frontend Quality\nlint · unit · coverage · artifact hermétique"];
+  fg [label="Frontend hard gates\ncontrats navigateur · responsive · architecture"];
+  fd [label="Frontend diagnostics\nVitals · Main Thread\nnon bloquants"];
+  fb [label="Frontend build production\nSEO snapshot + budgets"];
+  fc [label="Cloudflare deploy\nWrangler"];
+  bq [label="Backend verify\nhygiène · architecture · tests PostgreSQL · package"];
+  bj [label="JAR artifact"];
+  br [label="Render deploy hook"];
+  prod [label="Production\nCloudflare + Render + PostgreSQL + Cloudinary"];
+
+  push -> fq -> fg -> fb -> fc -> prod;
+  fg -> fd [style=dashed, label="télémétrie"];
+  push -> bq -> bj -> br -> prod;
+}

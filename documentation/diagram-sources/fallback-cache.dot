@@ -1,0 +1,26 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="transparent", pad="0.35", nodesep="0.42", ranksep="0.58", splines=ortho, fontname="Inter", label="Résilience du chargement public", labelloc=t, fontsize=24, fontcolor="#d8f7ff"];
+  node [shape=box, style="rounded,filled", fontname="Inter", fontsize=10.5, color="#2c7891", fillcolor="#092a39", fontcolor="#effcff"];
+  edge [color="#59bfd7", fontcolor="#a9ddea", fontname="Inter", fontsize=9];
+  start [label="Navigation / langue"];
+  cache [label="Lire last-known-good\nlocalStorage"];
+  paint [label="Afficher immédiatement\nsi cache valide"];
+  api [label="Rafraîchir /website/default\nrequest single-flight"];
+  ok [label="Réponse valide"];
+  store [label="Écrire cache local"];
+  fail [label="Erreur / timeout"];
+  cached [label="Conserver cache\n+ bannière source"];
+  demo [label="Importer demoPortfolio\nsi aucun cache"];
+  ui [label="UI disponible"];
+  start -> cache;
+  cache -> paint [label="hit"];
+  start -> api;
+  api -> ok [label="succès"];
+  ok -> store -> ui;
+  api -> fail [label="échec"];
+  fail -> cached [label="cache présent"];
+  fail -> demo [label="cache absent"];
+  paint -> ui;
+  cached -> ui;
+  demo -> ui;
+}

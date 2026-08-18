@@ -1,0 +1,18 @@
+digraph G {
+  graph [bgcolor="#06131d", pad=.4, nodesep=.4, ranksep=.65, fontname="Inter", fontcolor="#d8f7ff", label="Concurrence et mutations d’administration", labelloc=t, fontsize=26];
+  node [shape=box, style="rounded,filled", fillcolor="#0c2634", color="#28738d", fontcolor="#dff8ff", fontname="Inter", fontsize=12];
+  edge [color="#67a5ba", fontcolor="#b8e3ed", fontname="Inter", fontsize=10];
+  ui [label="Admin UI"];
+  coord [label="Async coordinator\nlatest-wins reads\nserialized writes", fillcolor="#1f3448", color="#70b5e8"];
+  api [label="authApi\ncredentials + CSRF\nIf-Match / ETag"];
+  sec [label="Spring Security"];
+  ctrl [label="Manager controller"];
+  service [label="Service transactionnel"];
+  db [label="PostgreSQL\n@Version + contentRevision", fillcolor="#17372f", color="#4dd6a3"];
+  conflict [label="409 / 412\nConcurrencyConflictError", fillcolor="#45232b", color="#ef8196"];
+  refresh [label="Reload état frais"];
+  ui -> coord -> api -> sec -> ctrl -> service -> db;
+  db -> service [label="commit", dir=back];
+  db -> conflict [label="révision obsolète"];
+  conflict -> api -> refresh -> ui;
+}

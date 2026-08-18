@@ -1,0 +1,32 @@
+digraph G {
+  graph [rankdir=LR, bgcolor="transparent", pad="0.35", nodesep="0.45", ranksep="0.7", splines=ortho, fontname="Inter", label="Architecture modulaire Backend", labelloc=t, fontsize=24, fontcolor="#e7e2ff"];
+  node [shape=box, style="rounded,filled", fontname="Inter", fontsize=10.5, color="#7b68c8", fillcolor="#211d45", fontcolor="#f4f1ff"];
+  edge [color="#9f8bed", fontcolor="#d3c9ff", fontname="Inter", fontsize=9];
+  security [label="Security Filters\nCORS · CSRF · session · requestId"];
+  publicctl [label="Public Controllers\nWebsite · analytics · engineering"];
+  adminctl [label="Admin Controllers\nmanager · upload · traduction · visibilité"];
+  domain [label="Domain Services\nOwner · snapshots · publication"];
+  localization [label="Localization\nstore · hash · provider"];
+  async [label="Reliability\nJobs · Outbox · Audit"];
+  observ [label="Observability\nroute profiler · metrics"];
+  cache [label="Caching\nCaffeine + invalidation"];
+  repos [label="Repositories JPA"];
+  db [label="PostgreSQL"];
+  storage [label="StorageService\nlocal / Cloudinary"];
+  translator [label="LibreTranslate"];
+
+  security -> publicctl;
+  security -> adminctl;
+  publicctl -> domain;
+  adminctl -> domain;
+  domain -> localization;
+  domain -> async;
+  domain -> cache;
+  domain -> repos;
+  localization -> repos;
+  localization -> translator;
+  async -> repos;
+  observ -> repos;
+  repos -> db;
+  adminctl -> storage;
+}

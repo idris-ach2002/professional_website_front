@@ -1,0 +1,47 @@
+name: Documentation
+
+on:
+  pull_request:
+    paths:
+      - "README.md"
+      - "documentation/**"
+      - ".github/workflows/documentation.yml"
+  push:
+    branches: [main]
+    paths:
+      - "README.md"
+      - "documentation/**"
+      - ".github/workflows/documentation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  documentation:
+    name: Validate documentation site
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install documentation dependencies
+        working-directory: documentation
+        run: npm install --no-audit --no-fund
+      - name: Validate current-state documentation
+        working-directory: documentation
+        run: npm run check
+      - name: Build documentation site
+        working-directory: documentation
+        run: npm run build
+      - name: Upload documentation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation-site
+          path: documentation/dist
+          if-no-files-found: error
+          retention-days: 7

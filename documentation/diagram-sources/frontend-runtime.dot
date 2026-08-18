@@ -1,0 +1,29 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="transparent", pad="0.35", nodesep="0.5", ranksep="0.6", splines=ortho, fontname="Inter", label="Runtime Frontend", labelloc=t, fontsize=24, fontcolor="#d8f7ff"];
+  node [shape=box, style="rounded,filled", fontname="Inter", fontsize=11, color="#26748f", fillcolor="#092837", fontcolor="#e8fbff"];
+  edge [color="#56bad3", fontcolor="#9fd9e7", fontname="Inter", fontsize=9];
+  root [label="React Root"];
+  mantine [label="MantineProvider"];
+  lang [label="LanguageProvider"];
+  prefs [label="AnimationPreferencesProvider"];
+  perf [label="PerformanceRuntimeProvider"];
+  router [label="BrowserRouter"];
+  boundary [label="AppErrorBoundary"];
+  app [label="App"];
+  vis [label="ItemVisibilityProvider"];
+  routes [label="Routes\nPortfolio · Admin · CV · Recruiter · Engineering · Projets"];
+  public [label="Surface publique\nProfile · Skills · Timeline · Projects · Footer"];
+  ocean [label="Monde océanique\nBackground · Aquarium · Transitions · Volcan"];
+  workers [label="Workers\nSimulation · Transition · Volcan"];
+  admin [label="Administration\nCRUD · publication · traduction · visibilité"];
+  mission [label="Mission Control\ntelemetry frontend + backend"];
+
+  root -> mantine -> lang -> prefs -> perf -> router -> boundary -> app -> vis -> routes;
+  routes -> public;
+  routes -> admin;
+  routes -> mission;
+  public -> ocean;
+  perf -> ocean [label="budget / qualité"];
+  perf -> workers [label="scheduler / resources"];
+  ocean -> workers [dir=both, label="buffers / messages"];
+}

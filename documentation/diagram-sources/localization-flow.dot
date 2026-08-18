@@ -1,0 +1,20 @@
+digraph G {
+  graph [rankdir=LR, bgcolor="transparent", pad="0.35", nodesep="0.45", ranksep="0.65", splines=ortho, fontname="Inter", label="Flux de localisation", labelloc=t, fontsize=24, fontcolor="#dff9ee"];
+  node [shape=box, style="rounded,filled", fontname="Inter", fontsize=10.5, color="#3e9277", fillcolor="#10362d", fontcolor="#f0fff9"];
+  edge [color="#66c9a7", fontcolor="#b6ead9", fontname="Inter", fontsize=9];
+  admin [label="Admin Traductions"];
+  api [label="Translation API protégée"];
+  store [label="TranslationStoreService"];
+  provider [label="LibreTranslate privé"];
+  table [label="content_translation"];
+  public [label="WebsiteService"];
+  loc [label="PortfolioLocalizationService"];
+  dto [label="DTO public localisé"];
+  browser [label="Frontend fr / en"];
+  admin -> api -> store;
+  store -> provider [label="auto / preview"];
+  store -> table [label="persist"];
+  public -> loc;
+  loc -> table [label="published bundle"];
+  loc -> dto -> browser;
+}

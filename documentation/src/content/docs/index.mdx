@@ -1,0 +1,46 @@
+---
+title: Atlas technique
+description: Portail de la documentation technique de l’état courant du portfolio full stack.
+template: splash
+---
+
+<div class="docs-hero">
+  <h1>Portfolio Engineering</h1>
+  <p>Documentation de référence de l’état courant du système : frontend React, interface avec le backend Spring Boot, données, sécurité, cloud, CI/CD et exploitation. Le contenu décrit exclusivement l’architecture présente sur la branche principale.</p>
+  <div class="docs-badges">
+<span class="docs-badge">Architecture actuelle</span>
+<span class="docs-badge">Front ↔ Back</span>
+<span class="docs-badge">Cloud</span>
+<span class="docs-badge">CI/CD</span>
+<span class="docs-badge">Sécurité</span>
+<span class="docs-badge">Observabilité</span>
+  </div>
+</div>
+
+<div class="callout-current"><strong>Source de vérité.</strong> Cette documentation décrit la branche <code>main</code> et s’appuie sur le code, la configuration, les contrats HTTP et les workflows réellement exécutés.</div>
+
+<div class="docs-grid">
+  <a class="docs-card" href="/overview/system-architecture/"><strong>Architecture globale</strong><span>Du navigateur aux services cloud, avec les flux de données et les frontières de confiance.</span></a>
+  <a class="docs-card" href="/frontend/architecture/"><strong>Architecture Frontend</strong><span>Responsabilités, modules, runtime et choix d’architecture du dépôt.</span></a>
+  <a class="docs-card" href="/integration/front-back/"><strong>Front ↔ Back</strong><span>Contrats HTTP, authentification, cache, erreurs et cycle des données.</span></a>
+  <a class="docs-card" href="/cloud/topology/"><strong>Cloud</strong><span>Cloudflare, Render, PostgreSQL managé, Cloudinary et traduction privée.</span></a>
+  <a class="docs-card" href="/deployment/full-release/"><strong>Déploiement</strong><span>Du commit à la production, contrôles de release et rollback opérationnel.</span></a>
+  <a class="docs-card" href="/quality/testing-strategy/"><strong>Qualité</strong><span>Tests déterministes, diagnostics séparés et invariants de release.</span></a>
+  <a class="docs-card" href="/security/trust-boundaries/"><strong>Sécurité</strong><span>Session, CSRF, CORS, ETag, secrets et routes publiques/protégées.</span></a>
+  <a class="docs-card" href="/reference/navigation/"><strong>Référence</strong><span>Routes, commandes, variables d’environnement et points d’entrée utiles.</span></a>
+</div>
+
+
+<div class="architecture-frame">
+  <img src="/diagrams/system-atlas.svg" alt="Architecture complète : frontend, backend, données, cloud, delivery et exploitation." />
+  <div class="architecture-caption">Architecture complète : frontend, backend, données, cloud, delivery et exploitation.</div>
+</div>
+
+
+## Lecture recommandée
+
+1. **Architecture globale** pour comprendre les frontières du système.
+2. **Architecture du dépôt** pour entrer dans le runtime et les modules.
+3. **Front ↔ Back** pour suivre une requête de bout en bout.
+4. **Cloud et déploiement** pour comprendre la topologie de production.
+5. **Qualité, sécurité et exploitation** pour les garanties de fonctionnement.

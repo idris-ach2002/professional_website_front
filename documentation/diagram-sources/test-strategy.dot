@@ -1,0 +1,15 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="transparent", pad="0.35", nodesep="0.45", ranksep="0.55", splines=ortho, fontname="Inter", label="Stratégie de qualité", labelloc=t, fontsize=24, fontcolor="#f5dfb4"];
+  node [shape=box, style="rounded,filled", fontname="Inter", fontsize=10.5, color="#9a7038", fillcolor="#372913", fontcolor="#fff8e8"];
+  edge [color="#d0a35f", fontcolor="#ecd3a6", fontname="Inter", fontsize=9];
+  change [label="Modification code"];
+  static [label="Contrats statiques\narchitecture · sécurité · budgets"];
+  unit [label="Tests unitaires\nfonctions / services / protocoles"];
+  integration [label="Tests intégration\nDOM / Spring / PostgreSQL"];
+  e2e [label="E2E déterministes\nprécondition → action → postcondition"];
+  build [label="Build hermétique"];
+  release [label="Gate de release"];
+  diag [label="Diagnostics non bloquants\nperformance navigateur / soak"];
+  change -> static -> unit -> integration -> e2e -> build -> release;
+  release -> diag [style=dashed];
+}

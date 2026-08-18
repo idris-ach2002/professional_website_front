@@ -1,0 +1,22 @@
+digraph G {
+  graph [rankdir=LR, bgcolor="transparent", pad="0.35", nodesep="0.45", ranksep="0.7", splines=ortho, fontname="Inter", label="Frontières de sécurité", labelloc=t, fontsize=24, fontcolor="#ffdce6"];
+  node [shape=box, style="rounded,filled", fontname="Inter", fontsize=10.5, color="#a64d70", fillcolor="#381827", fontcolor="#fff1f6"];
+  edge [color="#d67398", fontcolor="#f2b7cb", fontname="Inter", fontsize=9];
+  public [label="Visiteur anonyme"];
+  admin [label="Administrateur authentifié"];
+  cf [label="Cloudflare TLS / assets"];
+  publicapi [label="API publique\nGET website · analytics POST · engineering GET"];
+  session [label="Session Spring\nform login"];
+  csrf [label="CSRF token\nunsafe methods"];
+  cors [label="CORS allowlist\ncredentials"];
+  etag [label="If-Match / ETag\nconcurrence optimiste"];
+  manager [label="Manager API\nROLE_ADMIN"];
+  secret [label="Secrets serveur\nDB · Cloudinary · admin"];
+  db [label="PostgreSQL"];
+
+  public -> cf -> publicapi;
+  admin -> cf -> session -> csrf -> cors -> etag -> manager;
+  publicapi -> db;
+  manager -> db;
+  secret -> manager [style=dashed];
+}

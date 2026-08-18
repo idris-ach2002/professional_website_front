@@ -1,0 +1,20 @@
+digraph G {
+  graph [bgcolor="#06131d", pad=.35, nodesep=.35, ranksep=.6, fontname="Inter", fontcolor="#d8f7ff", label="Surface HTTP Backend", labelloc=t, fontsize=26];
+  node [shape=box, style="rounded,filled", fillcolor="#0c2634", color="#28738d", fontcolor="#dff8ff", fontname="Inter", fontsize=12];
+  edge [color="#659db0", fontname="Inter", fontcolor="#b8e3ed", fontsize=10];
+  security [label="Spring Security\nallowlist + denyAll", fillcolor="#39223c", color="#e06fb5"];
+  public [label="PUBLIC\n/website/**\n/analytics/events\n/api/engineering/**\n/actuator/health", fillcolor="#12392f", color="#4dd6a3"];
+  admin [label="ADMIN SESSION\n/manager/**\n/api/translations/**\n/api/items-visibility\n/uploads/**\n/v3/api-docs/**\n/actuator/prometheus", fillcolor="#29224b", color="#9388ff"];
+  csrf [label="CSRF\nmutations session", fillcolor="#3b3020", color="#e8bd67"];
+  cors [label="CORS allowlist\ncredentials contrôlés"];
+  security -> public [label="permit"];
+  security -> admin [label="ROLE_ADMIN"];
+  security -> csrf [label="protection"];
+  security -> cors [label="origines"];
+  public -> website [label="lecture"];
+  public -> ingest [label="ingestion"];
+  website [label="WebsiteController\nWebsiteService"];
+  ingest [label="Analytics / Runtime samples"];
+  admin -> manager [label="édition"];
+  manager [label="Manager controllers\nPublication · jobs · audit"];
+}

@@ -1,0 +1,29 @@
+digraph G {
+  graph [rankdir=LR, bgcolor="transparent", pad="0.35", nodesep="0.45", ranksep="0.6", splines=ortho, fontname="Inter", label="Cycle d’une requête publique", labelloc=t, fontsize=24, fontcolor="#d8f7ff"];
+  node [shape=box, style="rounded,filled", fontname="Inter", fontsize=10.5, color="#2f7288", fillcolor="#0a2634", fontcolor="#effcff"];
+  edge [color="#66c4db", fontcolor="#a9dce8", fontname="Inter", fontsize=9];
+  browser [label="Browser route"];
+  api [label="portfolioApi\nGET /website/default"];
+  network [label="Cloudflare / Internet"];
+  cors [label="CORS + Security chain"];
+  controller [label="WebsiteController"];
+  service [label="WebsiteService"];
+  cache [label="Caffeine\npublicWebsite"];
+  repo [label="OwnerRepository\nfetch graph"];
+  db [label="PostgreSQL"];
+  loc [label="PortfolioLocalizationService"];
+  dto [label="OwnerResponseDTO"];
+  local [label="LocalStorage\nlast-known-good"];
+  render [label="React render"];
+  fallback [label="Demo fallback\nsi API + cache indisponibles"];
+
+  browser -> api -> network -> cors -> controller -> service -> cache;
+  cache -> repo [label="miss"];
+  repo -> db;
+  db -> repo -> loc -> dto -> api;
+  api -> local [label="succès"];
+  api -> render;
+  local -> render [label="reprise"];
+  api -> fallback [style=dashed, label="échec"];
+  fallback -> render [style=dashed];
+}

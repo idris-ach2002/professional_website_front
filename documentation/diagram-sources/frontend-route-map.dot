@@ -1,0 +1,23 @@
+digraph G {
+  graph [bgcolor="#06131d", pad=.35, nodesep=.35, ranksep=.55, fontname="Inter", fontcolor="#d8f7ff", label="Carte des routes Frontend", labelloc=t, fontsize=26];
+  node [shape=box, style="rounded,filled", fillcolor="#0c2634", color="#28738d", fontcolor="#dff8ff", fontname="Inter", fontsize=13, margin=".16,.10"];
+  edge [color="#5e9db3", fontcolor="#a8dce9", fontname="Inter", fontsize=10, arrowsize=.75];
+  browser [label="BrowserRouter", fillcolor="#103b4d", color="#3cc6e8"];
+  public [label="Portfolio public\n/ · /en"];
+  cv [label="CV\n/cv · /en/cv"];
+  recruiter [label="Recruiter\n/recruiter"];
+  engineering [label="Mission Control\n/engineering"];
+  project [label="Étude projet\n/projects/:projectSlug"];
+  admin [label="Administration\n/admin", fillcolor="#29224b", color="#9388ff"];
+  preview [label="Preview snapshot\n/admin/preview/:ownerId/:versionId", fillcolor="#29224b", color="#9388ff"];
+  notfound [label="NotFound\n*", fillcolor="#39222c", color="#f58ea8"];
+  browser -> {public cv recruiter engineering project admin preview notfound};
+  public -> timeline [label="lazy"];
+  public -> projects [label="lazy"];
+  public -> volcano [label="lazy"];
+  timeline [label="PortfolioTimeline"];
+  projects [label="ProjectsShowcase"];
+  volcano [label="UnderwaterVolcanoField"];
+  admin -> panels [label="lazy"];
+  panels [label="Admin panels\nowner · profile · timeline · projects\npublication · analytics · translation"];
+}

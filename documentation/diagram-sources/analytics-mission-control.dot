@@ -1,0 +1,22 @@
+digraph G {
+  graph [rankdir=LR, bgcolor="transparent", pad="0.35", nodesep="0.42", ranksep="0.68", splines=ortho, fontname="Inter", label="Analytics et Mission Control", labelloc=t, fontsize=24, fontcolor="#d8f7ff"];
+  node [shape=box, style="rounded,filled", fontname="Inter", fontsize=10.5, color="#2c7891", fillcolor="#092a39", fontcolor="#effcff"];
+  edge [color="#59bfd7", fontcolor="#a9ddea", fontname="Inter", fontsize=9];
+  browser [label="AnalyticsTracker\npage / click events"];
+  ingest [label="POST /analytics/events"];
+  limiter [label="Rate limiter + hashing"];
+  queue [label="AnalyticsIngestionPipeline\nqueue bornée"];
+  writer [label="Batch writer"];
+  db [label="analytics_event"];
+  mission [label="MissionControlPage"];
+  api [label="Engineering API"];
+  profiler [label="BackendRouteProfiler\nServer-Timing"];
+  snapshot [label="MissionControlService\nJVM · DB · cache · jobs · outbox"];
+  samples [label="runtime_performance_sample"];
+  browser -> ingest -> limiter -> queue -> writer -> db;
+  mission -> api -> snapshot;
+  profiler -> api [style=dashed];
+  mission -> samples [label="performance samples"];
+  db -> snapshot [style=dashed];
+  samples -> snapshot [style=dashed];
+}

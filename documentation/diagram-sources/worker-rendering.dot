@@ -1,0 +1,30 @@
+digraph G {
+  graph [rankdir=LR, bgcolor="transparent", pad="0.35", nodesep="0.45", ranksep="0.68", splines=ortho, fontname="Inter", label="Rendu adaptatif et Workers", labelloc=t, fontsize=24, fontcolor="#d8f7ff"];
+  node [shape=box, style="rounded,filled", fontname="Inter", fontsize=10.5, color="#2c7891", fillcolor="#092a39", fontcolor="#effcff"];
+  edge [color="#59bfd7", fontcolor="#a9ddea", fontname="Inter", fontsize=9];
+  perf [label="PerformanceRuntimeProvider\ncapabilities + budgets"];
+  scheduler [label="runtimeScheduler\nuser-visible / background"];
+  aquarium [label="GlobalAquarium\nCanvas principal"];
+  marine [label="marineSimulation.worker\nsimulation"];
+  transition [label="OceanTransitionStage"];
+  transworker [label="oceanTransitionRender.worker\nOffscreenCanvas si supporté"];
+  volcano [label="UnderwaterVolcanoField"];
+  volworker [label="volcanoCanvasRender.worker\nparticules + débris"];
+  texworker [label="volcanoTexture.worker\ntextures"];
+  fallback [label="Fallback main thread\nsi capability absente"];
+  resources [label="resourceLifecycleRegistry\nleases + diagnostics"];
+
+  perf -> scheduler;
+  scheduler -> aquarium;
+  aquarium -> marine [dir=both, label="state buffers"];
+  scheduler -> transition;
+  transition -> transworker [dir=both];
+  scheduler -> volcano;
+  volcano -> volworker [dir=both, label="transferable buffers"];
+  volcano -> texworker [dir=both];
+  transition -> fallback [style=dashed];
+  volcano -> fallback [style=dashed];
+  aquarium -> resources;
+  transition -> resources;
+  volcano -> resources;
+}

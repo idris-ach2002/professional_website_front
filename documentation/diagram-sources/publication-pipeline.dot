@@ -1,0 +1,24 @@
+digraph G {
+  graph [rankdir=LR, bgcolor="transparent", pad="0.35", nodesep="0.45", ranksep="0.7", splines=ortho, fontname="Inter", label="Pipeline éditorial et publication", labelloc=t, fontsize=24, fontcolor="#e7e2ff"];
+  node [shape=box, style="rounded,filled", fontname="Inter", fontsize=10.5, color="#7563c4", fillcolor="#211c45", fontcolor="#f7f5ff"];
+  edge [color="#9c88ed", fontcolor="#d4caff", fontname="Inter", fontsize=9];
+  admin [label="Admin React"];
+  csrf [label="Session + CSRF + ETag"];
+  controller [label="PublicationAdminController"];
+  validation [label="Health / publish validation"];
+  service [label="PublicationService"];
+  snapshot [label="Snapshot éditorial\nDRAFT · READY · SCHEDULED · PUBLISHED"];
+  job [label="BackgroundJob\npublication planifiée"];
+  outbox [label="OutboxEvent\ntransactionnel"];
+  audit [label="PublicationAudit"];
+  cache [label="PortfolioChangePublisher\ncache invalidation"];
+  public [label="WebsiteService\nlecture publique"];
+
+  admin -> csrf -> controller -> validation -> service -> snapshot;
+  service -> job [label="si planifié"];
+  service -> outbox [label="événement"];
+  service -> audit [label="trace"];
+  job -> service [label="échéance"];
+  outbox -> cache [label="dispatch"];
+  cache -> public [label="prochaine lecture"];
+}

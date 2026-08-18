@@ -1,0 +1,23 @@
+digraph G {
+  graph [bgcolor="#06131d", pad=.45, nodesep=.45, ranksep=.7, fontname="Inter", fontcolor="#d8f7ff", label="Topologie de déploiement", labelloc=t, fontsize=27, compound=true];
+  node [shape=box, style="rounded,filled", fillcolor="#0c2634", color="#28738d", fontcolor="#dff8ff", fontname="Inter", fontsize=13];
+  edge [color="#65a7bd", fontcolor="#b8e3ed", fontname="Inter", fontsize=10, arrowsize=.8];
+  git [label="GitHub\nbranches + secrets", fillcolor="#222735", color="#7a849c"];
+  frontci [label="Frontend CI\nhard gates + build"];
+  backci [label="Backend CI\nMaven verify + artifact"];
+  docci [label="Documentation CI\ncheck + Starlight build", fillcolor="#173445", color="#58bad7"];
+  cf [label="Cloudflare\nDNS · TLS · Workers Assets", fillcolor="#3c2b16", color="#f4a74d"];
+  render [label="Render\nSpring Boot container", fillcolor="#29224b", color="#9388ff"];
+  aiven [label="Aiven PostgreSQL", fillcolor="#17372f", color="#4dd6a3"];
+  cloudinary [label="Cloudinary\nmedia", fillcolor="#17304a", color="#4da7e8"];
+  translate [label="LibreTranslate\nservice privé", fillcolor="#27372d", color="#80c89a"];
+  user [label="Navigateur", fillcolor="#103b4d", color="#3cc6e8"];
+  git -> {frontci backci docci};
+  frontci -> cf [label="deploy frontend"];
+  backci -> render [label="deploy hook"];
+  user -> cf [label="HTTPS"];
+  user -> render [label="API HTTPS"];
+  render -> aiven [label="JDBC/TLS"];
+  render -> cloudinary [label="API"];
+  render -> translate [label="réseau serveur"];
+}

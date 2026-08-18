@@ -1,0 +1,19 @@
+{
+  "name": "portfolio-front-documentation",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "npm run check && astro build",
+    "preview": "astro preview",
+    "check": "node scripts/check-docs.mjs"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "0.41.6",
+    "astro": "7.1.6"
+  },
+  "engines": {
+    "node": ">=22.16 <23",
+    "npm": ">=10.9 <11"
+  }
+}

@@ -1,0 +1,16 @@
+digraph G {
+  graph [rankdir=LR, bgcolor="transparent", pad="0.35", nodesep="0.45", ranksep="0.65", splines=ortho, fontname="Inter", label="Interaction d’administration", labelloc=t, fontsize=24, fontcolor="#e7e2ff"];
+  node [shape=box, style="rounded,filled", fontname="Inter", fontsize=10.5, color="#7865c9", fillcolor="#211d45", fontcolor="#f5f2ff"];
+  edge [color="#a08ced", fontcolor="#d4caff", fontname="Inter", fontsize=9];
+  ui [label="Admin React"];
+  coord [label="useAdminAsyncCoordinator\nlatest-wins reads / writes sérialisés"];
+  auth [label="authApi\ncredentials · CSRF · errors"];
+  etag [label="ETag / If-Match"];
+  security [label="Spring Security"];
+  ctl [label="Manager / API controllers"];
+  service [label="Domain services"];
+  tx [label="Transaction + optimistic locking"];
+  db [label="PostgreSQL"];
+  ui -> coord -> auth -> etag -> security -> ctl -> service -> tx -> db;
+  db -> tx -> service -> ctl -> auth -> coord -> ui [label="DTO + nouveaux tags"];
+}

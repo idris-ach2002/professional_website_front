@@ -1,0 +1,31 @@
+digraph G {
+  graph [rankdir=LR, bgcolor="transparent", pad="0.35", nodesep="0.42", ranksep="0.7", splines=polyline, fontname="Inter", label="Modèle de données central", labelloc=t, fontsize=24, fontcolor="#e7e2ff"];
+  node [shape=record, style="rounded,filled", fontname="Inter", fontsize=10, color="#6e5bc3", fillcolor="#211d43", fontcolor="#f5f2ff"];
+  edge [color="#9c8ae8", fontcolor="#cec3f5", fontname="Inter", fontsize=9, arrowsize=0.7];
+  owner [label="{Owner|identity\lcontacts\lrowVersion\l}"];
+  snap [label="{WebsiteVersion|contentRevision\lpublicationStatus\lactive / published\l}"];
+  profile [label="{Profile|title\ldescription\lmedia URLs\l}"];
+  timeline [label="{Timeline|title\ldescription\l}"];
+  exp [label="{Experience|category\ldates\lskills\l}"];
+  project [label="{Project|slug\lstatus\lcase study\llinks\l}"];
+  analytics [label="{AnalyticsEvent|event type\lvisitor/session hashes\lcontext\l}"];
+  translation [label="{ContentTranslation|content key\llocale\lfield\lstatus\l}"];
+  visibility [label="{FrontItemVisibility|item key\lvisible\l}"];
+  jobs [label="{BackgroundJob|type\lstatus\lattempts\l}"];
+  outbox [label="{OutboxEvent|event type\lstatus\lpayload\l}"];
+  audit [label="{PublicationAudit|action\lactor\lbefore / after\l}"];
+  samples [label="{RuntimePerformanceSample|build id\lruntime profile\lmetrics\l}"];
+
+  owner -> snap [label="1 → N"];
+  snap -> profile [label="1 → 1"];
+  snap -> timeline [label="1 → 1"];
+  timeline -> exp [label="1 → N"];
+  snap -> project [label="1 → N"];
+  owner -> jobs [style=dashed];
+  owner -> outbox [style=dashed];
+  owner -> audit [style=dashed];
+  translation -> snap [style=dashed, label="clé logique"];
+  analytics -> owner [style=dashed, label="agrégations"];
+  visibility -> owner [style=dashed, label="front global"];
+  samples -> owner [style=dashed, label="observabilité"];
+}

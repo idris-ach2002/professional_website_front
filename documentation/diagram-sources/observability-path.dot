@@ -1,0 +1,22 @@
+digraph G {
+  graph [bgcolor="#06131d", pad=.4, nodesep=.4, ranksep=.65, fontname="Inter", fontcolor="#d8f7ff", label="Chaîne d’observabilité", labelloc=t, fontsize=26];
+  node [shape=box, style="rounded,filled", fillcolor="#0c2634", color="#28738d", fontcolor="#dff8ff", fontname="Inter", fontsize=12];
+  edge [color="#67a5ba", fontcolor="#b8e3ed", fontname="Inter", fontsize=10];
+  browser [label="Browser runtime\nNavigation · resources · Server-Timing"];
+  analytics [label="Analytics events"];
+  samples [label="Runtime performance samples"];
+  spring [label="Spring Boot\nrequest IDs · route profiler"];
+  db [label="PostgreSQL\nanalytics + runtime samples", fillcolor="#17372f", color="#4dd6a3"];
+  caffeine [label="Caffeine metrics"];
+  actuator [label="Actuator / Prometheus", fillcolor="#29224b", color="#9388ff"];
+  mission [label="Mission Control\nfrontend + backend telemetry", fillcolor="#103b4d", color="#3cc6e8"];
+  audit [label="Publication audit\nJobs · Outbox"];
+  browser -> analytics -> spring;
+  browser -> samples -> spring;
+  spring -> db;
+  spring -> caffeine -> actuator;
+  spring -> actuator;
+  db -> mission;
+  actuator -> mission;
+  audit -> mission;
+}
