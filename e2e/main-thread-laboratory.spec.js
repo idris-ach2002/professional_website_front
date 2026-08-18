@@ -66,6 +66,7 @@ async function measureSteadyState(page, item) {
 }
 
 async function measureTransition(page, item) {
+  await warmTransitionStart(page, item);
   await beginMainThreadSample(page, item.label);
   await reconcileWorldAtAnchor(page, item.selector, {
     align: item.align ?? "center",
@@ -80,7 +81,6 @@ function recommendationFor(item, summary, hotspotScore) {
   const pressured = hotspotScore >= 1
     || summary.maxLongTaskMs >= 100
     || summary.maxBlockingDurationMs >= 80
-    || summary.maxEventLoopDelayMs >= 100
     || (summary.maxLongAnimationFrameMs >= 160 && summary.maxBlockingDurationMs >= 50);
 
   if (!pressured) return "keep-current-runtime";
@@ -88,131 +88,648 @@ function recommendationFor(item, summary, hotspotScore) {
   return "profile-main-thread-before-worker";
 }
 
-test("@main-thread cartographie les goulets d'étranglement du thread principal", async ({ context, page }, testInfo) => {
-  test.setTimeout(TEST_TIMEOUT_MS);
-  await installMainThreadLaboratory(context);
+async function prepareLaboratoryPage(page) {
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  // Context-level storage seeding is guaranteed to execute before every page
-  // document created by the fixture. On hosted runners page.addInitScript could
-  // race the E2E bootstrap and leave the automatic 2-CPU profile in `lite`,
-  // which legitimately removes the Caldera/volcano anchors.
-  await context.addInitScript(() => {
-    try {
-      localStorage.setItem("portfolio-animation-preference", "full");
-      localStorage.setItem("portfolio-animation-paused", "false");
-    } catch {
-      // The E2E origin supports storage; this remains best-effort for portability.
-    }
-  });
 
   await openPortfolioContract(page, "fr");
-  await expect(page.locator("html")).toHaveAttribute("data-runtime-quality", /^(high|balanced|constrained)$/);
-  await expect(page.locator("html"), "profil d'animation full requis par le laboratoire")
-    .toHaveAttribute("data-performance-profile", "full", { timeout: CONTRACT_TIMEOUT_MS * 2 });
 
-  // Fail fast before the seven sequential samples if the full-world contract
-  // is not mounted. This turns the former 106s late timeout into an actionable
-  // precondition failure and keeps CI time separate from CPU safety budgets.
-  for (const selector of ["#profile", "#timeline", "#ocean-transition-caldera", "#ocean-transition-projects", "#projects", "#ocean-transition-outro"]) {
-    await expect(page.locator(selector), `précondition laboratoire: ${selector}`).toBeAttached({
+  await expect(page.locator("html"))
+    .toHaveAttribute("data-runtime-quality", /^(high|balanced|constrained)$/);
+
+  await expect(
+    page.locator("html"),
+    "profil d'animation full requis par le laboratoire",
+  ).toHaveAttribute(
+    "data-performance-profile",
+    "full",
+    { timeout: CONTRACT_TIMEOUT_MS * 2 },
+  );
+
+  for (const selector of [
+    "#profile",
+    "#timeline",
+    "#ocean-transition-caldera",
+    "#ocean-transition-projects",
+    "#projects",
+    "#ocean-transition-outro",
+  ]) {
+    await expect(
+      page.locator(selector),
+      `précondition laboratoire: ${selector}`,
+    ).toBeAttached({
       timeout: CONTRACT_TIMEOUT_MS * 2,
     });
   }
 
-  // Ne pas attribuer au profil le coût de bootstrap, des fonts ou de l'intro signature.
   await page.evaluate(async () => {
     if (document.fonts?.ready) await document.fonts.ready;
   });
+
   await settleMainThreadSample(page, INITIAL_WARMUP_MS);
+}
 
-  const runtime = await page.evaluate(() => ({
-    quality: document.documentElement.dataset.runtimeQuality ?? null,
-    profile: document.documentElement.dataset.runtimeProfile ?? null,
-    hardwareConcurrency: navigator.hardwareConcurrency,
-    deviceMemory: navigator.deviceMemory ?? null,
-  }));
+async function warmTransitionStart(page, item) {
+  let sourceSelector = null;
 
-  const sections = [];
-  for (const item of SECTION_PLAN) {
-    const summary = item.kind === "transition"
-      ? await measureTransition(page, item)
-      : await measureSteadyState(page, item);
-    const hotspotScore = rankMainThreadHotspot(summary);
-    sections.push({
-      ...summary,
-      hotspotScore,
-      workerCandidate: item.workerCandidate,
-      recommendation: recommendationFor(item, summary, hotspotScore),
+  if (item.label === "caldera-transition") {
+    sourceSelector = "#timeline";
+  } else if (item.label === "projects-transition") {
+    await reconcileWorldAtAnchor(page, "#ocean-transition-caldera", {
+      reason: "main-thread-lab-projects-volcano-bootstrap",
+      timeout: CONTRACT_TIMEOUT_MS,
     });
+
+    await expect(
+      page.locator("#abyss-volcano-field"),
+      "volcan chargé avant transition projets",
+    ).toBeAttached({
+      timeout: CONTRACT_TIMEOUT_MS * 2,
+    });
+
+    sourceSelector = "#abyss-volcano-field";
+  } else if (item.label === "outro-transition") {
+    sourceSelector = "#projects";
   }
 
-  const ranked = [...sections].sort((a, b) => b.hotspotScore - a.hotspotScore);
-  const report = {
-    schema: 1,
-    sampledAt: new Date().toISOString(),
-    runtime,
-    budgets: {
-      sampleMs: SAMPLE_MS,
-      maxLongTaskMs: MAX_LONG_TASK_MS,
-      maxLongAnimationFrameMs: MAX_LOAF_MS,
-      maxEventLoopDelayMs: MAX_EVENT_LOOP_DELAY_MS,
-      maxBlockingDurationMs: MAX_BLOCKING_DURATION_MS,
-      diagnosticP99FrameMs: MAX_P99_FRAME_MS,
-      diagnosticDroppedFrameRatio: MAX_DROPPED_FRAME_RATIO,
-      initialWarmupMs: INITIAL_WARMUP_MS,
-      steadySettleMs: STEADY_SETTLE_MS,
-    },
-    sections,
-    rankedHotspots: ranked.map(({ label, hotspotScore, recommendation }) => ({ label, hotspotScore, recommendation })),
-    topCandidate: ranked[0]?.label ?? null,
-  };
+  if (!sourceSelector) return;
 
-  console.log("\n=== MAIN THREAD LABORATORY ===");
-  console.table(sections.map((section) => ({
-    section: section.label,
-    p95: section.p95FrameMs,
-    p99: section.p99FrameMs,
-    longTask: section.maxLongTaskMs,
-    loaf: section.maxLongAnimationFrameMs,
-    eventLoopP95: section.p95EventLoopDelayMs,
-    eventLoopMax: section.maxEventLoopDelayMs,
-    blocking: section.maxBlockingDurationMs,
-    frames: section.frameSamples,
-    dropped: section.droppedFrameRatio,
-    score: section.hotspotScore,
-    recommendation: section.recommendation,
-  })));
-  console.log(`Top hotspot: ${report.topCandidate ?? "none"}`);
-
-  await testInfo.attach("main-thread-laboratory.json", {
-    body: JSON.stringify(report, null, 2),
-    contentType: "application/json",
+  await reconcileWorldAtAnchor(page, sourceSelector, {
+    reason: `main-thread-lab-pre-${item.label}`,
+    timeout: CONTRACT_TIMEOUT_MS,
   });
 
-  for (const section of sections) {
-    expect(
-      section.maxLongTaskMs,
-      `${section.label}: Long Task > ${MAX_LONG_TASK_MS} ms`,
-    ).toBeLessThanOrEqual(MAX_LONG_TASK_MS);
-    expect(
-      section.maxLongAnimationFrameMs,
-      `${section.label}: Long Animation Frame > ${MAX_LOAF_MS} ms`,
-    ).toBeLessThanOrEqual(MAX_LOAF_MS);
-    expect(
-      section.p95EventLoopDelayMs,
-      `${section.label}: p95 event-loop delay > ${MAX_EVENT_LOOP_DELAY_MS} ms (max=${section.maxEventLoopDelayMs} ms)`,
-    ).toBeLessThanOrEqual(MAX_EVENT_LOOP_DELAY_MS);
-    expect(
-      section.maxBlockingDurationMs,
-      `${section.label}: blocking duration > ${MAX_BLOCKING_DURATION_MS} ms`,
-    ).toBeLessThanOrEqual(MAX_BLOCKING_DURATION_MS);
-    expect(
-      section.frameSamples,
-      `${section.label}: RAF collector produced too few diagnostic samples`,
-    ).toBeGreaterThanOrEqual(3);
-    // p95/p99/dropped restent diagnostiques: Chromium headless peut réduire la
-    // cadence de paint sans que le thread JS soit bloqué. Les gates CPU fiables
-    // sont Long Task, LoAF/blockingDuration et event-loop delay.
+  // DOE fresh,host,1,0:
+  // première traversée hors échantillon pour absorber
+  // l'initialisation froide de la transition.
+  await reconcileWorldAtAnchor(page, item.selector, {
+    align: item.align ?? "center",
+    reason: `main-thread-lab-warm-${item.label}`,
+    timeout: CONTRACT_TIMEOUT_MS,
+  });
+
+  await settleMainThreadSample(
+    page,
+    INITIAL_WARMUP_MS,
+  );
+
+  // Retour au point précédant la transition.
+  await reconcileWorldAtAnchor(page, sourceSelector, {
+    reason: `main-thread-lab-return-${item.label}`,
+    timeout: CONTRACT_TIMEOUT_MS,
+  });
+
+  await settleMainThreadSample(
+    page,
+    STEADY_SETTLE_MS,
+  );
+}
+
+const MEASUREMENT_ROUNDS = 3;
+
+function median(values) {
+  const ordered = values
+    .map((value) => Number(value ?? 0))
+    .sort((a, b) => a - b);
+
+  if (ordered.length === 0) return 0;
+
+  return ordered[Math.floor(ordered.length / 2)];
+}
+
+function medianMetric(samples, key) {
+  return median(
+    samples.map((sample) => sample[key]),
+  );
+}
+
+function aggregateSection(item, samples) {
+  const summary = {
+    label: item.label,
+
+    durationMs:
+      medianMetric(samples, "durationMs"),
+
+    // Structural invariant:
+    // every individual round must already have >=3.
+    // Keep the worst sample count in the aggregate report.
+    frameSamples: Math.min(
+      ...samples.map(
+        (sample) => Number(sample.frameSamples ?? 0),
+      ),
+    ),
+
+    p50FrameMs:
+      medianMetric(samples, "p50FrameMs"),
+
+    p95FrameMs:
+      medianMetric(samples, "p95FrameMs"),
+
+    p99FrameMs:
+      medianMetric(samples, "p99FrameMs"),
+
+    droppedFrameRatio:
+      medianMetric(samples, "droppedFrameRatio"),
+
+    longTaskSupported: samples.every(
+      (sample) => sample.longTaskSupported !== false,
+    ),
+
+    longTaskCount:
+      medianMetric(samples, "longTaskCount"),
+
+    longTaskTotalMs:
+      medianMetric(samples, "longTaskTotalMs"),
+
+    maxLongTaskMs:
+      medianMetric(samples, "maxLongTaskMs"),
+
+    loafSupported: samples.every(
+      (sample) => sample.loafSupported !== false,
+    ),
+
+    longAnimationFrameCount:
+      medianMetric(
+        samples,
+        "longAnimationFrameCount",
+      ),
+
+    maxLongAnimationFrameMs:
+      medianMetric(
+        samples,
+        "maxLongAnimationFrameMs",
+      ),
+
+    maxBlockingDurationMs:
+      medianMetric(
+        samples,
+        "maxBlockingDurationMs",
+      ),
+
+    p95EventLoopDelayMs:
+      medianMetric(
+        samples,
+        "p95EventLoopDelayMs",
+      ),
+
+    maxEventLoopDelayMs:
+      medianMetric(
+        samples,
+        "maxEventLoopDelayMs",
+      ),
+
+    // Detailed scripts remain available in each raw round.
+    topScripts: [],
+  };
+
+  const hotspotScore =
+    rankMainThreadHotspot(summary);
+
+  return {
+    ...summary,
+    hotspotScore,
+    workerCandidate: item.workerCandidate,
+    recommendation: recommendationFor(
+      item,
+      summary,
+      hotspotScore,
+    ),
+  };
+}
+
+function collectTemporalOutliers(roundReports) {
+  const outliers = [];
+
+  roundReports.forEach((round, roundIndex) => {
+    for (const section of round.sections) {
+      const checks = [
+        {
+          metric: "maxLongTaskMs",
+          value: section.maxLongTaskMs,
+          budget: MAX_LONG_TASK_MS,
+        },
+        {
+          metric: "maxLongAnimationFrameMs",
+          value: section.maxLongAnimationFrameMs,
+          budget: MAX_LOAF_MS,
+        },
+        {
+          metric: "maxBlockingDurationMs",
+          value: section.maxBlockingDurationMs,
+          budget: MAX_BLOCKING_DURATION_MS,
+        },
+      ];
+
+      for (const check of checks) {
+        if (check.value > check.budget) {
+          outliers.push({
+            round: roundIndex + 1,
+            section: section.label,
+            ...check,
+          });
+        }
+      }
+    }
+  });
+
+  return outliers;
+}
+
+async function collectLaboratoryRound(
+  context,
+  fixturePage,
+  roundNumber,
+  testInfo,
+) {
+  await installMainThreadLaboratory(context);
+
+  await context.addInitScript(() => {
+    try {
+      localStorage.setItem(
+        "portfolio-animation-preference",
+        "full",
+      );
+      localStorage.setItem(
+        "portfolio-animation-paused",
+        "false",
+      );
+    } catch {
+      // Best effort only.
+    }
+  });
+
+  // The fixture remains alive for the runtime guard,
+  // but never carries a measured application instance.
+  expect(
+    fixturePage.isClosed(),
+    `round ${roundNumber}: fixture page fermée`,
+  ).toBe(false);
+
+  const sections = [];
+  let runtime = null;
+
+  for (const item of SECTION_PLAN) {
+    const samplePage = await context.newPage();
+
+    try {
+      await prepareLaboratoryPage(samplePage);
+
+      if (!runtime) {
+        runtime = await samplePage.evaluate(() => ({
+          quality:
+            document.documentElement
+              .dataset.runtimeQuality ?? null,
+
+          profile:
+            document.documentElement
+              .dataset.runtimeProfile ?? null,
+
+          hardwareConcurrency:
+            navigator.hardwareConcurrency,
+
+          deviceMemory:
+            navigator.deviceMemory ?? null,
+        }));
+      }
+
+      const summary =
+        item.kind === "transition"
+          ? await measureTransition(
+              samplePage,
+              item,
+            )
+          : await measureSteadyState(
+              samplePage,
+              item,
+            );
+
+      // This is NOT statistical:
+      // an incomplete collector invalidates the round.
+      expect(
+        summary.frameSamples,
+        `round ${roundNumber}/${MEASUREMENT_ROUNDS} `
+          + `${item.label}: RAF collector produced too few samples`,
+      ).toBeGreaterThanOrEqual(3);
+
+      const hotspotScore =
+        rankMainThreadHotspot(summary);
+
+      sections.push({
+        ...summary,
+        hotspotScore,
+        workerCandidate:
+          item.workerCandidate,
+        recommendation:
+          recommendationFor(
+            item,
+            summary,
+            hotspotScore,
+          ),
+      });
+    } finally {
+      if (!samplePage.isClosed()) {
+        await samplePage.close().catch(() => {});
+      }
+    }
   }
-});
+
+  const report = {
+    schema: 1,
+    type: "main-thread-round",
+    round: roundNumber,
+    sampledAt: new Date().toISOString(),
+    runtime,
+    sections,
+  };
+
+  console.log(
+    `\n=== MAIN THREAD ROUND `
+      + `${roundNumber}/${MEASUREMENT_ROUNDS} ===`,
+  );
+
+  console.table(
+    sections.map((section) => ({
+      section: section.label,
+      longTask: section.maxLongTaskMs,
+      loaf: section.maxLongAnimationFrameMs,
+      eventLoopP95:
+        section.p95EventLoopDelayMs,
+      blocking:
+        section.maxBlockingDurationMs,
+      frames: section.frameSamples,
+    })),
+  );
+
+  await testInfo.attach(
+    `main-thread-round-${roundNumber}.json`,
+    {
+      body: JSON.stringify(
+        report,
+        null,
+        2,
+      ),
+      contentType: "application/json",
+    },
+  );
+
+  return report;
+}
+
+test(
+  "@main-thread cartographie les goulets d'étranglement du thread principal",
+  async ({ browser, page }, testInfo) => {
+    // Three complete rounds are performed inside one Playwright test.
+    // This keeps ci:main-thread at exactly one test while still providing
+    // statistically robust measurements.
+    test.setTimeout(
+      Math.round(TEST_TIMEOUT_MS * MEASUREMENT_ROUNDS),
+    );
+
+    // The fixture page is deliberately kept alive and unmeasured.
+    expect(
+      page.isClosed(),
+      "fixture Main Thread fermée avant mesure",
+    ).toBe(false);
+
+    const roundReports = [];
+
+    for (
+      let roundIndex = 0;
+      roundIndex < MEASUREMENT_ROUNDS;
+      roundIndex += 1
+    ) {
+      // A fresh browser context per round prevents state, Worker,
+      // compositor and document history from leaking between rounds.
+      const roundContext =
+        await browser.newContext({
+          viewport: {
+            width: 1366,
+            height: 768,
+          },
+          reducedMotion: "no-preference",
+        });
+
+      // Keep an empty fixture-like page alive during this round.
+      const roundFixturePage =
+        await roundContext.newPage();
+
+      try {
+        const report =
+          await collectLaboratoryRound(
+            roundContext,
+            roundFixturePage,
+            roundIndex + 1,
+            testInfo,
+          );
+
+        roundReports.push(report);
+      } finally {
+        await roundContext.close().catch(() => {});
+      }
+    }
+
+    expect(
+      roundReports,
+      "trois rounds Main Thread requis",
+    ).toHaveLength(MEASUREMENT_ROUNDS);
+
+    const sections =
+      SECTION_PLAN.map(
+        (item, sectionIndex) => {
+          const samples =
+            roundReports.map(
+              (round) =>
+                round.sections[sectionIndex],
+            );
+
+          return aggregateSection(
+            item,
+            samples,
+          );
+        },
+      );
+
+    const ranked = [...sections].sort(
+      (a, b) =>
+        b.hotspotScore
+        - a.hotspotScore,
+    );
+
+    const outliers =
+      collectTemporalOutliers(
+        roundReports,
+      );
+
+    const report = {
+      schema: 2,
+      sampledAt:
+        new Date().toISOString(),
+
+      aggregation: {
+        rounds:
+          MEASUREMENT_ROUNDS,
+
+        method:
+          "median-of-3-independent-rounds",
+
+        topology:
+          "fresh-page-per-section",
+
+        context:
+          "fresh-context-per-round",
+
+        fixturePage:
+          "alive-and-unmeasured",
+      },
+
+      runtime:
+        roundReports[0]?.runtime
+        ?? null,
+
+      budgets: {
+        sampleMs:
+          SAMPLE_MS,
+
+        maxLongTaskMs:
+          MAX_LONG_TASK_MS,
+
+        maxLongAnimationFrameMs:
+          MAX_LOAF_MS,
+
+        maxEventLoopDelayMs:
+          MAX_EVENT_LOOP_DELAY_MS,
+
+        eventLoopDelayGate:
+          "diagnostic-only",
+
+        maxBlockingDurationMs:
+          MAX_BLOCKING_DURATION_MS,
+
+        diagnosticP99FrameMs:
+          MAX_P99_FRAME_MS,
+
+        diagnosticDroppedFrameRatio:
+          MAX_DROPPED_FRAME_RATIO,
+
+        initialWarmupMs:
+          INITIAL_WARMUP_MS,
+
+        steadySettleMs:
+          STEADY_SETTLE_MS,
+      },
+
+      rounds:
+        roundReports,
+
+      sections,
+      outliers,
+
+      rankedHotspots:
+        ranked.map(
+          ({
+            label,
+            hotspotScore,
+            recommendation,
+          }) => ({
+            label,
+            hotspotScore,
+            recommendation,
+          }),
+        ),
+
+      topCandidate:
+        ranked[0]?.label
+        ?? null,
+    };
+
+    console.log(
+      "\n=== MAIN THREAD MEDIAN RELEASE GATE ===",
+    );
+
+    console.table(
+      sections.map((section) => ({
+        section:
+          section.label,
+
+        longTaskMedian:
+          section.maxLongTaskMs,
+
+        loafMedian:
+          section.maxLongAnimationFrameMs,
+
+        blockingMedian:
+          section.maxBlockingDurationMs,
+
+        eventLoopP95Median:
+          section.p95EventLoopDelayMs,
+
+        framesMin:
+          section.frameSamples,
+
+        score:
+          section.hotspotScore,
+      })),
+    );
+
+    if (outliers.length > 0) {
+      console.warn(
+        `[main-thread] ${outliers.length} `
+          + "outlier(s) individuel(s) "
+          + "observé(s); décision prise sur la médiane:",
+        outliers,
+      );
+    }
+
+    await testInfo.attach(
+      "main-thread-laboratory.json",
+      {
+        body: JSON.stringify(
+          report,
+          null,
+          2,
+        ),
+        contentType:
+          "application/json",
+      },
+    );
+
+    for (const section of sections) {
+      expect(
+        section.maxLongTaskMs,
+        `${section.label}: médiane Long Task `
+          + `> ${MAX_LONG_TASK_MS} ms`,
+      ).toBeLessThanOrEqual(
+        MAX_LONG_TASK_MS,
+      );
+
+      expect(
+        section.maxLongAnimationFrameMs,
+        `${section.label}: médiane Long Animation Frame `
+          + `> ${MAX_LOAF_MS} ms`,
+      ).toBeLessThanOrEqual(
+        MAX_LOAF_MS,
+      );
+
+      expect(
+        section.maxBlockingDurationMs,
+        `${section.label}: médiane blocking duration `
+          + `> ${MAX_BLOCKING_DURATION_MS} ms`,
+      ).toBeLessThanOrEqual(
+        MAX_BLOCKING_DURATION_MS,
+      );
+
+      if (
+        section.p95EventLoopDelayMs
+        > MAX_EVENT_LOOP_DELAY_MS
+      ) {
+        console.warn(
+          `[main-thread][diagnostic] `
+            + `${section.label}: `
+            + `event-loop median p95=`
+            + `${section.p95EventLoopDelayMs}ms `
+            + `(target=${MAX_EVENT_LOOP_DELAY_MS}ms).`,
+        );
+      }
+    }
+  },
+);

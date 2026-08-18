@@ -138,7 +138,12 @@ test("@stability garde la Timeline autonome, révèle les cartes puis coupe la s
   await expect(drone).toBeHidden();
   await expect(submarine).toBeHidden();
 
-  await lastCard.evaluate((element) => element.scrollIntoView({ block: "center", behavior: "auto" }));
+  const viewportHeight = page.viewportSize()?.height ?? 768;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await page.mouse.wheel(0, -Math.round(viewportHeight * 0.75));
+    if (await timeline.getAttribute("data-timeline-exit") === "clear") break;
+  }
+  await lastCard.scrollIntoViewIfNeeded();
   await expect(timeline).toHaveAttribute("data-timeline-direction", "up");
   await expect(timeline).toHaveAttribute("data-timeline-exit", "clear");
   await expect(timeline).toHaveAttribute("data-timeline-scene", "active");

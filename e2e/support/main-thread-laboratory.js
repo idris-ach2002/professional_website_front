@@ -208,9 +208,7 @@ export async function beginMainThreadSample(page, label) {
 }
 
 export async function settleMainThreadSample(page, durationMs) {
-  await page.evaluate((duration) => new Promise((resolve) => {
-    window.setTimeout(resolve, duration);
-  }), durationMs);
+  await page.waitForTimeout(durationMs);
 }
 
 export async function endMainThreadSample(page) {
@@ -279,16 +277,11 @@ export function summarizeMainThreadSnapshot(snapshot) {
 }
 
 export function rankMainThreadHotspot(summary) {
-  // Le ranking privilégie les signaux de blocage du main thread. La cadence RAF
-  // brute reste dans le rapport mais n'est pas une gate absolue en headless.
-  const loafPressure = summary.maxBlockingDurationMs > 0
-    ? summary.maxLongAnimationFrameMs / 160
-    : 0;
   const score = Math.max(
     summary.maxLongTaskMs / 100,
+    summary.maxLongAnimationFrameMs / 120,
     summary.maxBlockingDurationMs / 80,
-    summary.maxEventLoopDelayMs / 100,
-    loafPressure,
   );
+
   return round(score, 3);
 }

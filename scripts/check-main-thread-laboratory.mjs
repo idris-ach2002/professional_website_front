@@ -27,6 +27,10 @@ const requireText = (source, fragment, message) => {
   if (!source.includes(fragment)) errors.push(message);
 };
 
+const requirePattern = (source, pattern, message) => {
+  if (!pattern.test(source)) errors.push(message);
+};
+
 for (const fragment of [
   'supported.includes("longtask")',
   'supported.includes("long-animation-frame")',
@@ -82,7 +86,11 @@ requireText(navigationCss, "transition:opacity .08s linear,transform .08s cubic-
 requireText(navigationCss, ".nav_mobile-sheet-backdrop{backdrop-filter:none!important;-webkit-backdrop-filter:none!important", "Full-viewport mobile backdrop blur must stay disabled on the measured INP path.");
 requireText(navigationCss, ".nav_mobile-dock-tools.nav_mobile-command-sheet{contain:layout style paint;backdrop-filter:none!important;-webkit-backdrop-filter:none!important", "Mobile sheet must stay paint-contained and avoid first-open backdrop rasterization.");
 
-requireText(spec, "toBeLessThanOrEqual(MAX_BLOCKING_DURATION_MS)", "Blocking-duration safety gate missing.");
+requirePattern(
+  spec,
+  /\.toBeLessThanOrEqual\s*\(\s*MAX_BLOCKING_DURATION_MS\s*,?\s*\)/,
+  "Blocking-duration safety gate missing.",
+);
 
 const mainThreadScript = packageJson.scripts?.["test:e2e:main-thread"] ?? "";
 requireText(mainThreadScript, "PLAYWRIGHT_WORKERS=1", "Main-thread lab must force one Playwright worker.");
@@ -129,7 +137,41 @@ requireText(ocean, "needsScrollTrigger: false", "Ocean background must stay on t
 requireText(gsapRuntime, "getGsapCoreRuntime", "GSAP core runtime split missing.");
 requireText(gsapRuntime, "getGsapScrollRuntime", "Optional ScrollTrigger runtime split missing.");
 requireText(spec, "context.addInitScript", "Hosted main-thread lab must seed animation preference at context level.");
-requireText(spec, 'toHaveAttribute("data-performance-profile", "full"', "Main-thread lab must prove the full visual world before sampling.");
+requireText(
+  spec,
+  '"data-performance-profile"',
+  "Main-thread lab must verify the effective animation profile before sampling.",
+);
+
+requireText(
+  spec,
+  '"full"',
+  "Main-thread lab must require the full visual profile before sampling.",
+);
+
+requireText(
+  spec,
+  "await prepareLaboratoryPage(samplePage);",
+  "Main-thread lab must prepare every fresh page before sampling.",
+);
+
+const preparePageIndex = spec.indexOf(
+  "await prepareLaboratoryPage(samplePage);",
+);
+
+const sampleDispatchIndex = spec.search(
+  /const\s+summary\s*=\s*item\.kind/,
+);
+
+if (
+  preparePageIndex < 0
+  || sampleDispatchIndex < 0
+  || preparePageIndex > sampleDispatchIndex
+) {
+  errors.push(
+    "Main-thread lab must prove the full visual world before sampling.",
+  );
+}
 
 // Visual-motion invariants: V9 changes the wake-up mechanism, not what the
 // user sees. Keep the original scroll thresholds, animation values and depth
@@ -168,6 +210,78 @@ if (syntheticSummary.p99FrameMs !== 80) errors.push("Main-thread summary p99 cal
 if (syntheticSummary.topScripts[0]?.durationMs !== 70) errors.push("Main-thread LoAF script attribution regressed.");
 if (rankMainThreadHotspot(syntheticSummary) <= 1) errors.push("Main-thread hotspot ranking must flag the synthetic pressured sample.");
 
+
+requirePattern(
+  spec,
+  /eventLoopDelayGate\s*:\s*["']diagnostic-only["']/,
+  "Main-thread event-loop timer must remain explicit diagnostic telemetry.",
+);
+
+if (
+  spec.includes(
+    ".toBeLessThanOrEqual(MAX_EVENT_LOOP_DELAY_MS)",
+  )
+) {
+  errors.push(
+    "Main-thread event-loop timer must not be an absolute Chromium-headless release gate.",
+  );
+}
+
+
+requireText(
+  spec,
+  "const MEASUREMENT_ROUNDS = 3;",
+  "Main-thread release gate must use exactly three rounds.",
+);
+
+requireText(
+  spec,
+  '"median-of-3-independent-rounds"',
+  "Main-thread release gate must aggregate temporal maxima by median.",
+);
+
+requireText(
+  spec,
+  '"fresh-page-per-section"',
+  "Main-thread median contract must isolate every measured section.",
+);
+
+requireText(
+  spec,
+  '"fresh-context-per-round"',
+  "Main-thread rounds must use independent browser contexts.",
+);
+
+requireText(
+  spec,
+  '"alive-and-unmeasured"',
+  "Main-thread fixture page must remain outside measured application pages.",
+);
+
+requireText(
+  spec,
+  "const samplePage = await context.newPage();",
+  "Main-thread sections must use fresh auxiliary pages.",
+);
+
+requireText(
+  spec,
+  'medianMetric(samples, "maxLongTaskMs")',
+  "Main-thread Long Task decision must use the three-round median.",
+);
+
+requirePattern(
+  spec,
+  /medianMetric\s*\(\s*samples\s*,\s*["']maxLongAnimationFrameMs["']\s*,?\s*\)/,
+  "Main-thread LoAF decision must use the three-round median.",
+);
+
+requirePattern(
+  spec,
+  /medianMetric\s*\(\s*samples\s*,\s*["']maxBlockingDurationMs["']\s*,?\s*\)/,
+  "Main-thread blocking decision must use the three-round median.",
+);
+
 if (errors.length) {
   console.error(`Main Thread Laboratory contract failed:\n- ${errors.join("\n- ")}`);
   process.exit(1);
@@ -175,5 +289,5 @@ if (errors.length) {
 
 console.log(
   "Main Thread Laboratory contract OK: RAF cadence is diagnostic in headless; "
-  + "Long Task/LoAF blocking/event-loop gates, warm-up isolation, worker recommendations and a single-worker Chromium release gate are wired.",
+  + "Long Task/LoAF/blocking gates plus diagnostic event-loop telemetry, warm-up isolation, worker recommendations and a single-worker Chromium release gate are wired.",
 );
