@@ -46,9 +46,5 @@
     rgb(255 255 255 / .76),
     rgb(20 184 166 / .20),
     transparent);}
-.portrait-image, .portrait-placeholder{box-shadow:0 0 0 10px rgb(var(--profile-proven-aura) / .10),
-    0 24px 74px rgb(3 105 161 / .13),
-    0 0 38px rgb(var(--profile-proven-aura) / .13),
-    inset 0 0 0 1px rgb(255 255 255 / .46);}
 }
-@layer critical{.portrait-card.island-card::before, .availability-card.island-card::before, .contact-card.island-card::before{border:0}.profile-island .hero-copy{border-color:rgb(var(--profile-proven-line) / .42)}.profile-island .hero-copy::after{border-color:rgb(var(--profile-proven-line) / .30)}.profile-island .hero-keyword{border-color:rgb(var(--profile-proven-line) / .48)}.profile-island .hero-lead, .profile-island .hero-description{border-color:rgb(var(--profile-proven-line) / .42)}.portrait-card.island-card, .availability-card.island-card, .contact-card.island-card{border-color:rgb(var(--profile-proven-line) / .40)}.portrait-image, .portrait-placeholder{border-color:rgb(255 255 255 / .82)}.contact-pill{border-color:rgb(var(--profile-proven-line) / .42)}}
+@layer critical{.portrait-card.island-card::before, .availability-card.island-card::before, .contact-card.island-card::before{border:0}.profile-island .hero-copy{border-color:rgb(var(--profile-proven-line) / .42)}.profile-island .hero-copy::after{border-color:rgb(var(--profile-proven-line) / .30)}.profile-island .hero-keyword{border-color:rgb(var(--profile-proven-line) / .48)}.profile-island .hero-lead, .profile-island .hero-description{border-color:rgb(var(--profile-proven-line) / .42)}.portrait-card.island-card, .availability-card.island-card, .contact-card.island-card{border-color:rgb(var(--profile-proven-line) / .40)}.contact-pill{border-color:rgb(var(--profile-proven-line) / .42)}}

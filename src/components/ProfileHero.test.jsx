@@ -4,6 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 import ProfileHero from "./ProfileHero";
 
 vi.mock("../animations/useGsap", () => ({ useGsap: vi.fn() }));
+vi.mock("../contexts/useAnimationPreferences", () => ({
+  default: () => ({ effectiveProfileMotion: "animated" }),
+}));
 vi.mock("../localization/useLanguage", () => ({
   default: () => ({
     localizedPath: (path) => path,
@@ -29,6 +32,7 @@ const profile = {
   title: "Développeur Java Full Stack",
   headline: "Applications structurées et maintenables.",
   shortDescription: "Portfolio professionnel.",
+  description: "Je conçois des applications robustes et maintenables.",
   subtitle: "Java 21 / Spring Boot / React / PostgreSQL",
   availability: "Disponible pour une alternance à partir de septembre 2026",
   location: "Île-de-France",
@@ -48,23 +52,29 @@ describe("ProfileHero", () => {
     const dock = image.closest(".profile-identity-dock");
     expect(dock).toHaveAttribute("data-profile-module", "identity-dock");
     expect(image).toHaveAttribute("data-modal-title", "nav.profile — Idris ACHABOU");
-    expect(screen.getByText("Idris ACHABOU")).toBeInTheDocument();
+    expect(document.querySelector('.arctic-profile-name[aria-label="Idris ACHABOU"]')).toBeInTheDocument();
   });
-  it("garde les disciplines visuelles fixes sans exposer les technologies de prof.subtitle", () => {
-    render(
+  it("rend le contrat Arctic Ink avec les technologies réelles du profil", () => {
+    const { container } = render(
       <MantineProvider>
         <ProfileHero owner={owner} prof={profile} />
       </MantineProvider>,
     );
 
-    expect(screen.getByText("Backend")).toBeInTheDocument();
-    expect(screen.getByText("Frontend")).toBeInTheDocument();
-    expect(screen.getByText("Data")).toBeInTheDocument();
-    expect(screen.getByText("Cloud")).toBeInTheDocument();
-    expect(screen.queryByText("Java 21")).not.toBeInTheDocument();
-    expect(screen.queryByText("Spring Boot")).not.toBeInTheDocument();
-    expect(screen.queryByText("React")).not.toBeInTheDocument();
-    expect(screen.queryByText("PostgreSQL")).not.toBeInTheDocument();
+    const root = container.querySelector('.arctic-profile[data-profile-theme="arctic-ink"]');
+    expect(root).toBeInTheDocument();
+    expect(container.querySelectorAll('.profile-identity-dock[data-profile-module="identity-dock"]')).toHaveLength(1);
+    expect(screen.getByRole("heading", { level: 1, name: "Développeur Java Full Stack" })).toBeInTheDocument();
+    expect(screen.getByText("Java 21 / Spring Boot / React / PostgreSQL")).toBeInTheDocument();
+    expect(screen.getByText("Java")).toBeInTheDocument();
+    expect(screen.getByText("Spring Boot")).toBeInTheDocument();
+    expect(screen.getByText("React")).toBeInTheDocument();
+    expect(screen.getByText("PostgreSQL")).toBeInTheDocument();
+    expect(screen.getByText("API REST")).toBeInTheDocument();
+    expect(screen.getByText("Docker")).toBeInTheDocument();
+    expect(screen.getByText(profile.availability)).toBeInTheDocument();
+    expect(screen.getByText(profile.location)).toBeInTheDocument();
+    expect(container.querySelector(".profile-shared-motion-field")).not.toBeInTheDocument();
   });
 
 });

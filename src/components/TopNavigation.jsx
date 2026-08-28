@@ -1,4 +1,6 @@
 import {
+  Suspense,
+  lazy,
   useEffect,
   useMemo,
   useRef,
@@ -9,11 +11,11 @@ import {
 } from "react-router-dom";
 import useLanguage from "../localization/useLanguage";
 import "../styles/navigation/premium-navigation-v2.css";
+import "../styles/navigation/arctic-ink-palette.css";
 import AnimationPreferences from "./AnimationPreferences";
 import CommandUtilities from "./navigation/CommandUtilities";
 import usePremiumNavigationMotion from "./navigation/usePremiumNavigationMotion";
 import usePremiumNavigationShellMotion from "./navigation/usePremiumNavigationShellMotion";
-import SignatureCanvas from "./navigation/SignatureCanvas";
 import { useItemVisibility } from "../visibility/useItemVisibility";
 import {
   getOwnerFullName,
@@ -25,6 +27,7 @@ import {
 } from "../utils/portfolio";
 
 const NAV_LOGO_SRC = "/assets/identity/idris-navbar-logo.png";
+const SignatureCanvas = lazy(() => import("./navigation/SignatureCanvas"));
 const MOBILE_DOCK_QUERY = "(max-width: 1240px), (hover: none) and (pointer: coarse) and (max-width: 1366px)";
 
 function readMediaQuery(query) {
@@ -635,8 +638,8 @@ export default function TopNavigation({ owner }) {
   const desktopMenuRef = useRef(null);
   const desktopShellRef = useRef(null);
   const isHomePath = location.pathname === "/";
-  const ownerName = getOwnerFullName(owner);
   const profile = owner?.prof ?? owner?.profile ?? {};
+  const ownerName = getOwnerFullName(owner);
   const contactHref = isHomePath ? "#contact" : localizedPath("/#contact");
   const recruiterHref = localizedPath("/recruiter");
   const cvHref = normalizeUrl(profile?.cvUrl || "#profile");
@@ -658,24 +661,89 @@ export default function TopNavigation({ owner }) {
   useEffect(() => {
     if (!isHomePath) return undefined;
 
-    const sections = groups
-      .filter((group) => group.href?.startsWith("#"))
-      .map((group) => ({ group, element: document.querySelector(group.href) }))
-      .filter(({ element }) => Boolean(element));
+    const anchorGroups = groups.filter((group) => group.href?.startsWith("#"));
+    if (anchorGroups.length === 0) return undefined;
 
-    if (sections.length === 0) return undefined;
+    const scrollingElement = document.scrollingElement ?? document.documentElement;
+    let geometry = [];
+    let scrollFrame = 0;
+    let measureFrame = 0;
+    let mutationObserver = null;
+    let resizeObserver = null;
 
-    const observer = new IntersectionObserver((entries) => {
-      const visible = entries
-        .filter((entry) => entry.isIntersecting)
-        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-      if (!visible) return;
-      const match = sections.find(({ element }) => element === visible.target);
-      if (match) setObservedSection(match.group.label);
-    }, { rootMargin: "-32% 0px -54% 0px", threshold: [0.01, 0.18, 0.42, 0.72] });
+    const publishFromScroll = () => {
+      if (geometry.length === 0) return;
+      const scrollTop = scrollingElement.scrollTop;
+      const probe = scrollTop + Math.min(280, Math.max(128, window.innerHeight * 0.29));
+      let current = geometry[0];
+      for (const candidate of geometry) {
+        if (candidate.top > probe) break;
+        current = candidate;
+      }
+      if (current?.group?.label) {
+        setObservedSection((previous) => previous === current.group.label ? previous : current.group.label);
+      }
+    };
 
-    sections.forEach(({ element }) => observer.observe(element));
-    return () => observer.disconnect();
+    const collectAndMeasure = () => {
+      measureFrame = 0;
+      const scrollTop = scrollingElement.scrollTop;
+      geometry = anchorGroups
+        .map((group) => ({ group, element: document.querySelector(group.href) }))
+        .filter(({ element }) => Boolean(element))
+        .map(({ group, element }) => ({
+          group,
+          element,
+          top: element.getBoundingClientRect().top + scrollTop,
+        }))
+        .sort((a, b) => a.top - b.top);
+
+      resizeObserver?.disconnect();
+      geometry.forEach(({ element }) => resizeObserver?.observe(element));
+      publishFromScroll();
+
+      if (geometry.length === anchorGroups.length) {
+        mutationObserver?.disconnect();
+        mutationObserver = null;
+      }
+    };
+
+    const scheduleMeasure = () => {
+      if (measureFrame) return;
+      measureFrame = window.requestAnimationFrame(collectAndMeasure);
+    };
+
+    const onScroll = () => {
+      if (scrollFrame) return;
+      scrollFrame = window.requestAnimationFrame(() => {
+        scrollFrame = 0;
+        publishFromScroll();
+      });
+    };
+
+    resizeObserver = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(scheduleMeasure)
+      : null;
+
+    collectAndMeasure();
+    if (geometry.length < anchorGroups.length && typeof MutationObserver !== "undefined") {
+      mutationObserver = new MutationObserver(scheduleMeasure);
+      mutationObserver.observe(document.getElementById("main-content") ?? document.body, { childList: true, subtree: true });
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", scheduleMeasure, { passive: true });
+    window.visualViewport?.addEventListener("resize", scheduleMeasure, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", scheduleMeasure);
+      window.visualViewport?.removeEventListener("resize", scheduleMeasure);
+      resizeObserver?.disconnect();
+      mutationObserver?.disconnect();
+      if (scrollFrame) window.cancelAnimationFrame(scrollFrame);
+      if (measureFrame) window.cancelAnimationFrame(measureFrame);
+    };
   }, [groups, isHomePath]);
 
 
@@ -685,8 +753,15 @@ export default function TopNavigation({ owner }) {
       {!mobileDockNavigation && <div className="nav_spacer v2 hide" />}
       {!mobileDockNavigation && <div data-wf--navbar--variant="base" data-animation="default" data-collapse="medium" data-duration="400" data-easing="ease" data-easing2="ease" role="banner" className="nav_component w-nav" ref={desktopShellRef}>
         <div className="nav_container-v2">
-          <a href={isHomePath ? "#main-content" : localizedPath("/")} className="nav_brand nav_island nav_island--brand w-nav-brand" aria-label={`${t("notFound.home")} — ${ownerName || "Idris ACHABOU"}`} data-nav-zone="identity">
-            <SignatureCanvas name={(ownerName || "Idris ACHABOU").split(" ")[0]} fallbackSrc={NAV_LOGO_SRC} />
+          <a
+            href={isHomePath ? "#main-content" : localizedPath("/")}
+            className="nav_brand nav_brand--arctic-signature w-nav-brand"
+            aria-label={`${t("notFound.home")} — ${ownerName || "Idris ACHABOU"}`}
+            data-nav-zone="identity"
+          >
+            <Suspense fallback={<img src={NAV_LOGO_SRC} alt="" className="nav_personal-logo" aria-hidden="true" />}>
+              <SignatureCanvas name={(ownerName || "Idris ACHABOU").split(" ")[0]} fallbackSrc={NAV_LOGO_SRC} />
+            </Suspense>
           </a>
 
           <nav role="navigation" className="nav_menu v2 nav_island nav_island--core w-nav-menu" aria-label={t("nav.mainLabel")} data-nav-zone="navigation">

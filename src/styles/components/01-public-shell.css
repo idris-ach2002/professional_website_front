@@ -28,18 +28,8 @@
 .owner-select, .status-banner{box-shadow:var(--shadow);}
 .executive-badge{border:1px solid rgba(6,182,212,.22);text-transform:uppercase;letter-spacing:.08em;font-weight:900;}
 .card-kicker{letter-spacing:.11em;text-transform:uppercase;}
-.hero-grid{display:grid;grid-template-columns:minmax(0, 1.35fr) minmax(350px, .65fr);align-items:center;gap:clamp(30px, 5vw, 72px);min-height:calc(100vh - 120px);padding-top:40px;}
 .profile-island::before{border-radius:62px 38px 76px 42px;transform:rotate(-.7deg);}
-.hero-map-line{position:absolute;left:-9%;top:-32px;width:66%;height:140px;border-top:2px solid rgba(14,116,144,.18);border-radius:50%;transform:rotate(-8deg);pointer-events:none;}
-.hero-title-main{display:block;}
-.hero-actions{margin:26px 0 24px;}
 .filter-chip{border:1px solid rgba(20,184,166,.22);}
-.hero-panel{display:grid;gap:18px;transform:rotate(1.2deg);}
-.portrait-card{position:relative;min-height:470px;display:grid;justify-items:center;align-content:center;overflow:hidden;}
-.portrait-placeholder, .portrait-image{position:relative;z-index:2;width:178px !important;height:178px !important;border-radius:44% 56% 53% 47%;border:6px solid rgba(255,255,255,.82);box-shadow:0 22px 70px rgba(14,116,144,.22);object-fit:cover;}
-.portrait-placeholder{display:grid;place-items:center;color:white;font-size:4rem;font-weight:900;background:linear-gradient(135deg, #0e7490, #14b8a6 74%, #f97316 140%);}
-.portrait-content{position:relative;z-index:2;margin-top:20px;text-align:center;}
-.ring-label{color:var(--deep-ocean);font-size:.7rem;font-weight:900;text-transform:uppercase;}
 .contact-pill{text-decoration:none;}
 .contact-pill span{font-weight:900;text-transform:uppercase;letter-spacing:.08em;}
 .contact-pill strong{overflow-wrap:anywhere;}
@@ -86,17 +76,11 @@
 }
 @layer priority {
 .primary-action{background:linear-gradient(135deg, var(--deep-ocean), var(--reef));color:white;}
-.secondary-action{color:var(--deep-ocean);background:rgba(255,255,255,.52);}
-.ghost-action{color:var(--kelp);}
 .owner-select, .status-banner{background:rgba(244, 253, 255, .90);}
 .island-card{background:rgba(244, 253, 255, .88);}
 .executive-badge{color:var(--deep-ocean);background:rgba(34, 211, 238, .14);}
 .card-kicker{color:var(--deep-ocean);font-size:.75rem;font-weight:900;}
-.hero-title{margin:18px 0;font-size:clamp(3rem, 8vw, 8.2rem);line-height:.88;}
 .filter-chip{color:var(--kelp);background:rgba(20,184,166,.12);}
-.portrait-card{padding:34px 26px 26px;border-radius:50px 34px 58px 38px;}
-.portrait-name{color:var(--ink);font-weight:900;}
-.contact-card, .availability-card{padding:24px;border-radius:32px;}
 .project-status, .timeline-category{color:var(--deep-ocean);background:rgba(34,211,238,.12);}
 .featured-badge, .current-badge{color:var(--kelp);background:rgba(20,184,166,.13);}
 .timeline-card h3{color:var(--ink);line-height:1.05;}
@@ -114,4 +98,4 @@
 .gallery-nav{position:absolute;background:rgba(255,255,255,.74);color:var(--deep-ocean);}
 .project-carousel-panel .project-slide-card h3{font-size:clamp(2rem, 4.4vw, 4.9rem);}
 }
-@layer critical{.primary-action{border:0}.secondary-action{border-color:rgba(14,116,144,.32)}.owner-select, .status-banner{border:1px solid rgba(14,116,144,.15)}.island-card{border:1px solid rgba(14,116,144,.15)}.hero-title{letter-spacing:-.09em}.timeline-card h3{letter-spacing:-.04em}.stack-badge, .skill-badge{border-color:rgba(14,116,144,.22)}.mantine-Input-input{border-color:rgba(14,116,144,.18)}.mantine-Input-input:focus{border-color:var(--ocean)}.project-toolbar-sticky{border-color:rgba(3, 105, 161, .2)}.project-slide-card h3{letter-spacing:-.075em}.gallery-nav{border:1px solid rgba(3,105,161,.16)}}
+@layer critical{.primary-action{border:0}.owner-select, .status-banner{border:1px solid rgba(14,116,144,.15)}.island-card{border:1px solid rgba(14,116,144,.15)}.timeline-card h3{letter-spacing:-.04em}.stack-badge, .skill-badge{border-color:rgba(14,116,144,.22)}.mantine-Input-input{border-color:rgba(14,116,144,.18)}.mantine-Input-input:focus{border-color:var(--ocean)}.project-toolbar-sticky{border-color:rgba(3, 105, 161, .2)}.project-slide-card h3{letter-spacing:-.075em}.gallery-nav{border:1px solid rgba(3,105,161,.16)}}

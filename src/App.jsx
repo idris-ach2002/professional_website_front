@@ -3,10 +3,9 @@ import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { Routes, Route } from "react-router-dom";
 
 import AnalyticsTracker from "./components/AnalyticsTracker";
-import GlobalAquarium from "./components/GlobalAquarium";
 import OceanMorphBackground from "./components/OceanMorphBackground";
-import OceanWorldBridge from "./components/OceanWorldBridge";
 import OceanTransitionStage from "./components/OceanTransitionStage";
+import OceanWorldBridge from "./components/OceanWorldBridge";
 import ProfileHero from "./components/ProfileHero";
 import ProvenSkillsSection from "./components/ProvenSkillsSection";
 import SEOHead from "./components/MetadataHead";
@@ -25,6 +24,7 @@ import usePerformanceRuntime from "./performance/usePerformanceRuntime";
 import { ItemVisibilityProvider, VisibilityGate } from "./visibility/ItemVisibilityContext";
 
 
+const GlobalAquarium = lazy(() => import("./components/GlobalAquarium"));
 const PortfolioTimeline = lazy(() => import("./components/PortfolioTimeline"));
 const ProjectsShowcase = lazy(() => import("./components/ProjectsShowcase"));
 const SiteFooter = lazy(() => import("./components/SiteFooter"));
@@ -38,7 +38,7 @@ const NotFoundPage = lazy(() => import("./components/NotFoundPage"));
 const RecruiterPage = lazy(() => import("./components/RecruiterPage"));
 const MissionControlPage = lazy(() => import("./components/MissionControlPage"));
 
-function DeferredVolcanoField({ performanceMode, animationsPaused, runtimeQuality, runtimeBudget }) {
+function DeferredVolcanoField({ performanceMode, animationsPaused, runtimeQuality, runtimeBudget, sceneMode, qualityPreference, effects }) {
   const { t } = useLanguage();
   const { requestPrefetch } = usePerformanceRuntime();
   const sentinelRef = useRef(null);
@@ -93,7 +93,7 @@ function DeferredVolcanoField({ performanceMode, animationsPaused, runtimeQualit
             </section>
           }
         >
-          <UnderwaterVolcanoField performanceMode={performanceMode} paused={animationsPaused} runtimeQuality={runtimeQuality} runtimeBudget={runtimeBudget} />
+          <UnderwaterVolcanoField performanceMode={performanceMode} paused={animationsPaused} runtimeQuality={runtimeQuality} runtimeBudget={runtimeBudget} sceneMode={sceneMode} qualityPreference={qualityPreference} effects={effects} />
         </Suspense>
       </ErrorBoundary>
     );
@@ -124,34 +124,50 @@ function Home({
   const responsiveProfile = useResponsiveProfile();
   const { t } = useLanguage();
   const { runtimeQuality, runtimeBudget } = usePerformanceRuntime();
-  const { isMobile, reducedMotion, performanceMode, preference, isFirefox, animationsEnabled, animationsPaused } = responsiveProfile;
-  const showVolcano = !isMobile && !reducedMotion && animationsEnabled && !["lite", "ultra-lite"].includes(performanceMode);
+  const {
+    isMobile,
+    reducedMotion,
+    performanceMode,
+    preference,
+    isFirefox,
+    animationsPaused,
+    effectiveVolcanoMode,
+    effectiveVolcanoQuality,
+    scenePreferences,
+  } = responsiveProfile;
+  const showVolcano = effectiveVolcanoMode !== "off";
 
   return (
     <main id="main-content" className="app-shell" tabIndex={-1}>
       <SEOHead owner={owner} projects={projects} experiences={experiences} />
 
       <VisibilityGate item="global.ambient.background"><OceanMorphBackground
-        staticMode={performanceMode === "ultra-lite" || preference === "reduced"}
-        depthOnly={performanceMode === "lite" && preference === "auto"}
+        staticMode={isMobile || performanceMode === "ultra-lite" || preference === "reduced"}
+        depthOnly={!isMobile && performanceMode === "lite" && preference === "auto"}
         performanceMode={performanceMode}
         runtimeQuality={runtimeQuality}
       /></VisibilityGate>
-      <VisibilityGate item="global.ambient.aquarium"><GlobalAquarium
-        isMobile={isMobile}
-        reducedMotion={reducedMotion}
-        performanceMode={performanceMode}
-        isFirefox={isFirefox}
-        paused={animationsPaused}
-        runtimeQuality={runtimeQuality}
-        runtimeBudget={runtimeBudget}
-      /></VisibilityGate>
-      <VisibilityGate item="global.ambient.transitions"><OceanTransitionStage
-        reducedMotion={reducedMotion}
-        performanceMode={performanceMode}
-        paused={animationsPaused}
-        runtimeQuality={runtimeQuality}
-      /></VisibilityGate>
+      {!isMobile && (
+        <Suspense fallback={null}>
+          <VisibilityGate item="global.ambient.aquarium"><GlobalAquarium
+            isMobile={false}
+            reducedMotion={reducedMotion}
+            performanceMode={performanceMode}
+            isFirefox={isFirefox}
+            paused={animationsPaused}
+            runtimeQuality={runtimeQuality}
+            runtimeBudget={runtimeBudget}
+          /></VisibilityGate>
+        </Suspense>
+      )}
+      {!isMobile && (
+        <VisibilityGate item="global.ambient.transitions"><OceanTransitionStage
+          reducedMotion={reducedMotion}
+          performanceMode={performanceMode}
+          paused={animationsPaused}
+          runtimeQuality={runtimeQuality}
+        /></VisibilityGate>
+      )}
 
       <VisibilityGate item="global.navbar"><TopNavigation owner={owner} source={state.source} /></VisibilityGate>
 
@@ -198,7 +214,15 @@ function Home({
         {showVolcano ? (
           <>
             <OceanWorldBridge variant="caldera" />
-            <VisibilityGate item="home.volcano"><DeferredVolcanoField performanceMode={performanceMode} animationsPaused={animationsPaused} runtimeQuality={runtimeQuality} runtimeBudget={runtimeBudget} /></VisibilityGate>
+            <VisibilityGate item="home.volcano"><DeferredVolcanoField
+              performanceMode={performanceMode}
+              animationsPaused={animationsPaused}
+              runtimeQuality={runtimeQuality}
+              runtimeBudget={runtimeBudget}
+              sceneMode={effectiveVolcanoMode}
+              qualityPreference={effectiveVolcanoQuality}
+              effects={scenePreferences.volcanoEffects}
+            /></VisibilityGate>
             <OceanWorldBridge variant="projects" />
           </>
         ) : (

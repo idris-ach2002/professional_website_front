@@ -45,6 +45,30 @@ import {
 } from "../performance/volcanoWorkerProtocol";
 
 const VOLCANO_ENVIRONMENT_PATH = "/scenes/abyss-volcano-environment.svg";
+const VOLCANO_FOREGROUND_PATH = "/scenes/abyss-volcano-foreground.svg";
+const VOLCANO_FALLBACK_PATH = "/scenes/abyss-volcano.svg";
+
+function handleVolcanoVectorLoad(event) {
+  const image = event.currentTarget;
+  image.dataset.loaded = "true";
+  image.dataset.failed = "false";
+}
+
+function handleVolcanoVectorError(event) {
+  const image = event.currentTarget;
+  image.dataset.loaded = "false";
+  const retry = Number(image.dataset.retry || 0);
+  if (retry >= 2) {
+    image.dataset.failed = "true";
+    return;
+  }
+  const baseSrc = image.dataset.baseSrc || image.src.split("?")[0];
+  image.dataset.baseSrc = baseSrc;
+  image.dataset.retry = String(retry + 1);
+  window.setTimeout(() => {
+    if (image.isConnected) image.src = `${baseSrc}?retry=${retry + 1}`;
+  }, 140 * (retry + 1));
+}
 
 function resolveDpr(performanceMode, runtimeQuality, budgetCap = Infinity) {
   const deviceDpr = typeof window === "undefined" ? 1 : window.devicePixelRatio || 1;
@@ -188,11 +212,21 @@ function qualityScalar(runtimeQuality, performanceMode) {
   return 1;
 }
 
+function resolveUserVolcanoBudget(quality = "auto") {
+  if (quality === "eco") return { scale: 0.54, fps: 28, dprCap: 0.92, quality: 0.56 };
+  if (quality === "balanced") return { scale: 0.78, fps: 42, dprCap: 1.05, quality: 0.78 };
+  if (quality === "high") return { scale: 1, fps: 60, dprCap: 1.16, quality: 1 };
+  return { scale: 1, fps: Infinity, dprCap: Infinity, quality: 1 };
+}
+
 export default function UnderwaterVolcanoField({
   performanceMode = "full",
   paused = false,
   runtimeQuality = "high",
   runtimeBudget = null,
+  sceneMode = "auto",
+  qualityPreference = "auto",
+  effects: effectPreferences = null,
 }) {
   useEffect(() => {
     announceOceanWorldMounted("abyss-volcano-field");
@@ -233,16 +267,33 @@ export default function UnderwaterVolcanoField({
   const [rendererKind, setRendererKind] = useState("webgl2");
   const [pageVisible, setPageVisible] = useState(() => typeof document === "undefined" ? true : !document.hidden);
 
+  const userBudget = useMemo(() => resolveUserVolcanoBudget(qualityPreference), [qualityPreference]);
+  const volcanoMode = sceneMode ?? "auto";
+  const staticMode = volcanoMode === "static";
+  const effects = {
+    smoke: effectPreferences?.smoke !== false,
+    embers: effectPreferences?.embers !== false,
+    bubbles: effectPreferences?.bubbles !== false,
+    debris: effectPreferences?.debris !== false,
+  };
   const counts = useMemo(() => {
     const base = resolveVolcanoParticleCounts(runtimeQuality, performanceMode);
-    const scale = Math.max(0.2, Number(runtimeBudget?.volcanoScale ?? 1));
-    return Object.fromEntries(Object.entries(base).map(([key, value]) => [key, Math.max(1, Math.round(value * scale))]));
-  }, [performanceMode, runtimeBudget?.volcanoScale, runtimeQuality]);
-  const active = sceneReady && insideActiveZone && pageVisible && !paused;
-  const dpr = resolveDpr(performanceMode, runtimeQuality, runtimeBudget?.dprCap);
-  const targetFps = Math.min(resolveRenderFps(performanceMode, runtimeQuality), Number(runtimeBudget?.volcanoFps || Infinity));
-  const quality = qualityScalar(runtimeQuality, performanceMode);
-  const rockfallLimit = resolveRockfallLimit(runtimeQuality, performanceMode);
+    const runtimeScale = Math.max(0.2, Number(runtimeBudget?.volcanoScale ?? 1));
+    const scale = runtimeScale * userBudget.scale;
+    return Object.fromEntries(Object.entries(base).map(([key, value]) => {
+      if (!effects.smoke && ["smoke", "vent"].includes(key)) return [key, 0];
+      if (!effects.embers && key === "ember") return [key, 0];
+      if (!effects.bubbles && key === "bubble") return [key, 0];
+      if (!effects.debris && key === "sediment") return [key, 0];
+      return [key, Math.max(0, Math.round(value * scale))];
+    }));
+  }, [effects.bubbles, effects.debris, effects.embers, effects.smoke, performanceMode, runtimeBudget?.volcanoScale, runtimeQuality, userBudget.scale]);
+  const active = sceneReady && insideActiveZone && pageVisible && !paused && !staticMode;
+  const runtimeDpr = resolveDpr(performanceMode, runtimeQuality, runtimeBudget?.dprCap);
+  const dpr = Math.min(runtimeDpr, userBudget.dprCap);
+  const targetFps = Math.min(resolveRenderFps(performanceMode, runtimeQuality), Number(runtimeBudget?.volcanoFps || Infinity), userBudget.fps);
+  const quality = Math.min(qualityScalar(runtimeQuality, performanceMode), userBudget.quality);
+  const rockfallLimit = effects.debris ? resolveRockfallLimit(runtimeQuality, performanceMode) : 0;
   const countsRef = useRef(counts);
   const rockfallLimitRef = useRef(rockfallLimit);
   const dprRef = useRef(dpr);
@@ -256,9 +307,10 @@ export default function UnderwaterVolcanoField({
   const rebuildParticles = useCallback(() => {
     const { width, height } = viewportRef.current;
     if (width <= 1 || height <= 1) return;
-    const seed = 0x7610 + counts.smoke * 31 + counts.ember * 17 + counts.ash * 13 + counts.sediment * 11;
-    particlesRef.current = createVolcanoParticles(width, height, counts, seed);
-  }, [counts]);
+    const currentCounts = countsRef.current;
+    const seed = 0x7610 + currentCounts.smoke * 31 + currentCounts.ember * 17 + currentCounts.ash * 13 + currentCounts.sediment * 11;
+    particlesRef.current = createVolcanoParticles(width, height, currentCounts, seed);
+  }, []);
 
   const resize = useCallback(() => {
     const particleCanvas = particleCanvasRef.current;
@@ -268,10 +320,11 @@ export default function UnderwaterVolcanoField({
     if (!particleCanvas || !debrisCanvas || !webglCanvas || !stage) return;
 
     // One layout read, then all canvas writes are batched from the cached viewport.
-    const viewport = measureStageViewport(stage, dpr);
+    const currentDpr = dprRef.current;
+    const viewport = measureStageViewport(stage, currentDpr);
     viewportRef.current = viewport;
     applyCanvasViewport(webglCanvas, viewport);
-    rendererRef.current?.resize(viewport.width, viewport.height, dpr);
+    rendererRef.current?.resize(viewport.width, viewport.height, currentDpr);
 
     if (canvasWorkerOwnedRef.current) {
       applyCanvasViewport(particleCanvas, viewport, { bitmap: false });
@@ -287,7 +340,7 @@ export default function UnderwaterVolcanoField({
     // Preserve the exact main-thread simulation state/seed; only rasterization moves.
     rockfallRef.current = createVolcanoRockfall(0x7a31);
     rebuildParticles();
-  }, [dpr, rebuildParticles]);
+  }, [rebuildParticles]);
 
 
   useEffect(() => {
@@ -456,38 +509,53 @@ export default function UnderwaterVolcanoField({
   }, [sceneReady]);
 
   useEffect(() => {
-    if (!sceneReady || !webglCanvasRef.current) return undefined;
-    const canvasLeases = [
-      [webglCanvasRef.current, "volcano-webgl"],
-      [debrisCanvasRef.current, "volcano-debris"],
-      [particleCanvasRef.current, "volcano-particles"],
-    ].filter(([canvas]) => Boolean(canvas)).map(([canvas, label]) => registerRuntimeResource({
+    const canvas = webglCanvasRef.current;
+    const stage = stageRef.current;
+    if (!canvas || !stage) return undefined;
+
+    const canvasLease = registerRuntimeResource({
       owner: "UnderwaterVolcanoField",
       type: "canvas",
-      label,
+      label: "volcano-webgl",
       estimatedBytes: canvas.width * canvas.height * 4,
-    }));
-    // The original volcano is one WebGL composition. Never mount the old SVG
-    // fallback underneath it: that created two superposed volcanoes when the
-    // deferred renderer became ready a few seconds later.
-    const renderer = createVolcanoWebGLRenderer(webglCanvasRef.current);
-    const rendererLease = registerRuntimeResource({
-      owner: "UnderwaterVolcanoField",
-      type: "renderer",
-      label: renderer ? "webgl2-volcano-renderer" : "volcano-fallback-renderer",
     });
-    rendererRef.current = renderer;
-    setRendererKind(renderer ? "webgl2" : "fallback");
-    resize();
+    let rendererLease = null;
 
-    const stage = stageRef.current;
-    if (!stage) {
-      rendererRef.current?.destroy();
+    const releaseRendererLease = () => {
+      rendererLease?.release();
+      rendererLease = null;
+    };
+
+    const mountRenderer = () => {
+      const renderer = createVolcanoWebGLRenderer(canvas);
+      rendererRef.current = renderer;
+      releaseRendererLease();
+      rendererLease = registerRuntimeResource({
+        owner: "UnderwaterVolcanoField",
+        type: "renderer",
+        label: renderer ? "webgl2-volcano-renderer" : "volcano-fallback-renderer",
+      });
+      setRendererKind(renderer ? "webgl2" : "fallback");
+      resize();
+    };
+
+    const handleContextLost = (event) => {
+      // Opt into restoration. The SVG fallback takes over while the GPU
+      // context is unavailable; no blank frame can escape to the user.
+      event.preventDefault();
       rendererRef.current = null;
-      rendererLease.release();
-      canvasLeases.forEach((lease) => lease.release());
-      return undefined;
-    }
+      releaseRendererLease();
+      setRendererKind("lost");
+    };
+
+    const handleContextRestored = () => {
+      mountRenderer();
+    };
+
+    canvas.addEventListener("webglcontextlost", handleContextLost, false);
+    canvas.addEventListener("webglcontextrestored", handleContextRestored, false);
+    mountRenderer();
+
     const observer = new ResizeObserver(resize);
     observer.observe(stage);
     window.visualViewport?.addEventListener("resize", resize, { passive: true });
@@ -495,12 +563,15 @@ export default function UnderwaterVolcanoField({
     return () => {
       observer.disconnect();
       window.visualViewport?.removeEventListener("resize", resize);
-      rendererRef.current?.destroy();
+      canvas.removeEventListener("webglcontextlost", handleContextLost, false);
+      canvas.removeEventListener("webglcontextrestored", handleContextRestored, false);
+      const renderer = rendererRef.current;
       rendererRef.current = null;
-      rendererLease.release();
-      canvasLeases.forEach((lease) => lease.release());
+      renderer?.destroy();
+      releaseRendererLease();
+      canvasLease.release();
     };
-  }, [resize, sceneReady]);
+  }, [resize]);
 
   useEffect(() => {
     if (!sceneReady) return;
@@ -713,6 +784,8 @@ export default function UnderwaterVolcanoField({
     }
   }, []);
 
+  const fallbackVisible = staticMode || rendererKind !== "webgl2" || !sceneReady;
+
   return (
     <section
       ref={rootRef}
@@ -720,6 +793,12 @@ export default function UnderwaterVolcanoField({
       className={`volcano-field-section${active ? " is-active" : ""}${sceneReady ? " is-mounted" : " is-suspended"}`}
       data-volcano-stage={active ? "eruption" : "idle"}
       data-volcano-renderer={rendererKind}
+      data-volcano-fallback={fallbackVisible ? "true" : "false"}
+      data-volcano-mode={volcanoMode}
+      data-volcano-smoke={effects.smoke ? "true" : "false"}
+      data-volcano-embers={effects.embers ? "true" : "false"}
+      data-volcano-bubbles={effects.bubbles ? "true" : "false"}
+      data-volcano-debris={effects.debris ? "true" : "false"}
       aria-hidden="true"
     >
       <div ref={stageRef} className="volcano-field-stage" aria-hidden="true">
@@ -728,8 +807,22 @@ export default function UnderwaterVolcanoField({
           className="volcano-environment-vector"
           src={VOLCANO_ENVIRONMENT_PATH}
           alt=""
-          loading="lazy"
+          loading="eager"
           decoding="async"
+          fetchPriority="high"
+          data-loaded="false"
+          data-retry="0"
+          onLoad={handleVolcanoVectorLoad}
+          onError={handleVolcanoVectorError}
+        />
+        <img
+          className="volcano-static-fallback"
+          src={VOLCANO_FALLBACK_PATH}
+          alt=""
+          loading="eager"
+          decoding="async"
+          fetchPriority="high"
+          aria-hidden="true"
         />
         <div className="volcano-render-stack">
           <canvas ref={webglCanvasRef} className="volcano-webgl-canvas" />
@@ -744,10 +837,15 @@ export default function UnderwaterVolcanoField({
         </div>
         <img
           className="volcano-foreground-vector"
-          src="/scenes/abyss-volcano-foreground.svg"
+          src={VOLCANO_FOREGROUND_PATH}
           alt=""
-          loading="lazy"
+          loading="eager"
           decoding="async"
+          fetchPriority="high"
+          data-loaded="false"
+          data-retry="0"
+          onLoad={handleVolcanoVectorLoad}
+          onError={handleVolcanoVectorError}
         />
         <div className="volcano-seabed-vignette" />
       </div>

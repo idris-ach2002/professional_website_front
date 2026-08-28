@@ -28,7 +28,7 @@ function resetPointerMaterial(item) {
 }
 
 export default function usePremiumNavigationMotion(rootRef, activeSection) {
-  const { animationsEnabled, animationsPaused, performanceMode } = useAnimationPreferences();
+  const { animationsEnabled, animationsPaused, performanceMode, effectiveNavbarMotion } = useAnimationPreferences();
 
   useEffect(() => {
     const root = rootRef.current;
@@ -38,6 +38,7 @@ export default function usePremiumNavigationMotion(rootRef, activeSection) {
     const reducedMotionMedia = window.matchMedia(REDUCED_MOTION_QUERY);
     const canAnimate = () => animationsEnabled
       && !animationsPaused
+      && effectiveNavbarMotion === "animated"
       && performanceMode === "full"
       && desktopMedia.matches
       && !reducedMotionMedia.matches;
@@ -199,5 +200,5 @@ export default function usePremiumNavigationMotion(rootRef, activeSection) {
       if (pointerFrame) window.cancelAnimationFrame(pointerFrame);
       lens.classList.remove("is-visible", "is-hovered", "is-instant");
     };
-  }, [activeSection, animationsEnabled, animationsPaused, performanceMode, rootRef]);
+  }, [activeSection, animationsEnabled, animationsPaused, performanceMode, effectiveNavbarMotion, rootRef]);
 }

@@ -142,3 +142,6 @@
 .volcano-field-section{margin-top:-2px;}
 }
 @layer critical{.ocean-map{overflow:visible}.timeline-section.is-autonomous-timeline .section-eyebrow{border-color:rgba(103,232,249,.22)}.timeline-card.timeline-expedition-card{border:1px solid rgba(103,232,249,.18)}.timeline-expedition-row[data-timeline-inspection="approaching"] .timeline-expedition-card{border-color:rgba(103,232,249,.30)}.timeline-expedition-row[data-timeline-inspection="active"] .timeline-expedition-card{border-color:rgba(165,243,252,.42)}.timeline-expedition-card h2{letter-spacing:-.04em}.timeline-expedition-card .skill-badge{border-color:rgba(103,232,249,.20)}.timeline-expedition-card .timeline-category{border-color:rgba(103,232,249,.20)}.timeline-section.is-autonomous-timeline[data-timeline-exit="approaching"] :is(.timeline-exploration-drone,.timeline-submarine), .timeline-section.is-autonomous-timeline:is([data-timeline-scene="idle"],[data-timeline-scene="sleeping"],[data-timeline-scene="exiting"],[data-timeline-scene="paused"],[data-timeline-scene="static"]) :is(.timeline-exploration-drone,.timeline-submarine){visibility:hidden}}
+
+/* Final visual cleanup: keep the inspection drone, hide only the legacy mini-submarine. */
+.timeline-submarine{display:none!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;}

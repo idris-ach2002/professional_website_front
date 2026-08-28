@@ -36,6 +36,7 @@ const snapshot = {
 };
 
 async function mockMissionApis(page) {
+  const probes = { historyRequests: 0, performanceSampleWrites: 0 };
   await page.route("**/api/engineering/mission-control", (route) => route.fulfill({
     headers: { "Content-Type": "application/json", "Server-Timing": "spring;dur=8;desc=MissionControlService, postgres;dur=4;desc=PostgreSQL", "X-Portfolio-Trace": "Spring Security FilterChain>DispatcherServlet>EngineeringMissionControlController>MissionControlService>DataSource>PostgreSQL JDBC>CacheManager>Caffeine>BackgroundJobRepository>OutboxEventRepository>WebsiteVersionRepository>Jackson" },
     json: snapshot,
@@ -53,12 +54,19 @@ async function mockMissionApis(page) {
       items: totalElements ? [{ id: `${kind}-${pageIndex}-1`, type: kind === "jobs" ? "PUBLISH" : "PAGE_VIEW", status: "QUEUED", progress: null, attempts: 0, maxAttempts: 3, createdAt: "2026-08-13T12:00:00Z" }] : [],
     } });
   });
-  await page.route("**/api/engineering/performance/history**", (route) => route.fulfill({ json: { builds: [{ buildId: "lot3", sampleCount: 25, averageFps: 119.2, averageFrameP95Ms: 8.4, averageWorkerLatencyMs: 2.1, averageApiLatencyMs: 18.2, maximumActiveResources: 12, lastRecordedAt: "2026-08-13T12:00:00Z" }], recentSamples: [] } }));
-  await page.route("**/api/engineering/performance/samples", (route) => route.fulfill({ status: 201, json: {} }));
+  await page.route("**/api/engineering/performance/history**", (route) => {
+    probes.historyRequests += 1;
+    return route.fulfill({ json: { builds: [{ buildId: "lot3", sampleCount: 25, averageFps: 119.2, averageFrameP95Ms: 8.4, averageWorkerLatencyMs: 2.1, averageApiLatencyMs: 18.2, maximumActiveResources: 12, lastRecordedAt: "2026-08-13T12:00:00Z" }], recentSamples: [] } });
+  });
+  await page.route("**/api/engineering/performance/samples", (route) => {
+    probes.performanceSampleWrites += 1;
+    return route.fulfill({ status: 201, json: {} });
+  });
+  return probes;
 }
 
 test("@mission affiche les trois vues Architecture et calcule puis fige la topologie", async ({ page }) => {
-  await mockMissionApis(page);
+  const probes = await mockMissionApis(page);
   await page.goto("/engineering", { waitUntil: "domcontentloaded" });
 
   await expect(page.getByRole("heading", { level: 1, name: "Architecture technique du portfolio" })).toBeVisible();
@@ -77,6 +85,8 @@ test("@mission affiche les trois vues Architecture et calcule puis fige la topol
   await expect(page.locator(".architecture-layout-status")).toBeVisible();
   await expect(page.locator(".architecture-community.is-front strong")).toHaveText("professional_website_front");
   await expect(page.locator(".architecture-community.is-back strong")).toHaveText("professional_website");
+  expect(probes.historyRequests).toBe(0);
+  expect(probes.performanceSampleWrites).toBe(0);
   await page.getByRole("button", { name: /Spring Boot 4.*Déplacer le nœud/i }).click();
   await expect(page.getByRole("dialog", { name: /Détails Spring Boot 4/i })).toBeVisible();
 
@@ -85,8 +95,11 @@ test("@mission affiche les trois vues Architecture et calcule puis fige la topol
   await expect(page.getByRole("img", { name: /Diagramme d’état animé/i })).toBeVisible();
   await expect(page.getByRole("img", { name: /Waterfall full-stack/i })).toBeVisible();
 
+  const performanceHistoryRequest = page.waitForRequest("**/api/engineering/performance/history**");
   await page.getByRole("button", { name: /Performance/i }).click();
+  await performanceHistoryRequest;
   await expect(page.getByRole("heading", { name: "Performance de l’architecture en temps réel" })).toBeVisible();
+  expect(probes.historyRequests).toBeGreaterThan(0);
   await expect(page.locator("figure.live-profiler")).toBeVisible();
   await expect(page.getByRole("img", { name: /Profiler live multi-pistes du navigateur/i })).toBeVisible();
 });
@@ -103,6 +116,8 @@ test("@mission reste utilisable sans débordement sur mobile", async ({ page }) 
   await page.getByRole("button", { name: /Explorer le graphe/i }).click();
   await expect(page.locator("#architecture-system-stage")).toBeVisible();
   await expect(page.getByText("Graphe complet", { exact: true })).toBeVisible();
+  await expect(page.locator("#architecture-system-stage > canvas.architecture-webgl")).toHaveCount(0);
+  await expect(page.getByText(/statique · pan · nodes/i)).toBeVisible();
   await page.getByRole("button", { name: /React 19.*Déplacer le nœud/i }).click();
   const reactDialog = page.getByRole("dialog", { name: /Détails React 19/i });
   await expect(reactDialog).toBeVisible();

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import ItemVisibilityContext from "./itemVisibilityContext";
+import ItemVisibilityContext from "./visibilityContextCore";
 import { useItemVisibility } from "./useItemVisibility";
 
 const RAW_API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");

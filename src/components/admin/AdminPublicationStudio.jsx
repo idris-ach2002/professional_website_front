@@ -73,11 +73,22 @@ export default function AdminPublicationStudio({ controller }) {
 
   useEffect(() => {
     if (!selectedOwnerId) return undefined;
-    const refresh = () => {
-      if (document.visibilityState === "visible") refreshPublicationOperationalState(selectedOwnerId, selectedVersionId);
+    let disposed = false;
+    let timeoutId = 0;
+    const schedule = () => {
+      if (!disposed) timeoutId = window.setTimeout(refresh, 4000);
     };
-    const intervalId = window.setInterval(refresh, 4000);
-    return () => window.clearInterval(intervalId);
+    const refresh = async () => {
+      if (disposed) return;
+      if (document.visibilityState !== "visible") { schedule(); return; }
+      try {
+        await refreshPublicationOperationalState(selectedOwnerId, selectedVersionId);
+      } finally {
+        schedule();
+      }
+    };
+    schedule();
+    return () => { disposed = true; window.clearTimeout(timeoutId); };
   }, [selectedOwnerId, selectedVersionId, refreshPublicationOperationalState]);
 
   return <div data-admin-publication-studio>

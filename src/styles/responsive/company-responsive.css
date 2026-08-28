@@ -28,13 +28,8 @@ button, a, input, select, textarea, [role="button"]{touch-action:manipulation;}
 .nav_fixed.nav_fixed--portfolio .nav_component{inline-size:min(800px, calc(100% - 20px));}
 .nav_fixed.nav_fixed--portfolio .nav_container-v2{min-block-size:68px;}
 .nav_fixed.nav_fixed--portfolio .nav_button{min-inline-size:var(--touch-target);min-block-size:var(--touch-target);}
-.hero-grid{min-block-size:auto;padding-block-start:clamp(18px, 5vw, 48px);}
 .project-toolbar-sticky{position:relative;inset-block-start:auto;}}
 @media (max-width: 980px){:root{--layout-gutter:clamp(14px, 3.4vw, 28px);--layout-section-gap:clamp(48px, 8vw, 82px);}
-.hero-grid{grid-template-columns:minmax(0, 1fr);gap:clamp(24px, 6vw, 48px);}
-.hero-copy, .hero-panel{inline-size:min(100%, 760px);margin-inline:auto;}
-.hero-panel{transform:none;}
-.portrait-card{min-block-size:clamp(360px, 68vw, 500px);}
 .project-toolbar{grid-template-columns:minmax(0, 1fr);}
 .project-slide-grid, .expertise-layout{grid-template-columns:minmax(0, 1fr);}
 .project-panel-inner, .featured-project-island{min-block-size:auto;}
@@ -49,10 +44,7 @@ html{scroll-padding-top:var(--nav-clearance);}
 .nav_fixed.nav_fixed--portfolio .nav_mobile-panel{inset-inline:0;inline-size:100%;padding-inline:clamp(14px, 4vw, 22px);padding-block-end:max(18px, env(safe-area-inset-bottom, 0px));}
 .nav_fixed.nav_fixed--portfolio .nav_mobile-panel .dropdown-link, .nav_fixed.nav_fixed--portfolio .nav_mobile-direct-link, .nav_fixed.nav_fixed--portfolio .nav_mobile-language-option, .animation-preference-option, .animation-pause-button{min-block-size:var(--touch-target);}
 .nav_fixed.nav_fixed--portfolio .nav_mobile-language-option{min-inline-size:var(--touch-target);}
-.hero-title{font-size:clamp(2.75rem, 13.5vw, 5.5rem);letter-spacing:-.075em;}
-.hero-actions{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));align-items:stretch;}
-.hero-actions .mantine-Button-root{inline-size:100%;min-block-size:var(--touch-target);}
-.profile-copy-card, .profile-sub-card, .portrait-card, .availability-card, .contact-card, .project-slide-card, .timeline-card, .proven-skill-detail-card{border-radius:clamp(22px, 6vw, 34px);}
+.project-slide-card, .timeline-card, .proven-skill-detail-card{border-radius:clamp(22px, 6vw, 34px);}
 .section-title-fish{min-block-size:clamp(210px, 52vw, 300px);}
 .section-title-fish .section-title-copy{inline-size:calc(100% - (2 * var(--layout-gutter)));max-inline-size:720px;}
 .proven-skills-grid, .proven-skill-proof-grid{grid-template-columns:minmax(0, 1fr);}
@@ -69,12 +61,7 @@ html{scroll-padding-top:var(--nav-clearance);}
 .simple-footer-links{inline-size:100%;flex-wrap:wrap;}}
 @media (max-width: 520px){:root{--layout-gutter:12px;--nav-clearance:92px;}
 .nav_fixed.nav_fixed--portfolio .nav_personal-logo{inline-size:min(172px, 49vw);block-size:46px;}
-.hero-title{font-size:clamp(2.45rem, 14vw, 4.2rem);line-height:.92;}
-.hero-actions{grid-template-columns:minmax(0, 1fr);}
-.hero-actions .mantine-Button-root, .project-card-actions .mantine-Button-root, .project-detail-resource-actions .mantine-Button-root{inline-size:100%;}
-.portrait-card{min-block-size:330px;padding-inline:18px;}
-.portrait-placeholder, .portrait-image{inline-size:clamp(132px, 40vw, 168px);block-size:clamp(132px, 40vw, 168px);}
-.availability-card .mantine-Group-root{align-items:flex-start;flex-wrap:wrap;}
+.project-card-actions .mantine-Button-root, .project-detail-resource-actions .mantine-Button-root{inline-size:100%;}
 .project-slide-index{inset-inline-end:14px;font-size:clamp(2rem, 16vw, 4.2rem);}
 .project-detail-modal-header{align-items:flex-start;}
 .project-detail-modal-close{flex:0 0 var(--touch-target);}}
@@ -83,7 +70,6 @@ html{scroll-padding-top:var(--nav-clearance);}
 .nav_fixed.nav_fixed--portfolio .nav_container-v2{min-block-size:58px;}
 .nav_fixed.nav_fixed--portfolio .nav_personal-logo{block-size:42px;}
 .nav_fixed.nav_fixed--portfolio .nav_mobile-panel{max-block-size:calc(var(--visual-viewport-height) - 76px);}
-.hero-grid{min-block-size:auto;}
 .project-detail-modal-inner, .file-preview-pdf-frame-shell{max-block-size:calc(var(--visual-viewport-height) - 16px);}}
 @media (hover: none) and (pointer: coarse){:where(.project-link, .gallery-nav, .contact-pill, .dropdown-link, .proven-skill-button):hover{transform:none;}}
 @media (prefers-reduced-transparency: reduce){.nav_fixed.nav_fixed--portfolio .nav_container-v2, .island-card, .project-toolbar, .status-banner, .owner-select{backdrop-filter:none;-webkit-backdrop-filter:none;}}

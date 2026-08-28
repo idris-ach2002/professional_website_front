@@ -194,7 +194,7 @@ function interpolatePose(from, to, amount) {
 
 function drawCrossGlint(ctx, x, y, size, alpha, warm = false) {
   ctx.save();
-  ctx.strokeStyle = warm ? `rgba(236,188,91,${alpha})` : `rgba(151,222,241,${alpha})`;
+  ctx.strokeStyle = warm ? `rgba(185,213,234,${alpha})` : `rgba(170,211,238,${alpha})`;
   ctx.lineWidth = 0.65;
   ctx.lineCap = "round";
   ctx.beginPath();
@@ -323,15 +323,15 @@ function drawVaneRibbon(ctx, geometry, side, t0, t1, reveal, wave, pointerPressu
 
   const gradient = ctx.createLinearGradient(a.x, a.y, tipA.x, tipA.y);
   if (side < 0) {
-    gradient.addColorStop(0, `rgba(183,137,56,${0.36 * localReveal})`);
-    gradient.addColorStop(0.42, `rgba(224,177,80,${0.72 * localReveal})`);
-    gradient.addColorStop(0.78, `rgba(129,180,188,${0.60 * localReveal})`);
-    gradient.addColorStop(1, `rgba(47,103,126,${0.18 * localReveal})`);
+    gradient.addColorStop(0, `rgba(91,132,166,${0.36 * localReveal})`);
+    gradient.addColorStop(0.42, `rgba(154,190,217,${0.72 * localReveal})`);
+    gradient.addColorStop(0.78, `rgba(152,190,217,${0.60 * localReveal})`);
+    gradient.addColorStop(1, `rgba(55,105,145,${0.18 * localReveal})`);
   } else {
-    gradient.addColorStop(0, `rgba(71,118,136,${0.40 * localReveal})`);
-    gradient.addColorStop(0.4, `rgba(79,171,201,${0.72 * localReveal})`);
-    gradient.addColorStop(0.76, `rgba(216,171,77,${0.52 * localReveal})`);
-    gradient.addColorStop(1, `rgba(223,188,104,${0.15 * localReveal})`);
+    gradient.addColorStop(0, `rgba(70,119,157,${0.40 * localReveal})`);
+    gradient.addColorStop(0.4, `rgba(123,176,211,${0.72 * localReveal})`);
+    gradient.addColorStop(0.76, `rgba(188,215,234,${0.52 * localReveal})`);
+    gradient.addColorStop(1, `rgba(222,238,249,${0.15 * localReveal})`);
   }
 
   ctx.save();
@@ -367,8 +367,8 @@ function drawVaneRibbon(ctx, geometry, side, t0, t1, reveal, wave, pointerPressu
   ctx.fill();
 
   ctx.strokeStyle = side < 0
-    ? `rgba(242,204,119,${0.26 * localReveal})`
-    : `rgba(139,221,239,${0.24 * localReveal})`;
+    ? `rgba(218,236,248,${0.26 * localReveal})`
+    : `rgba(170,211,238,${0.24 * localReveal})`;
   ctx.lineWidth = 0.55 * Math.min(sx, sy);
   ctx.beginPath();
   ctx.moveTo(a.x, a.y);
@@ -410,8 +410,8 @@ function drawMicroFibers(ctx, geometry, state) {
 
     const fiberAlpha = state.specialFiberFade ?? 1;
     ctx.strokeStyle = side < 0
-      ? `rgba(245,212,139,${(0.13 + stagger * 0.19) * fiberAlpha})`
-      : `rgba(157,224,239,${(0.12 + stagger * 0.20) * fiberAlpha})`;
+      ? `rgba(232,244,252,${(0.13 + stagger * 0.19) * fiberAlpha})`
+      : `rgba(190,216,235,${(0.12 + stagger * 0.20) * fiberAlpha})`;
     ctx.lineWidth = 0.38 * Math.min(sx, sy);
     ctx.beginPath();
     ctx.moveTo(anchor.x, anchor.y);
@@ -447,9 +447,9 @@ function drawFeatherSparks(ctx, geometry, sparks, state) {
     const alpha = fade * (0.34 + state.hover * 0.16) * releaseBoost;
 
     const glow = ctx.createRadialGradient(x, y, 0, x, y, spark.radius * 4.5);
-    glow.addColorStop(0, `rgba(255,235,172,${alpha * 0.95})`);
-    glow.addColorStop(0.25, `rgba(121,213,237,${alpha * 0.62})`);
-    glow.addColorStop(1, "rgba(121,213,237,0)");
+    glow.addColorStop(0, `rgba(248,251,253,${alpha * 0.95})`);
+    glow.addColorStop(0.25, `rgba(161,204,233,${alpha * 0.62})`);
+    glow.addColorStop(1, "rgba(161,204,233,0)");
     ctx.fillStyle = glow;
     ctx.beginPath();
     ctx.arc(x, y, spark.radius * 4.5, 0, TAU);
@@ -472,15 +472,15 @@ function drawLooseFragment(ctx, pose, fragment, scaleUnit, alpha = 1) {
 
   const gradient = ctx.createLinearGradient(-half, 0, half, 0);
   if (fragment.warm) {
-    gradient.addColorStop(0, "rgba(111,150,147,0.22)");
-    gradient.addColorStop(0.28, "rgba(213,170,91,0.88)");
-    gradient.addColorStop(0.72, "rgba(231,198,126,0.78)");
-    gradient.addColorStop(1, "rgba(76,130,142,0.18)");
+    gradient.addColorStop(0, "rgba(93,135,169,0.22)");
+    gradient.addColorStop(0.28, "rgba(146,184,212,0.88)");
+    gradient.addColorStop(0.72, "rgba(196,219,236,0.78)");
+    gradient.addColorStop(1, "rgba(61,111,150,0.18)");
   } else {
-    gradient.addColorStop(0, "rgba(43,96,110,0.20)");
-    gradient.addColorStop(0.26, "rgba(86,174,190,0.78)");
-    gradient.addColorStop(0.72, "rgba(167,213,201,0.86)");
-    gradient.addColorStop(1, "rgba(185,143,73,0.18)");
+    gradient.addColorStop(0, "rgba(38,92,137,0.20)");
+    gradient.addColorStop(0.26, "rgba(105,157,194,0.78)");
+    gradient.addColorStop(0.72, "rgba(190,216,235,0.86)");
+    gradient.addColorStop(1, "rgba(118,157,189,0.18)");
   }
 
   ctx.fillStyle = gradient;
@@ -491,7 +491,7 @@ function drawLooseFragment(ctx, pose, fragment, scaleUnit, alpha = 1) {
   ctx.closePath();
   ctx.fill();
 
-  ctx.strokeStyle = fragment.warm ? "rgba(251,226,166,0.58)" : "rgba(206,238,232,0.58)";
+  ctx.strokeStyle = fragment.warm ? "rgba(239,247,252,0.58)" : "rgba(222,238,249,0.58)";
   ctx.lineWidth = 0.45 * scaleUnit;
   ctx.beginPath();
   ctx.moveTo(-half * 0.9, 0);
@@ -611,13 +611,13 @@ function drawTransformationFragments(ctx, geometry, fragments, state) {
     const endX = 157 * geometry.sx;
     const pulse = specialEvent.energyPulse;
     const beam = ctx.createLinearGradient(startX, y, endX, y);
-    beam.addColorStop(0, `rgba(211,175,115,${0.12 * pulse})`);
-    beam.addColorStop(0.46, `rgba(246,241,231,${0.76 * pulse})`);
-    beam.addColorStop(1, `rgba(169,206,194,${0.04 * pulse})`);
+    beam.addColorStop(0, `rgba(138,177,207,${0.12 * pulse})`);
+    beam.addColorStop(0.46, `rgba(248,251,253,${0.76 * pulse})`);
+    beam.addColorStop(1, `rgba(190,216,235,${0.04 * pulse})`);
     ctx.save();
     ctx.strokeStyle = beam;
     ctx.lineWidth = (0.8 + pulse * 0.7) * scaleUnit;
-    ctx.shadowColor = `rgba(211,175,115,${0.42 * pulse})`;
+    ctx.shadowColor = `rgba(138,177,207,${0.42 * pulse})`;
     ctx.shadowBlur = 5 * scaleUnit;
     ctx.beginPath();
     ctx.moveTo(startX, y);
@@ -649,9 +649,9 @@ function drawFeather(ctx, width, height, state, sparks, fragments) {
   ctx.translate(-p0.x, -p0.y);
 
   const baseGlow = ctx.createRadialGradient(p0.x + 4 * sx, p0.y - 1 * sy, 0, p0.x + 4 * sx, p0.y - 1 * sy, 19 * Math.min(sx, sy));
-  baseGlow.addColorStop(0, `rgba(222,177,82,${0.12 + state.hover * 0.05})`);
-  baseGlow.addColorStop(0.4, `rgba(76,177,206,${0.08 + state.hover * 0.04})`);
-  baseGlow.addColorStop(1, "rgba(76,177,206,0)");
+  baseGlow.addColorStop(0, `rgba(120,163,197,${0.12 + state.hover * 0.05})`);
+  baseGlow.addColorStop(0.4, `rgba(105,169,210,${0.08 + state.hover * 0.04})`);
+  baseGlow.addColorStop(1, "rgba(105,169,210,0)");
   ctx.fillStyle = baseGlow;
   ctx.beginPath();
   ctx.arc(p0.x + 4 * sx, p0.y - 1 * sy, 19 * Math.min(sx, sy), 0, TAU);
@@ -676,10 +676,10 @@ function drawFeather(ctx, width, height, state, sparks, fragments) {
   });
 
   const stemGradient = ctx.createLinearGradient(p0.x, p0.y, p3.x, p3.y);
-  stemGradient.addColorStop(0, "rgba(127,88,33,0.97)");
-  stemGradient.addColorStop(0.32, "rgba(230,190,101,0.98)");
-  stemGradient.addColorStop(0.63, "rgba(120,179,190,0.96)");
-  stemGradient.addColorStop(1, "rgba(69,123,145,0.92)");
+  stemGradient.addColorStop(0, "rgba(45,85,119,0.97)");
+  stemGradient.addColorStop(0.32, "rgba(144,181,210,0.98)");
+  stemGradient.addColorStop(0.63, "rgba(127,174,207,0.96)");
+  stemGradient.addColorStop(1, "rgba(55,105,145,0.92)");
   ctx.save();
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
@@ -692,7 +692,7 @@ function drawFeather(ctx, width, height, state, sparks, fragments) {
   ctx.stroke();
   ctx.setLineDash([]);
 
-  ctx.strokeStyle = `rgba(255,230,160,${0.22 + state.hover * 0.12})`;
+  ctx.strokeStyle = `rgba(232,244,252,${0.22 + state.hover * 0.12})`;
   ctx.lineWidth = 0.55 * Math.min(sx, sy);
   ctx.beginPath();
   ctx.moveTo(p0.x + 0.45 * sx, p0.y - 0.4 * sy);
@@ -706,9 +706,9 @@ function drawFeather(ctx, width, height, state, sparks, fragments) {
     const point = cubicBezierPoint(p0, p1, p2, p3, t);
     const radius = (3.3 + state.hover * 1.6) * Math.min(sx, sy);
     const glint = ctx.createRadialGradient(point.x, point.y, 0, point.x, point.y, radius);
-    glint.addColorStop(0, `rgba(255,249,224,${0.64 + state.hover * 0.12})`);
-    glint.addColorStop(0.24, `rgba(169,226,240,${0.28 + state.hover * 0.08})`);
-    glint.addColorStop(1, "rgba(169,226,240,0)");
+    glint.addColorStop(0, `rgba(248,251,253,${0.64 + state.hover * 0.12})`);
+    glint.addColorStop(0.24, `rgba(190,216,235,${0.28 + state.hover * 0.08})`);
+    glint.addColorStop(1, "rgba(190,216,235,0)");
     ctx.fillStyle = glint;
     ctx.beginPath();
     ctx.arc(point.x, point.y, radius, 0, TAU);
@@ -739,13 +739,13 @@ function resolveQuality(performanceMode, canMove) {
   return "full";
 }
 
-export default function SignatureCanvas({ name = "IDRIS", fallbackSrc }) {
+export default function SignatureCanvas({ name = "IDRIS" }) {
   const hostRef = useRef(null);
   const canvasRef = useRef(null);
   const particles = useMemo(() => createParticleField(), []);
   const sparks = useMemo(() => createSparkField(), []);
   const fragments = useMemo(() => createTransformationFragments(), []);
-  const { animationsEnabled, animationsPaused, performanceMode } = useAnimationPreferences();
+  const { animationsEnabled, animationsPaused, performanceMode, effectiveNavbarMotion } = useAnimationPreferences();
 
   useEffect(() => {
     const host = hostRef.current;
@@ -756,7 +756,7 @@ export default function SignatureCanvas({ name = "IDRIS", fallbackSrc }) {
     if (!ctx) return undefined;
 
     const reducedMotionMedia = window.matchMedia(REDUCED_MOTION_QUERY);
-    const motionAllowed = () => animationsEnabled && !animationsPaused && !reducedMotionMedia.matches;
+    const motionAllowed = () => animationsEnabled && !animationsPaused && effectiveNavbarMotion !== "static" && !reducedMotionMedia.matches;
     const currentQuality = () => resolveQuality(performanceMode, motionAllowed());
 
     const interaction = {
@@ -918,11 +918,10 @@ export default function SignatureCanvas({ name = "IDRIS", fallbackSrc }) {
       delete host.dataset.signatureQuality;
       delete host.dataset.signatureEvent;
     };
-  }, [animationsEnabled, animationsPaused, fragments, particles, performanceMode, sparks]);
+  }, [animationsEnabled, animationsPaused, effectiveNavbarMotion, fragments, particles, performanceMode, sparks]);
 
   return (
     <span className="nav_signature" ref={hostRef} aria-hidden="true">
-      {fallbackSrc ? <img src={fallbackSrc} alt="" className="nav_signature-fallback" decoding="async" /> : null}
       <canvas ref={canvasRef} className="nav_signature-canvas" />
       <SignatureWordmarkSvg name={name} />
     </span>

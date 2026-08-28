@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { getClientImpactSnapshot, measurePageMemory } from "../engineering/clientImpactTelemetry";
 import { frameVerdict } from "../engineering/engineeringTelemetry";
@@ -7,17 +7,23 @@ import usePerformanceRuntime from "../performance/usePerformanceRuntime";
 import { fetchMissionControlSnapshot, fetchPerformanceHistory, recordPerformanceSample, tracePortfolioPublic } from "../services/engineeringApi";
 import MetadataHead from "./MetadataHead";
 import TopNavigation from "./TopNavigation";
-import ArchitectureObservatory from "./mission-control/ArchitectureObservatory";
-import LiveTraceObservatory from "./mission-control/LiveTraceObservatory";
-import PerformanceObservatory from "./mission-control/PerformanceObservatory";
-import RequestTraceWaterfall from "./mission-control/RequestTraceWaterfall";
 import { VisibilityGate } from "../visibility/ItemVisibilityContext";
 import { useItemVisibility } from "../visibility/useItemVisibility";
 import "../styles/pages/mission-control.css";
 import "../styles/pages/architecture-graph-canvas.css";
 import "../styles/pages/architecture-app-mode.css";
 
+const ArchitectureObservatory = lazy(() => import("./mission-control/ArchitectureObservatory"));
+const LiveTraceObservatory = lazy(() => import("./mission-control/LiveTraceObservatory"));
+const PerformanceObservatory = lazy(() => import("./mission-control/PerformanceObservatory"));
+const RequestTraceWaterfall = lazy(() => import("./mission-control/RequestTraceWaterfall"));
+
 const LOCAL_SAMPLE_LIMIT = 120;
+const LIVE_SAMPLE_MS = 1000;
+const BACKEND_DESKTOP_MS = 5000;
+const BACKEND_MOBILE_MS = 10000;
+const MEMORY_SAMPLE_MS = 10000;
+const HISTORY_REFRESH_MS = 60000;
 const BUILD_ID = import.meta.env.VITE_BUILD_ID ?? import.meta.env.VITE_COMMIT_SHA ?? "development";
 const VIEWS = Object.freeze([
   { id: "system", key: "architecture.system", label: "System", description: "topologie vivante" },
@@ -59,62 +65,126 @@ export default function MissionControlPage({ owner, projects = [], experiences =
   const samplesRef = useRef([]);
   const backendRef = useRef(null);
   const backendProbeOkRef = useRef(false);
+  const backendRequestRef = useRef(null);
   const appMemoryRef = useRef({ supported: false, bytes: Number.NaN, breakdown: [] });
 
-  const refreshBackend = useCallback(async (signal, captureTrace = true) => {
+  const visibleViews = VIEWS.filter((item) => isVisible(item.key));
+  const activeView = visibleViews.some((item) => item.id === view) ? view : (visibleViews[0]?.id ?? "system");
+
+  const refreshBackend = useCallback((signal, captureTrace = true) => {
+    if (backendRequestRef.current) return backendRequestRef.current;
+
     const startedAt = performance.now();
-    try {
-      const snapshot = await fetchMissionControlSnapshot({ signal, onTrace: captureTrace ? setActiveTrace : undefined });
-      apiLatencyRef.current = performance.now() - startedAt;
-      apiRequestCountRef.current += 1;
-      backendRef.current = snapshot;
-      backendProbeOkRef.current = true;
-      setBackendSnapshot(snapshot);
-      setBackendError(null);
-      return snapshot;
-    } catch (error) {
-      if (error?.name !== "AbortError") {
-        backendProbeOkRef.current = false;
-        setBackendError(error?.message ?? "Backend observable indisponible");
+    const request = (async () => {
+      try {
+        const snapshot = await fetchMissionControlSnapshot({ signal, onTrace: captureTrace ? setActiveTrace : undefined });
+        apiLatencyRef.current = performance.now() - startedAt;
+        apiRequestCountRef.current += 1;
+        backendRef.current = snapshot;
+        backendProbeOkRef.current = true;
+        setBackendSnapshot(snapshot);
+        setBackendError(null);
+        return snapshot;
+      } catch (error) {
+        if (error?.name !== "AbortError") {
+          backendProbeOkRef.current = false;
+          setBackendError(error?.message ?? "Backend observable indisponible");
+        }
+        throw error;
+      } finally {
+        if (backendRequestRef.current === request) backendRequestRef.current = null;
       }
-      throw error;
-    }
+    })();
+
+    backendRequestRef.current = request;
+    return request;
   }, []);
 
   useEffect(() => {
     const controller = new AbortController();
-    queueMicrotask(() => { if (!controller.signal.aborted) refreshBackend(controller.signal, true).catch(() => {}); });
-    const intervalId = window.setInterval(() => {
-      if (document.hidden) return;
-      refreshBackend(controller.signal, false).catch(() => {});
-    }, 2000);
-    return () => { controller.abort(); window.clearInterval(intervalId); };
+    let timeoutId = 0;
+    let disposed = false;
+    let firstProbe = true;
+
+    const cadence = () => window.matchMedia?.("(max-width: 820px), (hover: none) and (pointer: coarse)")?.matches
+      ? BACKEND_MOBILE_MS
+      : BACKEND_DESKTOP_MS;
+
+    const schedule = () => {
+      if (disposed || controller.signal.aborted) return;
+      timeoutId = window.setTimeout(poll, cadence());
+    };
+
+    const poll = async () => {
+      if (disposed || controller.signal.aborted) return;
+      if (document.hidden) { schedule(); return; }
+      try {
+        await refreshBackend(controller.signal, firstProbe);
+        firstProbe = false;
+      } catch {
+        // Status is surfaced in the page; the next probe stays single-flight.
+      } finally {
+        schedule();
+      }
+    };
+
+    queueMicrotask(poll);
+    return () => {
+      disposed = true;
+      controller.abort();
+      window.clearTimeout(timeoutId);
+    };
   }, [refreshBackend]);
 
   useEffect(() => {
+    if (activeView !== "performance") return undefined;
     const controller = new AbortController();
-    const load = () => fetchPerformanceHistory(80, { signal: controller.signal }).then(setPerformanceHistory).catch(() => {});
+    let timeoutId = 0;
+    let disposed = false;
+
+    const load = async () => {
+      if (disposed || controller.signal.aborted) return;
+      if (document.hidden) {
+        timeoutId = window.setTimeout(load, HISTORY_REFRESH_MS);
+        return;
+      }
+      try {
+        const history = await fetchPerformanceHistory(80, { signal: controller.signal });
+        if (!disposed) setPerformanceHistory(history);
+      } catch {
+        // Performance history is optional telemetry.
+      } finally {
+        if (!disposed) timeoutId = window.setTimeout(load, HISTORY_REFRESH_MS);
+      }
+    };
+
     load();
-    const intervalId = window.setInterval(() => {
-      if (document.hidden) return;
-      load();
-    }, 30000);
-    return () => { controller.abort(); window.clearInterval(intervalId); };
-  }, []);
+    return () => {
+      disposed = true;
+      controller.abort();
+      window.clearTimeout(timeoutId);
+    };
+  }, [activeView]);
 
   useEffect(() => {
+    if (activeView !== "performance") return undefined;
     let active = true;
+    let timeoutId = 0;
     const measure = async () => {
+      if (!active) return;
+      if (document.hidden) {
+        timeoutId = window.setTimeout(measure, MEMORY_SAMPLE_MS);
+        return;
+      }
       const memory = await measurePageMemory();
-      if (active) appMemoryRef.current = memory;
+      if (active) {
+        appMemoryRef.current = memory;
+        timeoutId = window.setTimeout(measure, MEMORY_SAMPLE_MS);
+      }
     };
     measure();
-    const intervalId = window.setInterval(() => {
-      if (document.hidden) return;
-      measure();
-    }, 6000);
-    return () => { active = false; window.clearInterval(intervalId); };
-  }, []);
+    return () => { active = false; window.clearTimeout(timeoutId); };
+  }, [activeView]);
 
 
   useEffect(() => {
@@ -199,35 +269,46 @@ export default function MissionControlPage({ owner, projects = [], experiences =
         return updated;
       });
     };
-    sample();
-    const intervalId = window.setInterval(() => {
-      if (document.hidden) return;
-      sample();
-    }, 500);
-    return () => window.clearInterval(intervalId);
+    let timeoutId = 0;
+    let disposed = false;
+    const tick = () => {
+      if (disposed) return;
+      if (!document.hidden) sample();
+      timeoutId = window.setTimeout(tick, LIVE_SAMPLE_MS);
+    };
+    tick();
+    return () => { disposed = true; window.clearTimeout(timeoutId); };
   }, [getRuntimeSnapshot]);
 
   useEffect(() => {
+    if (activeView !== "performance") return undefined;
+    let timeoutId = 0;
+    let disposed = false;
     const publish = () => {
-      if (document.hidden) return;
+      if (disposed) return;
+      if (document.hidden) {
+        timeoutId = window.setTimeout(publish, 30000);
+        return;
+      }
       const latest = samplesRef.current.at(-1);
-      if (!latest || latest.fps <= 0) return;
-      recordPerformanceSample({
-        buildId: BUILD_ID,
-        runtimeProfile: latest.profile,
-        memoryState: latest.memoryState,
-        fps: latest.fps,
-        frameP95Ms: latest.p95,
-        longTaskCount: latest.longTasks,
-        workerLatencyMs: latest.workerLatency,
-        apiLatencyMs: latest.apiLatency,
-        activeResources: latest.resources,
-      }).catch(() => {});
+      if (latest?.fps > 0) {
+        recordPerformanceSample({
+          buildId: BUILD_ID,
+          runtimeProfile: latest.profile,
+          memoryState: latest.memoryState,
+          fps: latest.fps,
+          frameP95Ms: latest.p95,
+          longTaskCount: latest.longTasks,
+          workerLatencyMs: latest.workerLatency,
+          apiLatencyMs: latest.apiLatency,
+          activeResources: latest.resources,
+        }).catch(() => {});
+      }
+      timeoutId = window.setTimeout(publish, 30000);
     };
-    const timeoutId = window.setTimeout(publish, 10000);
-    const intervalId = window.setInterval(publish, 30000);
-    return () => { window.clearTimeout(timeoutId); window.clearInterval(intervalId); };
-  }, []);
+    timeoutId = window.setTimeout(publish, 10000);
+    return () => { disposed = true; window.clearTimeout(timeoutId); };
+  }, [activeView]);
 
   const runFeature = useCallback(async (feature) => {
     setRunningFeature(feature);
@@ -247,9 +328,6 @@ export default function MissionControlPage({ owner, projects = [], experiences =
       setRunningFeature(null);
     }
   }, [locale, refreshBackend]);
-
-  const visibleViews = VIEWS.filter((item) => isVisible(item.key));
-  const activeView = visibleViews.some((item) => item.id === view) ? view : (visibleViews[0]?.id ?? "system");
 
   const effectiveCursorIndex = followLive ? Math.max(0, samples.length - 1) : cursorIndex;
   const selected = samples[Math.max(0, Math.min(effectiveCursorIndex, samples.length - 1))] ?? {};
@@ -302,7 +380,7 @@ export default function MissionControlPage({ owner, projects = [], experiences =
             <div><span className="mission-kicker">Carte système</span><h2>Architecture vivante du portfolio</h2></div>
             <span className="mission-panel-count">ForceAtlas · communautés · flux réels</span>
           </header>
-          <ArchitectureObservatory snapshot={backendSnapshot} liveSample={selected} activeTrace={activeTrace} />
+          <Suspense fallback={<div className="mission-panel-loading">Chargement de la topologie…</div>}><ArchitectureObservatory snapshot={backendSnapshot} liveSample={selected} activeTrace={activeTrace} /></Suspense>
         </section></VisibilityGate>}
 
         {activeView === "trace" && <VisibilityGate item="architecture.trace"><section className="mission-panel mission-trace-panel">
@@ -310,8 +388,8 @@ export default function MissionControlPage({ owner, projects = [], experiences =
             <div><span className="mission-kicker">Trace instrumentée</span><h2>Exécution d’une requête de bout en bout</h2></div>
             <span className={activeTrace ? "mission-live-pill" : "mission-panel-count"}>{activeTrace ? "trace capturée" : "écoute"}</span>
           </header>
-          <LiveTraceObservatory trace={traced} selected={selected} onRunFeature={runFeature} runningFeature={runningFeature} />
-          <VisibilityGate item="architecture.trace.waterfall"><RequestTraceWaterfall trace={activeTrace} renderMs={selected.p95} /></VisibilityGate>
+          <Suspense fallback={<div className="mission-panel-loading">Chargement de la trace…</div>}><LiveTraceObservatory trace={traced} selected={selected} onRunFeature={runFeature} runningFeature={runningFeature} /></Suspense>
+          <VisibilityGate item="architecture.trace.waterfall"><Suspense fallback={null}><RequestTraceWaterfall trace={activeTrace} renderMs={selected.p95} /></Suspense></VisibilityGate>
         </section></VisibilityGate>}
 
         {activeView === "performance" && <VisibilityGate item="architecture.performance"><section className="mission-panel mission-performance-panel">
@@ -319,7 +397,7 @@ export default function MissionControlPage({ owner, projects = [], experiences =
             <div><span className="mission-kicker">Profiler live</span><h2>Performance de l’architecture en temps réel</h2></div>
             <span className="mission-panel-count">frames · main thread · GPU · API</span>
           </header>
-          <PerformanceObservatory samples={samples} selected={selected} history={performanceHistory} displayHz={displayHz} buildId={BUILD_ID} />
+          <Suspense fallback={<div className="mission-panel-loading">Chargement du profiler…</div>}><PerformanceObservatory samples={samples} selected={selected} history={performanceHistory} displayHz={displayHz} buildId={BUILD_ID} /></Suspense>
         </section></VisibilityGate>}
 
 

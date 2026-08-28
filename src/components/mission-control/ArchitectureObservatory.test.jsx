@@ -43,7 +43,7 @@ describe("ArchitectureObservatory", () => {
     expect(screen.getByText(/Fermeture dans/i)).toBeInTheDocument();
     expect(container.querySelectorAll(".architecture-node.heat-unknown").length).toBeGreaterThan(0);
     expect(container.querySelectorAll(".architecture-link-base")).toHaveLength(19);
-    expect(container.querySelectorAll(".architecture-link-pulse").length).toBeGreaterThan(0);
+    expect(container.querySelectorAll(".architecture-link-pulse")).toHaveLength(0);
   });
   it("utilise une composition mobile native avant de charger le graphe complet", () => {
     vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
@@ -69,7 +69,9 @@ describe("ArchitectureObservatory", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Explorer le graphe/i }));
     expect(screen.getByText("Graphe complet")).toBeInTheDocument();
+    expect(screen.getByText(/statique · pan · nodes/i)).toBeInTheDocument();
     expect(container.querySelector("#architecture-system-stage")).toBeInTheDocument();
+    expect(container.querySelector("canvas.architecture-webgl")).not.toBeInTheDocument();
   });
 
 });

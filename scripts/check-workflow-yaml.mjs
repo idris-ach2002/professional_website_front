@@ -8,10 +8,12 @@ const workflowDir = path.join(root, ".github/workflows");
 const files = fs.readdirSync(workflowDir).filter((name) => /\.ya?ml$/.test(name)).sort();
 const errors = [];
 let authoritative = null;
-
-if (files.length !== 1 || files[0] !== "frontend-ci.yml") {
-  errors.push(`un seul workflow actif est autorisé; trouvé: ${files.join(", ") || "aucun"}`);
-}
+let documentation = null;
+const allowedFiles = new Set(["frontend-ci.yml", "documentation.yml"]);
+const unexpectedFiles = files.filter((file) => !allowedFiles.has(file));
+if (!files.includes("frontend-ci.yml")) errors.push("frontend-ci.yml est requis comme workflow applicatif autoritatif.");
+if (!files.includes("documentation.yml")) errors.push("documentation.yml est requis comme workflow documentation isolé.");
+if (unexpectedFiles.length > 0) errors.push(`workflows inattendus: ${unexpectedFiles.join(", ")}`);
 
 for (const file of files) {
   const source = fs.readFileSync(path.join(workflowDir, file), "utf8");
@@ -34,6 +36,19 @@ for (const file of files) {
   if (!("on" in document)) errors.push(`${file}: déclencheur on manquant.`);
   if (!document.jobs || typeof document.jobs !== "object") errors.push(`${file}: jobs manquant.`);
   if (file === "frontend-ci.yml") authoritative = document;
+  if (file === "documentation.yml") documentation = document;
+}
+
+if (documentation) {
+  const jobs = documentation.jobs ?? {};
+  if (!jobs.documentation) errors.push("documentation.yml: job documentation manquant.");
+  const steps = jobs.documentation?.steps ?? [];
+  if (!steps.some((step) => step?.["working-directory"] === "documentation" && step?.run === "npm run check")) {
+    errors.push("documentation.yml: npm run check doit valider la documentation.");
+  }
+  if (!steps.some((step) => step?.["working-directory"] === "documentation" && step?.run === "npm run build")) {
+    errors.push("documentation.yml: npm run build doit construire la documentation.");
+  }
 }
 
 if (authoritative) {
@@ -147,4 +162,4 @@ if (errors.length) {
   for (const error of errors) console.error(`- ${error}`);
   process.exit(1);
 }
-console.log(`GitHub Actions YAML OK: ${files[0]} is syntactically valid and production is isolated from the E2E build profile.`);
+console.log(`GitHub Actions YAML OK: frontend CI/CD and isolated documentation workflow are syntactically valid; production stays isolated from the E2E build profile.`);

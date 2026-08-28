@@ -27,13 +27,12 @@ const totalBytes = rows.reduce((sum, row) => sum + row.bytes, 0);
 const totalImportant = rows.reduce((sum, row) => sum + row.important, 0);
 
 const budgets = {
-  totalBytes: 765_000,
-  totalImportant: 1_500,
+  totalBytes: 650_000,
+  totalImportant: 1_000,
   files: {
     "src/styles/navigation/premium-navigation-v2.css": { bytes: 212_000, important: 600 },
-    "src/styles/sections/profile-ios-v49.css": { bytes: 80_000, important: 300 },
+    "src/styles/sections/profile-arctic-ink.css": { bytes: 20_000, important: 12 },
     "src/styles/sections/timeline-legacy-optimized.css": { bytes: 4_000, important: 12 },
-    "src/styles/sections/profile-identity-dock.css": { bytes: 7_000, important: 0 },
     "src/styles/sections/timeline-mission-ui.css": { bytes: 12_000, important: 0 },
     "src/styles/pages/architecture-app-mode.css": { bytes: 9_000, important: 0 },
     "src/styles/pages/recruiter-app-mode.css": { bytes: 8_000, important: 0 },

@@ -427,8 +427,16 @@ for (const absolute of allTestFiles) {
   forbidText(source, ".concurrent(", `${relative} must use file/process isolation rather than intra-file shared-state concurrency.`);
 }
 
-if (workflowFiles.length !== 1 || workflowFiles[0] !== "frontend-ci.yml") {
-  errors.push(`GitHub Actions must have one authoritative frontend workflow after migration; found: ${workflowFiles.join(", ")}.`);
+const allowedWorkflowFiles = ["documentation.yml", "frontend-ci.yml"];
+const unexpectedWorkflowFiles = workflowFiles.filter((file) => !allowedWorkflowFiles.includes(file));
+if (!workflowFiles.includes("frontend-ci.yml")) {
+  errors.push("GitHub Actions must keep frontend-ci.yml as the authoritative application CI/CD workflow.");
+}
+if (!workflowFiles.includes("documentation.yml")) {
+  errors.push("GitHub Actions must keep documentation.yml as the isolated documentation workflow.");
+}
+if (unexpectedWorkflowFiles.length > 0) {
+  errors.push(`Unexpected GitHub Actions workflows found: ${unexpectedWorkflowFiles.join(", ")}.`);
 }
 for (const contract of [
   "runs-on: ubuntu-24.04",
@@ -499,5 +507,5 @@ if (errors.length > 0) {
 console.log(
   "Test architecture OK: hermetic fixtures, observable pre/postconditions, isolated browser contexts, "
   + "pinned Node/npm runtime, hermetic build+browser network, hardware-aware worker caps, deterministic parallel-isolation gates without repeat-each, "
-  + "single-flight soak plus non-blocking vitals/main-thread diagnostics, and one authoritative CI/CD workflow.",
+  + "single-flight soak plus non-blocking vitals/main-thread diagnostics, one authoritative app CI/CD workflow and one isolated documentation workflow.",
 );

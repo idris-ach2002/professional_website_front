@@ -43,8 +43,8 @@ function GlyphShape({ letter }) {
 
 export default function SignatureWordmarkSvg({ name = "IDRIS" }) {
   const id = useId().replaceAll(":", "");
-  const { animationsEnabled, animationsPaused, performanceMode } = useAnimationPreferences();
-  const animated = animationsEnabled && !animationsPaused && !["lite", "ultra-lite"].includes(performanceMode);
+  const { animationsEnabled, animationsPaused, performanceMode, effectiveNavbarMotion } = useAnimationPreferences();
+  const animated = animationsEnabled && !animationsPaused && effectiveNavbarMotion !== "static" && !["lite", "ultra-lite"].includes(performanceMode);
   const letters = String(name || "IDRIS").toUpperCase().split("").slice(0, 5);
   const supported = letters.join("") === "IDRIS";
 
@@ -74,17 +74,17 @@ export default function SignatureWordmarkSvg({ name = "IDRIS" }) {
     >
       <defs>
         <linearGradient id={`${id}-word`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#173B40" />
-          <stop offset="0.52" stopColor="#2C5554" />
-          <stop offset="0.72" stopColor="#B98B4B" />
-          <stop offset="0.83" stopColor="#385F5C" />
-          <stop offset="1" stopColor="#173B40" />
+          <stop offset="0" stopColor="#183652" />
+          <stop offset="0.48" stopColor="#306997" />
+          <stop offset="0.70" stopColor="#6990AE" />
+          <stop offset="0.84" stopColor="#C6DCED" />
+          <stop offset="1" stopColor="#183652" />
         </linearGradient>
         <linearGradient id={`${id}-shine`} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stopColor="#FFFFFF" stopOpacity="0" />
-          <stop offset="0.47" stopColor="#F6F1E7" stopOpacity="0.05" />
-          <stop offset="0.52" stopColor="#FFF8DF" stopOpacity="0.9" />
-          <stop offset="0.58" stopColor="#D8ECE7" stopOpacity="0.36" />
+          <stop offset="0.47" stopColor="#EAF4FB" stopOpacity="0.05" />
+          <stop offset="0.52" stopColor="#FFFFFF" stopOpacity="0.92" />
+          <stop offset="0.58" stopColor="#C6DCED" stopOpacity="0.42" />
           <stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
         </linearGradient>
         <clipPath id={`${id}-clip`}>

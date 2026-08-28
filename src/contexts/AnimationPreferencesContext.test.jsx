@@ -13,6 +13,11 @@ function Harness() {
       <span data-testid="paused">{String(context.animationsPaused)}</span>
       <span data-testid="profile-timeline">{String(context.transitionPreferences.profileTimeline)}</span>
       <span data-testid="transition-master">{String(context.transitionPreferences.master)}</span>
+      <span data-testid="volcano-mode">{context.scenePreferences.volcanoMode}</span>
+      <span data-testid="volcano-quality">{context.scenePreferences.volcanoQuality}</span>
+      <span data-testid="volcano-bubbles">{String(context.scenePreferences.volcanoEffects.bubbles)}</span>
+      <span data-testid="navbar-motion">{context.scenePreferences.navbarMotion}</span>
+      <span data-testid="profile-motion">{context.scenePreferences.profileMotion}</span>
       <button type="button" onClick={() => context.setPreference("full")}>full</button>
       <button type="button" onClick={() => context.setPreference("reduced")}>reduced</button>
       <button type="button" onClick={() => context.setPreference("off")}>off</button>
@@ -20,6 +25,12 @@ function Harness() {
       <button type="button" onClick={() => context.setTransitionEnabled("profileTimeline", false)}>disable-profile-timeline</button>
       <button type="button" onClick={() => context.setTransitionEnabled("master", false)}>disable-transition-master</button>
       <button type="button" onClick={context.resetTransitionPreferences}>reset-transitions</button>
+      <button type="button" onClick={() => context.setVolcanoMode("animated")}>volcano-animated</button>
+      <button type="button" onClick={() => context.setVolcanoQuality("balanced")}>volcano-balanced</button>
+      <button type="button" onClick={() => context.setVolcanoEffect("bubbles", false)}>disable-bubbles</button>
+      <button type="button" onClick={() => context.setNavbarMotion("static")}>navbar-static</button>
+      <button type="button" onClick={() => context.setProfileMotion("static")}>profile-static</button>
+      <button type="button" onClick={context.resetScenePreferences}>reset-scenes</button>
     </div>
   );
 }
@@ -67,6 +78,33 @@ describe("AnimationPreferencesProvider", () => {
     await user.click(screen.getByRole("button", { name: "reset-transitions" }));
     expect(screen.getByTestId("transition-master")).toHaveTextContent("true");
     expect(screen.getByTestId("profile-timeline")).toHaveTextContent("true");
+  });
+
+  it("mémorise les préférences de scène sans désactiver les protections runtime", async () => {
+    const user = userEvent.setup();
+    renderProvider();
+    await user.click(screen.getByRole("button", { name: "volcano-animated" }));
+    await user.click(screen.getByRole("button", { name: "volcano-balanced" }));
+    await user.click(screen.getByRole("button", { name: "disable-bubbles" }));
+    await user.click(screen.getByRole("button", { name: "navbar-static" }));
+    await user.click(screen.getByRole("button", { name: "profile-static" }));
+
+    expect(screen.getByTestId("volcano-mode")).toHaveTextContent("animated");
+    expect(screen.getByTestId("volcano-quality")).toHaveTextContent("balanced");
+    expect(screen.getByTestId("volcano-bubbles")).toHaveTextContent("false");
+    expect(screen.getByTestId("navbar-motion")).toHaveTextContent("static");
+    expect(screen.getByTestId("profile-motion")).toHaveTextContent("static");
+    expect(JSON.parse(window.localStorage.getItem("portfolio-animation-scenes-v1"))).toMatchObject({
+      volcanoMode: "animated",
+      volcanoQuality: "balanced",
+      volcanoEffects: { bubbles: false },
+      navbarMotion: "static",
+      profileMotion: "static",
+    });
+
+    await user.click(screen.getByRole("button", { name: "reset-scenes" }));
+    expect(screen.getByTestId("volcano-mode")).toHaveTextContent("auto");
+    expect(screen.getByTestId("volcano-bubbles")).toHaveTextContent("true");
   });
 
   it("active le mode ultra-léger quand les animations sont désactivées", async () => {

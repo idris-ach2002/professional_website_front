@@ -15,7 +15,7 @@ function resetShellPointer(shell) {
 }
 
 export default function usePremiumNavigationShellMotion(shellRef) {
-  const { animationsEnabled, animationsPaused, performanceMode } = useAnimationPreferences();
+  const { animationsEnabled, animationsPaused, performanceMode, effectiveNavbarMotion } = useAnimationPreferences();
 
   useEffect(() => {
     const shell = shellRef.current;
@@ -25,6 +25,7 @@ export default function usePremiumNavigationShellMotion(shellRef) {
     const reducedMotionMedia = window.matchMedia(REDUCED_MOTION_QUERY);
     const canAnimate = () => animationsEnabled
       && !animationsPaused
+      && effectiveNavbarMotion === "animated"
       && performanceMode === "full"
       && desktopMedia.matches
       && !reducedMotionMedia.matches;
@@ -93,5 +94,5 @@ export default function usePremiumNavigationShellMotion(shellRef) {
       if (pointerFrame) window.cancelAnimationFrame(pointerFrame);
       resetShellPointer(shell);
     };
-  }, [animationsEnabled, animationsPaused, performanceMode, shellRef]);
+  }, [animationsEnabled, animationsPaused, performanceMode, effectiveNavbarMotion, shellRef]);
 }

@@ -70,16 +70,15 @@ describe("SignatureCanvas", () => {
     getContextSpy?.mockRestore();
   });
 
-  it("dessine une signature statique et conserve un fallback image", () => {
+  it("dessine une signature statique sans fond image", () => {
     const { container } = render(<SignatureCanvas name="Idris" fallbackSrc="/logo.png" />);
 
     const signature = container.querySelector(".nav_signature");
     const canvas = container.querySelector("canvas");
-    const fallback = container.querySelector(".nav_signature-fallback");
     const wordmark = container.querySelector(".nav-signature-wordmark");
 
     expect(canvas).toBeTruthy();
-    expect(fallback).toHaveAttribute("src", "/logo.png");
+    expect(container.querySelector(".nav_signature-fallback")).toBeNull();
     expect(signature).toHaveAttribute("aria-hidden", "true");
     expect(wordmark).toHaveClass("is-static");
     expect(container.querySelectorAll(".nav-signature-letter")).toHaveLength(5);

@@ -407,8 +407,12 @@ function toClip([x, y]) {
 function ArchitectureCanvas({ nodes, links, positions, sample, onStatus, showParticles = true, paintStyle }) {
   const canvasRef = useRef(null);
   const dataRef = useRef({ nodes, links, positions, sample, showParticles });
+  const wakeRef = useRef(() => {});
 
-  useEffect(() => { dataRef.current = { nodes, links, positions, sample, showParticles }; }, [links, nodes, positions, sample, showParticles]);
+  useEffect(() => {
+    dataRef.current = { nodes, links, positions, sample, showParticles };
+    wakeRef.current?.();
+  }, [links, nodes, positions, sample, showParticles]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -416,6 +420,7 @@ function ArchitectureCanvas({ nodes, links, positions, sample, onStatus, showPar
     if (!gl) { onStatus?.("fallback"); return undefined; }
     const program = createProgram(gl);
     if (!program) { onStatus?.("fallback"); return undefined; }
+
     onStatus?.("active");
     const positionLocation = gl.getAttribLocation(program, "a_position");
     const sizeLocation = gl.getAttribLocation(program, "a_size");
@@ -423,30 +428,70 @@ function ArchitectureCanvas({ nodes, links, positions, sample, onStatus, showPar
     const buffer = gl.createBuffer();
     const gpuTimer = createGpuTimerQuery(gl, "architecture-graph");
     const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    const dimensions = { cssWidth: 1, cssHeight: 1, width: 1, height: 1 };
+    const vertexData = new Float32Array(4096);
     let frame = 0;
-    let visible = true;
+    let pageVisible = !document.hidden;
+    let canvasVisible = true;
     let lastPaint = 0;
+    let renderCount = 0;
+    let gpuSampleActive = false;
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, vertexData.byteLength, gl.DYNAMIC_DRAW);
+
+    const resize = () => {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
+      dimensions.cssWidth = Math.max(1, rect.width);
+      dimensions.cssHeight = Math.max(1, rect.height);
+      dimensions.width = Math.max(1, Math.round(dimensions.cssWidth * dpr));
+      dimensions.height = Math.max(1, Math.round(dimensions.cssHeight * dpr));
+      if (canvas.width !== dimensions.width || canvas.height !== dimensions.height) {
+        canvas.width = dimensions.width;
+        canvas.height = dimensions.height;
+      }
+      wakeRef.current?.();
+    };
+
+    const shouldRender = () => pageVisible && canvasVisible;
+    const schedule = () => {
+      if (!frame && shouldRender()) frame = requestAnimationFrame(render);
+    };
 
     const render = (time = 0) => {
       frame = 0;
-      if (!visible) return;
-      if (!reduced && time - lastPaint < 33) { frame = requestAnimationFrame(render); return; }
+      if (!shouldRender()) return;
+      const current = dataRef.current;
+      const animated = current.showParticles && !reduced;
+      if (animated && time - lastPaint < 33) { schedule(); return; }
       lastPaint = time;
-      const rect = canvas.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.35);
-      const width = Math.max(1, Math.round(rect.width * dpr));
-      const height = Math.max(1, Math.round(rect.height * dpr));
-      if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
-      gl.viewport(0, 0, width, height);
+
+      gl.viewport(0, 0, dimensions.width, dimensions.height);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
-      gpuTimer?.begin();
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
       gl.useProgram(program);
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      const vertices = [];
-      const current = dataRef.current;
+
+      renderCount += 1;
+      gpuTimer?.poll?.();
+      gpuSampleActive = Boolean(gpuTimer && renderCount % 15 === 0);
+      if (gpuSampleActive) gpuTimer.begin();
+
+      let offset = 0;
+      const pushVertex = (x, y, size, r, g, b, a) => {
+        if (offset + 7 > vertexData.length) return;
+        vertexData[offset++] = x;
+        vertexData[offset++] = y;
+        vertexData[offset++] = size;
+        vertexData[offset++] = r;
+        vertexData[offset++] = g;
+        vertexData[offset++] = b;
+        vertexData[offset++] = a;
+      };
+
       current.links.forEach((link, linkIndex) => {
         if (!link.active || !current.showParticles) return;
         const start = toClip(current.positions[link.source] ?? [50, 50]);
@@ -457,16 +502,18 @@ function ArchitectureCanvas({ nodes, links, positions, sample, onStatus, showPar
           const progress = reduced ? .5 : ((time * (.00012 + strength * .00012) + index / count + linkIndex * .09) % 1);
           const x = start[0] + (end[0] - start[0]) * progress;
           const y = start[1] + (end[1] - start[1]) * progress;
-          vertices.push(x, y, 8, .18, .88, .77, .9, x, y, 22, .48, .31, .98, .16);
+          pushVertex(x, y, 8, .18, .88, .77, .9);
+          pushVertex(x, y, 22, .48, .31, .98, .16);
         }
       });
       current.nodes.forEach((node) => {
         const [x, y] = toClip(current.positions[node.id] ?? [50, 50]);
         const activity = nodeActivity(node, current.sample);
-        vertices.push(x, y, 35 + activity * 32, .18, .88, .77, .05 + activity * .1);
+        pushVertex(x, y, 35 + activity * 32, .18, .88, .77, .05 + activity * .1);
       });
-      if (vertices.length > 0) {
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
+
+      if (offset > 0) {
+        gl.bufferSubData(gl.ARRAY_BUFFER, 0, vertexData.subarray(0, offset));
         const stride = 7 * Float32Array.BYTES_PER_ELEMENT;
         gl.enableVertexAttribArray(positionLocation);
         gl.enableVertexAttribArray(sizeLocation);
@@ -474,26 +521,36 @@ function ArchitectureCanvas({ nodes, links, positions, sample, onStatus, showPar
         gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, stride, 0);
         gl.vertexAttribPointer(sizeLocation, 1, gl.FLOAT, false, stride, 2 * Float32Array.BYTES_PER_ELEMENT);
         gl.vertexAttribPointer(colorLocation, 4, gl.FLOAT, false, stride, 3 * Float32Array.BYTES_PER_ELEMENT);
-        gl.drawArrays(gl.POINTS, 0, vertices.length / 7);
+        gl.drawArrays(gl.POINTS, 0, offset / 7);
       }
-      gpuTimer?.end();
-      if (!reduced) frame = requestAnimationFrame(render);
+      if (gpuSampleActive) gpuTimer.end();
+      if (animated) schedule();
     };
 
-    const observer = new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting && !document.hidden;
-      if (visible && !frame) frame = requestAnimationFrame(render);
-    });
+    const intersectionObserver = new IntersectionObserver(([entry]) => {
+      canvasVisible = entry.isIntersecting;
+      if (shouldRender()) schedule();
+      else if (frame) { cancelAnimationFrame(frame); frame = 0; }
+    }, { rootMargin: "120px 0px" });
+    const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
     const onVisibility = () => {
-      visible = !document.hidden;
-      if (visible && !frame) frame = requestAnimationFrame(render);
+      pageVisible = !document.hidden;
+      if (shouldRender()) schedule();
+      else if (frame) { cancelAnimationFrame(frame); frame = 0; }
     };
-    observer.observe(canvas);
+
+    wakeRef.current = schedule;
+    resize();
+    resizeObserver?.observe(canvas);
+    intersectionObserver.observe(canvas);
     document.addEventListener("visibilitychange", onVisibility);
-    frame = requestAnimationFrame(render);
+    schedule();
+
     return () => {
-      cancelAnimationFrame(frame);
-      observer.disconnect();
+      wakeRef.current = () => {};
+      if (frame) cancelAnimationFrame(frame);
+      resizeObserver?.disconnect();
+      intersectionObserver.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
       gpuTimer?.destroy();
       gl.deleteBuffer(buffer);
@@ -631,7 +688,6 @@ function GraphLinks({ links, positions, compact, activeTrace = null, scope = "al
           <g key={`${link.source}-${link.target}-${index}`} className={`${link.active ? "is-active" : "is-configured"} flow-${flow}${traced ? " is-traced" : ""}${highlighted ? " is-path-highlighted" : ""}${runtimeDimmed ? " is-runtime-dimmed" : ""}`}>
             <title>{link.channel}</title>
             <path className="architecture-link-base" d={path} markerEnd={`url(#${gradientId}-arrow-${flow})`} />
-            {link.active && <path className="architecture-link-pulse" d={path} />}
           </g>
         );
       })}
@@ -716,6 +772,9 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
   const layoutWorkerRef = useRef(null);
   const layoutCacheRef = useRef(new Map());
   const animationFrameRef = useRef(0);
+  const dragFrameRef = useRef(0);
+  const stageRectRef = useRef(null);
+  const layoutAppliedRef = useRef(false);
 
   const nodes = useMemo(() => compact ? normalized.nodes.filter((node) => COMPACT_IDS.has(node.id)) : normalized.nodes, [compact, normalized.nodes]);
   const scopeLinks = useMemo(() => {
@@ -787,7 +846,14 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
 
   useEffect(() => { positionsRef.current = positions; }, [positions]);
 
-  const animateToPositions = useCallback((target, duration = 430) => {
+  const setPositionsImmediately = useCallback((target) => {
+    cancelAnimationFrame(animationFrameRef.current);
+    const next = { ...target };
+    positionsRef.current = next;
+    setPositions(next);
+  }, []);
+
+  const animateToPositions = useCallback((target, duration = 360) => {
     cancelAnimationFrame(animationFrameRef.current);
     const source = { ...positionsRef.current };
     const startedAt = performance.now();
@@ -807,6 +873,13 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
     animationFrameRef.current = requestAnimationFrame(frame);
   }, []);
 
+  const commitLayout = useCallback((target, duration = 360) => {
+    const shouldAnimate = layoutAppliedRef.current && !isAppViewport && !compact;
+    layoutAppliedRef.current = true;
+    if (shouldAnimate) animateToPositions(target, duration);
+    else setPositionsImmediately(target);
+  }, [animateToPositions, compact, isAppViewport, setPositionsImmediately]);
+
   const requestLayout = useCallback((nextLayout = layoutId, force = false) => {
     if (isAppViewport && !mobileExplore && !compact) return;
     if (compact) {
@@ -821,7 +894,7 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
     const cacheKey = `${scope}:${nextLayout}:${widthBucket}`;
     const cached = !force ? layoutCacheRef.current.get(cacheKey) : null;
     if (cached) {
-      animateToPositions(cached, 360);
+      commitLayout(cached, 320);
       setLayoutStats({ state: "figé", durationMs: 0, source: "cache" });
       return;
     }
@@ -829,7 +902,7 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
     if (typeof Worker === "undefined") {
       const fallback = computeArchitectureLayout(NODES, scopeLinks, { width, height });
       layoutCacheRef.current.set(cacheKey, fallback);
-      animateToPositions(fallback);
+      commitLayout(fallback);
       setLayoutStats({ state: "figé", durationMs: 0, source: "fallback" });
       return;
     }
@@ -839,7 +912,7 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
     worker.onmessage = ({ data }) => {
       if (data?.type !== "result" || !data.positions) return;
       layoutCacheRef.current.set(cacheKey, data.positions);
-      animateToPositions(data.positions, 470);
+      commitLayout(data.positions, 380);
       setLayoutStats({ state: "figé", durationMs: Number(data.meta?.durationMs || 0), source: "calcul" });
       worker.terminate();
       if (layoutWorkerRef.current === worker) layoutWorkerRef.current = null;
@@ -847,7 +920,7 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
     worker.onerror = () => {
       const fallback = computeArchitectureLayout(NODES, scopeLinks, { width, height });
       layoutCacheRef.current.set(cacheKey, fallback);
-      animateToPositions(fallback);
+      commitLayout(fallback);
       setLayoutStats({ state: "figé", durationMs: 0, source: "fallback" });
       worker.terminate();
       if (layoutWorkerRef.current === worker) layoutWorkerRef.current = null;
@@ -860,7 +933,7 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
       width,
       height,
     });
-  }, [animateToPositions, compact, isAppViewport, layoutId, mobileExplore, nodes, scope, scopeLinks]);
+  }, [commitLayout, compact, isAppViewport, layoutId, mobileExplore, nodes, scope, scopeLinks]);
 
   useEffect(() => {
     if (compact || (isAppViewport && !mobileExplore)) return undefined;
@@ -872,22 +945,42 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
 
   useEffect(() => () => {
     cancelAnimationFrame(animationFrameRef.current);
+    cancelAnimationFrame(dragFrameRef.current);
     layoutWorkerRef.current?.terminate?.();
   }, []);
 
   useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage || typeof ResizeObserver === "undefined") return undefined;
+    const measure = () => { stageRectRef.current = stage.getBoundingClientRect(); };
+    const observer = new ResizeObserver(measure);
+    observer.observe(stage);
+    measure();
+    return () => observer.disconnect();
+  }, [compact, isAppViewport, mobileExplore]);
+
+  useEffect(() => {
     if (!selectedId || compact) return undefined;
     const startedAt = Date.now();
-    const intervalId = window.setInterval(() => {
+    let timeoutId = 0;
+    const tick = () => {
       if (document.hidden) return;
       const remaining = Math.max(0, 10 - Math.floor((Date.now() - startedAt) / 1000));
       setCountdown(remaining);
-      if (remaining === 0) {
-        setSelectedId(null);
-        window.clearInterval(intervalId);
-      }
-    }, 250);
-    return () => window.clearInterval(intervalId);
+      if (remaining === 0) setSelectedId(null);
+      else timeoutId = window.setTimeout(tick, 1000);
+    };
+    const onVisibility = () => {
+      window.clearTimeout(timeoutId);
+      timeoutId = 0;
+      if (!document.hidden) tick();
+    };
+    if (!document.hidden) timeoutId = window.setTimeout(tick, 1000);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.clearTimeout(timeoutId);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [compact, selectedId]);
 
   useEffect(() => {
@@ -903,28 +996,42 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
   }, [compact, selectedEdge, selectedId]);
 
   const moveNode = useCallback((id, clientX, clientY) => {
-    const rect = stageRef.current?.getBoundingClientRect();
+    const rect = stageRectRef.current ?? stageRef.current?.getBoundingClientRect();
     if (!rect?.width || !rect?.height) return;
     const candidate = [
       Math.max(8, Math.min(92, (clientX - rect.left) / rect.width * 100)),
       Math.max(4, Math.min(96, (clientY - rect.top) / rect.height * 100)),
     ];
-    positionsRef.current = { ...positionsRef.current, [id]: candidate };
-    setPositions(positionsRef.current);
+    const next = { ...positionsRef.current, [id]: candidate };
+    positionsRef.current = next;
+    setPositions(next);
   }, []);
 
   const onPointerDown = (event, id) => {
-    dragRef.current = { id, x: event.clientX, y: event.clientY, moved: false };
+    stageRectRef.current = stageRef.current?.getBoundingClientRect() ?? stageRectRef.current;
+    dragRef.current = { id, x: event.clientX, y: event.clientY, clientX: event.clientX, clientY: event.clientY, moved: false };
     event.currentTarget.setPointerCapture?.(event.pointerId);
   };
   const onPointerMove = (event, id) => {
-    if (dragRef.current?.id === id) {
-      if (Math.hypot(event.clientX - dragRef.current.x, event.clientY - dragRef.current.y) > 5) dragRef.current.moved = true;
-      moveNode(id, event.clientX, event.clientY);
-    }
+    const drag = dragRef.current;
+    if (drag?.id !== id) return;
+    drag.clientX = event.clientX;
+    drag.clientY = event.clientY;
+    if (Math.hypot(event.clientX - drag.x, event.clientY - drag.y) > 5) drag.moved = true;
+    if (dragFrameRef.current) return;
+    dragFrameRef.current = requestAnimationFrame(() => {
+      dragFrameRef.current = 0;
+      const latest = dragRef.current;
+      if (latest?.id) moveNode(latest.id, latest.clientX, latest.clientY);
+    });
   };
   const stopDragging = (event) => {
     const drag = dragRef.current;
+    if (dragFrameRef.current) {
+      cancelAnimationFrame(dragFrameRef.current);
+      dragFrameRef.current = 0;
+      if (drag?.moved) moveNode(drag.id, drag.clientX, drag.clientY);
+    }
     if (drag && !drag.moved) {
       setCountdown(10);
       setSelectedEdge(null);
@@ -1038,7 +1145,7 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
         </div>
         <div className="architecture-graph-statusline">
           <span><i />{activeLinks}/{scopeLinks.length} liens actifs</span>
-          <span>{webglStatus === "active" ? "flux WebGL" : "flux SVG"}</span>
+          <span>{isAppViewport ? "graphe statique" : webglStatus === "active" ? "flux WebGL" : "graphe SVG"}</span>
           <span className={`architecture-layout-status is-${layoutStats.state === "calcul" ? "moving" : "stable"}`}>{layoutStats.state === "calcul" ? "calcul de disposition…" : `${layoutDefinition.label} · figé · CPU layout libéré`}{layoutStats.durationMs > 0 ? ` · ${layoutStats.durationMs.toFixed(0)} ms` : ""}</span>
           {(focusId || pathStartId || search) && <button type="button" className="architecture-clear-focus" onClick={clearExploration}>Effacer exploration</button>}
         </div>
@@ -1051,7 +1158,7 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
         onSelect={(id) => { setCountdown(10); setSelectedEdge(null); setSelectedId(id); }}
         onExplore={() => { setSelectedId(null); setMobileExplore(true); }}
       />}
-      {!compact && isAppViewport && mobileExplore && <div className="architecture-mobile-explorer-bar"><button type="button" onClick={() => setMobileExplore(false)}>← Vue synthétique</button><strong>Graphe complet</strong><span>pan · zoom · nodes</span></div>}
+      {!compact && isAppViewport && mobileExplore && <div className="architecture-mobile-explorer-bar"><button type="button" onClick={() => setMobileExplore(false)}>← Vue synthétique</button><strong>Graphe complet</strong><span>statique · pan · nodes</span></div>}
 
       {!compact && !isAppViewport && showLayoutHelp && <div className="architecture-layout-explainer"><strong>{layoutDefinition.label}</strong><p>{layoutDefinition.description} Après le calcul, les positions sont mises en cache et le Web Worker est détruit : seules les interactions, le rendu des flux et les données live restent actives.</p></div>}
 
@@ -1080,7 +1187,7 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
             const runtimeDimmed = renderMode === "runtime" && !link.active;
             return <button type="button" key={`${link.source}-${link.target}-${index}`} className={`flow-${flow}${link.active ? " is-active" : ""}${highlighted ? " is-path-highlighted" : ""}${runtimeDimmed ? " is-runtime-dimmed" : ""}`} style={{ left: `${(start[0] + end[0]) / 2}%`, top: `${(start[1] + end[1]) / 2}%` }} onClick={() => { setSelectedId(null); setSelectedEdge(link); }}>{link.channel}</button>;
           })}</div>}
-          <ArchitectureCanvas nodes={nodes} links={scopeLinks} positions={positions} sample={liveSample} onStatus={setWebglStatus} showParticles={showParticles && (!isAppViewport || mobileExplore)} paintStyle={canvasStyle} />
+          {!isAppViewport && !compact && <ArchitectureCanvas nodes={nodes} links={scopeLinks} positions={positions} sample={liveSample} onStatus={setWebglStatus} showParticles={showParticles} paintStyle={canvasStyle} />}
           <div className="architecture-node-layer">
             {nodes.map((node) => {
               const telemetry = telemetryFor(node, snapshot, liveSample);

@@ -80,8 +80,10 @@ for (const viewport of VIEWPORTS) {
         height: viewport.height,
       });
 
+      // Keep the default real-user motion preference in the responsive matrix.
+      // Mobile performance must not depend on prefers-reduced-motion hiding work.
       await page.emulateMedia({
-        reducedMotion: "reduce",
+        reducedMotion: "no-preference",
       });
 
       await openPortfolioContract(page, "fr");
@@ -111,73 +113,81 @@ for (const viewport of VIEWPORTS) {
         `${viewport.name} initial`,
       );
 
-      await expect(page.locator(".profile-ios-ocean")).toBeVisible();
-      await expect(page.locator(".profile-discipline-grid [data-profile-discipline]")).toHaveCount(4);
-      await expect(page.locator(".profile-photo-widget")).toHaveCount(1);
-      await expect(page.locator(".profile-availability-widget")).toHaveCount(1);
-      await expect(page.locator(".profile-contacts-widget")).toHaveCount(1);
+      await expect(page.locator('.arctic-profile[data-profile-theme="arctic-ink"]')).toBeVisible();
+      await expect(page.locator(".arctic-tech-chip")).toHaveCount(6);
+      await expect(page.locator(".arctic-contact-card")).toHaveCount(1);
       await expect(page.locator('.profile-identity-dock[data-profile-module="identity-dock"]')).toHaveCount(1);
 
       const profileGeometry = await page.evaluate(() => {
-        const root = document.querySelector(".profile-ios-ocean");
-        const main = document.querySelector(".profile-ios-main");
-        const side = document.querySelector(".profile-ios-side-grid");
-        const photo = document.querySelector(".profile-photo-widget");
-        const availability = document.querySelector(".profile-availability-widget");
-        const contacts = document.querySelector(".profile-contacts-widget");
-        const portrait = document.querySelector(".profile-photo-widget .portrait-preview-trigger");
-        const availabilityIcon = document.querySelector(".profile-availability-icon");
-        if (!root || !main || !side || !photo || !availability || !contacts || !portrait || !availabilityIcon) return null;
-        const rect = (element) => element.getBoundingClientRect().toJSON();
+        const root = document.querySelector(".arctic-profile");
+        const main = document.querySelector(".arctic-profile-main");
+        const side = document.querySelector(".arctic-profile-aside");
+        const heading = document.querySelector(".arctic-profile-heading");
+        const mobilePortrait = document.querySelector(".arctic-mobile-portrait");
+        const desktopPortrait = document.querySelector(".arctic-desktop-portrait");
+        const contacts = document.querySelector(".arctic-contact-card");
+        const actions = document.querySelector(".arctic-profile-actions");
+        if (!root || !main || !side || !heading || !contacts || !actions) return null;
+        const rect = (element) => element?.getBoundingClientRect().toJSON() ?? null;
+        const visible = (element) => {
+          if (!element) return false;
+          const style = getComputedStyle(element);
+          const box = element.getBoundingClientRect();
+          return style.display !== "none" && style.visibility !== "hidden" && box.width > 0 && box.height > 0;
+        };
         return {
           root: rect(root),
           main: rect(main),
           side: rect(side),
-          photo: rect(photo),
-          availability: rect(availability),
+          heading: rect(heading),
+          mobilePortrait: rect(mobilePortrait),
+          desktopPortrait: rect(desktopPortrait),
           contacts: rect(contacts),
-          portrait: rect(portrait),
-          availabilityIcon: rect(availabilityIcon),
+          actions: rect(actions),
+          mobilePortraitVisible: visible(mobilePortrait),
+          desktopPortraitVisible: visible(desktopPortrait),
         };
       });
 
       expect(profileGeometry).not.toBeNull();
       expect(profileGeometry.root.width).toBeLessThanOrEqual(viewport.width + 2);
 
-      // Current profile contract:
-      // <= 780: photo / availability / contacts are a single full-width stack.
-      // 781..1240: photo + availability share a row; contacts spans the row below.
-      // > 1240: the right rail is a vertical desktop stack.
-      if (viewport.width <= 780) {
+      if (viewport.width <= 900) {
+        expect(profileGeometry.mobilePortraitVisible).toBe(true);
+        expect(profileGeometry.desktopPortraitVisible).toBe(false);
         expect(Math.abs(profileGeometry.side.width - profileGeometry.main.width)).toBeLessThanOrEqual(2);
-        expect(Math.abs(profileGeometry.photo.width - profileGeometry.side.width)).toBeLessThanOrEqual(2);
-        expect(Math.abs(profileGeometry.availability.width - profileGeometry.side.width)).toBeLessThanOrEqual(2);
-        expect(Math.abs(profileGeometry.contacts.width - profileGeometry.side.width)).toBeLessThanOrEqual(2);
-        expect(profileGeometry.photo.y).toBeLessThan(profileGeometry.availability.y);
-        expect(profileGeometry.availability.y).toBeLessThan(profileGeometry.contacts.y);
+        expect(profileGeometry.mobilePortrait.x).toBeLessThan(profileGeometry.heading.x);
+        expect(profileGeometry.mobilePortrait.width).toBeGreaterThanOrEqual(90);
+        expect(profileGeometry.mobilePortrait.width).toBeLessThanOrEqual(230);
+        expect(profileGeometry.contacts.width).toBeGreaterThanOrEqual(profileGeometry.side.width - 2);
       } else if (viewport.width <= 1240) {
+        expect(profileGeometry.mobilePortraitVisible).toBe(true);
+        expect(profileGeometry.desktopPortraitVisible).toBe(false);
         expect(Math.abs(profileGeometry.side.width - profileGeometry.main.width)).toBeLessThanOrEqual(2);
-        expect(Math.abs(profileGeometry.photo.width - profileGeometry.availability.width)).toBeLessThanOrEqual(2);
-        expect(profileGeometry.photo.x).toBeLessThan(profileGeometry.availability.x);
-        expect(profileGeometry.photo.y).toBeLessThan(profileGeometry.availability.y);
-        expect(profileGeometry.photo.y + profileGeometry.photo.height).toBeLessThanOrEqual(profileGeometry.contacts.y + 6);
-        expect(profileGeometry.availability.y + profileGeometry.availability.height).toBeLessThan(profileGeometry.contacts.y);
+        expect(profileGeometry.mobilePortrait.y).toBeGreaterThanOrEqual(profileGeometry.heading.y);
+        expect(profileGeometry.mobilePortrait.width).toBeLessThanOrEqual(232);
         expect(profileGeometry.contacts.width).toBeGreaterThanOrEqual(profileGeometry.side.width - 2);
       } else {
+        expect(profileGeometry.mobilePortraitVisible).toBe(false);
+        expect(profileGeometry.desktopPortraitVisible).toBe(true);
         expect(profileGeometry.main.width).toBeGreaterThan(profileGeometry.side.width);
-        expect(profileGeometry.side.height).toBeGreaterThan(700);
-        expect(profileGeometry.photo.y).toBeLessThan(profileGeometry.availability.y);
-        expect(profileGeometry.availability.y).toBeLessThan(profileGeometry.contacts.y);
-        expect(profileGeometry.photo.height).toBeGreaterThanOrEqual(360);
-        expect(profileGeometry.photo.height).toBeLessThanOrEqual(400);
+        expect(profileGeometry.side.x).toBeGreaterThan(profileGeometry.main.x);
+        expect(profileGeometry.contacts.y).toBeGreaterThan(profileGeometry.desktopPortrait.y);
       }
 
-      expect(profileGeometry.portrait.width).toBeGreaterThanOrEqual(140);
-      expect(profileGeometry.portrait.width).toBeLessThanOrEqual(220);
-      expect(profileGeometry.portrait.width).toBeLessThan(profileGeometry.photo.width);
-      expect(profileGeometry.portrait.height).toBeGreaterThan(profileGeometry.portrait.width);
-      expect(profileGeometry.availabilityIcon.width).toBeGreaterThanOrEqual(40);
-      expect(profileGeometry.availabilityIcon.width).toBeLessThanOrEqual(70);
+      const profileButtons = page.locator(".arctic-profile-actions .mantine-Button-root:visible");
+      const profileButtonCount = await profileButtons.count();
+      expect(profileButtonCount).toBeGreaterThan(0);
+      for (let index = 0; index < profileButtonCount; index += 1) {
+        const box = await profileButtons.nth(index).boundingBox();
+        expect(box).not.toBeNull();
+        expect(box.height).toBeGreaterThanOrEqual(44);
+      }
+
+      if (viewport.width <= 820) {
+        await expect(page.locator(".global-aquarium")).toHaveCount(0);
+        await expect(page.locator(".ocean-transition-stage")).toHaveCount(0);
+      }
 
       if (mobileBottomNavigation) {
         const dock = page.locator(".nav_mobile-dock");
@@ -254,7 +264,7 @@ for (const viewport of VIEWPORTS) {
         await expect(missionDialog).not.toBeVisible();
 
         const actions = page.locator(
-          ".hero-actions .mantine-Button-root:visible",
+          ".arctic-profile-actions .mantine-Button-root:visible",
         );
 
         const count = await actions.count();
@@ -348,4 +358,24 @@ test("@responsive recruteur 390x844 conserve une composition app tactile", async
     expect(box.height).toBeGreaterThanOrEqual(44);
   }
   await expectNoHorizontalOverflow(page, "recruiter 390x844");
+});
+
+test("@responsive la navbar desktop suit la section réellement courante", async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 820 });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await openPortfolioContract(page, "fr");
+
+  for (const target of ["#profile", "#skills", "#timeline", "#projects"]) {
+    const section = page.locator(target).first();
+    await expect(section).toBeVisible();
+    await page.evaluate((selector) => {
+      document.querySelector(selector)?.scrollIntoView({ block: "start", behavior: "instant" });
+    }, target);
+
+    const activeItem = page.locator(
+      `.nav_menu-dropdown-toggle-v2:has([data-nav-primary][href="${target}"])`,
+    );
+    await expect(activeItem).toHaveClass(/is-section-active/);
+    await expect(page.locator(".nav_menu-dropdown-toggle-v2.is-section-active")).toHaveCount(1);
+  }
 });

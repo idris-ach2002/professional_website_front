@@ -405,10 +405,9 @@ export function createVolcanoWebGLRenderer(canvas) {
     gpuTimer?.destroy();
     gl.deleteBuffer(buffer);
     gl.deleteProgram(program);
-    // Explicitly release the driver context. Deleting the program alone can
-    // leave the GPU process compiling/retaining the large fragment shader when
-    // the deferred volcano exits its active zone.
-    gl.getExtension?.("WEBGL_lose_context")?.loseContext?.();
+    // Do not call WEBGL_lose_context here. Runtime quality/DPR changes can
+    // rebuild resources on the same DOM canvas; explicitly killing the context
+    // makes that canvas intermittently unrecoverable in Chromium/WebKit.
   };
 
   return { gl, resize, render, destroy };

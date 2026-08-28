@@ -124,7 +124,12 @@ if (projects.includes("project-world-backdrop") || projects.includes("resolvePro
   errors.push("Per-project viewport worlds must remain removed; only the global project-station background may change.");
 }
 if (!footer.includes("TreasureMineField") || !mine.includes('data-mine-field="excavation-runtime"') || !mine.includes("IntersectionObserver") || !mine.includes("requestAnimationFrame")) {
-  errors.push("Final footer must use the compact animated excavation mine runtime.");
+  errors.push("Final footer must use the visibility-gated excavation mine runtime.");
+}
+if (!mine.includes('data-mobile-render-mode={isMobile ? "single-frame-static" : "dynamic-fx"}')
+  || !mine.includes('fxFps=animationsEnabled&&!isMobile?resolveMineFxFps')
+  || !mine.includes('(ultraLite||isMobile)?1:1.4')) {
+  errors.push("Treasure mine must collapse to one static DPR=1 frame on mobile while keeping desktop FX.");
 }
 for (const treasure of ["diamond", "emerald", "ruby", "sapphire", "gold", "amethyst", "opal", "aquamarine", "topaz", "red-coral", "black-pearl"]) {
   if (!mine.includes(`type: "${treasure}"`)) errors.push(`Missing precious mine object: ${treasure}.`);

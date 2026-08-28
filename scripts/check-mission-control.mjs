@@ -43,6 +43,39 @@ requireText(adminNav, "items-visiblility", "L’onglet admin items-visiblility e
 for (const key of ["architecture.system", "architecture.trace", "architecture.performance", "home.profile", "home.projects", "recruiter", "project", "cv"]) requireText(visibility, key, `Item visibility absent: ${key}`);
 requireText(mission, "useItemVisibility", "La navbar Architecture doit respecter items-visiblility.");
 
+// Performance invariants: Architecture must stay rich on desktop without becoming
+// a permanent source of main-thread/GPU/network pressure.
+for (const token of [
+  'lazy(() => import("./mission-control/ArchitectureObservatory"))',
+  'lazy(() => import("./mission-control/LiveTraceObservatory"))',
+  'lazy(() => import("./mission-control/PerformanceObservatory"))',
+  'BACKEND_DESKTOP_MS = 5000',
+  'BACKEND_MOBILE_MS = 10000',
+  'LIVE_SAMPLE_MS = 1000',
+  'activeView !== "performance"',
+]) requireText(mission, token, `Architecture performance contract missing: ${token}`);
+if (mission.includes("setInterval(")) errors.push("Mission Control polling must stay single-flight and timeout-driven; setInterval is forbidden.");
+for (const token of [
+  "bufferSubData",
+  "new ResizeObserver(resize)",
+  "pageVisible",
+  "canvasVisible",
+  "layoutAppliedRef",
+  "!isAppViewport && !compact && <ArchitectureCanvas",
+  "dragFrameRef",
+]) requireText(architecture, token, `Architecture renderer optimization missing: ${token}`);
+if (architecture.includes("architecture-link-pulse")) errors.push("Architecture must not duplicate WebGL flow particles with animated SVG pulse paths.");
+if (styles.includes("@keyframes architecture-flow") || styles.includes(".architecture-link-pulse")) errors.push("Legacy animated SVG flow CSS must stay removed.");
+requireText(styles, ".mission-control-ambient{display:none;}", "Mobile Architecture must disable expensive ambient blur layers.");
+
+
+for (const forbidden of ["trace-machine-flow", "trace-machine-playhead", "request-orbit-flow 1.1s", "mc-ambient 20s", "mc-blink 1.5s"]) {
+  if (styles.includes(forbidden)) errors.push(`Mission Control must not retain redundant permanent animation: ${forbidden}.`);
+}
+if (architecture.includes("setInterval(") || liveTrace.includes("setInterval(")) {
+  errors.push("Mission Control views must use visibility-aware single-shot timers rather than setInterval loops.");
+}
+
 if (errors.length) {
   console.error(`Architecture contract failed:\n\n- ${errors.join("\n- ")}`);
   process.exit(1);

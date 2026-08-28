@@ -1,10 +1,8 @@
 import { Alert, Loader, Stack, Text } from "@mantine/core";
 import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import GlobalAquarium from "../GlobalAquarium";
 import OceanMorphBackground from "../OceanMorphBackground";
 import OceanWorldBridge from "../OceanWorldBridge";
-import OceanTransitionStage from "../OceanTransitionStage";
 import ProfileHero from "../ProfileHero";
 import ProjectsShowcase from "../ProjectsShowcase";
 import ProvenSkillsSection from "../ProvenSkillsSection";
@@ -15,6 +13,8 @@ import { sortByDisplayOrder } from "../../utils/portfolio";
 import useResponsiveProfile from "../../hooks/useResponsiveProfile";
 import usePerformanceRuntime from "../../performance/usePerformanceRuntime";
 
+const GlobalAquarium = lazy(() => import("../GlobalAquarium"));
+const OceanTransitionStage = lazy(() => import("../OceanTransitionStage"));
 const PortfolioTimeline = lazy(() => import("../PortfolioTimeline"));
 const UnderwaterVolcanoField = lazy(() => import("../UnderwaterVolcanoField"));
 
@@ -41,6 +41,7 @@ export default function AdminVersionPreviewPage() {
   useEffect(() => {
     let disposed = false;
     let controller = null;
+    let refreshTimer = 0;
 
     const previousTitle = document.title;
     const existingRobots = document.querySelector('meta[name="robots"]');
@@ -50,8 +51,15 @@ export default function AdminVersionPreviewPage() {
     robots.setAttribute("content", "noindex,nofollow,noarchive");
     document.title = `Preview v${versionId} · Portfolio`;
 
+    const scheduleRefresh = () => {
+      if (disposed) return;
+      window.clearTimeout(refreshTimer);
+      refreshTimer = window.setTimeout(refresh, 2500);
+    };
+
     async function refresh() {
-      controller?.abort();
+      if (disposed) return;
+      if (document.visibilityState !== "visible") { scheduleRefresh(); return; }
       controller = new AbortController();
       try {
         const owner = await apiRequest(
@@ -65,18 +73,17 @@ export default function AdminVersionPreviewPage() {
         if (!disposed && error?.name !== "AbortError") {
           setState((current) => ({ ...current, loading: false, error: error?.message ?? "Aperçu indisponible." }));
         }
+      } finally {
+        if (!disposed) scheduleRefresh();
       }
     }
 
     refresh();
-    const intervalId = window.setInterval(() => {
-      if (document.visibilityState === "visible") refresh();
-    }, 2500);
 
     return () => {
       disposed = true;
       controller?.abort();
-      window.clearInterval(intervalId);
+      window.clearTimeout(refreshTimer);
       document.title = previousTitle;
       if (existingRobots) {
         if (previousRobotsContent == null) existingRobots.removeAttribute("content");
@@ -103,13 +110,13 @@ export default function AdminVersionPreviewPage() {
 
   return <main id="main-content" className="app-shell" tabIndex={-1} data-admin-version-preview>
     <OceanMorphBackground
-      staticMode={performanceMode === "ultra-lite" || preference === "reduced"}
-      depthOnly={performanceMode === "lite" && preference === "auto"}
+      staticMode={isMobile || performanceMode === "ultra-lite" || preference === "reduced"}
+      depthOnly={!isMobile && performanceMode === "lite" && preference === "auto"}
       performanceMode={performanceMode}
       runtimeQuality={runtimeQuality}
     />
-    <GlobalAquarium isMobile={isMobile} reducedMotion={reducedMotion} performanceMode={performanceMode} isFirefox={isFirefox} paused={animationsPaused} runtimeQuality={runtimeQuality} runtimeBudget={runtimeBudget} />
-    <OceanTransitionStage reducedMotion={reducedMotion} performanceMode={performanceMode} paused={animationsPaused} runtimeQuality={runtimeQuality} />
+    {!isMobile && <Suspense fallback={null}><GlobalAquarium isMobile={false} reducedMotion={reducedMotion} performanceMode={performanceMode} isFirefox={isFirefox} paused={animationsPaused} runtimeQuality={runtimeQuality} runtimeBudget={runtimeBudget} /></Suspense>}
+    {!isMobile && <Suspense fallback={null}><OceanTransitionStage reducedMotion={reducedMotion} performanceMode={performanceMode} paused={animationsPaused} runtimeQuality={runtimeQuality} /></Suspense>}
     <TopNavigation owner={owner} source="preview" />
 
     <Stack gap="xl" className="content-shell">

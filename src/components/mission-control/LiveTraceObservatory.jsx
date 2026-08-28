@@ -284,18 +284,36 @@ function StateMachine({ graph }) {
   const observedNodes = layout.nodes.filter((item) => item.status === "observed");
   const observedCount = observedNodes.length;
   const [playhead, setPlayhead] = useState(0);
-  const activeId = observedNodes[Math.max(0, Math.min(playhead, observedCount - 1))]?.id;
+  const compact = typeof window !== "undefined"
+    && Boolean(window.matchMedia?.("(max-width: 820px), (hover: none) and (pointer: coarse) and (max-width: 1366px)")?.matches);
+  const activeIndex = compact ? 0 : Math.max(0, Math.min(playhead, observedCount - 1));
+  const activeId = observedNodes[activeIndex]?.id;
 
   useEffect(() => {
-    if (observedCount <= 1) return undefined;
+    if (observedCount <= 1 || compact) return undefined;
     let index = 0;
-    const intervalId = window.setInterval(() => {
+    let timeoutId = 0;
+    const schedule = () => {
+      window.clearTimeout(timeoutId);
+      if (!document.hidden) timeoutId = window.setTimeout(advance, 620);
+    };
+    const advance = () => {
       if (document.hidden) return;
       index = (index + 1) % observedCount;
       setPlayhead(index);
-    }, 420);
-    return () => window.clearInterval(intervalId);
-  }, [observedCount]);
+      schedule();
+    };
+    const onVisibility = () => {
+      if (document.hidden) window.clearTimeout(timeoutId);
+      else schedule();
+    };
+    schedule();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.clearTimeout(timeoutId);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [compact, observedCount]);
   return (
     <div className="trace-state-machine-scroll">
       <div className="trace-state-diagram" role="img" aria-label="Diagramme d’état animé complexe de la requête sélectionnée" style={{ "--trace-height": `${layout.height}px` }}>
@@ -326,7 +344,6 @@ function StateMachine({ graph }) {
             {item.ms > 0 && <em>{item.ms.toFixed(1)} ms</em>}
           </div>
         ))}
-        <div className="trace-machine-playhead" aria-hidden="true" />
       </div>
     </div>
   );

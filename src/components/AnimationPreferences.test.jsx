@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AnimationPreferencesProvider from "../contexts/AnimationPreferencesContext";
@@ -28,26 +28,48 @@ describe("AnimationPreferences", () => {
     }));
   });
 
-  it("exposes the master transition switch and the five world seams", () => {
-    const { container } = renderControls();
-    expect(screen.getAllByRole("switch")).toHaveLength(6);
-    expect(container.querySelectorAll(".animation-control-tile")).toHaveLength(11);
-    expect(screen.getByRole("switch", { name: /Profil ↔ Timeline/i })).toHaveAttribute("aria-checked", "true");
-    expect(screen.getByRole("switch", { name: /Timeline ↔ Volcan/i })).toBeInTheDocument();
-    expect(screen.getByRole("switch", { name: /Timeline ↔ Projets/i })).toBeInTheDocument();
-    expect(screen.getByRole("switch", { name: /Volcan ↔ Projets/i })).toBeInTheDocument();
-    expect(screen.getByRole("switch", { name: /Projets ↔ Sortie/i })).toBeInTheDocument();
+  it("présente une vue racine compacte et les sous-menus détaillés", () => {
+    renderControls();
+    expect(screen.getByRole("group", { name: /Niveau d’animations/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Transitions océaniques/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Volcan sous-marin/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Navbar/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Profil Arctic Ink/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Performance/i })).toBeInTheDocument();
+    expect(screen.getAllByRole("switch")).toHaveLength(1);
   });
 
-  it("changes one seam without disabling the others", async () => {
+  it("ouvre les transitions et conserve le contrôle indépendant des cinq jonctions", async () => {
     const user = userEvent.setup();
     renderControls();
+    await user.click(screen.getByRole("button", { name: /Transitions océaniques/i }));
+
+    expect(screen.getAllByRole("switch")).toHaveLength(6);
     const profileTimeline = screen.getByRole("switch", { name: /Profil ↔ Timeline/i });
     const volcanoProjects = screen.getByRole("switch", { name: /Volcan ↔ Projets/i });
+    expect(profileTimeline).toHaveAttribute("aria-checked", "true");
 
     await user.click(profileTimeline);
-
     expect(profileTimeline).toHaveAttribute("aria-checked", "false");
     expect(volcanoProjects).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("persiste les réglages détaillés du volcan", async () => {
+    const user = userEvent.setup();
+    renderControls();
+    await user.click(screen.getByRole("button", { name: /Volcan sous-marin/i }));
+
+    const mode = screen.getByRole("group", { name: /Mode du volcan/i });
+    await user.click(within(mode).getByRole("button", { name: /Animé/i }));
+
+    const quality = screen.getByRole("group", { name: /Qualité du volcan/i });
+    await user.click(within(quality).getByRole("button", { name: /Équilibrée/i }));
+    await user.click(screen.getByRole("switch", { name: /Bulles/i }));
+
+    expect(JSON.parse(window.localStorage.getItem("portfolio-animation-scenes-v1"))).toMatchObject({
+      volcanoMode: "animated",
+      volcanoQuality: "balanced",
+      volcanoEffects: { bubbles: false },
+    });
   });
 });

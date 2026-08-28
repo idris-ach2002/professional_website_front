@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import useAnimationPreferences from "../contexts/useAnimationPreferences";
 
-const MOBILE_QUERY = "(max-width: 820px)";
+const MOBILE_QUERY = "(max-width: 820px), (hover: none) and (pointer: coarse) and (max-width: 1366px)";
+const DESKTOP_QUERY = "(min-width: 1241px)";
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
 let coreRuntimePromise = null;
@@ -44,7 +45,9 @@ export function useGsap(rootRef, setup, deps = [], options = {}) {
 
   useEffect(() => {
     const isMobile = typeof window !== "undefined" && window.matchMedia?.(MOBILE_QUERY).matches;
+    const isDesktop = typeof window !== "undefined" && window.matchMedia?.(DESKTOP_QUERY).matches;
     if (!animationsEnabled || animationsPaused) return undefined;
+    if (options.desktopOnly && !isDesktop) return undefined;
     if (performanceMode === "lite" && !options.allowOnLite) return undefined;
     const reducedMotion = typeof window !== "undefined" && window.matchMedia?.(REDUCED_MOTION_QUERY).matches;
 

@@ -1,13 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  OCEAN_TRANSITION_CONTROLS,
-  OCEAN_TRANSITION_PREFERENCE_KEYS,
-} from "../../animations/oceanTransitionPreferences";
 import useAnimationPreferences from "../../contexts/useAnimationPreferences";
+import { AnimationControlCenter } from "../AnimationPreferences";
 
 const CONTACT_KEY = "__command-contact";
 const OPTIONS_KEY = "__command-options";
-const ANIMATION_OPTIONS = ["auto", "full", "reduced", "off"];
 
 function UtilityIcon({ type }) {
   const common = {
@@ -61,24 +57,6 @@ function CvLogo() {
         </g>
       </g>
     </svg>
-  );
-}
-
-function CommandSwitch({ checked, label, onChange, disabled = false }) {
-  return (
-    <button
-      type="button"
-      className="nav-command-switch-row"
-      role="switch"
-      aria-checked={checked}
-      disabled={disabled}
-      onClick={() => onChange(!checked)}
-    >
-      <span>{label}</span>
-      <span className="nav-command-switch" data-checked={checked ? "true" : "false"} aria-hidden="true">
-        <span />
-      </span>
-    </button>
   );
 }
 
@@ -156,72 +134,13 @@ function RecruiterView({ t, recruiterHref }) {
   );
 }
 
-function AnimationsView({ t, preferences }) {
-  const {
-    preference,
-    setPreference,
-    paused,
-    togglePaused,
-    animationsEnabled,
-    systemReducedMotion,
-    transitionPreferences,
-    setTransitionEnabled,
-    resetTransitionPreferences,
-  } = preferences;
-  const masterKey = OCEAN_TRANSITION_PREFERENCE_KEYS.MASTER;
-  const masterEnabled = transitionPreferences[masterKey] !== false;
-  const selectedDescription = t(`animations.description.${preference}`);
-
+function AnimationsView() {
   return (
     <div className="nav-command-panel-view animation-preferences-control" data-command-view="animations">
-      <div className="nav-command-mode-grid" role="group" aria-label={t("animations.modeLabel")}>
-        {ANIMATION_OPTIONS.map((option) => (
-          <button
-            key={option}
-            type="button"
-            className={`nav-command-mode${preference === option ? " is-active" : ""}`}
-            aria-pressed={preference === option}
-            onClick={() => setPreference(option)}
-          >
-            <strong>{t(`animations.short.${option}`)}</strong>
-            <small>{t(`animations.${option}`)}</small>
-          </button>
-        ))}
-      </div>
-      <p className="nav-command-mode-description">{selectedDescription}</p>
-      {systemReducedMotion ? <p className="nav-command-system-note">{t("animations.systemOverride")}</p> : null}
-
-      <div className="nav-command-control-section">
-        <CommandSwitch checked={paused} label={paused ? t("animations.resume") : t("animations.pause")} onChange={togglePaused} disabled={!animationsEnabled} />
-      </div>
-
-      <div className="nav-command-section-heading">
-        <span>{t("animations.transitionsLabel")}</span>
-        <small>{masterEnabled ? t("animations.transitionsActiveCount", { count: OCEAN_TRANSITION_CONTROLS.filter((item) => transitionPreferences[item.key] !== false).length }) : t("animations.transitionsMasterOff")}</small>
-      </div>
-      <div className="nav-command-transition-list">
-        <CommandSwitch
-          checked={masterEnabled}
-          label={t("animations.transitionsMaster")}
-          onChange={(enabled) => setTransitionEnabled(masterKey, enabled)}
-        />
-        {OCEAN_TRANSITION_CONTROLS.map((item) => (
-          <CommandSwitch
-            key={item.key}
-            checked={transitionPreferences[item.key] !== false}
-            label={t(item.labelKey)}
-            disabled={!masterEnabled}
-            onChange={(enabled) => setTransitionEnabled(item.key, enabled)}
-          />
-        ))}
-      </div>
-      <button type="button" className="nav-command-reset" onClick={resetTransitionPreferences}>
-        <UtilityIcon type="reset" /><span>{t("animations.transitionsReset")}</span>
-      </button>
+      <AnimationControlCenter embedded />
     </div>
   );
 }
-
 function LanguageView({ language, setLanguage, t, close }) {
   const options = [
     { code: "fr", label: t("language.french"), description: t("language.frenchDescription") },
@@ -407,7 +326,7 @@ export default function CommandUtilities({
             />
           ) : null}
           {view === "recruiter" ? <RecruiterView t={t} recruiterHref={recruiterHref} /> : null}
-          {view === "animations" ? <AnimationsView t={t} preferences={preferences} /> : null}
+          {view === "animations" ? <AnimationsView /> : null}
           {view === "language" ? <LanguageView language={language} setLanguage={setLanguage} t={t} close={() => setActive(null)} /> : null}
         </section>
       ) : null}

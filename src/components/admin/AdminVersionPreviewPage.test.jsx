@@ -107,12 +107,12 @@ describe("AdminVersionPreviewPage", () => {
 
   it("keeps the last valid snapshot visible when a later refresh fails", async () => {
     vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
-    let intervalTick;
-    vi.spyOn(window, "setInterval").mockImplementation((callback, delay) => {
-      if (delay === 2500) intervalTick = callback;
+    let refreshTick;
+    vi.spyOn(window, "setTimeout").mockImplementation((callback, delay) => {
+      if (delay === 2500) refreshTick = callback;
       return 42;
     });
-    vi.spyOn(window, "clearInterval").mockImplementation(() => {});
+    vi.spyOn(window, "clearTimeout").mockImplementation(() => {});
     apiRequest
       .mockResolvedValueOnce(ownerSnapshot())
       .mockRejectedValueOnce(new Error("network down"));
@@ -125,9 +125,9 @@ describe("AdminVersionPreviewPage", () => {
 
     await flushControlledMicrotasks();
     expect(screen.getByText("APERÇU DRAFT — privé")).toBeInTheDocument();
-    expect(intervalTick).toEqual(expect.any(Function));
+    expect(refreshTick).toEqual(expect.any(Function));
     await act(async () => {
-      intervalTick();
+      refreshTick();
       for (let index = 0; index < 4; index += 1) {
         await Promise.resolve();
       }

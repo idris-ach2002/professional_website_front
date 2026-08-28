@@ -32,6 +32,7 @@ const categoryClasses = {
 };
 
 const SCENOGRAPHIC_DEPTHS = [180, 420, 760, 1_150, 1_580, 2_080, 2_700, 3_400, 4_150];
+const TIMELINE_COMPACT_QUERY = "(max-width: 1240px), (hover: none) and (pointer: coarse)";
 
 function getExperienceAnchor(experience, index) {
   const source = [experience?.title, experience?.organization]
@@ -78,14 +79,16 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
   }, []);
   const { locale, t } = useLanguage();
   const {
-    preference: animationPreference,
     animationsEnabled,
     animationsPaused,
   } = useAnimationPreferences();
+  const compactTimeline = typeof window !== "undefined"
+    && window.matchMedia?.(TIMELINE_COMPACT_QUERY).matches;
 
   const autonomousEnabled = animationsEnabled
     && !animationsPaused
-    && !(performanceMode === "lite" && animationPreference !== "auto");
+    && !compactTimeline
+    && !["lite", "ultra-lite"].includes(performanceMode);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -126,7 +129,7 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
       return undefined;
     }
 
-    const isMobile = window.matchMedia?.("(max-width: 1240px)").matches;
+    const isMobile = compactTimeline;
     let sceneInRange = false;
     let exitZoneActive = false;
     let terminalExitPending = false;
@@ -687,7 +690,7 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
         delete card.dataset.timelineInspection;
       });
     };
-  }, [autonomousEnabled, visibleExperiences.length, performanceMode, animationsPaused]);
+  }, [autonomousEnabled, compactTimeline, visibleExperiences.length, performanceMode, animationsPaused]);
 
   return (
     <section

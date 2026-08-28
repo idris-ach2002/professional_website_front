@@ -2,6 +2,8 @@ import fs from "node:fs";
 
 const app = fs.readFileSync("src/App.jsx", "utf8");
 const signature = fs.readFileSync("src/components/navigation/SignatureCanvas.jsx", "utf8");
+const navigation = fs.readFileSync("src/components/TopNavigation.jsx", "utf8");
+const palette = fs.readFileSync("src/styles/navigation/arctic-ink-palette.css", "utf8");
 const failures = [];
 
 if (/^import\s+ProjectsShowcase\s+from\s+["']\.\/components\/ProjectsShowcase["'];/m.test(app)) {
@@ -20,24 +22,16 @@ const names = [
   "REST_FRAME_RATE_FULL",
   "REST_FRAME_RATE_BALANCED",
 ];
-
 const rates = Object.fromEntries(names.map((name) => {
   const match = signature.match(new RegExp(`const ${name} = (\\d+);`));
   return [name, Number(match?.[1] ?? 0)];
 }));
 
-if (!rates.ACTIVE_FRAME_RATE_FULL
-  || !rates.ACTIVE_FRAME_RATE_BALANCED
-  || !rates.REST_FRAME_RATE_FULL
-  || !rates.REST_FRAME_RATE_BALANCED) {
+if (!rates.ACTIVE_FRAME_RATE_FULL || !rates.ACTIVE_FRAME_RATE_BALANCED || !rates.REST_FRAME_RATE_FULL || !rates.REST_FRAME_RATE_BALANCED) {
   failures.push("SignatureCanvas adaptive frame-rate constants are missing.");
 } else {
-  if (rates.REST_FRAME_RATE_FULL >= rates.ACTIVE_FRAME_RATE_FULL) {
-    failures.push("Full-quality rest cadence must stay below active cadence.");
-  }
-  if (rates.REST_FRAME_RATE_BALANCED >= rates.ACTIVE_FRAME_RATE_BALANCED) {
-    failures.push("Balanced rest cadence must stay below active cadence.");
-  }
+  if (rates.REST_FRAME_RATE_FULL >= rates.ACTIVE_FRAME_RATE_FULL) failures.push("Full-quality rest cadence must stay below active cadence.");
+  if (rates.REST_FRAME_RATE_BALANCED >= rates.ACTIVE_FRAME_RATE_BALANCED) failures.push("Balanced rest cadence must stay below active cadence.");
 }
 
 if (!signature.includes('["prepare", "shed", "assemble", "return"].includes(specialEvent.mode)')) {
@@ -45,6 +39,15 @@ if (!signature.includes('["prepare", "shed", "assemble", "return"].includes(spec
 }
 if (!signature.includes("const targetFrameRate = highMotion")) {
   failures.push("SignatureCanvas adaptive cadence selection is missing.");
+}
+if (!signature.includes('effectiveNavbarMotion !== "static"')) {
+  failures.push("SignatureCanvas must obey the Navbar motion preference.");
+}
+if (!navigation.includes('className="nav_brand nav_brand--arctic-signature w-nav-brand"')) {
+  failures.push("The Arctic signature must remain mounted without the legacy identity capsule.");
+}
+if (!palette.includes("floating signature identity: artwork only, no capsule")) {
+  failures.push("The Arctic palette must keep the signature capsule-free.");
 }
 
 if (failures.length) {
@@ -54,7 +57,7 @@ if (failures.length) {
 }
 
 console.log(
-  `Phase 3 performance OK: ProjectsShowcase is lazy; SignatureCanvas active/rest FPS `
+  `Phase 3 performance OK: ProjectsShowcase is lazy; Arctic signature is capsule-free; active/rest FPS `
   + `${rates.ACTIVE_FRAME_RATE_FULL}/${rates.REST_FRAME_RATE_FULL} full, `
   + `${rates.ACTIVE_FRAME_RATE_BALANCED}/${rates.REST_FRAME_RATE_BALANCED} balanced.`,
 );
