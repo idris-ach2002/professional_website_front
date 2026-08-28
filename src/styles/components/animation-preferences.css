@@ -1,8 +1,8 @@
 @layer base, priority, critical;
 @layer base {
 .animation-preferences-control{position:relative;flex:0 0 auto;}
-.nav_fixed.nav_fixed--portfolio .animation-preferences-trigger{appearance:none;}
-.nav_fixed.nav_fixed--portfolio .animation-preferences-control.nav_menu-dropdown-toggle-v2.single .dropdown-list-v2{right:-76px !important;left:auto !important;width:min(680px,calc(100vw - 48px)) !important;overscroll-behavior:contain;transform-origin:86% 0;}
+.nv.nv .animation-preferences-trigger{appearance:none;}
+.nv.nv .animation-preferences-control.nav_menu-dropdown-toggle-v2.single .dropdown-list-v2{right:-76px !important;left:auto !important;width:min(680px,calc(100vw - 48px)) !important;overscroll-behavior:contain;transform-origin:86% 0;}
 .animation-preferences-panel{--ap-ink:#16324d;--ap-muted:#667f96;--ap-line:rgba(61,105,143,.20);--ap-blue:#3d78a6;display:grid;gap:14px;width:100%;padding:16px;color:var(--ap-ink);background:radial-gradient(circle at 92% 2%,rgba(151,200,231,.18),transparent 30%),linear-gradient(180deg,rgba(249,252,254,.98),rgba(229,240,248,.98));}
 .animation-preferences-panel.is-embedded{padding:4px 0 0;background:transparent;}
 .animation-preferences-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:2px 2px 5px;}
@@ -72,7 +72,7 @@
 .animation-reset-button{justify-self:start;padding:6px 1px;border:0;color:#3e6c8e;background:transparent;font:inherit;font-size:.78rem;font-weight:780;text-decoration:underline;text-underline-offset:3px;cursor:pointer;}
 .animation-control-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:2px;color:#70869a;font-size:.76rem;}
 .animation-preferences-mobile{width:100%;margin-top:12px;}
-.nav_fixed.nav_fixed--portfolio .nav_mobile-utility-group .animation-preferences-mobile{grid-column:1/-1;width:100%;}
+.nv.nv .nav_mobile-utility-group .animation-preferences-mobile{grid-column:1/-1;width:100%;}
 .animation-preferences-mobile .animation-preferences-panel{border:1px solid rgba(65,114,151,.18);border-radius:16px;}
 html[data-animation-state="paused"] *{animation-play-state:paused !important;}
 html[data-animation-state="off"]{scroll-behavior:auto;}
@@ -81,19 +81,19 @@ html[data-performance-profile="ultra-lite"] .global-aquarium,html[data-performan
 html[data-performance-profile="ultra-lite"] .ocean-background{background:linear-gradient(180deg,#effbff 0%,#d9f3fb 42%,#a7dce7 100%);opacity:1;}
 html[data-performance-profile="lite"] .section-title-fish .section-title-copy,html[data-performance-profile="ultra-lite"] .section-title-fish .section-title-copy{position:relative;z-index:2;}
 html[data-performance-profile="lite"] .section-title-fish .section-reveal-fish,html[data-performance-profile="ultra-lite"] .section-title-fish .section-reveal-fish{right:clamp(-56px,-3vw,-28px);left:auto;top:clamp(14px,7%,28px);z-index:1;width:clamp(120px,14vw,190px) !important;opacity:.68;filter:drop-shadow(0 10px 18px rgba(2,6,23,.14)) drop-shadow(0 0 18px rgba(125,211,252,.24));transform:none;}
-@media (max-width:900px){.nav_fixed.nav_fixed--portfolio .animation-preferences-control.nav_menu-dropdown-toggle-v2.single .dropdown-list-v2{right:0 !important;width:min(680px,calc(100vw - 28px)) !important;}}
+@media (max-width:900px){.nv.nv .animation-preferences-control.nav_menu-dropdown-toggle-v2.single .dropdown-list-v2{right:0 !important;width:min(680px,calc(100vw - 28px)) !important;}}
 @media (max-width:820px){.animation-mode-grid{grid-template-columns:repeat(2,minmax(0,1fr));padding:0;border:0;background:transparent;}.animation-control-tile.is-mode{min-height:64px;border-color:var(--ap-line);background:rgba(250,252,254,.72);}.animation-preferences-heading{flex-direction:column;gap:5px;}.animation-preferences-heading em{text-align:left;}.animation-submenu-button{grid-template-columns:36px minmax(0,1fr) auto 16px;}.animation-switch-list.is-compact{grid-template-columns:1fr;}.animation-segmented{grid-template-columns:repeat(2,minmax(0,1fr));}.animation-runtime-grid{grid-template-columns:1fr 1fr;}html[data-performance-profile="lite"] .section-title-fish .section-reveal-fish,html[data-performance-profile="ultra-lite"] .section-title-fish .section-reveal-fish{right:-58px;top:8px;width:104px !important;opacity:.56;}}
 @media (max-width:520px){.animation-preferences-panel{padding:12px;}.animation-submenu-status{display:none;}.animation-runtime-grid{grid-template-columns:1fr;}.animation-protection-list>div{grid-template-columns:18px minmax(0,1fr);}.animation-protection-list em{display:none;}}
 @media (prefers-reduced-motion:reduce){.animation-control-tile,.animation-switch-row,.animation-submenu-button,.animation-mode-marker,.animation-activation-track,.animation-activation-thumb{transition:none !important;}}
 }
 @layer priority {
-.nav_fixed.nav_fixed--portfolio .animation-preferences-control.nav_menu-dropdown-toggle-v2.single .dropdown-list-v2{min-width:min(620px,calc(100vw - 48px));max-height:min(78vh,720px);}
-.nav_fixed.nav_fixed--portfolio .animation-preferences-control .dropdown-inside-wrap{padding:0;border-radius:18px;background:rgba(238,246,251,.985);}
+.nv.nv .animation-preferences-control.nav_menu-dropdown-toggle-v2.single .dropdown-list-v2{min-width:min(620px,calc(100vw - 48px));max-height:min(78vh,720px);}
+.nv.nv .animation-preferences-control .dropdown-inside-wrap{padding:0;border-radius:18px;background:rgba(238,246,251,.985);}
 html[data-animation-state="off"] *,html[data-animation-state="off"] *::before,html[data-animation-state="off"] *::after{transition-duration:.01ms;}
 html[data-performance-profile="lite"] .timeline-section .section-title-fish .section-reveal-fish,html[data-performance-profile="ultra-lite"] .timeline-section .section-title-fish .section-reveal-fish{display:none;}
 }
 @layer critical {
-.nav_fixed.nav_fixed--portfolio .animation-preferences-control.nav_menu-dropdown-toggle-v2.single .dropdown-list-v2{overflow:auto;}
-.nav_fixed.nav_fixed--portfolio .animation-preferences-control .dropdown-inside-wrap{overflow:hidden;}
+.nv.nv .animation-preferences-control.nav_menu-dropdown-toggle-v2.single .dropdown-list-v2{overflow:auto;}
+.nv.nv .animation-preferences-control .dropdown-inside-wrap{overflow:hidden;}
 html[data-performance-profile="lite"] .timeline-section .section-title-fish .section-reveal-fish,html[data-performance-profile="ultra-lite"] .timeline-section .section-title-fish .section-reveal-fish{visibility:hidden;}
 }

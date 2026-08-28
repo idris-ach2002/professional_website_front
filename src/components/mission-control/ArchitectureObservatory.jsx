@@ -431,6 +431,7 @@ function ArchitectureCanvas({ nodes, links, positions, sample, onStatus, showPar
     const dimensions = { cssWidth: 1, cssHeight: 1, width: 1, height: 1 };
     const vertexData = new Float32Array(4096);
     let frame = 0;
+    let wakeTimer = 0;
     let pageVisible = !document.hidden;
     let canvasVisible = true;
     let lastPaint = 0;
@@ -455,8 +456,14 @@ function ArchitectureCanvas({ nodes, links, positions, sample, onStatus, showPar
     };
 
     const shouldRender = () => pageVisible && canvasVisible;
-    const schedule = () => {
-      if (!frame && shouldRender()) frame = requestAnimationFrame(render);
+    const schedule = (delayMs = 0) => {
+      if (frame || wakeTimer || !shouldRender()) return;
+      const request = () => {
+        wakeTimer = 0;
+        if (!frame && shouldRender()) frame = requestAnimationFrame(render);
+      };
+      if (delayMs > 4) wakeTimer = window.setTimeout(request, Math.max(0, delayMs - 4));
+      else request();
     };
 
     const render = (time = 0) => {
@@ -464,7 +471,8 @@ function ArchitectureCanvas({ nodes, links, positions, sample, onStatus, showPar
       if (!shouldRender()) return;
       const current = dataRef.current;
       const animated = current.showParticles && !reduced;
-      if (animated && time - lastPaint < 33) { schedule(); return; }
+      const elapsedSincePaint = time - lastPaint;
+      if (animated && elapsedSincePaint < 33) { schedule(33 - elapsedSincePaint); return; }
       lastPaint = time;
 
       gl.viewport(0, 0, dimensions.width, dimensions.height);
@@ -524,19 +532,19 @@ function ArchitectureCanvas({ nodes, links, positions, sample, onStatus, showPar
         gl.drawArrays(gl.POINTS, 0, offset / 7);
       }
       if (gpuSampleActive) gpuTimer.end();
-      if (animated) schedule();
+      if (animated) schedule(33);
     };
 
     const intersectionObserver = new IntersectionObserver(([entry]) => {
       canvasVisible = entry.isIntersecting;
       if (shouldRender()) schedule();
-      else if (frame) { cancelAnimationFrame(frame); frame = 0; }
+      else { if (frame) { cancelAnimationFrame(frame); frame = 0; } window.clearTimeout(wakeTimer); wakeTimer = 0; }
     }, { rootMargin: "120px 0px" });
     const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
     const onVisibility = () => {
       pageVisible = !document.hidden;
       if (shouldRender()) schedule();
-      else if (frame) { cancelAnimationFrame(frame); frame = 0; }
+      else { if (frame) { cancelAnimationFrame(frame); frame = 0; } window.clearTimeout(wakeTimer); wakeTimer = 0; }
     };
 
     wakeRef.current = schedule;
@@ -549,13 +557,14 @@ function ArchitectureCanvas({ nodes, links, positions, sample, onStatus, showPar
     return () => {
       wakeRef.current = () => {};
       if (frame) cancelAnimationFrame(frame);
+      window.clearTimeout(wakeTimer);
+      wakeTimer = 0;
       resizeObserver?.disconnect();
       intersectionObserver.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
       gpuTimer?.destroy();
       gl.deleteBuffer(buffer);
       gl.deleteProgram(program);
-      gl.getExtension("WEBGL_lose_context")?.loseContext?.();
     };
   }, [onStatus]);
 
@@ -783,11 +792,11 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
   }, [compact, normalized.links, scope]);
   const activeNodeIds = useMemo(() => new Set(scopeLinks.flatMap((link) => [link.source, link.target])), [scopeLinks]);
   const runtimeNodeIds = useMemo(() => new Set(scopeLinks.filter((link) => link.active).flatMap((link) => [link.source, link.target])), [scopeLinks]);
-  const selectedNode = selectedId ? (nodes.find((node) => node.id === selectedId) ?? null) : null;
-  const activeLinks = scopeLinks.filter((link) => link.active).length;
-  const palette = CANVAS_SHADES.find((item) => item.id === canvasShade) ?? CANVAS_SHADES.find((item) => item.id === "sage") ?? CANVAS_SHADES[0];
-  const scopeLabel = SCOPES.find((item) => item.id === scope)?.label ?? "Vue complète";
-  const layoutDefinition = GRAPH_LAYOUTS.find((item) => item.id === layoutId) ?? GRAPH_LAYOUTS[0];
+  const selectedNode = useMemo(() => selectedId ? (nodes.find((node) => node.id === selectedId) ?? null) : null, [nodes, selectedId]);
+  const activeLinks = useMemo(() => scopeLinks.filter((link) => link.active).length, [scopeLinks]);
+  const palette = useMemo(() => CANVAS_SHADES.find((item) => item.id === canvasShade) ?? CANVAS_SHADES.find((item) => item.id === "sage") ?? CANVAS_SHADES[0], [canvasShade]);
+  const scopeLabel = useMemo(() => SCOPES.find((item) => item.id === scope)?.label ?? "Vue complète", [scope]);
+  const layoutDefinition = useMemo(() => GRAPH_LAYOUTS.find((item) => item.id === layoutId) ?? GRAPH_LAYOUTS[0], [layoutId]);
   const graphDegrees = useMemo(() => {
     const degree = Object.fromEntries(nodes.map((node) => [node.id, { in: 0, out: 0 }]));
     scopeLinks.forEach((link) => {
@@ -817,8 +826,8 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
   }, [nodes, search]);
   const effectiveDensity = semanticZoom ? (zoom < .92 ? "simple" : zoom > 1.08 ? "expert" : density) : density;
 
-  const canvasBackground = `linear-gradient(${showGrid ? palette.grid : "transparent"} 1px, transparent 1px), linear-gradient(90deg, ${showGrid ? palette.grid : "transparent"} 1px, transparent 1px), radial-gradient(circle at 20% 20%, ${palette.a}aa, transparent 36%), radial-gradient(circle at 78% 68%, ${palette.a}77, transparent 34%), linear-gradient(145deg, ${palette.a}, ${palette.b})`;
-  const canvasStyle = {
+  const canvasBackground = useMemo(() => `linear-gradient(${showGrid ? palette.grid : "transparent"} 1px, transparent 1px), linear-gradient(90deg, ${showGrid ? palette.grid : "transparent"} 1px, transparent 1px), radial-gradient(circle at 20% 20%, ${palette.a}aa, transparent 36%), radial-gradient(circle at 78% 68%, ${palette.a}77, transparent 34%), linear-gradient(145deg, ${palette.a}, ${palette.b})`, [palette, showGrid]);
+  const canvasStyle = useMemo(() => ({
     "--canvas-a": palette.a,
     "--canvas-b": palette.b,
     "--canvas-grid": palette.grid,
@@ -827,7 +836,7 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
     "--graph-grid-size": `${Math.round(34 * zoom)}px`,
     backgroundColor: palette.b,
     backgroundImage: canvasBackground,
-  };
+  }), [canvasBackground, palette, zoom]);
 
   // V28: same canvas model as V20. The graph background belongs directly to
   // the stage; there is no full-size intermediary surface that can mask it.

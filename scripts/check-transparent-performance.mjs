@@ -9,11 +9,13 @@ const app = read("src/App.jsx");
 const volcano = read("src/components/UnderwaterVolcanoField.jsx");
 const ocean = read("src/components/OceanTransitionStage.jsx");
 const oceanMorph = read("src/components/OceanMorphBackground.jsx");
+const aquarium = read("src/components/GlobalAquarium.jsx");
 const timeline = read("src/components/PortfolioTimeline.jsx");
 const nav = read("src/components/navigation/usePremiumNavigationMotion.js");
 const navShell = read("src/components/navigation/usePremiumNavigationShellMotion.js");
 const volcanoWorker = read("src/workers/volcanoCanvasRender.worker.js");
 const oceanWorker = read("src/workers/oceanTransitionRender.worker.js");
+const aquariumWorker = read("src/workers/aquariumCanvasRender.worker.js");
 const oceanController = read("src/performance/oceanTransitionOffscreenController.js");
 const protocol = read("src/performance/volcanoWorkerProtocol.js");
 const engine = read("src/animations/volcanoSimulationEngine.js");
@@ -30,6 +32,15 @@ requireText(oceanController, "transferControlToOffscreen", "ocean transition Off
 requireText(ocean, 'data-render-thread="main"', "ocean fallback render-thread marker missing");
 requireText(ocean, "useEffect(() => {\n    runtimeQualityRef.current = runtimeQuality;\n  }, [runtimeQuality]);", "ocean runtime-quality ref must synchronize after render");
 requireText(oceanWorker, "drawScene(context, sceneKey", "ocean worker must reuse the deterministic renderer");
+
+
+requireText(aquarium, "transferControlToOffscreen", "aquarium OffscreenCanvas render path missing");
+requireText(aquarium, 'new URL("../workers/aquariumCanvasRender.worker.js", import.meta.url)', "aquarium render worker must stay feature-split");
+requireText(aquarium, 'data-render-backend={renderBackend}', "aquarium renderer diagnostic marker missing");
+requireText(aquarium, "cinematicRef.current", "aquarium must skip invisible cinematic paint work while preserving simulation state");
+requireText(aquariumWorker, 'type: "buffer-return"', "aquarium render worker must return transferable buffers for reuse");
+forbidText(aquariumWorker, "requestAnimationFrame(", "aquarium render worker must stay message-driven with no autonomous RAF");
+forbidText(aquariumWorker, "setInterval(", "aquarium render worker must stay idle without messages");
 
 requireText(volcano, "transferControlToOffscreen", "volcano OffscreenCanvas path missing");
 requireText(volcano, 'root.dataset.volcanoCanvasRenderer = root.dataset.volcanoCanvasRenderer || "main"', "volcano renderer diagnostic must be initialized as DOM-owned state");
@@ -58,10 +69,14 @@ requireText(volcano, "useEffect(() => {\n    countsRef.current = counts;\n    ro
 requireText(volcano, "resolveVolcanoStageProfileInto", "volcano profile reuse missing");
 forbidText(volcano, "setPulseName(", "volcano pulse updates must not trigger React rerenders");
 forbidText(volcano, "setEruptionReaction(", "volcano reaction updates must not trigger React rerenders");
-requireText(volcanoWorker, "new Float64Array(message.buffer)", "volcano worker must consume transferred Float64 draw state");
-requireText(volcanoWorker, "decodeVolcanoParticles", "volcano worker must decode main-thread particle state rather than resimulate it");
-forbidText(volcanoWorker, "stepVolcanoParticles(", "volcano worker must not alter the original particle simulation timing");
-forbidText(volcanoWorker, "stepVolcanoRockfall(", "volcano worker must not alter the original rockfall simulation timing");
+requireText(volcanoWorker, "new Float64Array(message.buffer)", "volcano worker must consume transferred Float64 control state");
+requireText(volcanoWorker, "resetSimulation", "volcano worker deterministic simulation initialization missing");
+requireText(volcanoWorker, "stepVolcanoParticles(", "volcano particle simulation must run off the main thread when OffscreenCanvas is active");
+requireText(volcanoWorker, "stepVolcanoRockfall(", "volcano rockfall simulation must run off the main thread when OffscreenCanvas is active");
+forbidText(volcanoWorker, "requestAnimationFrame(", "volcano worker simulation must remain driven by the original main-thread paint clock");
+forbidText(volcanoWorker, "setInterval(", "volcano worker simulation must not introduce an autonomous clock");
+requireText(volcano, "requiredVolcanoFrameFloats(0, 0)", "volcano Worker path must transfer only compact control state, not particle/rock snapshots");
+requireText(volcano, "workerSimulationConfig", "volcano Worker must receive the same deterministic counts and seeds as the fallback renderer");
 requireText(volcanoWorker, 'type: "buffer-return"', "volcano worker must return buffers for reuse");
 requireText(protocol, "writeVolcanoFrame", "volcano worker protocol writer missing");
 requireText(protocol, "readVolcanoFrame", "volcano worker protocol reader missing");
@@ -85,6 +100,7 @@ requireText(initial, "427_000", "V9 initial source ceiling must remain enforced"
 requireText(initial, '"src/performance/oceanTransitionOffscreenController.js"', "ocean worker controller must stay outside the initial static graph");
 requireText(initial, '"src/workers/oceanTransitionRender.worker.js"', "ocean render worker must stay outside the initial static graph");
 requireText(initial, '"src/workers/volcanoCanvasRender.worker.js"', "volcano render worker must stay outside the initial static graph");
+requireText(initial, '"src/workers/aquariumCanvasRender.worker.js"', "aquarium render worker must stay outside the initial static graph");
 
 requireText(app, 'const PortfolioTimeline = lazy(', "existing Timeline feature split must remain");
 requireText(app, 'const ProjectsShowcase = lazy(', "existing Projects feature split must remain");
@@ -120,4 +136,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log("Transparent performance contract OK: render-only Offscreen workers, transferable Float64 buffers, simulation-preserving allocation/geometry reuse, feature splitting and idle scheduling are locked while V10 keeps render formulas and non-Timeline visual geometry under an explicit UI contract.");
+console.log("Transparent performance contract OK: deterministic Offscreen workers, compact transferable control buffers, simulation-preserving allocation/geometry reuse, feature splitting and idle scheduling are locked while V10 keeps render formulas and non-Timeline visual geometry under an explicit UI contract.");

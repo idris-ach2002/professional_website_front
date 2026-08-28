@@ -294,3 +294,124 @@ export function stepInspectionPilot(state, deltaSeconds, {
 
   return { ...state, phaseElapsed };
 }
+
+// Runtime variant used by the autonomous Timeline RAF. It preserves the exact
+// equations/state transitions of stepInspectionPilot while mutating the private
+// pilot object in place. This avoids one object-spread allocation per display
+// frame (60/120 Hz) and therefore removes avoidable GC pressure without changing
+// any visual coordinate, opacity or torch value.
+export function stepInspectionPilotInPlace(state, deltaSeconds, {
+  mobile = false,
+} = {}) {
+  const dt = clamp(Number(deltaSeconds) || 0, 0, 0.05);
+  if (dt <= 0) return state;
+
+  const phaseElapsed = (state.phaseElapsed ?? 0) + dt;
+
+  if (state.phase === INSPECTION_PHASES.IDLE) {
+    state.phaseElapsed = phaseElapsed;
+    state.opacity = 0;
+    state.torch = 0;
+    return state;
+  }
+
+  if (state.phase === INSPECTION_PHASES.VANISH) {
+    const opacity = 1 - smoothstep(0, VANISH_DURATION, phaseElapsed);
+    if (phaseElapsed < VANISH_DURATION) {
+      state.phaseElapsed = phaseElapsed;
+      state.opacity = opacity;
+      state.torch = 0;
+      return state;
+    }
+
+    if (!state.pendingTarget) {
+      state.phase = INSPECTION_PHASES.IDLE;
+      state.phaseElapsed = 0;
+      state.opacity = 0;
+      state.torch = 0;
+      return state;
+    }
+
+    state.facing = dockingPoint(
+      state.pendingTarget.index,
+      state.pendingTarget.side,
+      mobile,
+      state.pendingTarget.y,
+    ).facing;
+    state.phase = INSPECTION_PHASES.APPEAR;
+    state.phaseElapsed = 0;
+    state.opacity = 0;
+    state.torch = 0;
+    return state;
+  }
+
+  if (state.phase === INSPECTION_PHASES.APPEAR) {
+    const opacity = smoothstep(0, APPEAR_DURATION, phaseElapsed);
+    if (phaseElapsed < APPEAR_DURATION) {
+      state.phaseElapsed = phaseElapsed;
+      state.opacity = opacity;
+      state.torch = smoothstep(0.08, 0.72, opacity) * 0.72;
+      return state;
+    }
+
+    if (!state.pendingTarget) {
+      state.phase = INSPECTION_PHASES.IDLE;
+      state.phaseElapsed = 0;
+      state.opacity = 0;
+      state.torch = 0;
+      return state;
+    }
+
+    state.opacity = 1;
+    state.phaseElapsed = 0;
+    const next = startTransit(state, state.pendingTarget, mobile);
+    Object.assign(state, next);
+    return state;
+  }
+
+  if (state.phase === INSPECTION_PHASES.TRANSIT) {
+    const rawProgress = clamp01(phaseElapsed / Math.max(0.001, state.transitDuration));
+    const progress = smootherstep(rawProgress);
+    const arc = Math.sin(Math.PI * progress) * (mobile ? 0.025 : 0.045);
+    const arcSign = state.targetSide === "right" ? -1 : 1;
+    const x = lerp(state.startX, state.targetX, progress);
+    const y = clamp01(lerp(state.startY, state.targetY, progress) + arc * arcSign);
+
+    if (rawProgress < 1) {
+      state.x = x;
+      state.y = y;
+      state.baseX = x;
+      state.baseY = y;
+      state.phaseElapsed = phaseElapsed;
+      state.opacity = 1;
+      state.torch = 0.92 + smoothstep(0.04, 0.42, rawProgress) * 0.58;
+      return state;
+    }
+
+    state.x = state.targetX;
+    state.y = state.targetY;
+    state.baseX = state.targetX;
+    state.baseY = state.targetY;
+    state.phase = INSPECTION_PHASES.INSPECT;
+    state.phaseElapsed = 0;
+    state.inspectElapsed = 0;
+    state.opacity = 1;
+    state.torch = 1.48;
+    return state;
+  }
+
+  if (state.phase === INSPECTION_PHASES.INSPECT) {
+    const inspectElapsed = (state.inspectElapsed ?? 0) + dt;
+    const bobScale = mobile ? 0.006 : 0.009;
+    state.x = clamp01((state.baseX ?? state.x) + Math.sin(inspectElapsed * 0.72) * bobScale);
+    state.y = clamp01((state.baseY ?? state.y) + Math.sin(inspectElapsed * 0.93 + 0.7) * bobScale * 0.72);
+    state.phaseElapsed = phaseElapsed;
+    state.inspectElapsed = inspectElapsed;
+    state.opacity = 1;
+    state.torch = clamp(1.54 + Math.sin(inspectElapsed * 1.8) * 0.07, 1.44, 1.64);
+    return state;
+  }
+
+  state.phaseElapsed = phaseElapsed;
+  return state;
+}

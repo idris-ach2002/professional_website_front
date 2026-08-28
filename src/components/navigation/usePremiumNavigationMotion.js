@@ -54,12 +54,25 @@ export default function usePremiumNavigationMotion(rootRef, activeSection) {
     let focusedItem = null;
     let rootRect = null;
     const geometry = new Map();
+    const pointerShift = new Map(items.map((item) => [item, { x: 0, y: 0 }]));
 
     const refreshGeometry = () => {
-      // Read all geometry/computed accents before any lens/material write.
+      // Read all geometry/computed accents in one phase. The cached rectangle is
+      // normalized back to the unshifted magnetic position so pointer tracking
+      // never needs a layout read in its RAF hot path.
       rootRect = root.getBoundingClientRect();
       for (const item of items) {
-        geometry.set(item, { rect: item.getBoundingClientRect(), accent: readAccent(item) });
+        const rect = item.getBoundingClientRect();
+        const shift = pointerShift.get(item) ?? { x: 0, y: 0 };
+        geometry.set(item, {
+          rect: {
+            left: rect.left - shift.x,
+            top: rect.top - shift.y,
+            width: rect.width,
+            height: rect.height,
+          },
+          accent: readAccent(item),
+        });
       }
     };
 
@@ -109,15 +122,21 @@ export default function usePremiumNavigationMotion(rootRef, activeSection) {
       const clientX = event.clientX;
       const clientY = event.clientY;
       pointerFrame = window.requestAnimationFrame(() => {
-        // Keep the original transformed-item geometry semantics for the magnetic
-        // pointer response; only stable lens geometry is cached.
-        const rect = item.getBoundingClientRect();
-        if (!rect.width || !rect.height) return;
+        pointerFrame = 0;
+        let cached = geometry.get(item);
+        if (!cached) {
+          refreshGeometry();
+          cached = geometry.get(item);
+        }
+        const rect = cached?.rect;
+        if (!rect?.width || !rect?.height) return;
 
-        const ratioX = clamp((clientX - rect.left) / rect.width, 0, 1);
-        const ratioY = clamp((clientY - rect.top) / rect.height, 0, 1);
+        const previousShift = pointerShift.get(item) ?? { x: 0, y: 0 };
+        const ratioX = clamp((clientX - (rect.left + previousShift.x)) / rect.width, 0, 1);
+        const ratioY = clamp((clientY - (rect.top + previousShift.y)) / rect.height, 0, 1);
         const shiftX = (ratioX - 0.5) * 2.4;
         const shiftY = (ratioY - 0.5) * 1.25;
+        pointerShift.set(item, { x: shiftX, y: shiftY });
 
         item.style.setProperty("--nav-pointer-x", `${ratioX * 100}%`);
         item.style.setProperty("--nav-pointer-y", `${ratioY * 100}%`);
@@ -131,6 +150,7 @@ export default function usePremiumNavigationMotion(rootRef, activeSection) {
     items.forEach((item) => {
       const surface = item.closest(".nav_menu-dropdown-toggle-v2") ?? item;
       resetPointerMaterial(item);
+      pointerShift.set(item, { x: 0, y: 0 });
 
       const onPointerEnter = () => {
         pointedItem = item;
@@ -140,7 +160,10 @@ export default function usePremiumNavigationMotion(rootRef, activeSection) {
       const onPointerMove = (event) => updatePointerMaterial(item, event);
       const onPointerLeave = () => {
         if (pointedItem === item) pointedItem = null;
-        if (focusedItem !== item) resetPointerMaterial(item);
+        if (focusedItem !== item) {
+          resetPointerMaterial(item);
+          pointerShift.set(item, { x: 0, y: 0 });
+        }
         syncLens();
       };
       const onFocus = () => {
@@ -149,7 +172,10 @@ export default function usePremiumNavigationMotion(rootRef, activeSection) {
       };
       const onBlur = () => {
         if (focusedItem === item) focusedItem = null;
-        if (pointedItem !== item) resetPointerMaterial(item);
+        if (pointedItem !== item) {
+          resetPointerMaterial(item);
+          pointerShift.set(item, { x: 0, y: 0 });
+        }
         syncLens();
       };
 
@@ -169,6 +195,7 @@ export default function usePremiumNavigationMotion(rootRef, activeSection) {
         item.removeEventListener("focus", onFocus);
         item.removeEventListener("blur", onBlur);
         resetPointerMaterial(item);
+        pointerShift.set(item, { x: 0, y: 0 });
       });
     });
 

@@ -2,8 +2,10 @@ import {
   OCEAN_BIOMES,
   clamp,
   deterministicRockSeed,
-  sampleOceanCurrent,
+  sampleOceanCurrentInto,
 } from "../ocean/oceanWorldEngine.js";
+
+const CURRENT_SAMPLE = { x: 0, y: 0 };
 
 function mulberry32(seed) {
   let value = seed >>> 0;
@@ -88,10 +90,11 @@ function spawnRock(runtime, width, height, profile) {
   runtime.active.push(rock);
 }
 
-export function stepVolcanoRockfall(runtime, deltaSeconds, width, height, elapsedSeconds, profile, maxActive = 22) {
+export function stepVolcanoRockfall(runtime, deltaSeconds, width, height, elapsedSeconds, profile, maxActive = 22, settledTarget = null) {
   const dt = clamp(Number(deltaSeconds) || 0, 0, 0.05);
-  if (!dt || width <= 1 || height <= 1) return [];
-  const settled = [];
+  const settled = settledTarget ?? [];
+  settled.length = 0;
+  if (!dt || width <= 1 || height <= 1) return settled;
 
   if (elapsedSeconds >= runtime.nextSpawnAt && runtime.active.length < maxActive) {
     const random = mulberry32((runtime.seed + runtime.serial * 17 + Math.floor(elapsedSeconds * 11)) >>> 0);
@@ -104,7 +107,8 @@ export function stepVolcanoRockfall(runtime, deltaSeconds, width, height, elapse
 
   for (let index = runtime.active.length - 1; index >= 0; index -= 1) {
     const rock = runtime.active[index];
-    const current = sampleOceanCurrent(
+    const current = sampleOceanCurrentInto(
+      CURRENT_SAMPLE,
       rock.x / Math.max(1, width),
       rock.y / Math.max(1, height),
       elapsedSeconds,

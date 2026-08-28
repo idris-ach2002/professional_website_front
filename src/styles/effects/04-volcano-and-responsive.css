@@ -1,25 +1,17 @@
 @layer base, priority, critical;
 @layer base {
-.volcano-field-section{position:relative;width:100vw;left:50%;margin-left:-50vw;min-height:clamp(560px,78vh,880px);margin-block:clamp(18px,4vw,58px) clamp(22px,5vw,72px);overflow:hidden;isolation:isolate;background:#010816;}
+.volcano-field-section{position:relative;width:100vw;left:50%;margin-left:-50vw;min-height:clamp(560px,78vh,880px);margin-block:clamp(18px,4vw,58px) clamp(22px,5vw,72px);overflow:hidden;isolation:isolate;}
 .volcano-field-section::before{content:"";position:absolute;inset:0;z-index:7;pointer-events:none;opacity:.22;background:radial-gradient(ellipse at 50% 42%,rgba(255,197,80,.48),rgba(255,70,12,.16) 14%,transparent 31%);mix-blend-mode:screen;transition:opacity .12s ease;}
 .volcano-field-section[data-volcano-pulse="surge"]::before{opacity:.30;}
 .volcano-field-section[data-volcano-pulse="burst"]::before{opacity:.44;}
 .volcano-field-section[data-volcano-pulse="mega"]::before{opacity:.74;}
 .volcano-field-section[data-volcano-stage="idle"]::before{opacity:.08;}
 .volcano-field-section::after{content:"";position:absolute;inset:0;z-index:8;pointer-events:none;background:linear-gradient(180deg,rgba(1,8,22,.015),transparent 17% 73%,rgba(1,7,18,.78)),radial-gradient(ellipse at 50% 48%,transparent 46%,rgba(0,4,12,.28) 92%);}
-.volcano-field-stage{position:relative;width:100%;min-height:clamp(560px,78vh,880px);overflow:hidden;z-index:1;contain:layout paint;background:radial-gradient(ellipse at 50% 42%,rgba(14,70,91,.46),transparent 40%),linear-gradient(180deg,#082536 0%,#031522 54%,#010711 100%);}
+.volcano-field-stage{position:relative;width:100%;min-height:clamp(560px,78vh,880px);overflow:hidden;z-index:1;contain:layout paint;}
 .volcano-environment-vector,.volcano-foreground-vector{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center bottom;pointer-events:none;}
 .volcano-environment-vector{z-index:0;opacity:.98;filter:saturate(.92) contrast(1.12) brightness(.74);}
 .volcano-foreground-vector{z-index:5;opacity:.96;filter:saturate(.82) contrast(1.12) brightness(.68);}
 .volcano-render-stack{position:absolute;inset:0;z-index:2;overflow:hidden;pointer-events:none;}
-.volcano-static-fallback{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center bottom;pointer-events:none;}
-.volcano-static-fallback{z-index:1;opacity:0;transition:opacity .16s ease;}
-.volcano-environment-vector[data-loaded="false"],.volcano-foreground-vector[data-loaded="false"],.volcano-static-fallback[data-loaded="false"]{opacity:0;}
-.volcano-field-section[data-volcano-renderer="fallback"] .volcano-static-fallback{opacity:1;}
-.volcano-field-section[data-volcano-renderer="fallback"] .volcano-webgl-canvas{opacity:0;}
-.volcano-field-section[data-volcano-renderer="fallback"] .volcano-environment-vector,.volcano-field-section[data-volcano-renderer="fallback"] .volcano-foreground-vector{opacity:0;}
-.volcano-field-section.is-static::before{opacity:.16;}
-.volcano-field-placeholder{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 48%,rgba(17,79,101,.36),transparent 42%),linear-gradient(180deg,#082536,#020b16);}
 .volcano-webgl-canvas,.volcano-debris-canvas,.volcano-particle-canvas{inset:0;width:100% !important;height:100% !important;pointer-events:none;}
 .volcano-webgl-canvas{z-index:2;}
 .volcano-debris-canvas{z-index:3;}
@@ -251,12 +243,11 @@ html[data-runtime-quality="constrained"] .volcano-field-section::before{opacity:
 .timeline-image{height:150px;}}
 @media (max-width: 980px){.timeline-row{grid-template-columns:64px minmax(0, 1fr);}
 .timeline-row.is-right .timeline-card, .timeline-row.is-left .timeline-card{grid-column:2;justify-self:stretch;}
-.timeline-submarine, .timeline-straight-line{left:30px;}
+.timeline-straight-line{left:30px;}
 .gallery-panel{contain:none;}}
 @media (max-width: 640px){.timeline-list{gap:36px;}
 .timeline-row{grid-template-columns:42px minmax(0, 1fr);}
-.timeline-submarine, .timeline-straight-line{left:18px;}
-.timeline-submarine{width:72px;}
+.timeline-straight-line{left:18px;}
 .section-reveal-fish{width:clamp(112px, 36vw, 180px);}
 .ocean-surface-layer{left:-60vw !important;width:220vw !important;}
 .ocean-surface-waves{left:-56vw !important;width:320vw !important;}}
@@ -323,7 +314,7 @@ html[data-runtime-quality="constrained"] .volcano-field-section::before{opacity:
 .file-preview-image-trigger.project-visual, .project-visual, .gallery-panel.is-active .project-image, .project-image{border-radius:32px;box-shadow:none;background:#eefbff;}
 .project-image{transition:transform .42s cubic-bezier(.19, 1, .22, 1), filter .42s ease;}
 .projects-section{margin-top:clamp(-42px, -5vh, -18px);padding-top:clamp(10px, 2vh, 24px);}
-.timeline-submarine, .timeline-card, .section-description, .section-heading, .gallery-panel:not(.is-active) .project-slide-card, .project-carousel-panel .project-slide-card, .project-slide-card, .project-carousel-panel, .gallery-panel:not(.is-active), .gallery-panel.is-active, .gallery-panel, .project-gallery-camera, .project-gallery-viewport, .project-gallery-shell{will-change:auto;}
+.timeline-card, .section-description, .section-heading, .gallery-panel:not(.is-active) .project-slide-card, .project-carousel-panel .project-slide-card, .project-slide-card, .project-carousel-panel, .gallery-panel:not(.is-active), .gallery-panel.is-active, .gallery-panel, .project-gallery-camera, .project-gallery-viewport, .project-gallery-shell{will-change:auto;}
 .gallery-live-label{margin-top:10px;font-size:.82rem;font-weight:900;color:rgba(255, 255, 255, .94);text-shadow:none;}
 .gallery-nav.gallery-nav-hitbox{background:transparent;box-shadow:none;backdrop-filter:none;min-width:46px;min-height:46px;padding:0;border-radius:999px;pointer-events:auto;}
 .gallery-nav-visual{flex:0 0 46px;border-radius:999px;pointer-events:none;}

@@ -30,6 +30,7 @@ import {
   registerRuntimeResource,
 } from "./resourceLifecycleRegistry";
 import { decideSmartPrefetch } from "./smartPrefetch";
+import { getSceneRuntimeSnapshot } from "./sceneRuntimeDirector";
 
 const FRAME_BUFFER_SIZE = 256;
 const ANALYSIS_INTERVAL_MS = 1800;
@@ -580,6 +581,7 @@ export default function PerformanceRuntimeProvider({ children }) {
       assessment: memoryAssessmentRef.current,
     },
     resources: getRuntimeResourceSnapshot(),
+    scenes: getSceneRuntimeSnapshot(),
     decisions: [...decisionsRef.current],
   }), []);
 

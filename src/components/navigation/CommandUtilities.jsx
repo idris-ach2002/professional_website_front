@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import useAnimationPreferences from "../../contexts/useAnimationPreferences";
 import { AnimationControlCenter } from "../AnimationPreferences";
 
@@ -183,7 +183,7 @@ function ContactView({ t, contactHref, emailHref, linkedinHref }) {
   );
 }
 
-export default function CommandUtilities({
+function CommandUtilities({
   active,
   setActive,
   contactHref,
@@ -333,3 +333,18 @@ export default function CommandUtilities({
     </div>
   );
 }
+
+function normalizedUtilityState(active) {
+  return active === CONTACT_KEY || active === OPTIONS_KEY ? active : null;
+}
+
+function commandUtilitiesPropsEqual(previous, next) {
+  if (normalizedUtilityState(previous.active) !== normalizedUtilityState(next.active)) return false;
+  const keys = [
+    "setActive", "contactHref", "emailHref", "linkedinHref", "recruiterHref", "cvHref",
+    "language", "setLanguage", "isVisible", "t",
+  ];
+  return keys.every((key) => Object.is(previous[key], next[key]));
+}
+
+export default memo(CommandUtilities, commandUtilitiesPropsEqual);

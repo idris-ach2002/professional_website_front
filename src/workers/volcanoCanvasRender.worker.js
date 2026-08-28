@@ -1,3 +1,11 @@
+import {
+  createVolcanoParticles,
+  stepVolcanoParticles,
+} from "../animations/volcanoSimulationEngine.js";
+import {
+  createVolcanoRockfall,
+  stepVolcanoRockfall,
+} from "../animations/volcanoRockfallEngine.js";
 import { paintVolcanoSmokeTexture } from "../rendering/volcanoSmokeTexture.js";
 import {
   bakeSettledRock,
@@ -7,10 +15,6 @@ import {
 } from "../rendering/volcanoCanvasRenderer.js";
 import {
   VOLCANO_FRAME_FLOATS,
-  VOLCANO_PARTICLE_FLOATS,
-  VOLCANO_ROCK_FLOATS,
-  decodeVolcanoParticles,
-  decodeVolcanoRocks,
   readVolcanoFrame,
 } from "../performance/volcanoWorkerProtocol.js";
 
@@ -20,11 +24,16 @@ let particleContext = null;
 let debrisContext = null;
 let settledDebrisSurface = null;
 let textures = null;
+let particles = [];
+let rockfall = createVolcanoRockfall(0x7a31);
+let rockfallLimit = 22;
+let particleCounts = null;
+let particleSeed = 0x7610;
+let rockfallSeed = 0x7a31;
+const settledRocks = [];
 const viewport = { width: 1, height: 1, dpr: 1 };
 const profile = { stage: "eruption", pulseType: "base" };
-const particles = [];
-const rocks = [];
-const rockfallView = { active: rocks };
+const rockfallView = { active: rockfall.active };
 
 function texture(size, painter) {
   const surface = new OffscreenCanvas(size, size);
@@ -78,16 +87,38 @@ function buildTextures() {
   textures = { smoke, hotSmoke, ember, bubble, bio };
 }
 
-function resize(nextViewport) {
+function resizeCanvas(nextViewport) {
   viewport.width = nextViewport.width;
   viewport.height = nextViewport.height;
   viewport.dpr = nextViewport.dpr;
   const pixelWidth = Math.max(1, Math.round(viewport.width * viewport.dpr));
   const pixelHeight = Math.max(1, Math.round(viewport.height * viewport.dpr));
-  particleCanvas.width = pixelWidth;
-  particleCanvas.height = pixelHeight;
-  debrisCanvas.width = pixelWidth;
-  debrisCanvas.height = pixelHeight;
+  const bitmapChanged = particleCanvas.width !== pixelWidth
+    || particleCanvas.height !== pixelHeight
+    || debrisCanvas.width !== pixelWidth
+    || debrisCanvas.height !== pixelHeight;
+  if (particleCanvas.width !== pixelWidth) particleCanvas.width = pixelWidth;
+  if (particleCanvas.height !== pixelHeight) particleCanvas.height = pixelHeight;
+  if (debrisCanvas.width !== pixelWidth) debrisCanvas.width = pixelWidth;
+  if (debrisCanvas.height !== pixelHeight) debrisCanvas.height = pixelHeight;
+  if (bitmapChanged || !settledDebrisSurface) {
+    settledDebrisSurface = createSettledDebrisSurface(pixelWidth, pixelHeight);
+  }
+}
+
+function resetSimulation(config = {}) {
+  if (config.counts) particleCounts = config.counts;
+  if (Number.isFinite(config.particleSeed)) particleSeed = config.particleSeed;
+  if (Number.isFinite(config.rockfallSeed)) rockfallSeed = config.rockfallSeed;
+  if (Number.isFinite(config.rockfallLimit)) rockfallLimit = config.rockfallLimit;
+  particles = particleCounts
+    ? createVolcanoParticles(viewport.width, viewport.height, particleCounts, particleSeed)
+    : [];
+  rockfall = createVolcanoRockfall(rockfallSeed);
+  rockfallView.active = rockfall.active;
+  settledRocks.length = 0;
+  const pixelWidth = Math.max(1, Math.round(viewport.width * viewport.dpr));
+  const pixelHeight = Math.max(1, Math.round(viewport.height * viewport.dpr));
   settledDebrisSurface = createSettledDebrisSurface(pixelWidth, pixelHeight);
 }
 
@@ -106,18 +137,22 @@ self.onmessage = (event) => {
     particleContext = particleCanvas.getContext("2d", { alpha: true, desynchronized: true });
     debrisContext = debrisCanvas.getContext("2d", { alpha: true, desynchronized: true });
     buildTextures();
-    resize(message.viewport);
+    resizeCanvas(message.viewport);
+    resetSimulation(message.simulation);
     self.postMessage({ type: "ready" });
     return;
   }
   if (message.type === "resize") {
-    resize(message.viewport);
+    resizeCanvas(message.viewport);
+    resetSimulation(message.simulation);
     return;
   }
-  if (message.type === "settled-rock") {
-    if (settledDebrisSurface && message.rock) {
-      bakeSettledRock(settledDebrisSurface, message.rock, viewport);
-    }
+  if (message.type === "reset-simulation") {
+    resetSimulation(message.simulation);
+    return;
+  }
+  if (message.type === "drop-particles") {
+    particles = [];
     return;
   }
   if (message.type === "clear") {
@@ -132,16 +167,28 @@ self.onmessage = (event) => {
     return;
   }
 
-  const { elapsed, particleCount, rockCount } = readVolcanoFrame(state, profile, viewport);
-  const required = VOLCANO_FRAME_FLOATS
-    + particleCount * VOLCANO_PARTICLE_FLOATS
-    + rockCount * VOLCANO_ROCK_FLOATS;
-  if (required > state.length) {
-    self.postMessage({ type: "buffer-return", buffer: message.buffer }, [message.buffer]);
-    return;
+  const { paintDelta, elapsed } = readVolcanoFrame(state, profile, viewport);
+  stepVolcanoParticles(
+    particles,
+    paintDelta,
+    viewport.width,
+    viewport.height,
+    elapsed,
+    profile,
+  );
+  const newlySettled = stepVolcanoRockfall(
+    rockfall,
+    paintDelta,
+    viewport.width,
+    viewport.height,
+    elapsed,
+    profile,
+    rockfallLimit,
+    settledRocks,
+  );
+  for (let index = 0; index < newlySettled.length; index += 1) {
+    bakeSettledRock(settledDebrisSurface, newlySettled[index], viewport);
   }
-  decodeVolcanoParticles(state, particleCount, particles);
-  decodeVolcanoRocks(state, particleCount, rockCount, rocks);
   drawRockfall(debrisContext, rockfallView, settledDebrisSurface, viewport);
   drawParticleField(particleContext, particles, textures, viewport, elapsed, profile);
   self.postMessage({ type: "buffer-return", buffer: message.buffer }, [message.buffer]);

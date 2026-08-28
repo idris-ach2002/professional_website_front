@@ -1,9 +1,10 @@
-import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { getClientImpactSnapshot, measurePageMemory } from "../engineering/clientImpactTelemetry";
 import { frameVerdict } from "../engineering/engineeringTelemetry";
 import useLanguage from "../localization/useLanguage";
 import usePerformanceRuntime from "../performance/usePerformanceRuntime";
+import useOffscreenAnimationClock from "../performance/useOffscreenAnimationClock";
 import { fetchMissionControlSnapshot, fetchPerformanceHistory, recordPerformanceSample, tracePortfolioPublic } from "../services/engineeringApi";
 import MetadataHead from "./MetadataHead";
 import TopNavigation from "./TopNavigation";
@@ -51,6 +52,8 @@ export default function MissionControlPage({ owner, projects = [], experiences =
   const { localizedPath, locale } = useLanguage();
   const { isVisible } = useItemVisibility();
   const { getRuntimeSnapshot } = usePerformanceRuntime();
+  const rootRef = useRef(null);
+  useOffscreenAnimationClock(rootRef, { sceneId: "mission-control" });
   const [view, setView] = useState("system");
   const [backendSnapshot, setBackendSnapshot] = useState(null);
   const [backendError, setBackendError] = useState(null);
@@ -68,7 +71,7 @@ export default function MissionControlPage({ owner, projects = [], experiences =
   const backendRequestRef = useRef(null);
   const appMemoryRef = useRef({ supported: false, bytes: Number.NaN, breakdown: [] });
 
-  const visibleViews = VIEWS.filter((item) => isVisible(item.key));
+  const visibleViews = useMemo(() => VIEWS.filter((item) => isVisible(item.key)), [isVisible]);
   const activeView = visibleViews.some((item) => item.id === view) ? view : (visibleViews[0]?.id ?? "system");
 
   const refreshBackend = useCallback((signal, captureTrace = true) => {
@@ -263,10 +266,12 @@ export default function MissionControlPage({ owner, projects = [], experiences =
           resources: runtime?.resources,
         },
       };
-      setSamples((current) => {
-        const updated = [...current, next].slice(-LOCAL_SAMPLE_LIMIT);
-        samplesRef.current = updated;
-        return updated;
+      startTransition(() => {
+        setSamples((current) => {
+          const updated = [...current, next].slice(-LOCAL_SAMPLE_LIMIT);
+          samplesRef.current = updated;
+          return updated;
+        });
       });
     };
     let timeoutId = 0;
@@ -337,7 +342,7 @@ export default function MissionControlPage({ owner, projects = [], experiences =
   const traced = activeTrace ? { ...activeTrace, renderMs: selected.p95 } : null;
 
   return (
-    <main id="main-content" className="mission-control-page" tabIndex={-1}>
+    <main ref={rootRef} id="main-content" className="mission-control-page" tabIndex={-1}>
       <MetadataHead owner={owner} projects={projects} experiences={experiences} />
       <TopNavigation owner={owner} />
       <div className="mission-control-ambient" aria-hidden="true"><span /><span /></div>

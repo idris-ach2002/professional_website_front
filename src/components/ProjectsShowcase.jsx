@@ -7,6 +7,7 @@ import useResponsiveProfile from "../hooks/useResponsiveProfile";
 import useAnimationPreferences from "../contexts/useAnimationPreferences";
 import useLanguage from "../localization/useLanguage";
 import usePerformanceRuntime from "../performance/usePerformanceRuntime";
+import useOffscreenAnimationClock from "../performance/useOffscreenAnimationClock";
 import { ASSET_PRIORITIES, resolveAssetLoadingPolicy } from "../performance/assetLoadingPolicy";
 import SectionTitle from "./SectionTitle";
 import { FilePreviewButton, PreviewableImage } from "./FilePreview";
@@ -183,6 +184,10 @@ function useCardOverflowSignal(project, active) {
       setHasOverflow(false);
       return undefined;
     }
+    // Only the foreground project can expose the details affordance. Keeping
+    // ResizeObservers on every 3D background card caused duplicate layout
+    // measurement during carousel transitions with no visible benefit.
+    if (!active) return undefined;
 
     let frame = 0;
 
@@ -415,7 +420,7 @@ function ProjectDetailsModal({ project, opened, onClose }) {
 }
 
 
-function ProjectIsland({ project, index, featured, total, active, onOpenDetails }) {
+const ProjectIsland = memo(function ProjectIsland({ project, index, featured, total, active, onOpenDetails }) {
   const { locale, localizedPath, t } = useLanguage();
   const { cardRef, contentRef, hasOverflow } = useCardOverflowSignal(project, active);
   const showDetails = shouldShowProjectDetails(project) || hasOverflow;
@@ -478,7 +483,7 @@ function ProjectIsland({ project, index, featured, total, active, onOpenDetails 
       </div>
     </article>
   );
-}
+});
 
 const ProjectToolbar = memo(function ProjectToolbar({
   query,
@@ -836,9 +841,25 @@ export default function ProjectsShowcase({ projects }) {
   const { isVisible } = useItemVisibility();
   const { t } = useLanguage();
   const rootRef = useRef(null);
+  useOffscreenAnimationClock(rootRef, { sceneId: "projects" });
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("ALL");
   const [selectedStacks, setSelectedStacks] = useState([]);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return undefined;
+
+    const applyBiome = (value) => {
+      const biome = typeof value === "string" ? value : value?.detail?.biome;
+      if (!biome || root.dataset.oceanBiome === biome) return;
+      root.dataset.oceanBiome = biome;
+    };
+
+    applyBiome(window.__portfolioOceanBiome ?? document.documentElement.dataset.oceanBiome);
+    window.addEventListener("portfolio:ocean-biome", applyBiome);
+    return () => window.removeEventListener("portfolio:ocean-biome", applyBiome);
+  }, []);
 
   const publicProjects = useMemo(() => getPublicProjects(projects).filter((project) => isVisible(projectVisibilityKey(project))), [isVisible, projects]);
   const statuses = useMemo(() => getAvailableStatuses(publicProjects), [publicProjects]);

@@ -55,6 +55,30 @@ function resizeCanvas(canvas, dpr) {
   return { width, height, dpr };
 }
 
+function supportsAquariumOffscreenRendering() {
+  return typeof Worker !== "undefined"
+    && typeof OffscreenCanvas !== "undefined"
+    && typeof HTMLCanvasElement !== "undefined"
+    && typeof HTMLCanvasElement.prototype.transferControlToOffscreen === "function";
+}
+
+function writeAquariumRenderState(target, agents, previousAgents) {
+  let offset = 0;
+  for (const agent of agents) {
+    target[offset] = agent.x;
+    target[offset + 1] = agent.y;
+    target[offset + 2] = agent.heading;
+    offset += 3;
+  }
+  for (const agent of previousAgents) {
+    target[offset] = agent.x;
+    target[offset + 1] = agent.y;
+    target[offset + 2] = agent.heading;
+    offset += 3;
+  }
+  return offset;
+}
+
 function drawFish(context, agent, x, y, size, opacity) {
   const [light, dark, accent] = PALETTES[agent.species] ?? PALETTES.reef;
   const direction = agent.heading >= 0 ? 1 : -1;
@@ -263,7 +287,19 @@ export default function GlobalAquarium({
   runtimeBudget = null,
 }) {
   const { transitionPreferences } = useAnimationPreferences();
+  const rootRef = useRef(null);
   const canvasRef = useRef(null);
+  const renderWorkerRef = useRef(null);
+  const renderWorkerOwnedRef = useRef(false);
+  const renderTransferredCanvasRef = useRef(null);
+  const renderWorkerFailedRef = useRef(false);
+  const renderWorkerBuffersRef = useRef([]);
+  const initialOffscreenAllowedRef = useRef(!reducedMotion);
+  const dprRef = useRef(1);
+  const [renderBackend, setRenderBackend] = useState(() => (
+    !reducedMotion && supportsAquariumOffscreenRendering() ? "pending" : "main"
+  ));
+  const [canvasEpoch, setCanvasEpoch] = useState(0);
   const agentsRef = useRef([]);
   const previousAgentsRef = useRef([]);
   const transitionRef = useRef({ from: OCEAN_BIOMES.SURFACE, to: OCEAN_BIOMES.SURFACE, startedAt: 0, duration: 0 });
@@ -275,6 +311,7 @@ export default function GlobalAquarium({
   const lastFrameRef = useRef(0);
   const elapsedRef = useRef(0);
   const dangerRef = useRef(0);
+  const cinematicRef = useRef(false);
   // The footer is intentionally compact (~35vh), so it can never cross the
   // generic viewport-centre arbitration at the document end. A dedicated
   // visibility observer gives the final world priority while the mine is in
@@ -297,16 +334,130 @@ export default function GlobalAquarium({
   );
   const active = pageVisible && !paused;
 
+  useEffect(() => {
+    dprRef.current = dpr;
+  }, [dpr]);
+
+  const syncRenderWorkerPopulation = useCallback(() => {
+    const worker = renderWorkerRef.current;
+    if (!renderWorkerOwnedRef.current || !worker) return;
+    worker.postMessage({
+      type: "sync-population",
+      agents: agentsRef.current,
+      previousAgents: previousAgentsRef.current,
+    });
+  }, []);
+
   const rebuildPopulation = useCallback((targetBiome = biomeRef.current) => {
     agentsRef.current = createMarinePopulation(population, targetBiome, 0x5183 + population * 13);
     marineWorkerDeltaRef.current = 0;
     marineWorkerRef.current?.sync(agentsRef.current);
-  }, [population]);
+    queueMicrotask(syncRenderWorkerPopulation);
+  }, [population, syncRenderWorkerPopulation]);
+
+  const setCinematicMask = useCallback((enabled) => {
+    const next = Boolean(enabled);
+    cinematicRef.current = next;
+    rootRef.current?.classList.toggle("is-cinematic", next);
+  }, []);
 
   useEffect(() => {
     markRuntimeOwnerMounted("GlobalAquarium");
     return () => markRuntimeOwnerUnmounted("GlobalAquarium");
   }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return undefined;
+    if (!initialOffscreenAllowedRef.current || renderWorkerFailedRef.current || !supportsAquariumOffscreenRendering()) {
+      return undefined;
+    }
+
+    // React StrictMode intentionally mounts, cleans up, then mounts effects again
+    // in development. transferControlToOffscreen() is irreversible for a given
+    // HTMLCanvasElement, so transferring synchronously during the throw-away
+    // StrictMode pass leaves the second pass with a canvas that can no longer
+    // service getContext(). Defer the transfer by one animation frame: the
+    // throw-away pass is cancelled before it can claim the canvas, while the
+    // committed pass still moves rendering off the main thread immediately.
+    let cancelled = false;
+    let startupFrame = 0;
+    let worker = null;
+    let transferred = false;
+
+    const fallbackToMain = () => {
+      if (cancelled) return;
+      renderWorkerFailedRef.current = true;
+      renderWorkerOwnedRef.current = false;
+      if (renderWorkerRef.current === worker) renderWorkerRef.current = null;
+      renderWorkerBuffersRef.current = [];
+      if (rootRef.current) rootRef.current.dataset.renderBackend = "main";
+      window.__portfolioAquariumRender = { backend: "main", fallback: true };
+      try { worker?.terminate(); } catch { /* optional worker */ }
+      // Once transferControlToOffscreen() succeeds, that DOM canvas can never
+      // regain a main-thread context. Remount a fresh one before enabling the
+      // exact main-thread fallback renderer.
+      if (transferred) setCanvasEpoch((value) => value + 1);
+      setRenderBackend("main");
+    };
+
+    const startOffscreenRenderer = () => {
+      startupFrame = 0;
+      if (cancelled || canvasRef.current !== canvas) return;
+      try {
+        worker = new Worker(new URL("../workers/aquariumCanvasRender.worker.js", import.meta.url), { type: "module" });
+        const offscreen = canvas.transferControlToOffscreen();
+        transferred = true;
+        renderTransferredCanvasRef.current = canvas;
+        renderWorkerRef.current = worker;
+        renderWorkerOwnedRef.current = true;
+        renderWorkerBuffersRef.current = [];
+        const viewport = {
+          width: Math.max(1, window.innerWidth),
+          height: Math.max(1, window.innerHeight),
+          dpr: dprRef.current,
+        };
+        canvas.style.width = `${viewport.width}px`;
+        canvas.style.height = `${viewport.height}px`;
+
+        worker.addEventListener("message", (event) => {
+          if (cancelled) return;
+          if (event.data?.type === "ready") {
+            if (rootRef.current) rootRef.current.dataset.renderBackend = "worker";
+            window.__portfolioAquariumRender = { backend: "worker" };
+            setRenderBackend("worker");
+            syncRenderWorkerPopulation();
+            return;
+          }
+          if (event.data?.type === "buffer-return" && event.data.buffer instanceof ArrayBuffer) {
+            if (renderWorkerBuffersRef.current.length < 4) renderWorkerBuffersRef.current.push(event.data.buffer);
+          }
+        });
+        worker.addEventListener("error", fallbackToMain);
+        worker.postMessage({
+          type: "init",
+          canvas: offscreen,
+          viewport,
+          agents: agentsRef.current,
+          previousAgents: previousAgentsRef.current,
+        }, [offscreen]);
+      } catch {
+        fallbackToMain();
+      }
+    };
+
+    startupFrame = window.requestAnimationFrame(startOffscreenRenderer);
+
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(startupFrame);
+      try { worker?.terminate(); } catch { /* already terminated */ }
+      if (renderWorkerRef.current === worker) renderWorkerRef.current = null;
+      renderWorkerOwnedRef.current = false;
+      renderWorkerBuffersRef.current = [];
+      delete window.__portfolioAquariumRender;
+    };
+  }, [canvasEpoch, syncRenderWorkerPopulation]);
 
   useEffect(() => {
     const workerEnabled = Boolean(runtimeBudget?.workerSimulation) && !reducedMotion;
@@ -369,7 +520,9 @@ export default function GlobalAquarium({
     if (runningTransition.duration > 0 && !isOceanTransitionEnabled(transitionPreferences, runningTransitionName)) {
       previousAgentsRef.current = [];
       transitionRef.current = { ...runningTransition, duration: 0 };
+      syncRenderWorkerPopulation();
       window.clearTimeout(transitionTimerRef.current);
+      setCinematicMask(false);
       delete document.documentElement.dataset.oceanTransition;
     }
 
@@ -387,11 +540,13 @@ export default function GlobalAquarium({
       delete document.documentElement.dataset.oceanTransition;
 
       if (transitionEnabled) {
+        setCinematicMask(true);
         document.documentElement.dataset.oceanTransition = transitionName;
         window.dispatchEvent(new CustomEvent("portfolio:ocean-transition", {
           detail: { from: previousBiome, to: biome, duration },
         }));
         transitionTimerRef.current = window.setTimeout(() => {
+          setCinematicMask(false);
           if (document.documentElement.dataset.oceanTransition === transitionName) {
             delete document.documentElement.dataset.oceanTransition;
           }
@@ -412,13 +567,15 @@ export default function GlobalAquarium({
         startedAt: elapsedRef.current,
         duration,
       };
+      syncRenderWorkerPopulation();
     }
 
     return () => {
       window.clearTimeout(transitionTimerRef.current);
+      setCinematicMask(false);
       if (document.documentElement.dataset.oceanTransition === transitionName) delete document.documentElement.dataset.oceanTransition;
     };
-  }, [biome, population, rebuildPopulation, transitionPreferences]);
+  }, [biome, population, rebuildPopulation, setCinematicMask, syncRenderWorkerPopulation, transitionPreferences]);
 
   useEffect(() => {
     const handleVisibility = () => setPageVisible(!document.hidden);
@@ -456,6 +613,10 @@ export default function GlobalAquarium({
         document.documentElement.dataset.oceanBiome = nextBiome;
       }
       if (nextBiome === biomeRef.current) return;
+      window.__portfolioOceanBiome = nextBiome;
+      window.dispatchEvent(new CustomEvent("portfolio:ocean-biome", {
+        detail: { biome: nextBiome },
+      }));
       biomeRef.current = nextBiome;
       setBiome(nextBiome);
     };
@@ -621,6 +782,7 @@ export default function GlobalAquarium({
       queueMicrotask(() => {
         if (activeWorldDirectorOwner !== directorOwner) return;
         activeWorldDirectorOwner = null;
+        delete window.__portfolioOceanBiome;
         delete document.documentElement.dataset.oceanDirectorReady;
         delete document.documentElement.dataset.oceanBiome;
         delete document.documentElement.dataset.oceanTransition;
@@ -630,22 +792,47 @@ export default function GlobalAquarium({
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return undefined;
-    const context = canvas.getContext("2d", { alpha: true, desynchronized: true });
-    if (!context) return undefined;
+    if (!canvas || renderBackend === "pending") return undefined;
+    const workerOwned = renderBackend === "worker" && renderWorkerOwnedRef.current;
+    const transferredToWorker = renderTransferredCanvasRef.current === canvas;
+    // Never ask the DOM canvas for a context after transferControlToOffscreen().
+    // This is an irreversible browser invariant, including during async worker
+    // fallback races. A fresh keyed canvas is mounted before main rendering.
+    if (transferredToWorker && !workerOwned) return undefined;
+    const context = workerOwned ? null : canvas.getContext("2d", { alpha: true, desynchronized: true });
+    if (!workerOwned && !context) return undefined;
     const canvasLease = registerRuntimeResource({ owner: "GlobalAquarium", type: "canvas", label: "ocean-world" });
     const rafLease = registerRuntimeResource({ owner: "GlobalAquarium", type: "raf", label: "ocean-paint-loop" });
 
-    const resize = () => {
-      viewportRef.current = resizeCanvas(canvas, dpr);
+    let resizeFrame = 0;
+    let wakeTimer = 0;
+
+    const applyResize = () => {
+      resizeFrame = 0;
+      if (workerOwned) {
+        const width = Math.max(1, window.innerWidth);
+        const height = Math.max(1, window.innerHeight);
+        viewportRef.current = { width, height, dpr };
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+        renderWorkerRef.current?.postMessage({ type: "resize", viewport: viewportRef.current });
+      } else {
+        viewportRef.current = resizeCanvas(canvas, dpr);
+        context.imageSmoothingEnabled = true;
+        context.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
       canvasLease.update({
-        estimatedBytes: canvas.width * canvas.height * 4,
-        metadata: { width: canvas.width, height: canvas.height, dpr },
+        estimatedBytes: Math.round(viewportRef.current.width * dpr) * Math.round(viewportRef.current.height * dpr) * 4,
+        metadata: { width: viewportRef.current.width, height: viewportRef.current.height, dpr, backend: workerOwned ? "offscreen-worker" : "main" },
       });
     };
-    resize();
-    window.addEventListener("resize", resize, { passive: true });
-    window.visualViewport?.addEventListener("resize", resize, { passive: true });
+    const scheduleResize = () => {
+      if (resizeFrame) return;
+      resizeFrame = window.requestAnimationFrame(applyResize);
+    };
+    applyResize();
+    window.addEventListener("resize", scheduleResize, { passive: true });
+    window.visualViewport?.addEventListener("resize", scheduleResize, { passive: true });
 
     if (!agentsRef.current.length) rebuildPopulation();
 
@@ -655,9 +842,22 @@ export default function GlobalAquarium({
     );
     const minimumFrameMs = 1000 / Math.max(1, targetFps);
 
+    const schedulePaint = (delayMs = 0) => {
+      if (!active || reducedMotion) return;
+      window.clearTimeout(wakeTimer);
+      const request = () => {
+        wakeTimer = 0;
+        if (!active || rafRef.current) return;
+        rafRef.current = window.requestAnimationFrame(paint);
+      };
+      if (delayMs > 4) wakeTimer = window.setTimeout(request, Math.max(0, delayMs - 4));
+      else request();
+    };
+
     const paint = (timestamp) => {
+      rafRef.current = 0;
       if (!reducedMotion && lastFrameRef.current && timestamp - lastFrameRef.current < minimumFrameMs) {
-        if (active) rafRef.current = requestAnimationFrame(paint);
+        schedulePaint(minimumFrameMs - (timestamp - lastFrameRef.current));
         return;
       }
       const previous = lastFrameRef.current || timestamp;
@@ -667,9 +867,7 @@ export default function GlobalAquarium({
       dangerRef.current = Math.max(0, dangerRef.current - delta * 0.72);
 
       const viewport = viewportRef.current;
-      context.setTransform(viewport.dpr, 0, 0, viewport.dpr, 0, 0);
-      context.clearRect(0, 0, viewport.width, viewport.height);
-      context.imageSmoothingEnabled = true;
+      if (!workerOwned) context.clearRect(0, 0, viewport.width, viewport.height);
 
       const profile = BIOME_PROFILES[biomeRef.current] ?? BIOME_PROFILES.surface;
       const transition = transitionRef.current;
@@ -699,42 +897,72 @@ export default function GlobalAquarium({
       }
       if (transitionProgress < 1 && previousAgentsRef.current.length) {
         const previousProfile = BIOME_PROFILES[transition.from] ?? BIOME_PROFILES.surface;
-        for (const agent of previousAgentsRef.current) {
-          drawAgent(context, agent, viewport, elapsedRef.current, previousProfile.visibility * (1 - easedTransition));
+        if (!workerOwned) {
+          for (const agent of previousAgentsRef.current) {
+            drawAgent(context, agent, viewport, elapsedRef.current, previousProfile.visibility * (1 - easedTransition));
+          }
         }
       } else if (previousAgentsRef.current.length) {
         previousAgentsRef.current = [];
+        syncRenderWorkerPopulation();
       }
-      for (const agent of agentsRef.current) {
-        drawAgent(context, agent, viewport, elapsedRef.current, profile.visibility * easedTransition);
+      if (workerOwned && !cinematicRef.current) {
+        const currentCount = agentsRef.current.length;
+        const previousCount = transitionProgress < 1 ? previousAgentsRef.current.length : 0;
+        const neededFloats = Math.max(1, (currentCount + previousCount) * 3);
+        let buffer = renderWorkerBuffersRef.current.pop();
+        if (!buffer || buffer.byteLength < neededFloats * Float32Array.BYTES_PER_ELEMENT) {
+          buffer = new ArrayBuffer(neededFloats * Float32Array.BYTES_PER_ELEMENT);
+        }
+        const state = new Float32Array(buffer, 0, neededFloats);
+        writeAquariumRenderState(state, agentsRef.current, previousCount ? previousAgentsRef.current : []);
+        renderWorkerRef.current?.postMessage({
+          type: "frame",
+          buffer,
+          elapsed: elapsedRef.current,
+          biome: biomeRef.current,
+          previousBiome: transition.from,
+          transitionProgress: easedTransition,
+          currentCount,
+          previousCount,
+          rareEvents: !isMobile && !reducedMotion && runtimeQuality !== "constrained" && runtimeBudget?.rareOceanEvents !== false,
+        }, [buffer]);
+      } else if (!workerOwned && !cinematicRef.current) {
+        for (const agent of agentsRef.current) {
+          drawAgent(context, agent, viewport, elapsedRef.current, profile.visibility * easedTransition);
+        }
+
+        if (!isMobile && !reducedMotion && runtimeQuality !== "constrained" && runtimeBudget?.rareOceanEvents !== false) {
+          drawRareEvent(context, resolveRareOceanEvent(elapsedRef.current), viewport);
+        }
       }
 
-      if (!isMobile && !reducedMotion && runtimeQuality !== "constrained" && runtimeBudget?.rareOceanEvents !== false) {
-        drawRareEvent(context, resolveRareOceanEvent(elapsedRef.current), viewport);
-      }
-
-      if (active && !reducedMotion) rafRef.current = requestAnimationFrame(paint);
+      if (active && !reducedMotion) schedulePaint(minimumFrameMs);
     };
 
     if (active) {
       if (reducedMotion) paint(performance.now());
-      else rafRef.current = requestAnimationFrame(paint);
+      else schedulePaint();
     }
 
     return () => {
+      window.clearTimeout(wakeTimer);
       cancelAnimationFrame(rafRef.current);
+      window.cancelAnimationFrame(resizeFrame);
       lastFrameRef.current = 0;
       rafLease.release();
       canvasLease.release();
-      window.removeEventListener("resize", resize);
-      window.visualViewport?.removeEventListener("resize", resize);
+      window.removeEventListener("resize", scheduleResize);
+      window.visualViewport?.removeEventListener("resize", scheduleResize);
     };
-  }, [active, biome, dpr, isMobile, performanceMode, rebuildPopulation, reducedMotion, runtimeBudget?.aquariumFps, runtimeBudget?.rareOceanEvents, runtimeBudget?.workerSimulation, runtimeQuality]);
+  }, [active, dpr, isMobile, performanceMode, rebuildPopulation, reducedMotion, renderBackend, runtimeBudget?.aquariumFps, runtimeBudget?.rareOceanEvents, runtimeBudget?.workerSimulation, runtimeQuality, syncRenderWorkerPopulation]);
 
   return (
     <div
+      ref={rootRef}
       className={`global-aquarium ocean-world-runtime${paused ? " is-paused" : ""}`}
       data-biome={biome}
+      data-render-backend={renderBackend}
       data-simulation-fps={Math.min(resolveAquariumFps(runtimeQuality, performanceMode, isMobile), Number(runtimeBudget?.aquariumFps || Infinity))}
       aria-hidden="true"
     >
@@ -760,7 +988,7 @@ export default function GlobalAquarium({
           ))}
         </span>
       </div>
-      <canvas ref={canvasRef} className="ocean-world-canvas" />
+      <canvas key={canvasEpoch} ref={canvasRef} className="ocean-world-canvas" />
     </div>
   );
 }

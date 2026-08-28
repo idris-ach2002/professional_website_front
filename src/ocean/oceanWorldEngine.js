@@ -106,7 +106,7 @@ function hashNoise(value) {
  * Shared low-cost current field. Coordinates are normalized 0..1.
  * The same field can be sampled by fish, bubbles and volcano particles.
  */
-export function sampleOceanCurrent(x, y, timeSeconds, biome = OCEAN_BIOMES.SURFACE) {
+export function sampleOceanCurrentInto(target, x, y, timeSeconds, biome = OCEAN_BIOMES.SURFACE) {
   const profile = BIOME_PROFILES[biome] ?? BIOME_PROFILES[OCEAN_BIOMES.SURFACE];
   const t = Number(timeSeconds) || 0;
   const nx = clamp(Number(x) || 0, 0, 1);
@@ -114,10 +114,13 @@ export function sampleOceanCurrent(x, y, timeSeconds, biome = OCEAN_BIOMES.SURFA
   const flowA = Math.sin(t * 0.18 + ny * 5.3 + nx * 1.8);
   const flowB = Math.cos(t * 0.13 + nx * 4.7 - ny * 2.6);
   const swirl = Math.sin(t * 0.09 + (nx + ny) * 7.1);
-  return {
-    x: (flowA * 0.68 + flowB * 0.32) * profile.currentStrength,
-    y: (flowB * 0.16 + swirl * 0.08 + profile.verticalBias) * profile.currentStrength,
-  };
+  target.x = (flowA * 0.68 + flowB * 0.32) * profile.currentStrength;
+  target.y = (flowB * 0.16 + swirl * 0.08 + profile.verticalBias) * profile.currentStrength;
+  return target;
+}
+
+export function sampleOceanCurrent(x, y, timeSeconds, biome = OCEAN_BIOMES.SURFACE) {
+  return sampleOceanCurrentInto({}, x, y, timeSeconds, biome);
 }
 
 export function resolveMarinePopulation(runtimeQuality = "high", performanceMode = "full", mobile = false) {

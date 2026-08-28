@@ -29,9 +29,8 @@
 .timeline-section.is-autonomous-timeline .timeline-straight-line-progress{background:linear-gradient(#a5f3fc,#22d3ee,#0284c7);box-shadow:0 0 16px rgba(34,211,238,.30);transition:transform .24s cubic-bezier(.22,.68,.25,1);will-change:transform;}
 .timeline-autonomous-stage{position:sticky;top:clamp(92px,14vh,152px);z-index:3;width:100%;height:var(--timeline-stage-height);margin-bottom:0;overflow:visible;pointer-events:none;contain:layout style;}
 .timeline-section.is-autonomous-timeline .timeline-list{position:relative;z-index:4;margin-top:calc(var(--timeline-stage-height) * -1);}
-.timeline-section.is-autonomous-timeline .timeline-exploration-drone, .timeline-section.is-autonomous-timeline .timeline-submarine{position:absolute;inset:0 auto auto 0;pointer-events:none;visibility:visible;}
+.timeline-section.is-autonomous-timeline .timeline-exploration-drone{position:absolute;inset:0 auto auto 0;pointer-events:none;visibility:visible;}
 .timeline-section.is-autonomous-timeline .timeline-exploration-drone{z-index:2;opacity:0;}
-.timeline-section.is-autonomous-timeline .timeline-submarine{z-index:1;opacity:0;filter:drop-shadow(0 12px 18px rgba(2,15,27,.20));}
 .timeline-expedition-row{position:relative;min-height:250px;transform-style:flat;}
 .timeline-expedition-row::before{top:50% !important;width:clamp(72px,7vw,110px) !important;height:1px !important;border-radius:0;opacity:.60;animation:none;clip-path:none;}
 .timeline-expedition-row.is-left::before{left:calc(50% - clamp(112px,9vw,154px)) !important;}
@@ -63,7 +62,7 @@
 .timeline-section.is-autonomous-timeline[data-timeline-reveal="playing"] .timeline-row[data-timeline-card-state="revealed"]{opacity:1;transform:none;}
 .timeline-section.is-autonomous-timeline:is([data-timeline-reveal="complete"],[data-timeline-reveal="ready"]) .timeline-row{opacity:1;transform:none;}
 .timeline-exit-sentinel{position:absolute;inset:auto 0 0;height:clamp(160px,22vh,260px);pointer-events:none;}
-.timeline-section.is-autonomous-timeline[data-timeline-exit="approaching"] :is(.timeline-exploration-drone,.timeline-submarine), .timeline-section.is-autonomous-timeline:is([data-timeline-scene="idle"],[data-timeline-scene="sleeping"],[data-timeline-scene="exiting"],[data-timeline-scene="paused"],[data-timeline-scene="static"]) :is(.timeline-exploration-drone,.timeline-submarine){opacity:0 !important;}
+.timeline-section.is-autonomous-timeline[data-timeline-exit="approaching"] .timeline-exploration-drone, .timeline-section.is-autonomous-timeline:is([data-timeline-scene="idle"],[data-timeline-scene="sleeping"],[data-timeline-scene="exiting"],[data-timeline-scene="paused"],[data-timeline-scene="static"]) .timeline-exploration-drone{opacity:0 !important;}
 @media (max-width:980px){.timeline-expedition-row,.timeline-expedition-row.is-left,.timeline-expedition-row.is-right{grid-template-columns:34px minmax(0,1fr);gap:14px;}
 .timeline-expedition-row .timeline-expedition-card{grid-column:2;justify-self:stretch;width:100%;}
 .timeline-section.is-autonomous-timeline .timeline-straight-line{left:16px;}
@@ -74,7 +73,6 @@
 .timeline-section.is-autonomous-timeline .timeline-subsea-track{--timeline-stage-height:min(56vh,520px);}
 .timeline-autonomous-stage{top:clamp(76px,11vh,112px);}
 .timeline-section.is-autonomous-timeline .timeline-exploration-drone{width:clamp(92px,26vw,124px);z-index:2;}
-.timeline-section.is-autonomous-timeline .timeline-submarine{width:clamp(60px,16vw,82px);opacity:.24;}
 .timeline-expedition-topline,.timeline-expedition-footer{gap:12px;}
 .timeline-expedition-date{max-width:46%;}}
 @media (max-width:560px){.timeline-expedition-footer{display:grid;}
@@ -141,7 +139,4 @@
       #00070d 100%);}
 .volcano-field-section{margin-top:-2px;}
 }
-@layer critical{.ocean-map{overflow:visible}.timeline-section.is-autonomous-timeline .section-eyebrow{border-color:rgba(103,232,249,.22)}.timeline-card.timeline-expedition-card{border:1px solid rgba(103,232,249,.18)}.timeline-expedition-row[data-timeline-inspection="approaching"] .timeline-expedition-card{border-color:rgba(103,232,249,.30)}.timeline-expedition-row[data-timeline-inspection="active"] .timeline-expedition-card{border-color:rgba(165,243,252,.42)}.timeline-expedition-card h2{letter-spacing:-.04em}.timeline-expedition-card .skill-badge{border-color:rgba(103,232,249,.20)}.timeline-expedition-card .timeline-category{border-color:rgba(103,232,249,.20)}.timeline-section.is-autonomous-timeline[data-timeline-exit="approaching"] :is(.timeline-exploration-drone,.timeline-submarine), .timeline-section.is-autonomous-timeline:is([data-timeline-scene="idle"],[data-timeline-scene="sleeping"],[data-timeline-scene="exiting"],[data-timeline-scene="paused"],[data-timeline-scene="static"]) :is(.timeline-exploration-drone,.timeline-submarine){visibility:hidden}}
-
-/* Final visual cleanup: keep the inspection drone, hide only the legacy mini-submarine. */
-.timeline-submarine{display:none!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;}
+@layer critical{.ocean-map{overflow:visible}.timeline-section.is-autonomous-timeline .section-eyebrow{border-color:rgba(103,232,249,.22)}.timeline-card.timeline-expedition-card{border:1px solid rgba(103,232,249,.18)}.timeline-expedition-row[data-timeline-inspection="approaching"] .timeline-expedition-card{border-color:rgba(103,232,249,.30)}.timeline-expedition-row[data-timeline-inspection="active"] .timeline-expedition-card{border-color:rgba(165,243,252,.42)}.timeline-expedition-card h2{letter-spacing:-.04em}.timeline-expedition-card .skill-badge{border-color:rgba(103,232,249,.20)}.timeline-expedition-card .timeline-category{border-color:rgba(103,232,249,.20)}.timeline-section.is-autonomous-timeline[data-timeline-exit="approaching"] .timeline-exploration-drone, .timeline-section.is-autonomous-timeline:is([data-timeline-scene="idle"],[data-timeline-scene="sleeping"],[data-timeline-scene="exiting"],[data-timeline-scene="paused"],[data-timeline-scene="static"]) .timeline-exploration-drone{visibility:hidden}}

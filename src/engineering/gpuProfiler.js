@@ -44,14 +44,21 @@ export function getGpuTelemetrySnapshot() {
   };
 }
 
-export function createGpuTimerQuery(gl, source) {
+export function createGpuTimerQuery(gl, source, { minIntervalMs = 0, pollIntervalMs = 80 } = {}) {
   const extension = gl?.getExtension?.("EXT_disjoint_timer_query_webgl2");
   if (!extension || typeof gl.createQuery !== "function") return null;
+  const sampleInterval = Math.max(0, Number(minIntervalMs) || 0);
+  const pollInterval = Math.max(0, Number(pollIntervalMs) || 0);
   let pending = null;
   let active = null;
+  let lastStartedAt = -Infinity;
+  let lastPolledAt = -Infinity;
 
-  const poll = () => {
+  const poll = (force = false) => {
     if (!pending) return;
+    const timestamp = typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
+    if (!force && timestamp - lastPolledAt < pollInterval) return;
+    lastPolledAt = timestamp;
     const available = gl.getQueryParameter(pending, gl.QUERY_RESULT_AVAILABLE);
     const disjoint = gl.getParameter(extension.GPU_DISJOINT_EXT);
     if (!available) return;
@@ -67,8 +74,11 @@ export function createGpuTimerQuery(gl, source) {
     begin() {
       poll();
       if (active || pending) return;
+      const timestamp = typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
+      if (timestamp - lastStartedAt < sampleInterval) return;
       try {
         active = gl.createQuery();
+        lastStartedAt = timestamp;
         gl.beginQuery(extension.TIME_ELAPSED_EXT, active);
       } catch {
         if (active) gl.deleteQuery(active);

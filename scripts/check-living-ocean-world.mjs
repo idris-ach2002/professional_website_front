@@ -141,8 +141,12 @@ if (/ocean-ascent-vehicle|ascent-vehicle-silhouette|oceanVehicleAscent/.test(`${
   errors.push("Ascending project vehicles are forbidden in the final world flow.");
 }
 
-if (!css.includes('html[data-ocean-cinematic] .global-aquarium .ocean-world-canvas')) {
+if (!css.includes('html[data-ocean-cinematic] .global-aquarium .ocean-world-canvas')
+  && !css.includes('.global-aquarium.is-cinematic .ocean-world-canvas')) {
   errors.push("Marine fish must disappear during cinematic hand-offs to preserve suspense.");
+}
+if (css.includes('html:has(.ocean-transition-stage.is-active) .global-aquarium')) {
+  errors.push("Cinematic aquarium masking must remain locally scoped; a document-wide :has() invalidation is forbidden.");
 }
 if (!/background\s*:\s*transparent(?:\s*!important)?/.test(css) || !css.includes('.projects-section[data-project-world="research-station"]')) {
   errors.push("Projects must not reintroduce a dark station card behind the carousel.");

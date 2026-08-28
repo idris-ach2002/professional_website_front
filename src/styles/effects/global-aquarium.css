@@ -12,10 +12,10 @@
     radial-gradient(ellipse at 84% 82%, rgba(127,46,17,.10), transparent 28%);transform:scale3d(.94,.94,1);}
 .ocean-biome-project-light{background:radial-gradient(circle at 76% 22%, rgba(57,189,248,.16), transparent 30%),
     linear-gradient(180deg, transparent 30%, rgba(7,89,133,.16) 76%, rgba(14,116,144,.10));transform:translate3d(0,5%,0);}
-html[data-ocean-biome="deep"] .ocean-biome-haze, html[data-ocean-biome="caldera"] .ocean-biome-haze{opacity:.68;}
-html[data-ocean-biome="caldera"] .ocean-biome-mineral{opacity:.90;transform:scale3d(1,1,1);}
-html[data-ocean-biome="projects"] .ocean-biome-haze{opacity:.24;}
-html[data-ocean-biome="projects"] .ocean-biome-project-light{opacity:.82;}
+.global-aquarium[data-biome="deep"] .ocean-biome-haze, .global-aquarium[data-biome="caldera"] .ocean-biome-haze{opacity:.68;}
+.global-aquarium[data-biome="caldera"] .ocean-biome-mineral{opacity:.90;transform:scale3d(1,1,1);}
+.global-aquarium[data-biome="projects"] .ocean-biome-haze{opacity:.24;}
+.global-aquarium[data-biome="projects"] .ocean-biome-project-light{opacity:.82;}
 .global-aquarium.is-paused .ocean-world-canvas{visibility:hidden;}
 .timeline-exploration-drone{--torch-strength:0;position:absolute;top:0;left:0;z-index:1;width:clamp(172px, 15vw, 236px);opacity:0;pointer-events:none;will-change:transform, opacity;transform:translate3d(0, 0, 0);backface-visibility:hidden;}
 .timeline-exploration-drone-direction{position:relative;width:100%;transform-origin:50% 50%;}
@@ -74,11 +74,11 @@ html[data-ocean-biome="projects"] .ocean-biome-project-light{opacity:.82;}
 .ocean-transition-stage{position:fixed;inset:0;z-index:80;width:100vw;height:100vh;opacity:0;visibility:hidden;pointer-events:none;contain:strict;transform:translateZ(0);}
 .ocean-transition-stage.is-active{opacity:1;visibility:visible;}
 .ocean-biome-surface-light{background:radial-gradient(ellipse at 50% -8%, rgba(221,250,255,.34), transparent 48%);transform:translate3d(0,-5%,0);}
-html[data-ocean-biome="deep"] .ocean-biome-surface-light{opacity:.10;transform:translate3d(0,-10%,0);}
-html[data-ocean-biome="caldera"] .ocean-biome-mineral{opacity:.42;}
-html[data-ocean-biome="projects"] .ocean-biome-project-light{opacity:.38;transform:translate3d(0,0,0);}
-html[data-ocean-biome="outro"] .ocean-biome-project-light{opacity:.12;}
-html[data-ocean-biome="outro"] .ocean-biome-haze{opacity:.24;}
+.global-aquarium[data-biome="deep"] .ocean-biome-surface-light{opacity:.10;transform:translate3d(0,-10%,0);}
+.global-aquarium[data-biome="caldera"] .ocean-biome-mineral{opacity:.42;}
+.global-aquarium[data-biome="projects"] .ocean-biome-project-light{opacity:.38;transform:translate3d(0,0,0);}
+.global-aquarium[data-biome="outro"] .ocean-biome-project-light{opacity:.12;}
+.global-aquarium[data-biome="outro"] .ocean-biome-haze{opacity:.24;}
 .projects-section[data-project-world="research-station"]{position:relative;overflow:hidden;border-block:1px solid rgba(119,224,244,.22);}
 .projects-section[data-project-world="research-station"] > :not(.project-station-decor){position:relative;z-index:3;}
 .project-station-decor{position:absolute;inset:0;z-index:1;overflow:hidden;pointer-events:none;}
@@ -100,15 +100,15 @@ html[data-ocean-biome="outro"] .ocean-biome-haze{opacity:.24;}
 .project-station-window i::after{content:"";position:absolute;left:-22%;top:8%;width:30%;height:84%;clip-path:polygon(100% 50%,0 0,18% 50%,0 100%);background:inherit;}
 .project-station-window b{position:absolute;left:18%;bottom:0;width:68%;height:30%;border-radius:50% 50% 0 0;background:rgba(0,12,20,.62);}
 .project-station-status{position:absolute;right:clamp(80px,9vw,150px);top:clamp(172px,20vw,270px);color:rgba(126,234,249,.48);font:700 clamp(.52rem,.62vw,.7rem)/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.16em;text-shadow:0 0 12px rgba(85,217,239,.25);}
-html[data-ocean-biome="projects"] .projects-section[data-project-world="research-station"]{box-shadow:inset 0 24px 70px rgba(34,211,238,.035),inset 0 -40px 100px rgba(0,0,0,.24);}
+.projects-section[data-project-world="research-station"][data-ocean-biome="projects"]{box-shadow:inset 0 24px 70px rgba(34,211,238,.035),inset 0 -40px 100px rgba(0,0,0,.24);}
 @keyframes stationLightPulse { from{opacity:.35;filter:blur(.3px)} to{opacity:.82;filter:blur(0)} }
 @keyframes stationWindowFish { 0%{transform:translate3d(0,0,0);opacity:0} 12%{opacity:.5} 88%{opacity:.34} 100%{transform:translate3d(360%, -18%,0);opacity:0} }
 .projects-section[data-project-world="research-station"]::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.52;background:radial-gradient(ellipse at 50% 12%,rgba(109,234,248,.11),transparent 28%),
     linear-gradient(90deg,rgba(0,8,15,.42),transparent 17% 83%,rgba(0,8,15,.42));}
 .projects-section[data-project-world="research-station"]::after{content:"";position:absolute;z-index:2;left:-18%;right:-18%;top:clamp(150px,18vw,260px);height:clamp(120px,16vw,220px);pointer-events:none;opacity:.20;background:repeating-linear-gradient(90deg,transparent 0 10%,rgba(103,230,247,.16) 10.05% 10.15%,transparent 10.2% 20%),
     linear-gradient(180deg,rgba(18,72,89,.18),transparent);transform:perspective(760px) rotateX(62deg) translateY(-14%);transform-origin:50% 0;-webkit-mask-image:linear-gradient(90deg,transparent,#000 18% 82%,transparent);mask-image:linear-gradient(90deg,transparent,#000 18% 82%,transparent);}
-html[data-ocean-biome="projects"] .project-station-decor{animation:stationArrivalDepth .78s cubic-bezier(.18,.78,.18,1) both;}
-html[data-ocean-biome="projects"] .projects-section[data-project-world="research-station"]::after{animation:stationDeckReveal .82s cubic-bezier(.18,.78,.18,1) both;}
+.projects-section[data-project-world="research-station"][data-ocean-biome="projects"] .project-station-decor{animation:stationArrivalDepth .78s cubic-bezier(.18,.78,.18,1) both;}
+.projects-section[data-project-world="research-station"][data-ocean-biome="projects"]::after{animation:stationDeckReveal .82s cubic-bezier(.18,.78,.18,1) both;}
 @keyframes stationArrivalDepth {
   from{opacity:.28;transform:scale(1.025)}
   to{opacity:1;transform:scale(1)}
@@ -159,7 +159,7 @@ html[data-ocean-biome="projects"] .projects-section[data-project-world="research
 .treasure-contact{min-height:34px;padding:6px 10px;font-size:.78rem;}}
 @media (prefers-reduced-motion:reduce){.project-station-lightbar,.project-station-window i,.project-station-decor,.projects-section[data-project-world="research-station"]::after,.mine-shaft-light,.mine-dust-overlay,.project-gallery-camera{animation:none !important;}
 .treasure-contact{transition:none;}}
-html[data-ocean-cinematic] .global-aquarium .ocean-world-canvas{opacity:0 !important;}
+.global-aquarium.is-cinematic .ocean-world-canvas{opacity:0 !important;}
 .content-shell{--stack-gap:0px !important;}
 .projects-section[data-project-world="research-station"]{left:50%;width:100vw !important;isolation:isolate;}
 .project-station-decor{left:50% !important;right:auto !important;width:100vw !important;transform:translateX(-50%);opacity:.66;-webkit-mask-image:linear-gradient(180deg, transparent 0%, #000 8%, #000 91%, transparent 100%);mask-image:linear-gradient(180deg, transparent 0%, #000 8%, #000 91%, transparent 100%);}
@@ -184,7 +184,7 @@ html[data-ocean-cinematic] .global-aquarium .ocean-world-canvas{opacity:0 !impor
 .treasure-footer-copy{width:min(520px, 92vw);}
 .mine-shaft-light{left:52%;width:42%;}}
 .project-station-decor{animation:none !important;transform:translateX(-50%) !important;}
-html:has(.ocean-transition-stage.is-active) .global-aquarium .ocean-world-canvas{opacity:0 !important;}
+
 .treasure-mine-base-canvas{z-index:0;}
 .treasure-mine-fx-canvas{z-index:2;pointer-events:none;}
 }
@@ -223,3 +223,13 @@ html:has(.ocean-transition-stage.is-active) .global-aquarium .ocean-world-canvas
     radial-gradient(ellipse at 50% 22%, rgba(69,205,230,.12), transparent 42%);}
 }
 @layer critical{.volcano-field-section{border:0}.projects-section[data-project-world="research-station"]{overflow:visible;border:0}.simple-footer.ocean-outro.treasure-mine-footer{border:0}}
+
+/* Local style containment only; no visual property changes. */
+@layer critical {
+  .projects-section[data-project-world="research-station"],
+  .project-toolbar,
+  .project-slide-card,
+  .gallery-panel {
+    contain: style;
+  }
+}

@@ -19,6 +19,7 @@ const mustStayDeferred = [
   "src/performance/oceanTransitionOffscreenController.js",
   "src/workers/oceanTransitionRender.worker.js",
   "src/workers/volcanoCanvasRender.worker.js",
+  "src/workers/aquariumCanvasRender.worker.js",
   "src/components/Admin.jsx",
   "src/components/AdminVersionPreviewPage.jsx",
   "src/components/CvPage.jsx",

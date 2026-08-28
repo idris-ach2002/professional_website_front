@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { OCEAN_CINEMATIC_DURATIONS_MS } from "../ocean/oceanTransitionTimings";
 import useAnimationPreferences from "../contexts/useAnimationPreferences";
 import { isOceanTransitionEnabled } from "../animations/oceanTransitionPreferences";
+import { setVirtualSceneActivity } from "../performance/sceneRuntimeDirector";
 import {
   clamp01,
   createRockShards,
@@ -84,6 +85,11 @@ export default function OceanTransitionStage({ reducedMotion = false, performanc
   const enabledScene = scene && isOceanTransitionEnabled(transitionPreferences, scene.key) ? scene : null;
 
   useEffect(() => {
+    setVirtualSceneActivity("ocean-transition", Boolean(enabledScene));
+    return () => setVirtualSceneActivity("ocean-transition", false);
+  }, [enabledScene]);
+
+  useEffect(() => {
     if (!scene || enabledScene) return undefined;
     const frameId = window.requestAnimationFrame(() => {
       setScene((current) => current?.token === scene.token ? null : current);
@@ -128,20 +134,28 @@ export default function OceanTransitionStage({ reducedMotion = false, performanc
 
     document.documentElement.dataset.oceanCinematic = enabledScene.key;
 
+    let resizeFrame = 0;
     const resize = () => {
+      resizeFrame = 0;
       const dpr = Math.min(
         window.devicePixelRatio || 1,
         runtimeQuality === "constrained" ? 0.9 : runtimeQuality === "balanced" ? 1.05 : 1.2,
       );
       const viewport = { width: Math.max(1, window.innerWidth), height: Math.max(1, window.innerHeight), dpr };
+      const previous = viewportRef.current;
+      if (previous.width === viewport.width && previous.height === viewport.height && previous.dpr === viewport.dpr) return;
       viewportRef.current = viewport;
       canvas.style.width = `${viewport.width}px`;
       canvas.style.height = `${viewport.height}px`;
       if (useWorker) worker.postMessage({ type: "resize", viewport });
       else viewportRef.current = resizeCanvas(canvas, runtimeQuality);
     };
-    window.addEventListener("resize", resize, { passive: true });
-    window.visualViewport?.addEventListener("resize", resize, { passive: true });
+    const scheduleResize = () => {
+      if (resizeFrame) return;
+      resizeFrame = window.requestAnimationFrame(resize);
+    };
+    window.addEventListener("resize", scheduleResize, { passive: true });
+    window.visualViewport?.addEventListener("resize", scheduleResize, { passive: true });
 
     const paint = (now) => {
       if (disposed) return;
@@ -173,8 +187,9 @@ export default function OceanTransitionStage({ reducedMotion = false, performanc
     return () => {
       disposed = true;
       window.cancelAnimationFrame(rafRef.current);
-      window.removeEventListener("resize", resize);
-      window.visualViewport?.removeEventListener("resize", resize);
+      window.removeEventListener("resize", scheduleResize);
+      window.visualViewport?.removeEventListener("resize", scheduleResize);
+      window.cancelAnimationFrame(resizeFrame);
       if (useWorker) worker.postMessage({ type: "clear", viewport: viewportRef.current });
       if (document.documentElement.dataset.oceanCinematic === enabledScene.key) delete document.documentElement.dataset.oceanCinematic;
     };

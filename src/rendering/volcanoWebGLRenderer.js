@@ -366,37 +366,62 @@ export function createVolcanoWebGLRenderer(canvas) {
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
   const uniforms = uniformLocations(gl, program);
-  const gpuTimer = createGpuTimerQuery(gl, "volcano");
+  const gpuTimer = createGpuTimerQuery(gl, "volcano", { minIntervalMs: 900, pollIntervalMs: 120 });
+  let lastPixelWidth = 0;
+  let lastPixelHeight = 0;
+  let lastCssWidth = "";
+  let lastCssHeight = "";
+  let lastQuality = Number.NaN;
+  const lastDynamicUniforms = new Float64Array(8);
+  lastDynamicUniforms.fill(Number.NaN);
+  gl.clearColor(0, 0, 0, 0);
+
+  const setDynamicUniform = (index, location, value) => {
+    if (lastDynamicUniforms[index] === value) return;
+    gl.uniform1f(location, value);
+    lastDynamicUniforms[index] = value;
+  };
 
   const resize = (width, height, dpr = 1) => {
     const pixelWidth = Math.max(1, Math.round(width * dpr));
     const pixelHeight = Math.max(1, Math.round(height * dpr));
+    const cssWidth = `${width}px`;
+    const cssHeight = `${height}px`;
+    const bitmapChanged = pixelWidth !== lastPixelWidth || pixelHeight !== lastPixelHeight;
     if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
       canvas.width = pixelWidth;
       canvas.height = pixelHeight;
     }
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    gl.viewport(0, 0, pixelWidth, pixelHeight);
-    gl.useProgram(program);
-    gl.uniform2f(uniforms.resolution, pixelWidth, pixelHeight);
+    if (cssWidth !== lastCssWidth) canvas.style.width = cssWidth;
+    if (cssHeight !== lastCssHeight) canvas.style.height = cssHeight;
+    if (bitmapChanged) {
+      lastPixelWidth = pixelWidth;
+      lastPixelHeight = pixelHeight;
+      gl.viewport(0, 0, pixelWidth, pixelHeight);
+      gl.useProgram(program);
+      gl.uniform2f(uniforms.resolution, pixelWidth, pixelHeight);
+    }
+    lastCssWidth = cssWidth;
+    lastCssHeight = cssHeight;
   };
 
   const render = (timeSeconds, profile, quality = 1) => {
     gpuTimer?.begin();
     gl.useProgram(program);
-    gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.uniform1f(uniforms.time, timeSeconds);
-    gl.uniform1f(uniforms.lava, profile?.lava ?? 0.34);
-    gl.uniform1f(uniforms.crater, profile?.crater ?? 0.30);
-    gl.uniform1f(uniforms.eruption, profile?.eruption ?? (profile?.stage === "eruption" ? 1 : 0));
-    gl.uniform1f(uniforms.heat, profile?.heat ?? 0.14);
-    gl.uniform1f(uniforms.waterGlow, profile?.waterGlow ?? 0.10);
-    gl.uniform1f(uniforms.fracture, profile?.fracture ?? 0.18);
-    gl.uniform1f(uniforms.shock, profile?.shock ?? 0);
-    gl.uniform1f(uniforms.canyonLight, profile?.canyonLight ?? 0.18);
-    gl.uniform1f(uniforms.quality, quality);
+    setDynamicUniform(0, uniforms.lava, profile?.lava ?? 0.34);
+    setDynamicUniform(1, uniforms.crater, profile?.crater ?? 0.30);
+    setDynamicUniform(2, uniforms.eruption, profile?.eruption ?? (profile?.stage === "eruption" ? 1 : 0));
+    setDynamicUniform(3, uniforms.heat, profile?.heat ?? 0.14);
+    setDynamicUniform(4, uniforms.waterGlow, profile?.waterGlow ?? 0.10);
+    setDynamicUniform(5, uniforms.fracture, profile?.fracture ?? 0.18);
+    setDynamicUniform(6, uniforms.shock, profile?.shock ?? 0);
+    setDynamicUniform(7, uniforms.canyonLight, profile?.canyonLight ?? 0.18);
+    if (quality !== lastQuality) {
+      gl.uniform1f(uniforms.quality, quality);
+      lastQuality = quality;
+    }
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     gpuTimer?.end();
   };
@@ -405,9 +430,9 @@ export function createVolcanoWebGLRenderer(canvas) {
     gpuTimer?.destroy();
     gl.deleteBuffer(buffer);
     gl.deleteProgram(program);
-    // Do not call WEBGL_lose_context here. Runtime quality/DPR changes can
-    // rebuild resources on the same DOM canvas; explicitly killing the context
-    // makes that canvas intermittently unrecoverable in Chromium/WebKit.
+    // Never force WEBGL_lose_context here. The adaptive runtime can change DPR
+    // or quality while this DOM canvas remains mounted; explicitly killing the
+    // context makes Chromium/WebKit intermittently unable to rebuild it.
   };
 
   return { gl, resize, render, destroy };

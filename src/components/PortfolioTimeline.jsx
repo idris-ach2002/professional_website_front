@@ -7,12 +7,13 @@ import ExplorationDrone from "./ExplorationDrone";
 import TimelineDetailSheet from "./timeline/TimelineDetailSheet";
 import { formatPeriod, slugify } from "../utils/portfolio";
 import useAnimationPreferences from "../contexts/useAnimationPreferences";
+import useOffscreenAnimationClock from "../performance/useOffscreenAnimationClock";
 import { clamp, progressForStep } from "../animations/timelineMotion";
 import {
   createInspectionPilot,
   INSPECTION_PHASES,
   requestInspectionTarget,
-  stepInspectionPilot,
+  stepInspectionPilotInPlace,
 } from "../animations/timelineInspectionEngine";
 import { announceOceanWorldMounted } from "../ocean/oceanWorldRegistration";
 import { useItemVisibility } from "../visibility/useItemVisibility";
@@ -70,6 +71,7 @@ function TimelineCardReef({ variant = 0 }) {
 
 export default function PortfolioTimeline({ timeline, experiences = [], performanceMode = "full" }) {
   const rootRef = useRef(null);
+  useOffscreenAnimationClock(rootRef, { sceneId: "timeline" });
   const detailSheetRef = useRef(null);
   const { isVisible } = useItemVisibility();
   const visibleExperiences = experiences.filter((experience, index) => isVisible(experienceVisibilityKey(experience, index)));
@@ -96,7 +98,6 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
 
     const stage = root.querySelector(".timeline-autonomous-stage");
     const lineProgress = root.querySelector(".timeline-straight-line-progress");
-    const submarine = root.querySelector(".timeline-submarine");
     const explorationDrone = root.querySelector(".timeline-exploration-drone");
     const cards = Array.from(root.querySelectorAll(".timeline-row"));
     const exitSentinel = root.querySelector(".timeline-exit-sentinel");
@@ -125,7 +126,6 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
       revealAllCards();
       clearInspection();
       if (explorationDrone) explorationDrone.style.opacity = "0";
-      if (submarine) submarine.style.opacity = "0";
       return undefined;
     }
 
@@ -164,6 +164,12 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
     let metrics = null;
     let resizeFrame = 0;
     let scrollFrame = 0;
+    let renderedDroneTransform = "";
+    let renderedDroneOpacity = "";
+    let renderedTorchStrength = "";
+    let renderedDroneFacing = "";
+    let renderedDronePhase = "";
+    let renderedTorchState = "";
     let geometryDirty = true;
     let pendingCardSyncForce = false;
     let pendingGeometryMeasure = false;
@@ -294,10 +300,19 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
       stageGeometry.documentTop = stageRect.top + scrollTop;
       stageGeometry.height = stageRect.height;
       for (let index = 0; index < cards.length; index += 1) {
-        const rect = cards[index].getBoundingClientRect();
+        const card = cards[index];
+        const rect = card.getBoundingClientRect();
         const cached = cachedCardGeometry[index];
         cached.documentTop = rect.top + scrollTop;
         cached.height = rect.height;
+        // After the real card height has been measured once, let the browser
+        // skip style/layout/paint for distant card descendants while preserving
+        // the exact measured block size. Visible pixels and scroll geometry stay
+        // unchanged, but large shadows/transparencies no longer paint offscreen.
+        if (rect.height > 0 && "contentVisibility" in card.style) {
+          card.style.contentVisibility = "auto";
+          card.style.setProperty("contain-intrinsic-size", `auto ${Math.ceil(rect.height)}px`);
+        }
       }
       geometryDirty = false;
     };
@@ -446,16 +461,38 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
       const activeMetrics = metrics ?? measure();
 
       if (explorationDrone && !isMobile) {
-        pilot = stepInspectionPilot(pilot, deltaSeconds, { mobile: false });
+        stepInspectionPilotInPlace(pilot, deltaSeconds, { mobile: false });
 
         const x = activeMetrics.sideMargin + activeMetrics.droneRangeX * pilot.x;
         const y = activeMetrics.droneRangeY * pilot.y;
-        explorationDrone.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0)`;
-        explorationDrone.style.opacity = String(pilot.opacity * (performanceMode === "balanced" ? 0.84 : 0.96));
-        explorationDrone.style.setProperty("--torch-strength", pilot.torch.toFixed(3));
-        explorationDrone.dataset.facing = pilot.facing;
-        explorationDrone.dataset.inspectionPhase = pilot.phase;
-        explorationDrone.dataset.torch = pilot.torch > 0.32 ? "on" : "off";
+        const transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0)`;
+        const opacity = String(pilot.opacity * (performanceMode === "balanced" ? 0.84 : 0.96));
+        const torchStrength = pilot.torch.toFixed(3);
+        const torchState = pilot.torch > 0.32 ? "on" : "off";
+        if (renderedDroneTransform !== transform) {
+          renderedDroneTransform = transform;
+          explorationDrone.style.transform = transform;
+        }
+        if (renderedDroneOpacity !== opacity) {
+          renderedDroneOpacity = opacity;
+          explorationDrone.style.opacity = opacity;
+        }
+        if (renderedTorchStrength !== torchStrength) {
+          renderedTorchStrength = torchStrength;
+          explorationDrone.style.setProperty("--torch-strength", torchStrength);
+        }
+        if (renderedDroneFacing !== pilot.facing) {
+          renderedDroneFacing = pilot.facing;
+          explorationDrone.dataset.facing = pilot.facing;
+        }
+        if (renderedDronePhase !== pilot.phase) {
+          renderedDronePhase = pilot.phase;
+          explorationDrone.dataset.inspectionPhase = pilot.phase;
+        }
+        if (renderedTorchState !== torchState) {
+          renderedTorchState = torchState;
+          explorationDrone.dataset.torch = torchState;
+        }
         updateInspectionUI();
       }
 
@@ -466,7 +503,6 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
       if (frame || !sceneInRange || exitZoneActive || !pageVisible || !autonomousEnabled) return;
       lastTimestamp = 0;
       root.dataset.timelineScene = "active";
-      if (submarine) submarine.style.opacity = isMobile ? "0.68" : "0.58";
       frame = window.requestAnimationFrame(renderFrame);
     };
 
@@ -526,7 +562,6 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
             explorationDrone.style.opacity = "0";
             explorationDrone.style.setProperty("--torch-strength", "0");
           }
-          if (submarine) submarine.style.opacity = "0";
           stopLoop("idle");
         }
       },
@@ -590,7 +625,6 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
               explorationDrone.style.setProperty("--torch-strength", "0");
               explorationDrone.dataset.torch = "off";
             }
-            if (submarine) submarine.style.opacity = "0";
             stopLoop("exiting");
           }, 420);
           return;
@@ -604,7 +638,6 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
           explorationDrone.style.setProperty("--torch-strength", "0");
           explorationDrone.dataset.torch = "off";
         }
-        if (submarine) submarine.style.opacity = "0";
         stopLoop("exiting");
       },
       { root: null, rootMargin: "0px 0px -14% 0px", threshold: [0, 0.01] },
@@ -612,10 +645,10 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
 
     const cardObserver = new IntersectionObserver(
       (entries) => {
+        syncTravelDirectionFromScroll();
         entries.forEach((entry) => {
           const index = Number(entry.target.dataset.timelineCardIndex);
           const cardTop = Number(entry.boundingClientRect?.top);
-          syncTravelDirectionFromScroll();
           if (travelDirection === "up" && (exitZoneActive || terminalExitPending)) {
             rearmInspectionFromBelow();
           }
@@ -688,6 +721,8 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
       cards.forEach((card) => {
         delete card.dataset.timelineCardState;
         delete card.dataset.timelineInspection;
+        card.style.removeProperty("content-visibility");
+        card.style.removeProperty("contain-intrinsic-size");
       });
     };
   }, [autonomousEnabled, compactTimeline, visibleExperiences.length, performanceMode, animationsPaused]);
@@ -732,13 +767,6 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
 
             <div className="timeline-autonomous-stage" aria-hidden="true">
               <ExplorationDrone />
-              <img
-                src="/assets/ocean/submarine-scroll.svg"
-                alt=""
-                aria-hidden="true"
-                className="timeline-submarine"
-                loading="lazy"
-              />
             </div>
 
             <div className="timeline-list">

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 import useAnimationPreferences from "../../contexts/useAnimationPreferences";
 import SignatureWordmarkSvg from "./SignatureWordmarkSvg";
 
@@ -739,7 +739,7 @@ function resolveQuality(performanceMode, canMove) {
   return "full";
 }
 
-export default function SignatureCanvas({ name = "IDRIS" }) {
+function SignatureCanvas({ name = "IDRIS" }) {
   const hostRef = useRef(null);
   const canvasRef = useRef(null);
   const particles = useMemo(() => createParticleField(), []);
@@ -769,8 +769,15 @@ export default function SignatureCanvas({ name = "IDRIS" }) {
       start: performance.now(),
       lastFrame: 0,
       frame: 0,
+      wakeTimer: 0,
+      resizeFrame: 0,
       width: 252,
       height: 62,
+      left: 0,
+      top: 0,
+      readyPublished: false,
+      renderedQuality: "",
+      renderedEvent: "",
     };
 
     const resize = () => {
@@ -780,13 +787,25 @@ export default function SignatureCanvas({ name = "IDRIS" }) {
       const quality = currentQuality();
       const qualityDprCap = quality === "full" ? MAX_DPR : quality === "balanced" ? 1.5 : 1.25;
       const dpr = Math.min(window.devicePixelRatio || 1, qualityDprCap);
-      canvas.width = Math.round(width * dpr);
-      canvas.height = Math.round(height * dpr);
+      const pixelWidth = Math.round(width * dpr);
+      const pixelHeight = Math.round(height * dpr);
+      if (canvas.width !== pixelWidth) canvas.width = pixelWidth;
+      if (canvas.height !== pixelHeight) canvas.height = pixelHeight;
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       interaction.width = width;
       interaction.height = height;
+      interaction.left = rect.left;
+      interaction.top = rect.top;
+    };
+
+    const scheduleResize = () => {
+      if (interaction.resizeFrame) return;
+      interaction.resizeFrame = window.requestAnimationFrame(() => {
+        interaction.resizeFrame = 0;
+        resize();
+      });
     };
 
     const renderFrame = (time, reveal = 1) => {
@@ -802,9 +821,18 @@ export default function SignatureCanvas({ name = "IDRIS" }) {
         time,
         quality,
       });
-      host.dataset.canvasReady = "true";
-      host.dataset.signatureQuality = quality;
-      host.dataset.signatureEvent = specialEvent.mode;
+      if (!interaction.readyPublished) {
+        interaction.readyPublished = true;
+        host.dataset.canvasReady = "true";
+      }
+      if (interaction.renderedQuality !== quality) {
+        interaction.renderedQuality = quality;
+        host.dataset.signatureQuality = quality;
+      }
+      if (interaction.renderedEvent !== specialEvent.mode) {
+        interaction.renderedEvent = specialEvent.mode;
+        host.dataset.signatureEvent = specialEvent.mode;
+      }
     };
 
     const renderStatic = () => {
@@ -812,11 +840,29 @@ export default function SignatureCanvas({ name = "IDRIS" }) {
       renderFrame(INTRO_DURATION_MS + FEATHER_CYCLE_MS * 0.38, 1);
     };
 
+    const clearWakeTimer = () => {
+      if (!interaction.wakeTimer) return;
+      window.clearTimeout(interaction.wakeTimer);
+      interaction.wakeTimer = 0;
+    };
+
+    const scheduleAnimation = (delayMs = 0) => {
+      if (currentQuality() === "static" || document.visibilityState === "hidden") return;
+      clearWakeTimer();
+      const request = () => {
+        interaction.wakeTimer = 0;
+        if (interaction.frame || document.visibilityState === "hidden") return;
+        interaction.frame = window.requestAnimationFrame(animate);
+      };
+      if (delayMs > 4) interaction.wakeTimer = window.setTimeout(request, Math.max(0, delayMs - 4));
+      else request();
+    };
+
     const animate = (now) => {
+      interaction.frame = 0;
       const quality = currentQuality();
       if (quality === "static" || document.visibilityState === "hidden") {
         renderStatic();
-        interaction.frame = 0;
         return;
       }
 
@@ -834,24 +880,35 @@ export default function SignatureCanvas({ name = "IDRIS" }) {
         ? (quality === "full" ? ACTIVE_FRAME_RATE_FULL : ACTIVE_FRAME_RATE_BALANCED)
         : (quality === "full" ? REST_FRAME_RATE_FULL : REST_FRAME_RATE_BALANCED);
       const frameInterval = 1000 / targetFrameRate;
-      if (now - interaction.lastFrame >= frameInterval) {
+      const elapsedSincePaint = now - interaction.lastFrame;
+      if (!interaction.lastFrame || elapsedSincePaint >= frameInterval) {
         interaction.lastFrame = now;
         renderFrame(elapsed, introReveal);
+        scheduleAnimation(frameInterval);
+      } else {
+        scheduleAnimation(frameInterval - elapsedSincePaint);
       }
+    };
 
-      interaction.frame = window.requestAnimationFrame(animate);
+    const wakeForInteraction = () => {
+      if (currentQuality() === "static" || document.visibilityState === "hidden") return;
+      clearWakeTimer();
+      if (!interaction.frame) interaction.frame = window.requestAnimationFrame(animate);
     };
 
     const onPointerEnter = () => {
       if (currentQuality() === "static") return;
+      const rect = host.getBoundingClientRect();
+      interaction.left = rect.left;
+      interaction.top = rect.top;
       interaction.hoverTarget = 1;
+      wakeForInteraction();
     };
 
     const onPointerMove = (event) => {
       if (currentQuality() === "static") return;
-      const rect = host.getBoundingClientRect();
-      interaction.pointerX = clamp((event.clientX - rect.left) / Math.max(1, rect.width), 0, 1);
-      interaction.pointerY = clamp((event.clientY - rect.top) / Math.max(1, rect.height), 0, 1);
+      interaction.pointerX = clamp((event.clientX - interaction.left) / Math.max(1, interaction.width), 0, 1);
+      interaction.pointerY = clamp((event.clientY - interaction.top) / Math.max(1, interaction.height), 0, 1);
       const featherCenterX = 0.23;
       const featherCenterY = 0.50;
       const dx = interaction.pointerX - featherCenterX;
@@ -859,16 +916,19 @@ export default function SignatureCanvas({ name = "IDRIS" }) {
       const distance = Math.hypot(dx * 1.35, dy);
       const proximity = 1 - clamp(distance / 0.64, 0, 1);
       interaction.pointerPressureTarget = clamp((interaction.pointerX - featherCenterX) * proximity * 1.6, -1, 1);
+      wakeForInteraction();
     };
 
     const onPointerLeave = () => {
       interaction.hoverTarget = 0;
       interaction.pointerPressureTarget = 0;
+      wakeForInteraction();
     };
 
     const restartAnimationIfNeeded = () => {
       const quality = currentQuality();
       if (quality === "static") {
+        clearWakeTimer();
         if (interaction.frame) window.cancelAnimationFrame(interaction.frame);
         interaction.frame = 0;
         interaction.hover = 0;
@@ -881,12 +941,14 @@ export default function SignatureCanvas({ name = "IDRIS" }) {
 
       if (document.visibilityState === "visible" && !interaction.frame) {
         interaction.start = performance.now() - INTRO_DURATION_MS;
-        interaction.frame = window.requestAnimationFrame(animate);
+        interaction.lastFrame = 0;
+        scheduleAnimation();
       }
     };
 
     const onVisibilityChange = () => {
       if (document.visibilityState === "hidden") {
+        clearWakeTimer();
         if (interaction.frame) window.cancelAnimationFrame(interaction.frame);
         interaction.frame = 0;
         return;
@@ -894,7 +956,7 @@ export default function SignatureCanvas({ name = "IDRIS" }) {
       restartAnimationIfNeeded();
     };
 
-    const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => resize()) : null;
+    const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(scheduleResize) : null;
     resizeObserver?.observe(host);
     host.addEventListener("pointerenter", onPointerEnter, { passive: true });
     host.addEventListener("pointermove", onPointerMove, { passive: true });
@@ -904,7 +966,7 @@ export default function SignatureCanvas({ name = "IDRIS" }) {
 
     resize();
     if (currentQuality() === "static") renderStatic();
-    else interaction.frame = window.requestAnimationFrame(animate);
+    else scheduleAnimation();
 
     return () => {
       resizeObserver?.disconnect();
@@ -913,7 +975,9 @@ export default function SignatureCanvas({ name = "IDRIS" }) {
       host.removeEventListener("pointerleave", onPointerLeave);
       document.removeEventListener("visibilitychange", onVisibilityChange);
       reducedMotionMedia.removeEventListener?.("change", restartAnimationIfNeeded);
+      clearWakeTimer();
       if (interaction.frame) window.cancelAnimationFrame(interaction.frame);
+      if (interaction.resizeFrame) window.cancelAnimationFrame(interaction.resizeFrame);
       delete host.dataset.canvasReady;
       delete host.dataset.signatureQuality;
       delete host.dataset.signatureEvent;
@@ -927,3 +991,5 @@ export default function SignatureCanvas({ name = "IDRIS" }) {
     </span>
   );
 }
+
+export default memo(SignatureCanvas);

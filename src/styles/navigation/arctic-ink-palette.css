@@ -1,6 +1,6 @@
 @layer base, priority, critical;
 @layer priority {
-  .nav_fixed.nav_fixed--portfolio {
+  .nv.nv {
     --arctic-nav-ink: 24 54 82;
     --arctic-nav-blue: 48 105 151;
     --arctic-nav-steel: 105 143 174;
@@ -9,40 +9,33 @@
   }
 
   @media (min-width: 1241px) {
-    .nav_fixed.nav_fixed--portfolio .nav_container-v2 {
-      border-color: rgb(var(--arctic-nav-steel) / .30);
-      background:
-        radial-gradient(280px 84px at 14% -8%, rgb(255 255 255 / .80), transparent 72%),
-        linear-gradient(180deg, rgb(var(--arctic-nav-pearl) / .76), rgb(var(--arctic-nav-frost) / .56));
-      box-shadow: inset 0 1px 0 rgb(255 255 255 / .88), 0 16px 42px rgb(19 61 95 / .09);
-    }
 
-    .nav_fixed.nav_fixed--portfolio .dropdown1_toggle.v2,
-    .nav_fixed.nav_fixed--portfolio .nav_direct-link,
-    .nav_fixed.nav_fixed--portfolio .nav-command-trigger {
+    .nv.nv .dropdown1_toggle.v2,
+    .nv.nv .nav_direct-link,
+    .nv.nv .nav-command-trigger {
       color: rgb(var(--arctic-nav-ink));
     }
 
-    .nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2.is-section-active .dropdown1_toggle.v2 {
+    .nv.nv .nav_menu-dropdown-toggle-v2.is-section-active .dropdown1_toggle.v2 {
       color: rgb(var(--arctic-nav-ink));
       border-color: rgb(var(--arctic-nav-blue) / .30);
       background: linear-gradient(180deg, rgb(255 255 255 / .58), rgb(var(--arctic-nav-frost) / .42));
     }
 
-    .nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2.is-section-active .dropdown1_toggle.v2::after,
-    .nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2.is-open .dropdown1_toggle.v2::after {
+    .nv.nv .nav_menu-dropdown-toggle-v2.is-section-active .dropdown1_toggle.v2::after,
+    .nv.nv .nav_menu-dropdown-toggle-v2.is-open .dropdown1_toggle.v2::after {
       background: linear-gradient(90deg, transparent, rgb(var(--arctic-nav-blue) / .74) 20% 80%, transparent) !important;
       box-shadow: 0 0 10px rgb(var(--arctic-nav-blue) / .16);
     }
 
-    .nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2.is-section-active .nav_primary-icon,
-    .nav_fixed.nav_fixed--portfolio .nav_menu-dropdown-toggle-v2.is-open .nav_primary-icon {
+    .nv.nv .nav_menu-dropdown-toggle-v2.is-section-active .nav_primary-icon,
+    .nv.nv .nav_menu-dropdown-toggle-v2.is-open .nav_primary-icon {
       color: rgb(var(--arctic-nav-blue));
     }
   }
 
   @media (max-width: 1240px), (hover: none) and (pointer: coarse) and (max-width: 1366px) {
-    .nav_fixed.nav_fixed--portfolio.is-mobile-dock-mode .nav_mobile-dock {
+    .nv.nv.is-mobile-dock-mode .nav_mobile-dock {
       border-color: rgb(var(--arctic-nav-steel) / .30);
       background: linear-gradient(180deg, rgb(var(--arctic-nav-pearl) / .84), rgb(var(--arctic-nav-frost) / .72));
       box-shadow: inset 0 1px 0 rgb(255 255 255 / .92), 0 14px 34px rgb(19 61 95 / .12);
@@ -68,12 +61,12 @@
 
 @layer priority {
   @media (min-width: 1241px) {
-    .nav_fixed.nav_fixed--portfolio .nav_signature-fallback,
-    .nav_fixed.nav_fixed--portfolio .nav_personal-logo {
+    .nv.nv .nav_signature-fallback,
+    .nv.nv .nav_personal-logo {
       filter: saturate(.55) hue-rotate(165deg) brightness(1.08) drop-shadow(0 4px 10px rgb(24 54 82 / .10)) !important;
     }
 
-    .nav_fixed.nav_fixed--portfolio .nav-signature-wordmark-fallback {
+    .nv.nv .nav-signature-wordmark-fallback {
       fill: rgb(var(--arctic-nav-ink)) !important;
     }
   }
@@ -82,12 +75,12 @@
 /* Arctic Ink — floating signature identity: artwork only, no capsule. */
 @layer priority {
   @media (min-width: 1241px) {
-    .nav_fixed.nav_fixed--portfolio .nav_container-v2 {
+    .nv.nv .nav_container-v2 {
       grid-template-columns: clamp(150px, 11.8vw, 188px) minmax(0, 1fr) auto !important;
       gap: clamp(10px, 1.1vw, 18px) !important;
     }
 
-    .nav_fixed.nav_fixed--portfolio .nav_brand.nav_brand--arctic-signature {
+    .nv.nv .nav_brand.nav_brand--arctic-signature {
       position: relative !important;
       display: flex !important;
       align-items: center !important;
@@ -107,13 +100,13 @@
       text-decoration: none !important;
     }
 
-    .nav_fixed.nav_fixed--portfolio .nav_brand.nav_brand--arctic-signature::before,
-    .nav_fixed.nav_fixed--portfolio .nav_brand.nav_brand--arctic-signature::after {
+    .nv.nv .nav_brand.nav_brand--arctic-signature::before,
+    .nv.nv .nav_brand.nav_brand--arctic-signature::after {
       display: none !important;
       content: none !important;
     }
 
-    .nav_fixed.nav_fixed--portfolio .nav_brand--arctic-signature .nav_signature {
+    .nv.nv .nav_brand--arctic-signature .nav_signature {
       width: 100% !important;
       height: 58px !important;
       overflow: visible !important;
@@ -121,30 +114,30 @@
       filter: drop-shadow(0 5px 12px rgb(var(--arctic-nav-ink) / .08));
     }
 
-    .nav_fixed.nav_fixed--portfolio .nav_brand--arctic-signature .nav_signature-canvas,
-    .nav_fixed.nav_fixed--portfolio .nav_brand--arctic-signature .nav_signature-fallback,
-    .nav_fixed.nav_fixed--portfolio .nav_brand--arctic-signature .nav-signature-wordmark {
+    .nv.nv .nav_brand--arctic-signature .nav_signature-canvas,
+    .nv.nv .nav_brand--arctic-signature .nav_signature-fallback,
+    .nv.nv .nav_brand--arctic-signature .nav-signature-wordmark {
       width: 100% !important;
       height: 100% !important;
     }
 
-    .nav_fixed.nav_fixed--portfolio .nav_brand--arctic-signature .nav_signature-fallback,
-    .nav_fixed.nav_fixed--portfolio .nav_brand--arctic-signature .nav_personal-logo {
+    .nv.nv .nav_brand--arctic-signature .nav_signature-fallback,
+    .nv.nv .nav_brand--arctic-signature .nav_personal-logo {
       filter: saturate(.48) hue-rotate(170deg) brightness(1.06) contrast(.96) drop-shadow(0 4px 10px rgb(var(--arctic-nav-ink) / .08)) !important;
     }
 
-    .nav_fixed.nav_fixed--portfolio .nav_brand--arctic-signature .nav-signature-wordmark-fallback {
+    .nv.nv .nav_brand--arctic-signature .nav-signature-wordmark-fallback {
       fill: rgb(var(--arctic-nav-ink)) !important;
     }
 
-    .nav_fixed.nav_fixed--portfolio .nav_brand--arctic-signature:hover,
-    .nav_fixed.nav_fixed--portfolio .nav_brand--arctic-signature:focus-visible {
+    .nv.nv .nav_brand--arctic-signature:hover,
+    .nv.nv .nav_brand--arctic-signature:focus-visible {
       background: transparent !important;
       box-shadow: none !important;
       filter: none !important;
     }
 
-    .nav_fixed.nav_fixed--portfolio .nav_brand--arctic-signature:focus-visible {
+    .nv.nv .nav_brand--arctic-signature:focus-visible {
       outline: 2px solid rgb(var(--arctic-nav-blue) / .34) !important;
       outline-offset: 4px !important;
       border-radius: 8px !important;
@@ -152,12 +145,12 @@
   }
 
   @media (min-width: 1241px) and (max-width: 1390px) {
-    .nav_fixed.nav_fixed--portfolio .nav_container-v2 {
+    .nv.nv .nav_container-v2 {
       grid-template-columns: 132px minmax(0, 1fr) auto !important;
       gap: 7px !important;
     }
 
-    .nav_fixed.nav_fixed--portfolio .nav_brand--arctic-signature .nav_signature {
+    .nv.nv .nav_brand--arctic-signature .nav_signature {
       height: 54px !important;
     }
   }
@@ -168,14 +161,14 @@
 @layer priority {
   @media (min-width: 1241px) {
     /* Le fond Arctic Ink ne doit plus couvrir la zone plume + IDRIS */
-    .nav_fixed.nav_fixed--portfolio .nav_container-v2 {
+    .nv.nv .nav_container-v2 {
       background: transparent !important;
       box-shadow: none !important;
       border-color: transparent !important;
     }
 
     /* On garde la plaque glass seulement derrière menu + actions */
-    .nav_fixed.nav_fixed--portfolio .nav_container-v2::before {
+    .nv.nv .nav_container-v2::before {
       left: calc(clamp(190px, 14vw, 224px) + clamp(16px, 1.5vw, 26px)) !important;
       right: 0 !important;
       top: 50% !important;
@@ -184,28 +177,28 @@
       border-radius: 0 !important;
     }
 
-    .nav_fixed.nav_fixed--portfolio .nav_container-v2::after {
+    .nv.nv .nav_container-v2::after {
       display: none !important;
     }
 
     /* Zone signature réellement transparente */
-    .nav_fixed.nav_fixed--portfolio .nav_brand.nav_island--brand,
-    .nav_fixed.nav_fixed--portfolio .nav_signature,
-    .nav_fixed.nav_fixed--portfolio .nav_signature-canvas,
-    .nav_fixed.nav_fixed--portfolio .nav_signature-fallback {
+    .nv.nv .nav_brand.nav_island--brand,
+    .nv.nv .nav_signature,
+    .nv.nv .nav_signature-canvas,
+    .nv.nv .nav_signature-fallback {
       background: transparent !important;
       box-shadow: none !important;
       backdrop-filter: none !important;
       -webkit-backdrop-filter: none !important;
     }
 
-    .nav_fixed.nav_fixed--portfolio .nav_brand.nav_island--brand::before,
-    .nav_fixed.nav_fixed--portfolio .nav_brand.nav_island--brand::after {
+    .nv.nv .nav_brand.nav_island--brand::before,
+    .nv.nv .nav_brand.nav_island--brand::after {
       display: none !important;
     }
 
     /* On s'assure que plume + IDRIS flottent bien sur le fond de la page */
-    .nav_fixed.nav_fixed--portfolio .nav_signature {
+    .nv.nv .nav_signature {
       isolation: isolate !important;
       overflow: visible !important;
     }
@@ -216,8 +209,8 @@
 /* FIX: arctic signature fully transparent and fallback removed */
 @layer priority {
   @media (min-width: 1241px) {
-    .nav_fixed.nav_fixed--portfolio .nav_brand.nav_island--brand,
-    .nav_fixed.nav_fixed--portfolio .nav_signature {
+    .nv.nv .nav_brand.nav_island--brand,
+    .nv.nv .nav_signature {
       background: transparent !important;
       box-shadow: none !important;
       border-color: transparent !important;
@@ -225,15 +218,15 @@
       -webkit-backdrop-filter: none !important;
     }
 
-    .nav_fixed.nav_fixed--portfolio .nav_brand.nav_island--brand::before,
-    .nav_fixed.nav_fixed--portfolio .nav_brand.nav_island--brand::after,
-    .nav_fixed.nav_fixed--portfolio .nav_signature::before,
-    .nav_fixed.nav_fixed--portfolio .nav_signature::after {
+    .nv.nv .nav_brand.nav_island--brand::before,
+    .nv.nv .nav_brand.nav_island--brand::after,
+    .nv.nv .nav_signature::before,
+    .nv.nv .nav_signature::after {
       display: none !important;
       content: none !important;
     }
 
-    .nav_fixed.nav_fixed--portfolio .nav_signature-fallback {
+    .nv.nv .nav_signature-fallback {
       display: none !important;
       opacity: 0 !important;
       visibility: hidden !important;
@@ -245,9 +238,9 @@
 /* FINAL: Arctic Ink signature transparency */
 @layer priority {
   @media (min-width: 1241px) {
-    .nav_fixed.nav_fixed--portfolio .nav_brand.nav_island--brand,
-    .nav_fixed.nav_fixed--portfolio .nav_signature,
-    .nav_fixed.nav_fixed--portfolio .nav_signature-canvas {
+    .nv.nv .nav_brand.nav_island--brand,
+    .nv.nv .nav_signature,
+    .nv.nv .nav_signature-canvas {
       background: transparent !important;
       border-color: transparent !important;
       box-shadow: none !important;
@@ -255,13 +248,74 @@
       -webkit-backdrop-filter: none !important;
     }
 
-    .nav_fixed.nav_fixed--portfolio .nav_brand.nav_island--brand::before,
-    .nav_fixed.nav_fixed--portfolio .nav_brand.nav_island--brand::after,
-    .nav_fixed.nav_fixed--portfolio .nav_signature::before,
-    .nav_fixed.nav_fixed--portfolio .nav_signature::after,
-    .nav_fixed.nav_fixed--portfolio .nav_signature-fallback {
+    .nv.nv .nav_brand.nav_island--brand::before,
+    .nv.nv .nav_brand.nav_island--brand::after,
+    .nv.nv .nav_signature::before,
+    .nv.nv .nav_signature::after,
+    .nv.nv .nav_signature-fallback {
       display: none !important;
     }
   }
 }
 
+/* Runtime isolation: same pixels, smaller style-invalidation scope. */
+@layer critical {
+  .nv.nv {
+    contain: style;
+  }
+
+  @media (min-width: 1241px) {
+    .nv.nv .nav_component,
+    .nv.nv .nav_container-v2,
+    .nv.nv .nav_menu.v2.nav_island--core,
+    .nv.nv .nav-command-utilities.nav_island--actions,
+    .nv.nv .dropdown-list-v2,
+    .nv.nv .nav-command-panel {
+      contain: style;
+    }
+  }
+}
+
+/* Phase 3 exact-visual runtime isolation.
+   Closed desktop menus keep their normal exit transition, then their invisible
+   subtree is skipped entirely until the next open. No visible declaration is
+   changed. */
+@layer critical {
+  @media (min-width: 1241px) {
+    .nv.nv .nav_menu-dropdown-toggle-v2,
+    .nv.nv .dropdown1_toggle.v2,
+    .nv.nv .nav-command-trigger,
+    .nv.nv .nav-command-cv {
+      contain: style;
+    }
+
+    @supports (content-visibility: hidden) {
+      .nv.nv .nav_menu-dropdown-toggle-v2.is-dormant .dropdown-list-v2 {
+        content-visibility: hidden;
+        contain-intrinsic-size: 420px 360px;
+      }
+    }
+  }
+}
+
+/* Pre-volcano zero-lag checkpoint: compositing hints only. These declarations
+   do not change colors, blur radii, opacity, geometry or animation timing. */
+@layer critical {
+  @media (min-width: 1241px) {
+    @supports (will-change: backdrop-filter) {
+      .nv.nv .nav_menu.v2.nav_island--core,
+      .nv.nv .nav-command-utilities.nav_island--actions {
+        will-change: backdrop-filter;
+      }
+
+      .nv.nv .nav_menu-dropdown-toggle-v2.is-open .dropdown-inside-wrap,
+      .nv.nv .nav-command-panel {
+        will-change: opacity, transform, backdrop-filter;
+      }
+
+      .nv.nv .nav_menu-dropdown-toggle-v2.is-dormant .dropdown-inside-wrap {
+        will-change: auto;
+      }
+    }
+  }
+}

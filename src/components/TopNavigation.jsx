@@ -1,6 +1,7 @@
 import {
   Suspense,
   lazy,
+  memo,
   useEffect,
   useMemo,
   useRef,
@@ -289,7 +290,7 @@ function resolveSectionHref(href, isHomePath, localizedPath) {
   return isHomePath ? href : localizedPath(`/${href}`);
 }
 
-function MegaMenuItem({ item, isHomePath, profile, owner, localizedPath, onNavigate }) {
+const MegaMenuItem = memo(function MegaMenuItem({ item, isHomePath, profile, owner, localizedPath, onNavigate }) {
   const href = resolveItemHref(item, { isHomePath, profile, owner, localizedPath });
   const isExternal = href?.startsWith("http") || href?.startsWith("mailto:") || href?.startsWith("tel:");
 
@@ -314,20 +315,32 @@ function MegaMenuItem({ item, isHomePath, profile, owner, localizedPath, onNavig
       </span>
     </a>
   );
-}
+});
 
-function DesktopDropdown({ group, active, setActive, isHomePath, owner, profile, localizedPath, sectionActive }) {
-  const open = active === group.label;
-  const className = `nav_menu-dropdown-toggle-v2 w-dropdown ${group.layout ?? "single"}${open ? " is-open" : ""}${sectionActive ? " is-section-active" : ""}`;
+const DesktopDropdown = memo(function DesktopDropdown({ group, open, setActive, isHomePath, owner, profile, localizedPath, sectionActive }) {
+  const [dormant, setDormant] = useState(() => !open);
+
+  useEffect(() => {
+    if (open) return undefined;
+    const timer = window.setTimeout(() => setDormant(true), 280);
+    return () => window.clearTimeout(timer);
+  }, [open]);
+  const className = `nav_menu-dropdown-toggle-v2 w-dropdown ${group.layout ?? "single"}${open ? " is-open" : ""}${sectionActive ? " is-section-active" : ""}${!open && dormant ? " is-dormant" : ""}`;
 
   return (
     <div
       data-delay="200"
       data-hover="true"
       className={className}
-      onMouseEnter={() => setActive(group.label)}
+      onMouseEnter={() => {
+        setDormant(false);
+        setActive(group.label);
+      }}
       onMouseLeave={() => setActive(null)}
-      onFocus={() => setActive(group.label)}
+      onFocus={() => {
+        setDormant(false);
+        setActive(group.label);
+      }}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) {
           setActive(null);
@@ -374,7 +387,7 @@ function DesktopDropdown({ group, active, setActive, isHomePath, owner, profile,
       </nav>
     </div>
   );
-}
+});
 
 function MobileSheetHeader({ icon, title, eyebrow, onClose, actionHref, onAction }) {
   return (
@@ -628,7 +641,7 @@ function MobileBottomNavigation({
   );
 }
 
-export default function TopNavigation({ owner }) {
+function TopNavigation({ owner }) {
   const mobileDockNavigation = useNavigationMedia(MOBILE_DOCK_QUERY);
   const { isVisible } = useItemVisibility();
   const { language, localizedPath, setLanguage, t } = useLanguage();
@@ -749,7 +762,7 @@ export default function TopNavigation({ owner }) {
 
 
   return (
-    <div className={`nav_fixed nav_fixed--portfolio${mobileDockNavigation ? " is-mobile-dock-mode" : ""}`}>
+    <div className={`nv nav_fixed nav_fixed--portfolio${mobileDockNavigation ? " is-mobile-dock-mode" : ""}`}>
       {!mobileDockNavigation && <div className="nav_spacer v2 hide" />}
       {!mobileDockNavigation && <div data-wf--navbar--variant="base" data-animation="default" data-collapse="medium" data-duration="400" data-easing="ease" data-easing2="ease" role="banner" className="nav_component w-nav" ref={desktopShellRef}>
         <div className="nav_container-v2">
@@ -771,7 +784,7 @@ export default function TopNavigation({ owner }) {
                 <DesktopDropdown
                   key={group.label}
                   group={group}
-                  active={active}
+                  open={active === group.label}
                   setActive={setActive}
                   isHomePath={isHomePath}
                   owner={owner}
@@ -820,3 +833,5 @@ export default function TopNavigation({ owner }) {
     </div>
   );
 }
+
+export default memo(TopNavigation);

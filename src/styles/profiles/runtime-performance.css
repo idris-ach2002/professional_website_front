@@ -7,3 +7,45 @@ html[data-runtime-quality="constrained"] .ocean-glow{filter:none !important;}
 @layer priority {
 html[data-runtime-quality="constrained"] :is( .nav_component, .nav_mobile_component, .project-toolbar, .project-toolbar-sticky, .project-detail-modal-content, .project-detail-modal-overlay, .proven-skill-detail-card, .owner-select, .status-banner, .site-footer ){-webkit-backdrop-filter:none;backdrop-filter:none;}
 }
+
+/* Exact-visual isolation for expensive public sections. Hidden carousel panels
+   already render at opacity:0; content-visibility only prevents their invisible
+   descendants from consuming style/layout/paint work. */
+@layer critical {
+  .timeline-section,
+  .projects-section,
+  .project-gallery-shell,
+  .timeline-card,
+  .gallery-panel,
+  .project-slide-card {
+    contain: style;
+  }
+
+  @supports (content-visibility: hidden) {
+    .project-gallery-camera .gallery-panel.is-hidden {
+      content-visibility: hidden;
+      contain-intrinsic-size: 1040px 680px;
+    }
+
+    .project-gallery-camera .gallery-panel.is-visible,
+    .project-gallery-camera .gallery-panel.is-active {
+      content-visibility: visible;
+    }
+  }
+}
+
+/* Shared Scene Runtime Director compositing policy. Only near/visible scenes
+   keep transform/opacity promotion hints; distant scenes release compositor
+   layers after their CSS animation clock has been suspended. */
+@layer critical {
+  [data-scene-runtime-id="timeline"][data-scene-near="true"] .timeline-exploration-drone,
+  [data-scene-runtime-id="projects"][data-scene-near="true"] .gallery-panel.is-visible,
+  [data-scene-runtime-id="projects"][data-scene-near="true"] .gallery-panel.is-active {
+    will-change: transform, opacity;
+  }
+
+  [data-scene-runtime-id="timeline"][data-scene-near="false"] .timeline-exploration-drone,
+  [data-scene-runtime-id="projects"][data-scene-near="false"] .gallery-panel {
+    will-change: auto;
+  }
+}

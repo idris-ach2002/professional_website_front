@@ -1,6 +1,9 @@
-import { OCEAN_BIOMES, sampleOceanCurrent } from "../ocean/oceanWorldEngine.js";
+import { OCEAN_BIOMES, sampleOceanCurrentInto } from "../ocean/oceanWorldEngine.js";
 
 const TAU = Math.PI * 2;
+const CURRENT_SAMPLE = { x: 0, y: 0 };
+const BREATHING_SAMPLE = { slow: 0, lava: 0, plume: 0 };
+const PULSE_SAMPLE = { kind: "base", progress: 0, envelope: 0, shock: 0 };
 
 function mulberry32(seed) {
   let value = seed >>> 0;
@@ -151,50 +154,47 @@ function gaussian(value, center, width) {
   return Math.exp(-Math.pow((value - center) / Math.max(0.001, width), 2));
 }
 
-function perpetualBreathing(elapsed) {
-  return {
-    slow: 0.5 + 0.5 * Math.sin(elapsed * 0.68 + 0.7),
-    lava: 0.5 + 0.5 * Math.sin(elapsed * 2.15 + 1.4),
-    plume: 0.5 + 0.5 * Math.sin(elapsed * 0.43 + 2.2),
-  };
+function perpetualBreathingInto(elapsed, target) {
+  target.slow = 0.5 + 0.5 * Math.sin(elapsed * 0.68 + 0.7);
+  target.lava = 0.5 + 0.5 * Math.sin(elapsed * 2.15 + 1.4);
+  target.plume = 0.5 + 0.5 * Math.sin(elapsed * 0.43 + 2.2);
+  return target;
 }
 
-function resolvePulseEnvelope(simulation) {
+function resolvePulseEnvelopeInto(simulation, target) {
   if (!simulation || simulation.pulseStartedAt < 0 || simulation.pulseDuration <= 0) {
-    return { kind: "base", progress: 0, envelope: 0, shock: 0 };
+    target.kind = "base";
+    target.progress = 0;
+    target.envelope = 0;
+    target.shock = 0;
+    return target;
   }
   const progress = clamp(simulation.pulseElapsed / simulation.pulseDuration, 0, 1);
   const kind = simulation.pulseKind;
   const strength = simulation.pulseStrength || 1;
-
+  target.kind = kind;
+  target.progress = progress;
   if (kind === "mega") {
     const primary = gaussian(progress, 0.26, 0.12);
     const secondary = gaussian(progress, 0.62, 0.14) * 0.72;
     const rebound = gaussian(progress, 0.84, 0.10) * 0.28;
-    return {
-      kind,
-      progress,
-      envelope: clamp((primary + secondary + rebound) * strength, 0, 2.2),
-      shock: clamp((primary * 1.28 + secondary * 0.84 + rebound * 0.24) * strength, 0, 1.9),
-    };
+    target.envelope = clamp((primary + secondary + rebound) * strength, 0, 2.2);
+    target.shock = clamp((primary * 1.28 + secondary * 0.84 + rebound * 0.24) * strength, 0, 1.9);
+    return target;
   }
-
   const peak = kind === "burst"
     ? gaussian(progress, 0.40, 0.20)
     : gaussian(progress, 0.46, 0.24);
   const tail = kind === "burst" ? gaussian(progress, 0.76, 0.18) * 0.22 : 0;
-  return {
-    kind,
-    progress,
-    envelope: clamp((peak + tail) * strength, 0, kind === "burst" ? 1.45 : 1.0),
-    shock: kind === "burst" ? clamp(peak * strength * 0.34, 0, 0.46) : 0,
-  };
+  target.envelope = clamp((peak + tail) * strength, 0, kind === "burst" ? 1.45 : 1.0);
+  target.shock = kind === "burst" ? clamp(peak * strength * 0.34, 0, 0.46) : 0;
+  return target;
 }
 
 export function resolveVolcanoStageProfileInto(simulation, target = {}) {
   const elapsed = simulation?.elapsed ?? 0;
-  const breathing = perpetualBreathing(elapsed);
-  const pulse = resolvePulseEnvelope(simulation);
+  const breathing = perpetualBreathingInto(elapsed, BREATHING_SAMPLE);
+  const pulse = resolvePulseEnvelopeInto(simulation, PULSE_SAMPLE);
   const boost = pulse.envelope;
   const megaBoost = pulse.kind === "mega" ? boost : 0;
   const burstBoost = pulse.kind === "burst" ? boost : 0;
@@ -459,7 +459,8 @@ export function stepVolcanoParticles(
     particle.life += dt;
     particle.rotation += particle.spin * dt;
     const phase = particle.phase + elapsedSeconds * (particle.type === "ember" ? 3.4 : 0.78);
-    const sharedCurrent = sampleOceanCurrent(
+    sampleOceanCurrentInto(
+      CURRENT_SAMPLE,
       particle.x / Math.max(1, width),
       particle.y / Math.max(1, height),
       elapsedSeconds,
@@ -467,7 +468,7 @@ export function stepVolcanoParticles(
     );
 
     if (particle.type === "vent") {
-      particle.x += (particle.vx + Math.sin(phase) * (3.2 + turbulence * 2.0) + sharedCurrent.x * 10) * dt;
+      particle.x += (particle.vx + Math.sin(phase) * (3.2 + turbulence * 2.0) + CURRENT_SAMPLE.x * 10) * dt;
       particle.y += particle.vy * (0.76 + plume * 0.20) * dt;
       particle.size += dt * 4.5;
     } else if (particle.type === "smoke") {
@@ -476,7 +477,7 @@ export function stepVolcanoParticles(
       const buoyancy = (0.82 + plume * 0.34) * layerBoost * smokeFlow;
       const lateral = layer === "hot" ? 2.8 : layer === "main" ? 5.4 : 8.2;
       const drift = Math.sin(phase) * lateral + Math.sin(phase * 0.47 + 1.7) * 2.1;
-      particle.x += (particle.vx + drift + sharedCurrent.x * 8) * dt;
+      particle.x += (particle.vx + drift + CURRENT_SAMPLE.x * 8) * dt;
       particle.y += particle.vy * buoyancy * dt;
       const expansion = layer === "hot"
         ? 2.4 + smokeDensity * 1.6
@@ -494,7 +495,7 @@ export function stepVolcanoParticles(
       particle.y += particle.vy * burst * dt;
     } else if (particle.type === "bubble") {
       const lift = 0.82 + (profile?.bubbles ?? 0) * 0.62;
-      particle.x += (particle.vx + Math.sin(phase) * (5.2 + turbulence * 4.6) + sharedCurrent.x * 12) * dt;
+      particle.x += (particle.vx + Math.sin(phase) * (5.2 + turbulence * 4.6) + CURRENT_SAMPLE.x * 12) * dt;
       particle.y += particle.vy * lift * dt;
       particle.size += dt * (0.12 + eruption * 0.30);
     } else if (particle.type === "sediment") {
@@ -502,8 +503,8 @@ export function stepVolcanoParticles(
       particle.y += (particle.vy * (0.22 + sediment * 0.46) + (1 - sediment) * 2.2) * dt;
       if (shock > 0.12) particle.y -= shock * dt * (22 + particle.size * 3.5);
     } else {
-      particle.x += (particle.vx + Math.sin(phase) * 0.8 + sharedCurrent.x * 7) * dt;
-      particle.y += (particle.vy + sharedCurrent.y * 5) * dt;
+      particle.x += (particle.vx + Math.sin(phase) * 0.8 + CURRENT_SAMPLE.x * 7) * dt;
+      particle.y += (particle.vy + CURRENT_SAMPLE.y * 5) * dt;
     }
 
     if (shock > 0.08 && particle.type !== "vent" && particle.type !== "bio" && particle.type !== "smoke") {
