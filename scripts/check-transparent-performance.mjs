@@ -31,7 +31,8 @@ requireText(oceanController, "scheduleBackgroundTask", "ocean worker must initia
 requireText(oceanController, "transferControlToOffscreen", "ocean transition OffscreenCanvas transfer path missing");
 requireText(ocean, 'data-render-thread="main"', "ocean fallback render-thread marker missing");
 requireText(ocean, "useEffect(() => {\n    runtimeQualityRef.current = runtimeQuality;\n  }, [runtimeQuality]);", "ocean runtime-quality ref must synchronize after render");
-requireText(oceanWorker, "drawScene(context, sceneKey", "ocean worker must reuse the deterministic renderer");
+requireText(oceanWorker, "drawPreparedScene(context, scenePlan", "ocean worker must reuse the deterministic prepared renderer");
+requireText(oceanWorker, "resolveScenePlan(sceneKey)", "ocean worker must resolve the deterministic scene plan during prepare");
 
 
 requireText(aquarium, "transferControlToOffscreen", "aquarium OffscreenCanvas render path missing");

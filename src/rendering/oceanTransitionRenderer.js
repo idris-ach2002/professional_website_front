@@ -1,4 +1,10 @@
 // Visual language contract: real plunge; branching incandescent fault; Airlock shutters; Sonar-style resonance.
+const TAU = Math.PI * 2;
+const STATION_GLOW_LAYOUT = Object.freeze(Array.from({ length: 14 }, (_, index) => Object.freeze({
+  column: index % 7,
+  row: Math.floor(index / 7),
+  yJitter: Math.sin(index * 2.3) * 0.026,
+})));
 function clamp01(value) {
   return Math.min(1, Math.max(0, value));
 }
@@ -45,6 +51,9 @@ function createSceneParticles(count, seed) {
     drift: (random() - 0.5) * 0.18,
     phase: random() * Math.PI * 2,
     layer: index % 3,
+    streakLayerScale: 0.55 + (index % 3) * 0.44,
+    streakAlphaBase: 0.15 + (index % 3) * 0.11,
+    stationWidth: 2 + (index % 3) * 2,
   }));
 }
 
@@ -79,6 +88,7 @@ function drawSuspenseVeil(context, viewport, progress, intensity = 1, focusX = 0
   const { width, height } = viewport;
   const reveal = easeOut(clamp01((progress - 0.34) / 0.58));
   const darkness = intensity * 0.58 * (1 - reveal);
+  if (darkness <= 0) return;
   const aperture = Math.max(width, height) * (0.055 + reveal * 0.76);
   const vignette = context.createRadialGradient(
     width * focusX,
@@ -100,11 +110,10 @@ function drawSpeedStreaks(context, viewport, particles, progress, alpha, vertica
   context.save();
   context.lineCap = "round";
   for (const particle of particles) {
-    const layerScale = 0.55 + particle.layer * 0.44;
-    const length = (vertical ? height : width) * (0.018 + progress * 0.095) * layerScale;
+    const length = (vertical ? height : width) * (0.018 + progress * 0.095) * particle.streakLayerScale;
     const x = particle.x * width + Math.sin(particle.phase + progress * 9) * width * particle.drift;
     const y = ((particle.y + progress * particle.speed * 0.92) % 1) * height;
-    context.strokeStyle = `rgba(187,242,251,${alpha * (0.15 + particle.layer * 0.11)})`;
+    context.strokeStyle = `rgba(187,242,251,${alpha * particle.streakAlphaBase})`;
     context.lineWidth = Math.max(0.7, particle.size * 0.55);
     context.beginPath();
     context.moveTo(x, y);
@@ -117,6 +126,7 @@ function drawSpeedStreaks(context, viewport, particles, progress, alpha, vertica
 function drawPressureLens(context, viewport, progress) {
   const { width, height } = viewport;
   const pressure = easeInOut(clamp01((progress - 0.12) / 0.72));
+  if (pressure <= 0) return;
   context.save();
   context.globalCompositeOperation = "screen";
   for (let ring = 0; ring < 5; ring += 1) {
@@ -133,7 +143,7 @@ function drawPressureLens(context, viewport, progress) {
       height * (0.028 + local * 0.27),
       0,
       0,
-      Math.PI * 2,
+      TAU,
     );
     context.stroke();
   }
@@ -153,45 +163,51 @@ function drawPressureDescent(context, viewport, progress, particles, reverse = f
   context.fillStyle = background;
   context.fillRect(0, 0, width, height);
 
-  context.save();
-  context.globalCompositeOperation = "screen";
-  for (let index = 0; index < 7; index += 1) {
-    const x = width * (0.02 + index * 0.165);
-    const narrowing = 1 - e * 0.82;
-    context.fillStyle = `rgba(219,252,255,${(1 - e) * (0.075 + (index % 3) * 0.018)})`;
-    context.beginPath();
-    context.moveTo(x, -40);
-    context.lineTo(x + width * 0.05 * narrowing, height * (0.46 + index % 2 * 0.08));
-    context.lineTo(x + width * 0.13 * narrowing, height * (0.46 + index % 2 * 0.08));
-    context.lineTo(x + width * 0.025, -40);
-    context.closePath();
-    context.fill();
+  if (e < 1) {
+    context.save();
+    context.globalCompositeOperation = "screen";
+    for (let index = 0; index < 7; index += 1) {
+      const x = width * (0.02 + index * 0.165);
+      const narrowing = 1 - e * 0.82;
+      context.fillStyle = `rgba(219,252,255,${(1 - e) * (0.075 + (index % 3) * 0.018)})`;
+      context.beginPath();
+      context.moveTo(x, -40);
+      context.lineTo(x + width * 0.05 * narrowing, height * (0.46 + index % 2 * 0.08));
+      context.lineTo(x + width * 0.13 * narrowing, height * (0.46 + index % 2 * 0.08));
+      context.lineTo(x + width * 0.025, -40);
+      context.closePath();
+      context.fill();
+    }
+    context.restore();
   }
-  context.restore();
 
-  for (let layer = 0; layer < 3; layer += 1) {
-    const lift = plunge * height * (0.24 + layer * 0.24);
-    const alpha = (0.08 + layer * 0.035) * e;
-    context.fillStyle = `rgba(0,12,22,${alpha})`;
-    context.beginPath();
-    context.moveTo(0, height * (0.77 - layer * 0.08) - lift);
-    context.quadraticCurveTo(width * 0.25, height * (0.69 - layer * 0.07) - lift, width * 0.48, height * (0.75 - layer * 0.05) - lift);
-    context.quadraticCurveTo(width * 0.72, height * (0.66 - layer * 0.06) - lift, width, height * (0.73 - layer * 0.08) - lift);
-    context.lineTo(width, height);
-    context.lineTo(0, height);
-    context.closePath();
-    context.fill();
+  if (e > 0) {
+    for (let layer = 0; layer < 3; layer += 1) {
+      const lift = plunge * height * (0.24 + layer * 0.24);
+      const alpha = (0.08 + layer * 0.035) * e;
+      context.fillStyle = `rgba(0,12,22,${alpha})`;
+      context.beginPath();
+      context.moveTo(0, height * (0.77 - layer * 0.08) - lift);
+      context.quadraticCurveTo(width * 0.25, height * (0.69 - layer * 0.07) - lift, width * 0.48, height * (0.75 - layer * 0.05) - lift);
+      context.quadraticCurveTo(width * 0.72, height * (0.66 - layer * 0.06) - lift, width, height * (0.73 - layer * 0.08) - lift);
+      context.lineTo(width, height);
+      context.lineTo(0, height);
+      context.closePath();
+      context.fill();
+    }
   }
 
   drawSpeedStreaks(context, viewport, particles, plunge, 0.92, true);
   drawPressureLens(context, viewport, p);
 
-  const ceiling = height * (0.04 + e * 0.30);
-  const topShade = context.createLinearGradient(0, 0, 0, ceiling + height * 0.22);
-  topShade.addColorStop(0, `rgba(0,5,13,${e * 0.78})`);
-  topShade.addColorStop(1, "rgba(0,5,13,0)");
-  context.fillStyle = topShade;
-  context.fillRect(0, 0, width, ceiling + height * 0.22);
+  if (e > 0) {
+    const ceiling = height * (0.04 + e * 0.30);
+    const topShade = context.createLinearGradient(0, 0, 0, ceiling + height * 0.22);
+    topShade.addColorStop(0, `rgba(0,5,13,${e * 0.78})`);
+    topShade.addColorStop(1, "rgba(0,5,13,0)");
+    context.fillStyle = topShade;
+    context.fillRect(0, 0, width, ceiling + height * 0.22);
+  }
 
   const pinch = Math.max(0, 1 - Math.abs(p - 0.72) / 0.20);
   if (pinch > 0) {
@@ -208,6 +224,7 @@ function drawPressureDescent(context, viewport, progress, particles, reverse = f
 }
 
 function drawFractureBranch(context, width, height, originX, originY, scale, alpha, branchIndex) {
+  if (scale <= 0 || alpha <= 0) return;
   const direction = branchIndex % 2 === 0 ? -1 : 1;
   context.beginPath();
   context.moveTo(originX, originY);
@@ -284,12 +301,14 @@ function drawSeismicRift(context, viewport, progress, particles, shards, reverse
   }
 
   const crackX = width * 0.5;
-  const crackGlow = context.createRadialGradient(crackX, height * 0.55, 0, crackX, height * 0.55, width * (0.025 + fracture * 0.36));
-  crackGlow.addColorStop(0, `rgba(255,167,62,${fracture * 0.86})`);
-  crackGlow.addColorStop(0.18, `rgba(255,74,12,${fracture * 0.54})`);
-  crackGlow.addColorStop(1, "rgba(227,39,7,0)");
-  context.fillStyle = crackGlow;
-  context.fillRect(0, 0, width, height);
+  if (fracture > 0) {
+    const crackGlow = context.createRadialGradient(crackX, height * 0.55, 0, crackX, height * 0.55, width * (0.025 + fracture * 0.36));
+    crackGlow.addColorStop(0, `rgba(255,167,62,${fracture * 0.86})`);
+    crackGlow.addColorStop(0.18, `rgba(255,74,12,${fracture * 0.54})`);
+    crackGlow.addColorStop(1, "rgba(227,39,7,0)");
+    context.fillStyle = crackGlow;
+    context.fillRect(0, 0, width, height);
+  }
 
   context.save();
   context.lineCap = "round";
@@ -306,20 +325,24 @@ function drawSeismicRift(context, viewport, progress, particles, shards, reverse
   context.lineTo(crackX - width * 0.022, height * 0.72);
   context.lineTo(crackX + width * 0.006, height * 0.94);
   context.stroke();
-  for (let branch = 0; branch < 6; branch += 1) {
-    drawFractureBranch(context, width, height, crackX, height * (0.18 + branch * 0.105), fracture * (0.42 + branch * 0.07), fracture * 0.72, branch);
+  if (fracture > 0) {
+    for (let branch = 0; branch < 6; branch += 1) {
+      drawFractureBranch(context, width, height, crackX, height * (0.18 + branch * 0.105), fracture * (0.42 + branch * 0.07), fracture * 0.72, branch);
+    }
   }
   context.restore();
 
-  context.save();
-  context.globalCompositeOperation = "screen";
-  for (let band = 0; band < 6; band += 1) {
-    const bandY = height * (0.28 + band * 0.09);
-    const wave = Math.sin(p * 15 + band) * width * 0.005;
-    context.fillStyle = `rgba(255,106,33,${fracture * 0.035})`;
-    context.fillRect(crackX - width * 0.12 + wave, bandY, width * 0.24, 2 + band % 2);
+  if (fracture > 0) {
+    context.save();
+    context.globalCompositeOperation = "screen";
+    for (let band = 0; band < 6; band += 1) {
+      const bandY = height * (0.28 + band * 0.09);
+      const wave = Math.sin(p * 15 + band) * width * 0.005;
+      context.fillStyle = `rgba(255,106,33,${fracture * 0.035})`;
+      context.fillRect(crackX - width * 0.12 + wave, bandY, width * 0.24, 2 + band % 2);
+    }
+    context.restore();
   }
-  context.restore();
 
   for (const particle of particles) {
     const radial = 0.025 + fracture * (0.12 + particle.speed * 0.34);
@@ -335,7 +358,7 @@ function drawSeismicRift(context, viewport, progress, particles, shards, reverse
     context.strokeStyle = `rgba(255,136,39,${pulse * 0.46})`;
     context.lineWidth = 2;
     context.beginPath();
-    context.ellipse(crackX, height * 0.57, width * (0.05 + pulse * 0.27), height * (0.03 + pulse * 0.15), 0, 0, Math.PI * 2);
+    context.ellipse(crackX, height * 0.57, width * (0.05 + pulse * 0.27), height * (0.03 + pulse * 0.15), 0, 0, TAU);
     context.stroke();
   }
 
@@ -416,47 +439,56 @@ function drawStationPowerReveal(context, viewport, progress, particles, direct =
   context.fillRect(0, 0, width, height);
 
   if (!direct) {
-    const residual = context.createRadialGradient(width * 0.12, height * 0.62, 0, width * 0.12, height * 0.62, width * (0.05 + shock * 0.40));
-    residual.addColorStop(0, `rgba(255,115,38,${Math.max(0, 0.72 - p * 0.78)})`);
-    residual.addColorStop(0.28, `rgba(240,54,10,${Math.max(0, 0.33 - p * 0.35)})`);
-    residual.addColorStop(1, "rgba(214,44,8,0)");
-    context.fillStyle = residual;
-    context.fillRect(0, 0, width, height);
+    const residualCoreAlpha = Math.max(0, 0.72 - p * 0.78);
+    const residualMidAlpha = Math.max(0, 0.33 - p * 0.35);
+    if (residualCoreAlpha > 0 || residualMidAlpha > 0) {
+      const residual = context.createRadialGradient(width * 0.12, height * 0.62, 0, width * 0.12, height * 0.62, width * (0.05 + shock * 0.40));
+      residual.addColorStop(0, `rgba(255,115,38,${residualCoreAlpha})`);
+      residual.addColorStop(0.28, `rgba(240,54,10,${residualMidAlpha})`);
+      residual.addColorStop(1, "rgba(214,44,8,0)");
+      context.fillStyle = residual;
+      context.fillRect(0, 0, width, height);
+    }
 
     if (p < 0.32) {
       context.strokeStyle = `rgba(255,149,69,${(1 - p / 0.32) * 0.34})`;
       context.lineWidth = 2;
       context.beginPath();
-      context.ellipse(width * 0.12, height * 0.62, width * shock * 0.46, height * shock * 0.28, 0, 0, Math.PI * 2);
+      context.ellipse(width * 0.12, height * 0.62, width * shock * 0.46, height * shock * 0.28, 0, 0, TAU);
       context.stroke();
     }
   }
 
-  context.fillStyle = `rgba(0,2,6,${blackout * 0.94})`;
-  context.fillRect(0, 0, width, height);
+  if (blackout > 0) {
+    context.fillStyle = `rgba(0,2,6,${blackout * 0.94})`;
+    context.fillRect(0, 0, width, height);
+  }
 
   drawPerspectiveGrid(context, viewport, power, (p * 4) % 1);
   drawStationGeometry(context, viewport, power);
 
-  context.save();
-  context.globalCompositeOperation = "screen";
-  for (let index = 0; index < 14; index += 1) {
-    const local = clamp01((power - index * 0.038) / 0.48);
-    if (local <= 0) continue;
-    const column = index % 7;
-    const row = Math.floor(index / 7);
-    const x = width * (0.10 + column * 0.133);
-    const y = height * (0.22 + row * 0.54 + Math.sin(index * 2.3) * 0.026);
-    const glow = context.createRadialGradient(x, y, 0, x, y, 16 + local * 20);
-    glow.addColorStop(0, `rgba(163,249,255,${local * 0.72})`);
-    glow.addColorStop(0.18, `rgba(68,225,244,${local * 0.45})`);
-    glow.addColorStop(1, "rgba(68,225,244,0)");
-    context.fillStyle = glow;
-    context.beginPath();
-    context.arc(x, y, 18 + local * 18, 0, Math.PI * 2);
-    context.fill();
+  if (power > 0) {
+    context.save();
+    context.globalCompositeOperation = "screen";
+    for (let index = 0; index < STATION_GLOW_LAYOUT.length; index += 1) {
+      const local = clamp01((power - index * 0.038) / 0.48);
+      if (local <= 0) continue;
+      const layout = STATION_GLOW_LAYOUT[index];
+      const x = width * (0.10 + layout.column * 0.133);
+      const y = height * (0.22 + layout.row * 0.54 + layout.yJitter);
+      const radius = 16 + local * 20;
+      const glow = context.createRadialGradient(x, y, 0, x, y, radius);
+      glow.addColorStop(0, `rgba(163,249,255,${local * 0.72})`);
+      glow.addColorStop(0.18, `rgba(68,225,244,${local * 0.45})`);
+      glow.addColorStop(1, "rgba(68,225,244,0)");
+      context.fillStyle = glow;
+      // The former arc clip was always >= the gradient outer radius, so it
+      // could not affect a visible pixel. Filling the exact gradient bounds
+      // removes 14 path constructions per frame with identical output.
+      context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    }
+    context.restore();
   }
-  context.restore();
 
   const shutters = easeOut(clamp01((power - 0.46) / 0.54));
   if (shutters < 1) {
@@ -476,19 +508,21 @@ function drawStationPowerReveal(context, viewport, progress, particles, direct =
     context.stroke();
   }
 
-  const scanY = height * (0.12 + power * 0.76);
-  const scan = context.createLinearGradient(0, scanY - 26, 0, scanY + 26);
-  scan.addColorStop(0, "rgba(92,236,250,0)");
-  scan.addColorStop(0.5, `rgba(92,236,250,${power * 0.28})`);
-  scan.addColorStop(1, "rgba(92,236,250,0)");
-  context.fillStyle = scan;
-  context.fillRect(0, scanY - 26, width, 52);
+  if (power > 0) {
+    const scanY = height * (0.12 + power * 0.76);
+    const scan = context.createLinearGradient(0, scanY - 26, 0, scanY + 26);
+    scan.addColorStop(0, "rgba(92,236,250,0)");
+    scan.addColorStop(0.5, `rgba(92,236,250,${power * 0.28})`);
+    scan.addColorStop(1, "rgba(92,236,250,0)");
+    context.fillStyle = scan;
+    context.fillRect(0, scanY - 26, width, 52);
+  }
 
+  context.fillStyle = power > 0.30 ? "rgba(112,237,250,.25)" : "rgba(206,108,62,.16)";
   for (const particle of particles) {
     const x = ((particle.x - p * particle.speed * 0.16) % 1 + 1) % 1 * width;
     const y = particle.y * height + Math.sin(p * 8 + particle.phase) * 10;
-    context.fillStyle = power > 0.30 ? "rgba(112,237,250,.25)" : "rgba(206,108,62,.16)";
-    context.fillRect(x, y, 2 + particle.layer * 2, 1);
+    context.fillRect(x, y, particle.stationWidth, 1);
   }
 
   drawSuspenseVeil(context, viewport, progress, 0.84, 0.5, 0.5);
@@ -544,34 +578,36 @@ function drawMineralResonance(context, viewport, progress, particles, shards, re
     context.strokeStyle = `rgba(119,229,241,${Math.sin(local * Math.PI) * 0.18})`;
     context.lineWidth = 1.1;
     context.beginPath();
-    context.ellipse(width * 0.5, height * 0.54, width * local * 0.34, height * local * 0.24, 0, 0, Math.PI * 2);
+    context.ellipse(width * 0.5, height * 0.54, width * local * 0.34, height * local * 0.24, 0, 0, TAU);
     context.stroke();
   }
   context.restore();
 
-  context.save();
-  context.lineCap = "round";
-  const veinColors = [
-    `rgba(252,216,120,${crack * 0.72})`,
-    `rgba(157,237,251,${crack * 0.66})`,
-    `rgba(184,153,249,${crack * 0.38})`,
-  ];
-  for (let vein = 0; vein < 7; vein += 1) {
-    const spread = (vein - 3) * width * 0.0105;
-    context.strokeStyle = veinColors[vein % veinColors.length];
-    context.lineWidth = 0.9 + (vein % 3) * 0.45;
-    context.shadowColor = veinColors[vein % veinColors.length];
-    context.shadowBlur = 7 + crack * 11;
-    const startX = width * 0.5 + spread;
-    context.beginPath();
-    context.moveTo(startX, height * 0.18);
-    context.lineTo(startX + width * 0.012 * Math.sin(vein + 1), height * 0.34);
-    context.lineTo(startX - width * 0.017 * Math.cos(vein * 1.6), height * 0.52);
-    context.lineTo(startX + width * 0.019 * Math.sin(vein * 2.2), height * 0.72);
-    context.lineTo(startX - width * 0.006, height * 0.90);
-    context.stroke();
+  if (crack > 0) {
+    context.save();
+    context.lineCap = "round";
+    const veinColors = [
+      `rgba(252,216,120,${crack * 0.72})`,
+      `rgba(157,237,251,${crack * 0.66})`,
+      `rgba(184,153,249,${crack * 0.38})`,
+    ];
+    for (let vein = 0; vein < 7; vein += 1) {
+      const spread = (vein - 3) * width * 0.0105;
+      context.strokeStyle = veinColors[vein % veinColors.length];
+      context.lineWidth = 0.9 + (vein % 3) * 0.45;
+      context.shadowColor = veinColors[vein % veinColors.length];
+      context.shadowBlur = 7 + crack * 11;
+      const startX = width * 0.5 + spread;
+      context.beginPath();
+      context.moveTo(startX, height * 0.18);
+      context.lineTo(startX + width * 0.012 * Math.sin(vein + 1), height * 0.34);
+      context.lineTo(startX - width * 0.017 * Math.cos(vein * 1.6), height * 0.52);
+      context.lineTo(startX + width * 0.019 * Math.sin(vein * 2.2), height * 0.72);
+      context.lineTo(startX - width * 0.006, height * 0.90);
+      context.stroke();
+    }
+    context.restore();
   }
-  context.restore();
 
   for (const particle of particles) {
     const local = clamp01((crack - particle.x * 0.30) / 0.74);
@@ -580,7 +616,7 @@ function drawMineralResonance(context, viewport, progress, particles, shards, re
     const y = particle.y * height;
     context.fillStyle = particle.layer === 2 ? `rgba(255,219,132,${local * 0.54})` : `rgba(176,241,249,${local * 0.36})`;
     context.beginPath();
-    context.arc(x, y, particle.size * (0.65 + local), 0, Math.PI * 2);
+    context.arc(x, y, particle.size * (0.65 + local), 0, TAU);
     context.fill();
   }
 
@@ -598,30 +634,44 @@ function drawMineralResonance(context, viewport, progress, particles, shards, re
   drawSuspenseVeil(context, viewport, progress, 0.97, 0.5, 0.54);
 }
 
+const OCEAN_TRANSITION_SCENE_PLANS = Object.freeze({
+  "surface-deep": Object.freeze({ kind: "pressure", reverse: false, direct: false }),
+  "deep-surface": Object.freeze({ kind: "pressure", reverse: true, direct: false }),
+  "deep-caldera": Object.freeze({ kind: "seismic", reverse: false, direct: false }),
+  "caldera-deep": Object.freeze({ kind: "seismic", reverse: true, direct: false }),
+  "caldera-projects": Object.freeze({ kind: "station", reverse: false, direct: false }),
+  "projects-caldera": Object.freeze({ kind: "station", reverse: true, direct: false }),
+  "deep-projects": Object.freeze({ kind: "station", reverse: false, direct: true }),
+  "projects-deep": Object.freeze({ kind: "station", reverse: true, direct: true }),
+  "projects-outro": Object.freeze({ kind: "mineral", reverse: false, direct: false }),
+  "outro-projects": Object.freeze({ kind: "mineral", reverse: true, direct: false }),
+});
+
+function resolveScenePlan(sceneKey) {
+  return OCEAN_TRANSITION_SCENE_PLANS[sceneKey] ?? null;
+}
+
+function drawPreparedScene(context, plan, viewport, progress, particles, shards) {
+  if (!plan) return;
+  if (plan.kind === "pressure") {
+    drawPressureDescent(context, viewport, progress, particles, plan.reverse);
+    return;
+  }
+  if (plan.kind === "seismic") {
+    drawSeismicRift(context, viewport, progress, particles, shards, plan.reverse);
+    return;
+  }
+  if (plan.kind === "station") {
+    drawStationPowerReveal(context, viewport, progress, particles, plan.direct, plan.reverse);
+    return;
+  }
+  if (plan.kind === "mineral") {
+    drawMineralResonance(context, viewport, progress, particles, shards, plan.reverse);
+  }
+}
+
 function drawScene(context, sceneKey, viewport, progress, particles, shards) {
-  const reverse = ["deep-surface", "caldera-deep", "projects-caldera", "projects-deep", "outro-projects"].includes(sceneKey);
-  if (sceneKey === "surface-deep" || sceneKey === "deep-surface") {
-    drawPressureDescent(context, viewport, progress, particles, reverse);
-    return;
-  }
-  if (sceneKey === "deep-caldera" || sceneKey === "caldera-deep") {
-    drawSeismicRift(context, viewport, progress, particles, shards, reverse);
-    return;
-  }
-  if (["caldera-projects", "projects-caldera", "deep-projects", "projects-deep"].includes(sceneKey)) {
-    drawStationPowerReveal(
-      context,
-      viewport,
-      progress,
-      particles,
-      sceneKey.includes("deep-projects") || sceneKey.includes("projects-deep"),
-      reverse,
-    );
-    return;
-  }
-  if (sceneKey === "projects-outro" || sceneKey === "outro-projects") {
-    drawMineralResonance(context, viewport, progress, particles, shards, reverse);
-  }
+  drawPreparedScene(context, resolveScenePlan(sceneKey), viewport, progress, particles, shards);
 }
 
 
@@ -631,5 +681,7 @@ export {
   createSceneParticles,
   createRockShards,
   resizeCanvas,
+  resolveScenePlan,
+  drawPreparedScene,
   drawScene,
 };

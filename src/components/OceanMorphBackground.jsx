@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { useGsap } from "../animations/useGsap";
 import { clamp } from "../animations/timelineMotion";
+import { subscribeScrollFrame } from "../performance/scrollFrameCoordinator";
 
 const FULL_PARTICLE_COUNT = 8;
 const BALANCED_PARTICLE_COUNT = 5;
@@ -74,11 +75,9 @@ export default function OceanMorphBackground({
       }));
     }
 
-    let depthFrame = 0;
-    let rangeFrame = 0;
-    let maxScroll = 1;
     let lastGlobalPublish = 0;
     let lastDepth = Number.NaN;
+    let firstScrollFrame = true;
     const minGlobalInterval = 1000 / GLOBAL_DEPTH_PAINT_FPS;
     const toDepth = (progress) => clamp(Math.pow(progress * 1.5, 0.92), 0, 1);
 
@@ -92,62 +91,22 @@ export default function OceanMorphBackground({
 
       if (force || now - lastGlobalPublish >= minGlobalInterval || depth === 0 || depth === 1) {
         lastGlobalPublish = now;
-        // Keep the global depth veil compositor-local. Publishing an inherited
-        // custom property on <html> invalidated style across the whole portfolio.
         depthOverlay.style.opacity = String(0.48 - depth * 0.34);
       }
     };
 
-    const scrollingElement = document.scrollingElement ?? document.documentElement;
-    const readProgress = () => clamp(scrollingElement.scrollTop / Math.max(1, maxScroll), 0, 1);
-
-    const paintCurrentDepth = (force = false) => {
-      depthFrame = 0;
-      paintDepth(readProgress(), force);
-    };
-
-    const scheduleDepthPaint = () => {
-      if (depthFrame) return;
-      depthFrame = window.requestAnimationFrame(() => paintCurrentDepth(false));
-    };
-
-    const refreshScrollRange = () => {
-      rangeFrame = 0;
-      if (depthFrame) {
-        window.cancelAnimationFrame(depthFrame);
-        depthFrame = 0;
-      }
-      maxScroll = Math.max(1, scrollingElement.scrollHeight - (window.innerHeight || 1));
-      paintCurrentDepth(true);
-    };
-
-    const scheduleRangeRefresh = () => {
-      if (rangeFrame) return;
-      rangeFrame = window.requestAnimationFrame(refreshScrollRange);
-    };
-
-    // The global depth mapping is a simple document-scroll ratio. Running it
-    // through ScrollTrigger made every wheel event enter the plugin's global
-    // update path and was the largest forced-style/layout source in the V9
-    // trace. A passive scroll wake-up + one RAF preserves the exact formula and
-    // 45 FPS publication cap without a layout-querying trigger.
-    const documentResizeObserver = typeof ResizeObserver !== "undefined"
-      ? new ResizeObserver(scheduleRangeRefresh)
-      : null;
-    documentResizeObserver?.observe(document.body);
-    window.addEventListener("scroll", scheduleDepthPaint, { passive: true });
-    window.addEventListener("resize", scheduleRangeRefresh, { passive: true });
-    window.visualViewport?.addEventListener("resize", scheduleRangeRefresh, { passive: true });
-    refreshScrollRange();
+    // Phase 4: consume the shared document scroll snapshot. Navbar, Timeline and
+    // the Aquarium use the same cached scroll position instead of independently
+    // querying Element.scrollTop from separate RAF callbacks.
+    const unsubscribeScrollFrame = subscribeScrollFrame((scroll) => {
+      const progress = clamp(scroll.scrollTop / Math.max(1, scroll.maxScroll), 0, 1);
+      paintDepth(progress, firstScrollFrame);
+      firstScrollFrame = false;
+    });
 
     return () => {
       animations.forEach((animation) => animation.kill());
-      documentResizeObserver?.disconnect();
-      window.removeEventListener("scroll", scheduleDepthPaint);
-      window.removeEventListener("resize", scheduleRangeRefresh);
-      window.visualViewport?.removeEventListener("resize", scheduleRangeRefresh);
-      window.cancelAnimationFrame(depthFrame);
-      window.cancelAnimationFrame(rangeFrame);
+      unsubscribeScrollFrame();
     };
   }, [staticMode, depthOnly, performanceMode, runtimeQuality], {
     allowOnMobile: depthOnly,

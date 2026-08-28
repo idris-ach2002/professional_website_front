@@ -18,6 +18,7 @@ import CommandUtilities from "./navigation/CommandUtilities";
 import usePremiumNavigationMotion from "./navigation/usePremiumNavigationMotion";
 import usePremiumNavigationShellMotion from "./navigation/usePremiumNavigationShellMotion";
 import { useItemVisibility } from "../visibility/useItemVisibility";
+import { getScrollFrameSnapshot, subscribeScrollFrame } from "../performance/scrollFrameCoordinator";
 import {
   getOwnerFullName,
   getProjectSlug,
@@ -355,8 +356,19 @@ const DesktopDropdown = memo(function DesktopDropdown({ group, open, setActive, 
         aria-expanded={open}
         onClick={() => setActive(null)}
       >
-        <span className="nav_primary-icon"><Icon type={group.icon} /></span>
-        <span>{group.label}</span>
+        <i className="nav_primary-surface nav_primary-surface--idle" aria-hidden="true" />
+        <i className="nav_primary-surface nav_primary-surface--hover" aria-hidden="true" />
+        <i className="nav_primary-surface nav_primary-surface--active" aria-hidden="true" />
+        <span className="nav_primary-icon">
+          <i className="nav_primary-icon-shadow nav_primary-icon-shadow--hover" aria-hidden="true" />
+          <i className="nav_primary-icon-shadow nav_primary-icon-shadow--active" aria-hidden="true" />
+          <span className="nav_primary-icon-glyph nav_primary-icon-glyph--base"><Icon type={group.icon} /></span>
+          <span className="nav_primary-icon-glyph nav_primary-icon-glyph--active" aria-hidden="true"><Icon type={group.icon} /></span>
+        </span>
+        <span className="nav_primary-label">
+          <span className="nav_primary-label-layer nav_primary-label-layer--base">{group.label}</span>
+          <span className="nav_primary-label-layer nav_primary-label-layer--active" aria-hidden="true">{group.label}</span>
+        </span>
         <svg viewBox="0 0 16 16" className="nav_menu-dropdown-arrow" aria-hidden="true">
           <path d="M4.4 6.2 8 9.8l3.6-3.6" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -677,17 +689,15 @@ function TopNavigation({ owner }) {
     const anchorGroups = groups.filter((group) => group.href?.startsWith("#"));
     if (anchorGroups.length === 0) return undefined;
 
-    const scrollingElement = document.scrollingElement ?? document.documentElement;
     let geometry = [];
-    let scrollFrame = 0;
     let measureFrame = 0;
     let mutationObserver = null;
     let resizeObserver = null;
 
-    const publishFromScroll = () => {
+    const publishFromScroll = (scroll = getScrollFrameSnapshot()) => {
       if (geometry.length === 0) return;
-      const scrollTop = scrollingElement.scrollTop;
-      const probe = scrollTop + Math.min(280, Math.max(128, window.innerHeight * 0.29));
+      const scrollTop = scroll.scrollTop;
+      const probe = scrollTop + Math.min(280, Math.max(128, scroll.viewportHeight * 0.29));
       let current = geometry[0];
       for (const candidate of geometry) {
         if (candidate.top > probe) break;
@@ -700,7 +710,7 @@ function TopNavigation({ owner }) {
 
     const collectAndMeasure = () => {
       measureFrame = 0;
-      const scrollTop = scrollingElement.scrollTop;
+      const scrollTop = getScrollFrameSnapshot({ fresh: true }).scrollTop;
       geometry = anchorGroups
         .map((group) => ({ group, element: document.querySelector(group.href) }))
         .filter(({ element }) => Boolean(element))
@@ -726,14 +736,6 @@ function TopNavigation({ owner }) {
       measureFrame = window.requestAnimationFrame(collectAndMeasure);
     };
 
-    const onScroll = () => {
-      if (scrollFrame) return;
-      scrollFrame = window.requestAnimationFrame(() => {
-        scrollFrame = 0;
-        publishFromScroll();
-      });
-    };
-
     resizeObserver = typeof ResizeObserver !== "undefined"
       ? new ResizeObserver(scheduleMeasure)
       : null;
@@ -744,17 +746,16 @@ function TopNavigation({ owner }) {
       mutationObserver.observe(document.getElementById("main-content") ?? document.body, { childList: true, subtree: true });
     }
 
-    window.addEventListener("scroll", onScroll, { passive: true });
+    const unsubscribeScrollFrame = subscribeScrollFrame(publishFromScroll, { immediate: false });
     window.addEventListener("resize", scheduleMeasure, { passive: true });
     window.visualViewport?.addEventListener("resize", scheduleMeasure, { passive: true });
 
     return () => {
-      window.removeEventListener("scroll", onScroll);
+      unsubscribeScrollFrame();
       window.removeEventListener("resize", scheduleMeasure);
       window.visualViewport?.removeEventListener("resize", scheduleMeasure);
       resizeObserver?.disconnect();
       mutationObserver?.disconnect();
-      if (scrollFrame) window.cancelAnimationFrame(scrollFrame);
       if (measureFrame) window.cancelAnimationFrame(measureFrame);
     };
   }, [groups, isHomePath]);

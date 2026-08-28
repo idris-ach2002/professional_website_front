@@ -20,11 +20,17 @@ function findActiveItem(items, activeSection) {
   return items.find((item) => item.dataset.navSection === activeSection) ?? items[0] ?? null;
 }
 
+function setStylePropertyIfChanged(element, property, value) {
+  if (element.style.getPropertyValue(property) === value) return false;
+  element.style.setProperty(property, value);
+  return true;
+}
+
 function resetPointerMaterial(item) {
-  item.style.setProperty("--nav-pointer-x", "18%");
-  item.style.setProperty("--nav-pointer-y", "50%");
-  item.style.setProperty("--nav-shift-x", "0px");
-  item.style.setProperty("--nav-shift-y", "0px");
+  setStylePropertyIfChanged(item, "--nav-pointer-x", "18%");
+  setStylePropertyIfChanged(item, "--nav-pointer-y", "50%");
+  setStylePropertyIfChanged(item, "--nav-shift-x", "0px");
+  setStylePropertyIfChanged(item, "--nav-shift-y", "0px");
 }
 
 export default function usePremiumNavigationMotion(rootRef, activeSection) {
@@ -88,11 +94,11 @@ export default function usePremiumNavigationMotion(rootRef, activeSection) {
       if (!rootRect || !itemGeometry) return;
       const itemRect = itemGeometry.rect;
 
-      lens.style.setProperty("--nav-lens-x", `${itemRect.left - rootRect.left}px`);
-      lens.style.setProperty("--nav-lens-y", `${itemRect.top - rootRect.top}px`);
-      lens.style.setProperty("--nav-lens-width", `${itemRect.width}px`);
-      lens.style.setProperty("--nav-lens-height", `${itemRect.height}px`);
-      lens.style.setProperty("--nav-lens-accent", itemGeometry.accent);
+      setStylePropertyIfChanged(lens, "--nav-lens-x", `${itemRect.left - rootRect.left}px`);
+      setStylePropertyIfChanged(lens, "--nav-lens-y", `${itemRect.top - rootRect.top}px`);
+      setStylePropertyIfChanged(lens, "--nav-lens-width", `${itemRect.width}px`);
+      setStylePropertyIfChanged(lens, "--nav-lens-height", `${itemRect.height}px`);
+      setStylePropertyIfChanged(lens, "--nav-lens-accent", itemGeometry.accent);
       lens.classList.toggle("is-hovered", hovered);
       lens.classList.add("is-visible");
 
@@ -138,10 +144,10 @@ export default function usePremiumNavigationMotion(rootRef, activeSection) {
         const shiftY = (ratioY - 0.5) * 1.25;
         pointerShift.set(item, { x: shiftX, y: shiftY });
 
-        item.style.setProperty("--nav-pointer-x", `${ratioX * 100}%`);
-        item.style.setProperty("--nav-pointer-y", `${ratioY * 100}%`);
-        item.style.setProperty("--nav-shift-x", `${shiftX.toFixed(2)}px`);
-        item.style.setProperty("--nav-shift-y", `${shiftY.toFixed(2)}px`);
+        setStylePropertyIfChanged(item, "--nav-pointer-x", `${ratioX * 100}%`);
+        setStylePropertyIfChanged(item, "--nav-pointer-y", `${ratioY * 100}%`);
+        setStylePropertyIfChanged(item, "--nav-shift-x", `${shiftX.toFixed(2)}px`);
+        setStylePropertyIfChanged(item, "--nav-shift-y", `${shiftY.toFixed(2)}px`);
       });
     };
 

@@ -111,7 +111,7 @@ if (!transitionStage.includes('data-reveal-engine="cinematic-world-reveal"')) {
   errors.push("Transition stage must expose the cinematic world-reveal engine marker.");
 }
 
-if (!transitionStage.includes("transferControlToOffscreen") || !transitionWorker.includes("drawScene(context, sceneKey")) {
+if (!transitionStage.includes("transferControlToOffscreen") || !transitionWorker.includes("drawPreparedScene(context, scenePlan")) {
   errors.push("Ocean cinematics must retain their deterministic OffscreenCanvas worker path with main-thread fallback.");
 }
 if (!css.includes(".ocean-world-gate") || css.includes(".ocean-world-bridge{")) {

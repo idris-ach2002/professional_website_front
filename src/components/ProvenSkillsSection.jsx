@@ -116,6 +116,11 @@ export default function ProvenSkillsSection({ projects = [], experiences = [], p
                   buttonRefs.current[nextIndex]?.focus();
                 }}
               >
+                <span className="proven-skill-surface-stack" aria-hidden="true">
+                  <span className="proven-skill-surface proven-skill-surface--idle" />
+                  <span className="proven-skill-surface proven-skill-surface--hover" />
+                  <span className="proven-skill-surface proven-skill-surface--selected" />
+                </span>
                 <span className="proven-skill-index">{String(index + 1).padStart(2, "0")}</span>
                 <span className="proven-skill-copy">
                   <strong>{skill.label}</strong>

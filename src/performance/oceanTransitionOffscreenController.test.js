@@ -4,7 +4,10 @@ vi.mock("./runtimeScheduler.js", () => ({
   scheduleBackgroundTask: vi.fn((task) => Promise.resolve().then(task)),
 }));
 
-import { scheduleOceanTransitionOffscreen } from "./oceanTransitionOffscreenController";
+import {
+  createOceanTransitionFramePump,
+  scheduleOceanTransitionOffscreen,
+} from "./oceanTransitionOffscreenController";
 
 describe("ocean transition OffscreenCanvas protocol", () => {
   beforeEach(() => {
@@ -83,4 +86,53 @@ describe("ocean transition OffscreenCanvas protocol", () => {
 
     vi.unstubAllGlobals();
   });
+  it("applique une backpressure latest-wins aux frames tant que le Worker est occupé", () => {
+    const listeners = new Set();
+    const worker = {
+      postMessage: vi.fn(),
+      addEventListener: vi.fn((type, listener) => {
+        if (type === "message") listeners.add(listener);
+      }),
+      removeEventListener: vi.fn((type, listener) => {
+        if (type === "message") listeners.delete(listener);
+      }),
+    };
+    const emit = (data) => {
+      listeners.forEach((listener) => listener({ data }));
+    };
+
+    const pump = createOceanTransitionFramePump(worker, 42);
+
+    expect(pump.postFrame({ progress: 0.1 })).toBe(true);
+    expect(pump.postFrame({ progress: 0.2 })).toBe(false);
+    expect(pump.postFrame({ progress: 0.3 })).toBe(false);
+
+    expect(worker.postMessage).toHaveBeenCalledTimes(1);
+    expect(worker.postMessage.mock.calls[0][0]).toEqual({
+      type: "frame",
+      progress: 0.1,
+      sceneToken: 42,
+      sequence: 1,
+    });
+
+    emit({ type: "frame-rendered", sceneToken: 999, sequence: 1 });
+    expect(worker.postMessage).toHaveBeenCalledTimes(1);
+
+    emit({ type: "frame-rendered", sceneToken: 42, sequence: 1 });
+    expect(worker.postMessage).toHaveBeenCalledTimes(2);
+    expect(worker.postMessage.mock.calls[1][0]).toEqual({
+      type: "frame",
+      progress: 0.3,
+      sceneToken: 42,
+      sequence: 2,
+    });
+
+    emit({ type: "frame-rendered", sceneToken: 42, sequence: 2 });
+    expect(worker.postMessage).toHaveBeenCalledTimes(2);
+
+    pump.dispose();
+    expect(pump.postFrame({ progress: 0.4 })).toBe(false);
+    expect(worker.removeEventListener).toHaveBeenCalledTimes(1);
+  });
+
 });

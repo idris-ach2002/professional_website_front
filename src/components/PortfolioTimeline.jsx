@@ -20,6 +20,7 @@ import { useItemVisibility } from "../visibility/useItemVisibility";
 import { experienceVisibilityKey } from "../visibility/itemVisibilityRegistry";
 import "../styles/sections/timeline-legacy-optimized.css";
 import "../styles/sections/timeline-mission-ui.css";
+import { getScrollFrameSnapshot } from "../performance/scrollFrameCoordinator";
 
 const categoryClasses = {
   SCHOOL: "timeline-school",
@@ -104,20 +105,31 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
 
     if (!stage || !lineProgress) return undefined;
 
+    let renderedInspectionIndex = -2;
+    let renderedInspectionPhase = "";
+
+    const setDatasetValue = (element, key, value) => {
+      if (element.dataset[key] === value) return false;
+      element.dataset[key] = value;
+      return true;
+    };
+
     const revealAllCards = () => {
       cards.forEach((card) => {
-        card.dataset.timelineCardState = "revealed";
+        setDatasetValue(card, "timelineCardState", "revealed");
       });
-      lineProgress.style.transform = "scaleY(1)";
-      root.dataset.timelineReveal = "complete";
+      if (lineProgress.style.transform !== "scaleY(1)") lineProgress.style.transform = "scaleY(1)";
+      setDatasetValue(root, "timelineReveal", "complete");
     };
 
     const clearInspection = () => {
       cards.forEach((card) => {
-        card.dataset.timelineInspection = "idle";
+        setDatasetValue(card, "timelineInspection", "idle");
       });
-      root.dataset.timelineInspection = "idle";
-      delete root.dataset.timelineInspectionCard;
+      setDatasetValue(root, "timelineInspection", "idle");
+      if (root.hasAttribute("data-timeline-inspection-card")) delete root.dataset.timelineInspectionCard;
+      renderedInspectionIndex = -2;
+      renderedInspectionPhase = "";
     };
 
     if (!autonomousEnabled) {
@@ -136,7 +148,7 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
     let terminalExitTimer = 0;
     let pageVisible = !document.hidden;
     let travelDirection = "down";
-    let lastObservedScrollTop = (document.scrollingElement ?? document.documentElement).scrollTop;
+    let lastObservedScrollTop = getScrollFrameSnapshot({ fresh: true }).scrollTop;
 
     const setTravelDirection = (nextDirection) => {
       if (nextDirection !== "up" && nextDirection !== "down") return;
@@ -146,8 +158,7 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
     };
 
     const syncTravelDirectionFromScroll = (forcedDirection) => {
-      const scrollingElement = document.scrollingElement ?? document.documentElement;
-      const currentScrollTop = scrollingElement.scrollTop;
+      const currentScrollTop = getScrollFrameSnapshot().scrollTop;
 
       if (forcedDirection) {
         lastObservedScrollTop = currentScrollTop;
@@ -175,8 +186,6 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
     let pendingGeometryMeasure = false;
     let revealTimers = [];
     let requestedTargetIndex = -1;
-    let renderedInspectionIndex = -2;
-    let renderedInspectionPhase = "";
     const visibleCards = new Map();
     const visibleCardInfo = cards.map(() => ({ ratio: 0, centerDistance: Infinity, stageY: undefined }));
     const cachedCardGeometry = cards.map(() => ({ documentTop: 0, height: 0 }));
@@ -188,13 +197,13 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
       facing: "left",
     });
 
-    root.dataset.timelineScene = "idle";
-    root.dataset.timelineEntry = "none";
-    root.dataset.timelineReveal = "ready";
-    root.dataset.timelineInspection = "idle";
+    setDatasetValue(root, "timelineScene", "idle");
+    setDatasetValue(root, "timelineEntry", "none");
+    setDatasetValue(root, "timelineReveal", "ready");
+    setDatasetValue(root, "timelineInspection", "idle");
     cards.forEach((card) => {
-      card.dataset.timelineCardState = "revealed";
-      card.dataset.timelineInspection = "idle";
+      setDatasetValue(card, "timelineCardState", "revealed");
+      setDatasetValue(card, "timelineInspection", "idle");
     });
 
     const clearRevealTimers = () => {
@@ -284,18 +293,19 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
       // for the line/reveal contract and desktop re-entry.
       requestedTargetIndex = -1;
       cards.forEach((card) => {
-        if (card.dataset.timelineInspection !== "idle") card.dataset.timelineInspection = "idle";
+        setDatasetValue(card, "timelineInspection", "idle");
       });
-      if (root.dataset.timelineInspection !== "idle") root.dataset.timelineInspection = "idle";
+      setDatasetValue(root, "timelineInspection", "idle");
       if (root.hasAttribute("data-timeline-inspection-card")) delete root.dataset.timelineInspectionCard;
+      renderedInspectionIndex = -2;
+      renderedInspectionPhase = "";
     };
 
     const measureCardGeometry = () => {
       // This is the only Timeline geometry read phase. Positions are converted
       // to document coordinates once and then projected into the viewport from
       // scrollTop without forcing layout from the autonomous RAF hot path.
-      const scrollingElement = document.scrollingElement ?? document.documentElement;
-      const scrollTop = scrollingElement.scrollTop;
+      const scrollTop = getScrollFrameSnapshot({ fresh: true }).scrollTop;
       const stageRect = stage.getBoundingClientRect();
       stageGeometry.documentTop = stageRect.top + scrollTop;
       stageGeometry.height = stageRect.height;
@@ -319,10 +329,10 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
 
     const refreshVisibleCardsFromLayout = ({ force = false, remeasure = false } = {}) => {
       if (geometryDirty || remeasure) measureCardGeometry();
-      const viewportHeight = window.visualViewport?.height ?? window.innerHeight ?? 800;
+      const scrollSnapshot = getScrollFrameSnapshot();
+      const viewportHeight = scrollSnapshot.viewportHeight || 800;
       const viewportFocus = viewportHeight * (isMobile ? 0.46 : 0.50);
-      const scrollingElement = document.scrollingElement ?? document.documentElement;
-      const scrollTop = scrollingElement.scrollTop;
+      const scrollTop = scrollSnapshot.scrollTop;
       const stageTop = stageGeometry.documentTop - scrollTop;
       visibleCards.clear();
 
@@ -406,9 +416,11 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
       root.dataset.timelineReveal = "playing";
       lineProgress.style.transform = "scaleY(0)";
       cards.forEach((card) => {
-        card.dataset.timelineCardState = "pending";
-        card.dataset.timelineInspection = "idle";
+        setDatasetValue(card, "timelineCardState", "pending");
+        setDatasetValue(card, "timelineInspection", "idle");
       });
+      renderedInspectionIndex = -2;
+      renderedInspectionPhase = "";
 
       const total = Math.max(1, cards.length);
       const interval = clamp(3_100 / total, 300, 560);
@@ -431,24 +443,38 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
         && renderedInspectionPhase === pilot.phase
       ) return;
 
-      renderedInspectionIndex = pilot.targetIndex;
-      renderedInspectionPhase = pilot.phase;
+      const previousIndex = renderedInspectionIndex;
+      const nextIndex = pilot.targetIndex;
       const isInspecting = pilot.phase === INSPECTION_PHASES.INSPECT;
       const isApproaching = pilot.phase === INSPECTION_PHASES.TRANSIT
         || pilot.phase === INSPECTION_PHASES.APPEAR;
-
-      cards.forEach((card, index) => {
-        card.dataset.timelineInspection = index === pilot.targetIndex
-          ? isInspecting ? "active" : isApproaching ? "approaching" : "idle"
-          : "idle";
-      });
-
-      root.dataset.timelineInspection = isInspecting
+      const nextCardState = isInspecting
         ? "active"
         : isApproaching ? "approaching" : "idle";
 
-      if (pilot.targetIndex >= 0) root.dataset.timelineInspectionCard = String(pilot.targetIndex);
-      else delete root.dataset.timelineInspectionCard;
+      if (previousIndex >= 0 && previousIndex !== nextIndex) {
+        setDatasetValue(cards[previousIndex], "timelineInspection", "idle");
+      }
+      if (nextIndex >= 0) {
+        setDatasetValue(cards[nextIndex], "timelineInspection", nextCardState);
+      }
+
+      const nextRootState = isInspecting
+        ? "active"
+        : isApproaching ? "approaching" : "idle";
+      setDatasetValue(root, "timelineInspection", nextRootState);
+
+      if (nextIndex >= 0) {
+        const nextCardIndex = String(nextIndex);
+        if (root.dataset.timelineInspectionCard !== nextCardIndex) {
+          root.dataset.timelineInspectionCard = nextCardIndex;
+        }
+      } else if (root.hasAttribute("data-timeline-inspection-card")) {
+        delete root.dataset.timelineInspectionCard;
+      }
+
+      renderedInspectionIndex = nextIndex;
+      renderedInspectionPhase = pilot.phase;
     };
 
     const renderFrame = (timestamp) => {
@@ -555,7 +581,7 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
           revealAllCards();
           root.dataset.timelineEntry = "none";
           visibleCards.clear();
-          lastObservedScrollTop = (document.scrollingElement ?? document.documentElement).scrollTop;
+          lastObservedScrollTop = getScrollFrameSnapshot().scrollTop;
           requestedTargetIndex = -1;
           clearInspection();
           if (explorationDrone) {
@@ -653,9 +679,8 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
             rearmInspectionFromBelow();
           }
           if (Number.isFinite(cardTop)) {
-            const scrollingElement = document.scrollingElement ?? document.documentElement;
             const cached = cachedCardGeometry[index];
-            cached.documentTop = cardTop + scrollingElement.scrollTop;
+            cached.documentTop = cardTop + getScrollFrameSnapshot().scrollTop;
             cached.height = Number(entry.boundingClientRect?.height) || cached.height;
           }
         });
@@ -795,6 +820,11 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
                     data-timeline-travel-side={side}
                   >
                     <Card className="timeline-card island-card timeline-expedition-card timeline-mission-capsule" radius="xl" data-mission-shape="pressure-hull">
+                      <span className="timeline-card-compositor-layer" aria-hidden="true">
+                        <span className="timeline-card-compositor-state timeline-card-compositor-state--idle" />
+                        <span className="timeline-card-compositor-state timeline-card-compositor-state--approaching" />
+                        <span className="timeline-card-compositor-state timeline-card-compositor-state--active" />
+                      </span>
                       <TimelineCardReef variant={index} />
                       <span className="timeline-capsule-port" aria-hidden="true" />
                       <span className="timeline-capsule-rivet timeline-capsule-rivet--a" aria-hidden="true" />

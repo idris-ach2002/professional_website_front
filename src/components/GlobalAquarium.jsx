@@ -24,6 +24,7 @@ import {
 } from "../performance/resourceLifecycleRegistry";
 import useAnimationPreferences from "../contexts/useAnimationPreferences";
 import { isOceanTransitionEnabled } from "../animations/oceanTransitionPreferences";
+import { getScrollFrameSnapshot } from "../performance/scrollFrameCoordinator";
 
 const OBSERVED_SECTIONS = Object.freeze([...OCEAN_WORLD_ANCHOR_IDS, "ocean-outro"]);
 
@@ -602,7 +603,7 @@ export default function GlobalAquarium({
     let geometryDirty = true;
     let pendingGeometryMeasure = false;
 
-    const getScrollTop = () => (document.scrollingElement ?? document.documentElement).scrollTop;
+    const getScrollTop = () => getScrollFrameSnapshot().scrollTop;
 
     const commitBiome = (nextBiome) => {
       if (!nextBiome || activeWorldDirectorOwner !== directorOwner) return;

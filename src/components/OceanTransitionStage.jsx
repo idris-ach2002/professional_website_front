@@ -18,6 +18,7 @@ export default function OceanTransitionStage({ reducedMotion = false, performanc
   const rafRef = useRef(0);
   const workerRef = useRef(null);
   const workerOwnedCanvasRef = useRef(false);
+  const workerFramePumpFactoryRef = useRef(null);
   const viewportRef = useRef({ width: 1, height: 1, dpr: 1 });
   const runtimeQualityRef = useRef(runtimeQuality);
   const offscreenAllowedAtMountRef = useRef(!reducedMotion && !["lite", "ultra-lite"].includes(performanceMode));
@@ -49,12 +50,14 @@ export default function OceanTransitionStage({ reducedMotion = false, performanc
         worker = result.worker;
         viewportRef.current = result.viewport;
         workerRef.current = worker;
+        workerFramePumpFactoryRef.current = result.createFramePump;
         workerOwnedCanvasRef.current = true;
         canvas.dataset.renderThread = "worker";
       })
       .catch(() => {
         if (disposed) return;
         workerRef.current = null;
+        workerFramePumpFactoryRef.current = null;
         workerOwnedCanvasRef.current = false;
         canvas.dataset.renderThread = "main";
       });
@@ -64,6 +67,7 @@ export default function OceanTransitionStage({ reducedMotion = false, performanc
       controller.abort();
       worker?.terminate();
       if (workerRef.current === worker) workerRef.current = null;
+      workerFramePumpFactoryRef.current = null;
       workerOwnedCanvasRef.current = false;
     };
   }, []);
@@ -113,6 +117,7 @@ export default function OceanTransitionStage({ reducedMotion = false, performanc
 
     const worker = workerRef.current;
     const useWorker = Boolean(workerOwnedCanvasRef.current && worker);
+    const framePump = useWorker ? workerFramePumpFactoryRef.current?.(enabledScene.token) : null;
     if (!useWorker) {
       context = canvas.getContext("2d", { alpha: true, desynchronized: true });
       if (!context) return undefined;
@@ -129,7 +134,14 @@ export default function OceanTransitionStage({ reducedMotion = false, performanc
       canvas.style.width = `${viewport.width}px`;
       canvas.style.height = `${viewport.height}px`;
       worker.postMessage({ type: "resize", viewport });
-      worker.postMessage({ type: "prepare", key: enabledScene.key, count, shardCount, seed });
+      worker.postMessage({
+        type: "prepare",
+        key: enabledScene.key,
+        sceneToken: enabledScene.token,
+        count,
+        shardCount,
+        seed,
+      });
     }
 
     document.documentElement.dataset.oceanCinematic = enabledScene.key;
@@ -163,20 +175,25 @@ export default function OceanTransitionStage({ reducedMotion = false, performanc
       const viewport = viewportRef.current;
 
       if (useWorker) {
-        worker.postMessage({ type: "frame", key: enabledScene.key, progress, alpha: sceneFade(progress), viewport });
+        const frame = { progress };
+        if (framePump) framePump.postFrame(frame);
+        else worker.postMessage({ type: "frame", ...frame, sceneToken: enabledScene.token });
       } else {
         context.setTransform(viewport.dpr, 0, 0, viewport.dpr, 0, 0);
         context.clearRect(0, 0, viewport.width, viewport.height);
-        context.save();
         context.globalAlpha = sceneFade(progress);
-        drawScene(context, enabledScene.key, viewport, progress, particles, shards);
-        context.restore();
+        try {
+          drawScene(context, enabledScene.key, viewport, progress, particles, shards);
+        } finally {
+          context.globalAlpha = 1;
+        }
       }
 
       if (progress < 1) {
         rafRef.current = window.requestAnimationFrame(paint);
       } else {
-        if (useWorker) worker.postMessage({ type: "clear", viewport });
+        framePump?.clearPending();
+        if (useWorker) worker.postMessage({ type: "clear" });
         else context.clearRect(0, 0, viewport.width, viewport.height);
         if (document.documentElement.dataset.oceanCinematic === enabledScene.key) delete document.documentElement.dataset.oceanCinematic;
         setScene((current) => current?.token === enabledScene.token ? null : current);
@@ -190,7 +207,8 @@ export default function OceanTransitionStage({ reducedMotion = false, performanc
       window.removeEventListener("resize", scheduleResize);
       window.visualViewport?.removeEventListener("resize", scheduleResize);
       window.cancelAnimationFrame(resizeFrame);
-      if (useWorker) worker.postMessage({ type: "clear", viewport: viewportRef.current });
+      framePump?.dispose();
+      if (useWorker) worker.postMessage({ type: "clear" });
       if (document.documentElement.dataset.oceanCinematic === enabledScene.key) delete document.documentElement.dataset.oceanCinematic;
     };
   }, [enabledScene, paused, performanceMode, reducedMotion, runtimeQuality]);

@@ -44,15 +44,15 @@ html[data-runtime-quality="constrained"] .volcano-field-section::before{opacity:
 .project-gallery-shell::after, .project-gallery-shell::before{position:absolute;pointer-events:none;z-index:0;opacity:0 !important;}
 .ocean-background{position:fixed;inset:0;z-index:0;overflow:hidden;opacity:0;pointer-events:none;--ocean-depth:0;--surface-opacity:1;}
 .ocean-background::after{content:"";position:absolute;inset:0;z-index:8;pointer-events:none;opacity:calc(var(--ocean-depth) * .94) !important;}
-.ocean-depth-gradient{z-index:1;transition:opacity .18s linear;opacity:calc(.08 + var(--ocean-depth) * .88) !important;}
-.ocean-surface-layer{z-index:2;height:34vh;transform:translate3d(0, calc(var(--ocean-depth) * -18vh), 0);transition:opacity .18s linear;opacity:calc(var(--surface-opacity) * .92) !important;left:0 !important;right:0 !important;width:100vw !important;contain:paint;}
+.ocean-depth-gradient{z-index:1;opacity:calc(.08 + var(--ocean-depth) * .88) !important;}
+.ocean-surface-layer{z-index:2;height:34vh;transform:translate3d(0, calc(var(--ocean-depth) * -18vh), 0);opacity:calc(var(--surface-opacity) * .92) !important;left:0 !important;right:0 !important;width:100vw !important;contain:paint;}
 .ocean-surface-waves{position:absolute;left:0 !important;top:-4vh !important;width:200vw !important;height:36vh !important;will-change:transform;transform:translate3d(0, 0, 0);animation:ocean-surface-infinite-drift 15s linear infinite;}
 .ocean-surface-wave-main{transform-box:fill-box;transform-origin:center center;}
 @keyframes ocean-surface-infinite-drift {
   from { transform: translate3d(0, 0, 0); }
   to { transform: translate3d(-50%, 0, 0); }
 }
-.ocean-map{position:absolute;z-index:2;transform:translateY(calc(var(--ocean-depth) * -10vh)) scale(calc(1 + var(--ocean-depth) * .04));transition:opacity .18s linear, transform .18s linear;inset:-18% -14% !important;width:128% !important;height:136% !important;opacity:calc(.72 - var(--ocean-depth) * .5) !important;}
+.ocean-map{position:absolute;z-index:2;transform:translateY(calc(var(--ocean-depth) * -10vh)) scale(calc(1 + var(--ocean-depth) * .04));inset:-18% -14% !important;width:128% !important;height:136% !important;opacity:calc(.72 - var(--ocean-depth) * .5) !important;}
 .ocean-static-layer{transform-box:fill-box;transform-origin:center center;will-change:transform;}
 .ocean-static-layer-1{animation:ocean-static-layer-drift-a 16s ease-in-out infinite alternate;}
 .ocean-static-layer-2{animation:ocean-static-layer-drift-b 21s ease-in-out infinite alternate;}

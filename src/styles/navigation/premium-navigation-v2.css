@@ -1123,3 +1123,199 @@
 @layer critical{@media(max-width:640px){.nv.nv.is-mobile-dock-mode .nav_mobile-dock{contain:layout style paint;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}.nav_mobile-dock-more,.nav_mobile-dock-more .nav_mobile-dock-icon,.nav_mobile-dock-more .dropdown-link-icon-svg{transition:none!important}.nav_mobile-dock-more.is-active .nav_mobile-dock-icon{transform:none!important;box-shadow:none!important}.nav_mobile-dock-more .nav_mobile-dock-icon{pointer-events:none}}}
 
 
+
+/* Post-profiler Phase 2: keep only visually effective nav icon transitions.
+   The final Arctic Ink cascade renders these icons borderless with transparent
+   backgrounds, so transitioning those dead properties only creates style/
+   transition work without changing pixels. */
+@media (min-width:1241px){
+  .nv.nv .nav_primary-icon{
+    contain:layout style;
+    transition:color .15s ease,box-shadow .18s ease,transform .22s cubic-bezier(.16,1,.3,1);
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .nv.nv .nav_primary-icon{transition:none;}
+}
+
+/* Post-profiler Phase 3: compositor conversion for desktop primary navigation.
+   Background/border, icon glow and label/icon color states are pre-rendered as
+   layers; hover/open transitions now cross-fade opacity instead of animating
+   paint-heavy background/border/color/box-shadow properties. */
+@media (min-width:1241px){
+  .nv.nv .dropdown1_toggle.v2{
+    background:transparent;
+    border:1px solid transparent;
+    box-shadow:none;
+    transition:transform .20s cubic-bezier(.16,1,.3,1);
+  }
+  .nv.nv .dropdown1_toggle.v2:hover,
+  .nv.nv .dropdown1_toggle.v2:focus-visible,
+  .nv.nv .nav_menu-dropdown-toggle-v2.is-section-active .dropdown1_toggle.v2,
+  .nv.nv .nav_menu-dropdown-toggle-v2.is-open .dropdown1_toggle.v2{
+    background:transparent;
+    border-color:transparent;
+    box-shadow:none;
+  }
+  .nv.nv .nav_primary-surface{
+    position:absolute;
+    inset:0;
+    z-index:0;
+    box-sizing:border-box;
+    border:1px solid transparent;
+    border-radius:inherit;
+    pointer-events:none;
+    opacity:0;
+    transform:translateZ(0);
+    backface-visibility:hidden;
+    will-change:opacity;
+    transition:opacity .18s ease;
+  }
+  .nv.nv .nav_primary-surface--idle{
+    opacity:1;
+    background:rgba(var(--la-elevated),.28);
+  }
+  .nv.nv .nav_primary-surface--hover{
+    background:rgba(var(--la-glass),.70);
+    border-color:rgba(var(--la-border),.62);
+  }
+  .nv.nv .nav_primary-surface--active{
+    background:rgba(var(--la-glass),.60);
+  }
+  .nv.nv .dropdown1_toggle.v2:hover .nav_primary-surface--idle,
+  .nv.nv .dropdown1_toggle.v2:focus-visible .nav_primary-surface--idle,
+  .nv.nv .nav_menu-dropdown-toggle-v2.is-section-active .nav_primary-surface--idle,
+  .nv.nv .nav_menu-dropdown-toggle-v2.is-open .nav_primary-surface--idle{opacity:0;}
+  .nv.nv .dropdown1_toggle.v2:hover .nav_primary-surface--hover,
+  .nv.nv .dropdown1_toggle.v2:focus-visible .nav_primary-surface--hover{opacity:1;}
+  .nv.nv .nav_menu-dropdown-toggle-v2.is-section-active .nav_primary-surface--hover,
+  .nv.nv .nav_menu-dropdown-toggle-v2.is-open .nav_primary-surface--hover{opacity:0;}
+  .nv.nv .nav_menu-dropdown-toggle-v2.is-section-active .nav_primary-surface--active,
+  .nv.nv .nav_menu-dropdown-toggle-v2.is-open .nav_primary-surface--active{opacity:1;}
+
+  .nv.nv .dropdown1_toggle.v2::before{z-index:1;}
+  .nv.nv .dropdown1_toggle.v2::after{z-index:4;}
+  .nv.nv .dropdown1_toggle.v2>.nav_primary-icon,
+  .nv.nv .dropdown1_toggle.v2>.nav_primary-label,
+  .nv.nv .dropdown1_toggle.v2>.nav_menu-dropdown-arrow{
+    position:relative;
+    z-index:3;
+  }
+
+  .nv.nv .nav_primary-label{
+    display:inline-grid;
+    grid-template-areas:"label";
+    align-items:center;
+    transition:transform .16s cubic-bezier(.16,1,.3,1);
+  }
+  .nv.nv .nav_primary-label-layer{
+    grid-area:label;
+    display:block;
+    pointer-events:none;
+    transform:translateZ(0);
+    backface-visibility:hidden;
+    will-change:opacity;
+    transition:opacity .15s ease;
+  }
+  .nv.nv .nav_primary-label-layer--base{color:rgb(var(--la-muted));opacity:1;}
+  .nv.nv .nav_primary-label-layer--active{color:rgb(var(--la-ink));opacity:0;}
+  .nv.nv .dropdown1_toggle.v2:hover .nav_primary-label-layer--base,
+  .nv.nv .dropdown1_toggle.v2:focus-visible .nav_primary-label-layer--base,
+  .nv.nv .nav_menu-dropdown-toggle-v2.is-section-active .nav_primary-label-layer--base,
+  .nv.nv .nav_menu-dropdown-toggle-v2.is-open .nav_primary-label-layer--base{opacity:0;}
+  .nv.nv .dropdown1_toggle.v2:hover .nav_primary-label-layer--active,
+  .nv.nv .dropdown1_toggle.v2:focus-visible .nav_primary-label-layer--active,
+  .nv.nv .nav_menu-dropdown-toggle-v2.is-section-active .nav_primary-label-layer--active,
+  .nv.nv .nav_menu-dropdown-toggle-v2.is-open .nav_primary-label-layer--active{opacity:1;}
+
+  .nv.nv .nav_primary-icon{
+    color:inherit;
+    background:transparent;
+    box-shadow:none;
+    transition:transform .22s cubic-bezier(.16,1,.3,1);
+  }
+  .nv.nv .dropdown1_toggle.v2:hover .nav_primary-icon,
+  .nv.nv .dropdown1_toggle.v2:focus-visible .nav_primary-icon,
+  .nv.nv .nav_menu-dropdown-toggle-v2.is-section-active .nav_primary-icon,
+  .nv.nv .nav_menu-dropdown-toggle-v2.is-open .nav_primary-icon{
+    color:inherit;
+    background:transparent;
+    box-shadow:none;
+  }
+  .nv.nv .nav_primary-icon-shadow{
+    position:absolute;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    opacity:0;
+    transform:translateZ(0);
+    will-change:opacity;
+    transition:opacity .18s ease;
+  }
+  .nv.nv .nav_primary-icon-shadow--hover{
+    box-shadow:0 5px 13px rgba(var(--nav-item-accent),.12),inset 0 1px rgba(255,255,255,.78);
+  }
+  .nv.nv .nav_primary-icon-shadow--active{
+    box-shadow:0 4px 12px rgba(var(--nav-item-accent),.11),inset 0 1px rgba(255,255,255,.80);
+  }
+  .nv.nv .dropdown1_toggle.v2:hover .nav_primary-icon-shadow--hover,
+  .nv.nv .dropdown1_toggle.v2:focus-visible .nav_primary-icon-shadow--hover{opacity:1;}
+  .nv.nv .nav_menu-dropdown-toggle-v2.is-section-active .nav_primary-icon-shadow--hover,
+  .nv.nv .nav_menu-dropdown-toggle-v2.is-open .nav_primary-icon-shadow--hover{opacity:0;}
+  .nv.nv .nav_menu-dropdown-toggle-v2.is-section-active .nav_primary-icon-shadow--active,
+  .nv.nv .nav_menu-dropdown-toggle-v2.is-open .nav_primary-icon-shadow--active{opacity:1;}
+
+  .nv.nv .nav_primary-icon-glyph{
+    position:absolute;
+    inset:0;
+    z-index:2;
+    display:grid;
+    place-items:center;
+    pointer-events:none;
+    transform:translateZ(0);
+    backface-visibility:hidden;
+    will-change:opacity;
+    transition:opacity .15s ease;
+  }
+  .nv.nv .nav_primary-icon-glyph--base{color:rgb(var(--la-muted));opacity:1;}
+  .nv.nv .nav_primary-icon-glyph--active{color:rgb(var(--la-blue));opacity:0;}
+  .nv.nv .dropdown1_toggle.v2:hover .nav_primary-icon-glyph--base,
+  .nv.nv .dropdown1_toggle.v2:focus-visible .nav_primary-icon-glyph--base,
+  .nv.nv .nav_menu-dropdown-toggle-v2.is-section-active .nav_primary-icon-glyph--base,
+  .nv.nv .nav_menu-dropdown-toggle-v2.is-open .nav_primary-icon-glyph--base{opacity:0;}
+  .nv.nv .dropdown1_toggle.v2:hover .nav_primary-icon-glyph--active,
+  .nv.nv .dropdown1_toggle.v2:focus-visible .nav_primary-icon-glyph--active,
+  .nv.nv .nav_menu-dropdown-toggle-v2.is-section-active .nav_primary-icon-glyph--active,
+  .nv.nv .nav_menu-dropdown-toggle-v2.is-open .nav_primary-icon-glyph--active{opacity:1;}
+
+  .nv.nv .nav_primary-icon-glyph .dropdown-link-icon-svg{
+    display:block;
+    transition:transform .18s cubic-bezier(.16,1,.3,1);
+  }
+  .nv.nv .nav_primary-icon-glyph--base .dropdown-link-icon-svg{filter:none;}
+  .nv.nv .nav_primary-icon-glyph--active .dropdown-link-icon-svg{filter:drop-shadow(0 1px 3px rgba(var(--nav-item-accent),.18));}
+  .nv.nv .dropdown1_toggle.v2:hover .nav_primary-icon-glyph--base .dropdown-link-icon-svg,
+  .nv.nv .dropdown1_toggle.v2:focus-visible .nav_primary-icon-glyph--base .dropdown-link-icon-svg{filter:none;}
+  .nv.nv .dropdown1_toggle.v2:hover .nav_primary-icon-glyph--active .dropdown-link-icon-svg,
+  .nv.nv .dropdown1_toggle.v2:focus-visible .nav_primary-icon-glyph--active .dropdown-link-icon-svg{filter:drop-shadow(0 1px 3px rgba(var(--nav-item-accent),.18));}
+}
+@media(prefers-reduced-motion:reduce){
+  .nv.nv .nav_primary-surface,
+  .nv.nv .nav_primary-label-layer,
+  .nv.nv .nav_primary-icon-shadow,
+  .nv.nv .nav_primary-icon-glyph{transition:none;}
+}
+
+
+/* Post-profiler Phase 4 layer diet: let Gecko promote opacity layers only while
+   they animate instead of pinning every navbar state surface in GPU memory. */
+@media (min-width:1241px){
+  .nv.nv .nav_primary-surface,
+  .nv.nv .nav_primary-label-layer,
+  .nv.nv .nav_primary-icon-shadow,
+  .nv.nv .nav_primary-icon-glyph{
+    transform:none;
+    backface-visibility:visible;
+    will-change:auto;
+  }
+}

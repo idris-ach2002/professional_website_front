@@ -8,9 +8,15 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+function setStylePropertyIfChanged(element, property, value) {
+  if (element.style.getPropertyValue(property) === value) return false;
+  element.style.setProperty(property, value);
+  return true;
+}
+
 function resetShellPointer(shell) {
-  shell.style.setProperty("--nav-shell-pointer-x", "50%");
-  shell.style.setProperty("--nav-shell-pointer-y", "22%");
+  setStylePropertyIfChanged(shell, "--nav-shell-pointer-x", "50%");
+  setStylePropertyIfChanged(shell, "--nav-shell-pointer-y", "22%");
   shell.classList.remove("is-shell-pointer-active");
 }
 
@@ -50,8 +56,8 @@ export default function usePremiumNavigationShellMotion(shellRef) {
         const ratioX = clamp((clientX - rect.left) / rect.width, 0, 1);
         const ratioY = clamp((clientY - rect.top) / rect.height, 0, 1);
 
-        shell.style.setProperty("--nav-shell-pointer-x", `${(ratioX * 100).toFixed(2)}%`);
-        shell.style.setProperty("--nav-shell-pointer-y", `${(ratioY * 100).toFixed(2)}%`);
+        setStylePropertyIfChanged(shell, "--nav-shell-pointer-x", `${(ratioX * 100).toFixed(2)}%`);
+        setStylePropertyIfChanged(shell, "--nav-shell-pointer-y", `${(ratioY * 100).toFixed(2)}%`);
         shell.classList.add("is-shell-pointer-active");
       });
     };

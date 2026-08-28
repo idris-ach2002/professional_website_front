@@ -100,7 +100,7 @@
 .timeline-section.is-autonomous-timeline .section-description{color:rgba(224,251,255,.74);}
 .timeline-section.is-autonomous-timeline .section-eyebrow{color:#a5f3fc;background:rgba(8,47,73,.50);}
 .timeline-expedition-row::before{background:linear-gradient(90deg,transparent,rgba(103,232,249,.50),rgba(224,251,255,.82));}
-.timeline-card.timeline-expedition-card{padding:clamp(22px,2.5vw,32px);border-radius:24px;background:linear-gradient(145deg,rgba(6,37,55,.96),rgba(3,25,40,.94));box-shadow:0 18px 52px rgba(1,12,22,.24),inset 0 1px rgba(224,251,255,.06);backdrop-filter:none;transition:border-color .34s ease,box-shadow .34s ease,background .34s ease;}
+.timeline-card.timeline-expedition-card{padding:clamp(22px,2.5vw,32px);border-radius:24px;background:linear-gradient(145deg,rgba(6,37,55,.96),rgba(3,25,40,.94));box-shadow:0 18px 52px rgba(1,12,22,.24),inset 0 1px rgba(224,251,255,.06);backdrop-filter:none;contain:layout style;transition:border-color .34s ease,box-shadow .34s ease,background .34s ease;}
 .timeline-card.timeline-expedition-card::before{z-index:0;background:linear-gradient(90deg,rgba(34,211,238,.58) 0 86px,rgba(103,232,249,.10) 86px 100%) 0 0/100% 3px no-repeat,
     radial-gradient(320px 180px at 100% 0%,rgba(14,165,233,.08),transparent 72%);}
 .timeline-expedition-row[data-timeline-inspection="approaching"] .timeline-expedition-card{box-shadow:0 18px 52px rgba(1,12,22,.24),0 0 20px rgba(34,211,238,.05);}
@@ -140,3 +140,84 @@
 .volcano-field-section{margin-top:-2px;}
 }
 @layer critical{.ocean-map{overflow:visible}.timeline-section.is-autonomous-timeline .section-eyebrow{border-color:rgba(103,232,249,.22)}.timeline-card.timeline-expedition-card{border:1px solid rgba(103,232,249,.18)}.timeline-expedition-row[data-timeline-inspection="approaching"] .timeline-expedition-card{border-color:rgba(103,232,249,.30)}.timeline-expedition-row[data-timeline-inspection="active"] .timeline-expedition-card{border-color:rgba(165,243,252,.42)}.timeline-expedition-card h2{letter-spacing:-.04em}.timeline-expedition-card .skill-badge{border-color:rgba(103,232,249,.20)}.timeline-expedition-card .timeline-category{border-color:rgba(103,232,249,.20)}.timeline-section.is-autonomous-timeline[data-timeline-exit="approaching"] .timeline-exploration-drone, .timeline-section.is-autonomous-timeline:is([data-timeline-scene="idle"],[data-timeline-scene="sleeping"],[data-timeline-scene="exiting"],[data-timeline-scene="paused"],[data-timeline-scene="static"]) .timeline-exploration-drone{visibility:hidden}}
+
+/* Post-profiler Phase 3: compositor conversion for Timeline card states.
+   The exact idle/approaching/active background + border appearances are kept
+   as pre-rendered layers and cross-faded with opacity. Only the external
+   shadow remains on the card itself because moving it inside an overflow-clipped
+   card would change the rendered silhouette. */
+@layer critical {
+  .timeline-card.timeline-expedition-card{
+    background:transparent;
+    border:1px solid transparent;
+    transition:box-shadow .34s ease;
+  }
+  .timeline-expedition-row[data-timeline-inspection="approaching"] .timeline-expedition-card{
+    background:transparent;
+    border-color:transparent;
+  }
+  .timeline-expedition-row[data-timeline-inspection="active"] .timeline-expedition-card{
+    background:transparent;
+    border-color:transparent;
+  }
+  .timeline-card.timeline-expedition-card > .timeline-card-compositor-layer{
+    position:absolute;
+    inset:0;
+    z-index:0;
+    display:block;
+    border-radius:inherit;
+    pointer-events:none;
+    overflow:hidden;
+    contain:paint;
+  }
+  .timeline-card-compositor-state{
+    position:absolute;
+    inset:0;
+    box-sizing:border-box;
+    border:1px solid transparent;
+    border-radius:inherit;
+    pointer-events:none;
+    opacity:0;
+    transform:translateZ(0);
+    backface-visibility:hidden;
+    will-change:opacity;
+    transition:opacity .34s ease;
+  }
+  .timeline-card-compositor-state--idle{
+    opacity:1;
+    border-color:rgba(103,232,249,.18);
+    background:linear-gradient(145deg,rgba(6,37,55,.96),rgba(3,25,40,.94));
+  }
+  .timeline-card-compositor-state--approaching{
+    border-color:rgba(103,232,249,.30);
+    background:linear-gradient(145deg,rgba(6,37,55,.96),rgba(3,25,40,.94));
+  }
+  .timeline-card-compositor-state--active{
+    border-color:rgba(165,243,252,.42);
+    background:linear-gradient(145deg,rgba(7,43,61,.97),rgba(3,28,43,.96));
+  }
+  .timeline-expedition-row[data-timeline-inspection="approaching"] .timeline-card-compositor-state--idle,
+  .timeline-expedition-row[data-timeline-inspection="active"] .timeline-card-compositor-state--idle{opacity:0;}
+  .timeline-expedition-row[data-timeline-inspection="approaching"] .timeline-card-compositor-state--approaching{opacity:1;}
+  .timeline-expedition-row[data-timeline-inspection="active"] .timeline-card-compositor-state--approaching{opacity:0;}
+  .timeline-expedition-row[data-timeline-inspection="active"] .timeline-card-compositor-state--active{opacity:1;}
+
+  .timeline-card.timeline-expedition-card::before{z-index:1;}
+  .timeline-card.timeline-expedition-card > .timeline-card-reef-field{z-index:2;}
+  .timeline-card.timeline-expedition-card::after{z-index:3;}
+  .timeline-card.timeline-expedition-card > :not(.timeline-card-reef-field):not(.timeline-card-compositor-layer){position:relative;z-index:4;}
+}
+@media(prefers-reduced-motion:reduce){
+  .timeline-card-compositor-state{transition:none;}
+}
+
+
+/* Post-profiler Phase 4 layer diet: preserve the Phase 3 opacity cross-fade but
+   remove permanent GPU promotion hints from every timeline card state. */
+@layer critical{
+  .timeline-card-compositor-state{
+    transform:none;
+    backface-visibility:visible;
+    will-change:auto;
+  }
+}

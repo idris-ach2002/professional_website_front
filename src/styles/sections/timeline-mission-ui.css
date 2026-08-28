@@ -76,3 +76,41 @@
 .timeline-mission-capsule,.timeline-detail-sheet{box-sizing:border-box;}
 .timeline-details-trigger,.timeline-detail-close{touch-action:manipulation;}
 }
+
+/* Post-profiler Phase 4: the inspection port keeps the same two rendered states
+   but cross-fades surfaces instead of interpolating background/box-shadow. */
+@layer critical{
+  .timeline-capsule-port{
+    isolation:isolate;
+    border-color:transparent;
+    background:transparent;
+    box-shadow:none;
+    transition:none;
+  }
+  .timeline-capsule-port::before,
+  .timeline-capsule-port::after{
+    content:"";
+    position:absolute;
+    inset:-2px;
+    z-index:-1;
+    box-sizing:border-box;
+    border:2px solid rgba(154,239,239,.62);
+    border-radius:50%;
+    pointer-events:none;
+    transition:opacity .2s ease;
+  }
+  .timeline-capsule-port::before{
+    opacity:1;
+    background:#0a3846;
+    box-shadow:0 0 0 5px rgba(77,204,207,.07);
+  }
+  .timeline-capsule-port::after{
+    opacity:0;
+    background:#70e5df;
+    box-shadow:0 0 0 6px rgba(87,225,221,.11),0 0 22px rgba(87,225,221,.46);
+  }
+  .timeline-row[data-timeline-inspection="active"] .timeline-capsule-port{background:transparent;box-shadow:none;}
+  .timeline-row[data-timeline-inspection="active"] .timeline-capsule-port::before{opacity:0;}
+  .timeline-row[data-timeline-inspection="active"] .timeline-capsule-port::after{opacity:1;}
+}
+@media(prefers-reduced-motion:reduce){.timeline-capsule-port::before,.timeline-capsule-port::after{transition:none;}}

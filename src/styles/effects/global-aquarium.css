@@ -31,7 +31,7 @@
     rgba(103,232,249,.16) 291deg,
     rgba(34,211,238,.025) 300deg,
     transparent 300deg 360deg
-  );-webkit-mask-image:radial-gradient(ellipse 116% 82% at 100% 50%,#000 0 10%,rgba(0,0,0,.98) 30%,rgba(0,0,0,.78) 56%,rgba(0,0,0,.30) 80%,transparent 100%);mask-image:radial-gradient(ellipse 116% 82% at 100% 50%,#000 0 10%,rgba(0,0,0,.98) 30%,rgba(0,0,0,.78) 56%,rgba(0,0,0,.30) 80%,transparent 100%);mix-blend-mode:screen;filter:blur(1.2px) drop-shadow(0 0 16px rgba(34,211,238,.18));transition:opacity .05s linear;}
+  );-webkit-mask-image:radial-gradient(ellipse 116% 82% at 100% 50%,#000 0 10%,rgba(0,0,0,.98) 30%,rgba(0,0,0,.78) 56%,rgba(0,0,0,.30) 80%,transparent 100%);mask-image:radial-gradient(ellipse 116% 82% at 100% 50%,#000 0 10%,rgba(0,0,0,.98) 30%,rgba(0,0,0,.78) 56%,rgba(0,0,0,.30) 80%,transparent 100%);mix-blend-mode:screen;filter:blur(1.2px) drop-shadow(0 0 16px rgba(34,211,238,.18));}
 .timeline-inspection-torch::before{content:"";position:absolute;right:-2px;top:50%;width:clamp(54px,5vw,84px);height:clamp(54px,5vw,84px);border-radius:50%;transform:translateY(-50%);background:radial-gradient(circle,rgba(240,253,255,.96) 0 7%,rgba(165,243,252,.70) 16%,rgba(34,211,238,.30) 38%,transparent 72%);filter:blur(2px);}
 .timeline-inspection-torch::after{content:"";position:absolute;inset:0;background:conic-gradient(
     from 0deg at 100% 50%,
@@ -45,7 +45,7 @@
   );-webkit-mask-image:radial-gradient(ellipse 108% 58% at 100% 50%,#000 0 8%,rgba(0,0,0,.92) 34%,rgba(0,0,0,.48) 64%,transparent 94%);mask-image:radial-gradient(ellipse 108% 58% at 100% 50%,#000 0 8%,rgba(0,0,0,.92) 34%,rgba(0,0,0,.48) 64%,transparent 94%);filter:blur(.8px);}
 .exploration-drone-rotor{transform-box:fill-box;transform-origin:center;animation:exploration-drone-rotor .86s linear infinite;}
 .exploration-drone-rotor--reverse{animation-direction:reverse;animation-duration:.96s;}
-.exploration-drone-beam{opacity:clamp(.06, calc(.08 + var(--torch-strength) * .28), .46);transition:opacity .08s linear;}
+.exploration-drone-beam{opacity:clamp(.06, calc(.08 + var(--torch-strength) * .28), .46);}
 .exploration-drone-sonar{opacity:calc(.08 + var(--torch-strength) * .22);}
 .exploration-drone-lamp{opacity:clamp(.64, calc(.62 + var(--torch-strength) * .45), 1);filter:drop-shadow(0 0 5px rgba(207,250,254,.55));}
 .exploration-drone-beacon, .exploration-drone-status{animation:exploration-drone-status 2.4s ease-in-out infinite;}

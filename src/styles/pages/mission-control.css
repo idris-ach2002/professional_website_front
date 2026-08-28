@@ -806,7 +806,7 @@
 .architecture-graph-toolbar-v25{display:grid;margin-bottom:.78rem;}
 .architecture-graph-statusline > span{font-size:13px;}
 .architecture-display-menu .architecture-canvas-shades button b{display:inline;font-size:13px;}
-.architecture-node{transition:opacity .2s ease, border-color .2s ease, box-shadow .2s ease, transform .22s ease;}
+.architecture-node{contain:layout style;transition:opacity .2s ease, border-color .2s ease, box-shadow .2s ease, transform .22s ease;}
 .architecture-node.is-path-node, .architecture-node.is-focus-node{box-shadow:0 0 0 3px rgba(104,235,202,.12), 0 18px 38px rgba(0,0,0,.34), 0 0 34px rgba(104,235,202,.2);}
 .architecture-observatory.density-simple .architecture-node small, .architecture-observatory.density-simple .architecture-node em, .architecture-observatory.density-simple .architecture-node-metric, .architecture-observatory.density-simple .architecture-node-load, .architecture-observatory.density-simple .architecture-node-queue{display:none;}
 .architecture-link-map g.is-path-highlighted .architecture-link-base{stroke:#6ef0ce;stroke-width:4;}

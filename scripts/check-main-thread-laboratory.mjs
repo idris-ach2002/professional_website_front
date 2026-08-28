@@ -15,6 +15,7 @@ const timeline = read("src/components/PortfolioTimeline.jsx");
 const aquarium = read("src/components/GlobalAquarium.jsx");
 const viewport = read("src/components/ViewportStability.jsx");
 const ocean = read("src/components/OceanMorphBackground.jsx");
+const scrollCoordinator = read("src/performance/scrollFrameCoordinator.js");
 const gsapRuntime = read("src/animations/useGsap.js");
 const sectionTitle = read("src/components/SectionTitle.jsx");
 const projectsShowcase = read("src/components/ProjectsShowcase.jsx");
@@ -121,7 +122,13 @@ const aquariumSelect = aquarium.slice(aquarium.indexOf("const selectViewportBiom
 if (aquariumSelect.includes("getBoundingClientRect")) errors.push("World Director selection hot path must remain layout-free.");
 requireText(viewport, "VIEWPORT_TARGET_SELECTOR", "Viewport values must be scoped to their real consumers.");
 if (viewport.includes("root.style.setProperty")) errors.push("Viewport geometry must not publish inherited custom properties on <html>.");
-requireText(ocean, "const scheduleDepthPaint =", "Ocean depth must use coalesced native RAF publication.");
+requireText(ocean, "subscribeScrollFrame", "Ocean depth must consume the shared scroll-frame publication.");
+requireText(topNavigation, "subscribeScrollFrame", "Navbar active-section tracking must consume the shared scroll-frame publication.");
+requireText(timeline, "getScrollFrameSnapshot", "Timeline scroll geometry must consume the shared scroll-frame snapshot.");
+requireText(aquarium, "getScrollFrameSnapshot", "Aquarium world selection must consume the shared scroll-frame snapshot.");
+requireText(scrollCoordinator, "window.requestAnimationFrame(flush)", "Shared scroll coordinator must coalesce document scroll publication through one native RAF.");
+requireText(scrollCoordinator, 'window.addEventListener("scroll", handleScroll, { passive: true })', "Shared scroll coordinator must keep the document scroll listener passive.");
+requireText(scrollCoordinator, "const visualTop = window.visualViewport?.pageTop", "Shared scroll coordinator must prefer a layout-safe viewport scroll source before Element.scrollTop fallback.");
 requireText(ocean, "global-ocean-depth-overlay", "Global ocean depth must use a dedicated compositor-local overlay.");
 if (ocean.includes("--global-ocean-depth") || ocean.includes("document.documentElement.style.setProperty")) {
   errors.push("Global ocean depth must not publish inherited style state on <html>.");
