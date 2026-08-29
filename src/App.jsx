@@ -38,7 +38,7 @@ const NotFoundPage = lazy(() => import("./components/NotFoundPage"));
 const RecruiterPage = lazy(() => import("./components/RecruiterPage"));
 const MissionControlPage = lazy(() => import("./components/MissionControlPage"));
 
-function DeferredVolcanoField({ performanceMode, animationsPaused, runtimeQuality, runtimeBudget, sceneMode, qualityPreference, effects }) {
+function DeferredVolcanoField({ performanceMode, animationsPaused, runtimeQuality, runtimeBudget, sceneMode, qualityPreference, resolutionPreference, effects }) {
   const { t } = useLanguage();
   const { requestPrefetch } = usePerformanceRuntime();
   const sentinelRef = useRef(null);
@@ -93,7 +93,7 @@ function DeferredVolcanoField({ performanceMode, animationsPaused, runtimeQualit
             </section>
           }
         >
-          <UnderwaterVolcanoField performanceMode={performanceMode} paused={animationsPaused} runtimeQuality={runtimeQuality} runtimeBudget={runtimeBudget} sceneMode={sceneMode} qualityPreference={qualityPreference} effects={effects} />
+          <UnderwaterVolcanoField performanceMode={performanceMode} paused={animationsPaused} runtimeQuality={runtimeQuality} runtimeBudget={runtimeBudget} sceneMode={sceneMode} qualityPreference={qualityPreference} resolutionPreference={resolutionPreference} effects={effects} />
         </Suspense>
       </ErrorBoundary>
     );
@@ -133,6 +133,7 @@ function Home({
     animationsPaused,
     effectiveVolcanoMode,
     effectiveVolcanoQuality,
+    effectiveVolcanoResolution,
     scenePreferences,
   } = responsiveProfile;
   const showVolcano = effectiveVolcanoMode !== "off";
@@ -221,6 +222,7 @@ function Home({
               runtimeBudget={runtimeBudget}
               sceneMode={effectiveVolcanoMode}
               qualityPreference={effectiveVolcanoQuality}
+              resolutionPreference={effectiveVolcanoResolution}
               effects={scenePreferences.volcanoEffects}
             /></VisibilityGate>
             <OceanWorldBridge variant="projects" />

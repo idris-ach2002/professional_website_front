@@ -7,6 +7,7 @@ import {
 } from "react";
 import { gsapReady } from "../animations/useGsap";
 import { announceOceanWorldMounted } from "../ocean/oceanWorldRegistration";
+import { resolveVolcanoResolutionAssets } from "../animations/volcanoResolution";
 import {
   createVolcanoParticles,
   createVolcanoSimulation,
@@ -44,8 +45,6 @@ import {
   writeVolcanoFrame,
 } from "../performance/volcanoWorkerProtocol";
 
-const VOLCANO_ENVIRONMENT_PATH = "/scenes/abyss-volcano-environment.svg";
-
 function resolveDpr(performanceMode, runtimeQuality, budgetCap = Infinity) {
   const deviceDpr = typeof window === "undefined" ? 1 : window.devicePixelRatio || 1;
   const maxDpr = runtimeQuality === "constrained"
@@ -81,6 +80,17 @@ function applyCanvasViewport(canvas, viewport, { bitmap = true } = {}) {
   canvas.style.width = `${viewport.width}px`;
   canvas.style.height = `${viewport.height}px`;
   return { pixelWidth, pixelHeight };
+}
+
+function preloadVolcanoImage(source) {
+  if (typeof Image === "undefined") return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.decoding = "async";
+    image.onload = () => resolve();
+    image.onerror = () => reject(new Error(`Unable to preload volcano asset: ${source}`));
+    image.src = source;
+  });
 }
 
 function supportsVolcanoOffscreenRendering() {
@@ -210,6 +220,7 @@ export default function UnderwaterVolcanoField({
   paused = false,
   runtimeQuality = "high",
   runtimeBudget = null,
+  resolutionPreference = "4k",
 }) {
   useEffect(() => {
     announceOceanWorldMounted("abyss-volcano-field");
@@ -252,6 +263,30 @@ export default function UnderwaterVolcanoField({
   const [canvasWorkerEpoch, setCanvasWorkerEpoch] = useState(0);
   const [rendererKind, setRendererKind] = useState("webgl2");
   const [pageVisible, setPageVisible] = useState(() => typeof document === "undefined" ? true : !document.hidden);
+  const [volcanoImageAssets, setVolcanoImageAssets] = useState(() => resolveVolcanoResolutionAssets(resolutionPreference));
+
+  useEffect(() => {
+    const target = resolveVolcanoResolutionAssets(resolutionPreference);
+    if (target.id === volcanoImageAssets.id) return undefined;
+
+    let cancelled = false;
+    Promise.all([
+      preloadVolcanoImage(target.environment),
+      preloadVolcanoImage(target.foreground),
+    ]).then(() => {
+      if (!cancelled) setVolcanoImageAssets(target);
+    }).catch(() => {
+      // Keep the currently displayed pair if a new resolution cannot be loaded.
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [resolutionPreference, volcanoImageAssets.id]);
+
+  const fallbackToMaxResolution = useCallback(() => {
+    setVolcanoImageAssets((current) => current.id === "max" ? current : resolveVolcanoResolutionAssets("max"));
+  }, []);
 
   const counts = useMemo(() => {
     const base = resolveVolcanoParticleCounts(runtimeQuality, performanceMode);
@@ -793,16 +828,18 @@ export default function UnderwaterVolcanoField({
       className={`volcano-field-section${active ? " is-active" : ""}${sceneReady ? " is-mounted" : " is-suspended"}`}
       data-volcano-stage={active ? "eruption" : "idle"}
       data-volcano-renderer={rendererKind}
+      data-volcano-resolution={volcanoImageAssets.id}
       aria-hidden="true"
     >
       <div ref={stageRef} className="volcano-field-stage" aria-hidden="true">
         <div className="volcano-light-rays" />
         <img
           className="volcano-environment-vector"
-          src={VOLCANO_ENVIRONMENT_PATH}
+          src={volcanoImageAssets.environment}
           alt=""
           loading="lazy"
           decoding="async"
+          onError={fallbackToMaxResolution}
         />
         <div className="volcano-render-stack">
           <canvas ref={webglCanvasRef} className="volcano-webgl-canvas" />
@@ -817,10 +854,11 @@ export default function UnderwaterVolcanoField({
         </div>
         <img
           className="volcano-foreground-vector"
-          src="/scenes/abyss-volcano-foreground.svg"
+          src={volcanoImageAssets.foreground}
           alt=""
           loading="lazy"
           decoding="async"
+          onError={fallbackToMaxResolution}
         />
         <div className="volcano-seabed-vignette" />
       </div>

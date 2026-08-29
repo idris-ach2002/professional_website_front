@@ -3,6 +3,7 @@ import {
   OCEAN_TRANSITION_CONTROLS,
   OCEAN_TRANSITION_PREFERENCE_KEYS,
 } from "../animations/oceanTransitionPreferences";
+import { VOLCANO_RESOLUTION_OPTIONS } from "../animations/volcanoResolution";
 import useAnimationPreferences from "../contexts/useAnimationPreferences";
 import useLanguage from "../localization/useLanguage";
 
@@ -35,7 +36,7 @@ function ModeMarker({ active }) {
 
 function SegmentedModes({ value, options, onChange, labels, ariaLabel }) {
   return (
-    <div className="animation-segmented" role="group" aria-label={ariaLabel}>
+    <div className="animation-segmented" data-option-count={options.length} role="group" aria-label={ariaLabel}>
       {options.map((option) => (
         <button
           key={option}
@@ -135,10 +136,12 @@ export function AnimationControlCenter({ embedded = false }) {
     scenePreferences,
     effectiveVolcanoMode,
     effectiveVolcanoQuality,
+    effectiveVolcanoResolution,
     effectiveNavbarMotion,
     effectiveProfileMotion,
     setVolcanoMode,
     setVolcanoQuality,
+    setVolcanoResolution,
     setVolcanoEffect,
     setNavbarMotion,
     setProfileMotion,
@@ -164,6 +167,13 @@ export function AnimationControlCenter({ embedded = false }) {
     eco: label(t, "animations.quality.eco", "Éco"),
     balanced: label(t, "animations.quality.balanced", "Équilibrée"),
     high: label(t, "animations.quality.high", "Haute"),
+  };
+  const resolutionLabels = {
+    auto: label(t, "animations.resolution.auto", "Auto · 4K"),
+    max: label(t, "animations.resolution.max", "Max"),
+    "4k": label(t, "animations.resolution.4k", "4K"),
+    "2k": label(t, "animations.resolution.2k", "2K"),
+    fhd: label(t, "animations.resolution.fhd", "Full HD"),
   };
 
   return (
@@ -229,6 +239,11 @@ export function AnimationControlCenter({ embedded = false }) {
             <SegmentedModes value={scenePreferences.volcanoQuality} options={VOLCANO_QUALITIES} onChange={setVolcanoQuality} labels={qualityLabels} ariaLabel={label(t, "animations.volcano.qualityAria", "Qualité du volcan")} />
           </div>
           <div className="animation-control-block">
+            <div className="animation-section-heading"><span>{label(t, "animations.volcano.resolution", "Résolution")}</span></div>
+            <SegmentedModes value={scenePreferences.volcanoResolution} options={VOLCANO_RESOLUTION_OPTIONS} onChange={setVolcanoResolution} labels={resolutionLabels} ariaLabel={label(t, "animations.volcano.resolutionAria", "Résolution du volcan")} />
+            <small className="animation-control-hint">{label(t, "animations.volcano.resolutionHint", "Auto utilise 4K par défaut. Max conserve la source originale jusqu’à 5696×3200.")}</small>
+          </div>
+          <div className="animation-control-block">
             <div className="animation-section-heading"><span>{label(t, "animations.volcano.effects", "Effets")}</span></div>
             <div className="animation-switch-list is-compact">
               <SwitchRow label={label(t, "animations.volcano.smoke", "Fumée")} checked={scenePreferences.volcanoEffects.smoke} onChange={(enabled) => setVolcanoEffect("smoke", enabled)} />
@@ -239,7 +254,7 @@ export function AnimationControlCenter({ embedded = false }) {
           </div>
           <div className="animation-effective-card">
             <span>{label(t, "animations.effectiveLabel", "État effectif")}</span>
-            <strong>{label(t, `animations.scene.${effectiveVolcanoMode}`, effectiveVolcanoMode)} · {label(t, `animations.quality.${effectiveVolcanoQuality}`, effectiveVolcanoQuality)}</strong>
+            <strong>{label(t, `animations.scene.${effectiveVolcanoMode}`, effectiveVolcanoMode)} · {label(t, `animations.quality.${effectiveVolcanoQuality}`, effectiveVolcanoQuality)} · {resolutionLabels[effectiveVolcanoResolution] ?? effectiveVolcanoResolution}</strong>
             <small>{label(t, "animations.volcano.safety", "Les protections GPU et mémoire restent toujours actives.")}</small>
           </div>
         </section>

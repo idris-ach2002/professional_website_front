@@ -15,6 +15,8 @@ function Harness() {
       <span data-testid="transition-master">{String(context.transitionPreferences.master)}</span>
       <span data-testid="volcano-mode">{context.scenePreferences.volcanoMode}</span>
       <span data-testid="volcano-quality">{context.scenePreferences.volcanoQuality}</span>
+      <span data-testid="volcano-resolution">{context.scenePreferences.volcanoResolution}</span>
+      <span data-testid="volcano-resolution-effective">{context.effectiveVolcanoResolution}</span>
       <span data-testid="volcano-bubbles">{String(context.scenePreferences.volcanoEffects.bubbles)}</span>
       <span data-testid="navbar-motion">{context.scenePreferences.navbarMotion}</span>
       <span data-testid="profile-motion">{context.scenePreferences.profileMotion}</span>
@@ -27,6 +29,7 @@ function Harness() {
       <button type="button" onClick={context.resetTransitionPreferences}>reset-transitions</button>
       <button type="button" onClick={() => context.setVolcanoMode("animated")}>volcano-animated</button>
       <button type="button" onClick={() => context.setVolcanoQuality("balanced")}>volcano-balanced</button>
+      <button type="button" onClick={() => context.setVolcanoResolution("2k")}>volcano-2k</button>
       <button type="button" onClick={() => context.setVolcanoEffect("bubbles", false)}>disable-bubbles</button>
       <button type="button" onClick={() => context.setNavbarMotion("static")}>navbar-static</button>
       <button type="button" onClick={() => context.setProfileMotion("static")}>profile-static</button>
@@ -84,19 +87,25 @@ describe("AnimationPreferencesProvider", () => {
     const user = userEvent.setup();
     renderProvider();
     await user.click(screen.getByRole("button", { name: "volcano-animated" }));
+    expect(screen.getByTestId("volcano-resolution")).toHaveTextContent("auto");
+    expect(screen.getByTestId("volcano-resolution-effective")).toHaveTextContent("4k");
     await user.click(screen.getByRole("button", { name: "volcano-balanced" }));
+    await user.click(screen.getByRole("button", { name: "volcano-2k" }));
     await user.click(screen.getByRole("button", { name: "disable-bubbles" }));
     await user.click(screen.getByRole("button", { name: "navbar-static" }));
     await user.click(screen.getByRole("button", { name: "profile-static" }));
 
     expect(screen.getByTestId("volcano-mode")).toHaveTextContent("animated");
     expect(screen.getByTestId("volcano-quality")).toHaveTextContent("balanced");
+    expect(screen.getByTestId("volcano-resolution")).toHaveTextContent("2k");
+    expect(screen.getByTestId("volcano-resolution-effective")).toHaveTextContent("2k");
     expect(screen.getByTestId("volcano-bubbles")).toHaveTextContent("false");
     expect(screen.getByTestId("navbar-motion")).toHaveTextContent("static");
     expect(screen.getByTestId("profile-motion")).toHaveTextContent("static");
     expect(JSON.parse(window.localStorage.getItem("portfolio-animation-scenes-v1"))).toMatchObject({
       volcanoMode: "animated",
       volcanoQuality: "balanced",
+      volcanoResolution: "2k",
       volcanoEffects: { bubbles: false },
       navbarMotion: "static",
       profileMotion: "static",
@@ -104,6 +113,8 @@ describe("AnimationPreferencesProvider", () => {
 
     await user.click(screen.getByRole("button", { name: "reset-scenes" }));
     expect(screen.getByTestId("volcano-mode")).toHaveTextContent("auto");
+    expect(screen.getByTestId("volcano-resolution")).toHaveTextContent("auto");
+    expect(screen.getByTestId("volcano-resolution-effective")).toHaveTextContent("4k");
     expect(screen.getByTestId("volcano-bubbles")).toHaveTextContent("true");
   });
 

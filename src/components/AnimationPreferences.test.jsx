@@ -64,11 +64,16 @@ describe("AnimationPreferences", () => {
 
     const quality = screen.getByRole("group", { name: /Qualité du volcan/i });
     await user.click(within(quality).getByRole("button", { name: /Équilibrée/i }));
+
+    const resolution = screen.getByRole("group", { name: /Résolution du volcan/i });
+    expect(within(resolution).getByRole("button", { name: /Auto · 4K/i })).toHaveAttribute("aria-pressed", "true");
+    await user.click(within(resolution).getByRole("button", { name: /^2K$/i }));
     await user.click(screen.getByRole("switch", { name: /Bulles/i }));
 
     expect(JSON.parse(window.localStorage.getItem("portfolio-animation-scenes-v1"))).toMatchObject({
       volcanoMode: "animated",
       volcanoQuality: "balanced",
+      volcanoResolution: "2k",
       volcanoEffects: { bubbles: false },
     });
   });

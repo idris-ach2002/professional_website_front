@@ -4,6 +4,12 @@ import {
   DEFAULT_OCEAN_TRANSITION_PREFERENCES,
   normalizeOceanTransitionPreferences,
 } from "../animations/oceanTransitionPreferences";
+import {
+  DEFAULT_VOLCANO_RESOLUTION,
+  normalizeVolcanoResolution,
+  resolveEffectiveVolcanoResolution,
+  VOLCANO_RESOLUTION_OPTIONS,
+} from "../animations/volcanoResolution";
 
 const MOBILE_QUERY = "(max-width: 820px), (hover: none) and (pointer: coarse) and (max-width: 1366px)";
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
@@ -14,12 +20,14 @@ const SCENE_STORAGE_KEY = "portfolio-animation-scenes-v1";
 const VALID_PREFERENCES = new Set(["auto", "full", "reduced", "off"]);
 const VALID_VOLCANO_MODES = new Set(["auto", "animated", "static", "off"]);
 const VALID_VOLCANO_QUALITIES = new Set(["auto", "eco", "balanced", "high"]);
+const VALID_VOLCANO_RESOLUTIONS = new Set(VOLCANO_RESOLUTION_OPTIONS);
 const VALID_MOTION_MODES = new Set(["auto", "animated", "static"]);
 const VALID_PROFILE_FRAME_INTENSITIES = new Set(["subtle", "elegant", "expressive"]);
 
 const DEFAULT_SCENE_PREFERENCES = Object.freeze({
   volcanoMode: "auto",
   volcanoQuality: "auto",
+  volcanoResolution: DEFAULT_VOLCANO_RESOLUTION,
   volcanoEffects: Object.freeze({
     smoke: true,
     embers: true,
@@ -55,6 +63,7 @@ function normalizeScenePreferences(value) {
   return {
     volcanoMode: VALID_VOLCANO_MODES.has(source.volcanoMode) ? source.volcanoMode : "auto",
     volcanoQuality: VALID_VOLCANO_QUALITIES.has(source.volcanoQuality) ? source.volcanoQuality : "auto",
+    volcanoResolution: normalizeVolcanoResolution(source.volcanoResolution),
     volcanoEffects: {
       smoke: effects.smoke !== false,
       embers: effects.embers !== false,
@@ -247,6 +256,7 @@ export default function AnimationPreferencesProvider({ children }) {
     performanceMode,
   });
   const effectiveVolcanoQuality = resolveEffectiveVolcanoQuality(scenePreferences.volcanoQuality, performanceMode);
+  const effectiveVolcanoResolution = resolveEffectiveVolcanoResolution(scenePreferences.volcanoResolution);
   const effectiveNavbarMotion = resolveEffectiveMotionMode({
     requested: scenePreferences.navbarMotion,
     animationsEnabled,
@@ -289,6 +299,7 @@ export default function AnimationPreferencesProvider({ children }) {
     root.dataset.browserEngine = browserSignals.isFirefox ? "firefox" : "other";
     root.dataset.volcanoMode = effectiveVolcanoMode;
     root.dataset.volcanoQuality = effectiveVolcanoQuality;
+    root.dataset.volcanoResolution = effectiveVolcanoResolution;
     root.dataset.navbarMotion = effectiveNavbarMotion;
     root.dataset.profileMotion = effectiveProfileMotion;
     root.classList.toggle("is-firefox", browserSignals.isFirefox);
@@ -302,6 +313,7 @@ export default function AnimationPreferencesProvider({ children }) {
       delete root.dataset.browserEngine;
       delete root.dataset.volcanoMode;
       delete root.dataset.volcanoQuality;
+      delete root.dataset.volcanoResolution;
       delete root.dataset.navbarMotion;
       delete root.dataset.profileMotion;
       root.classList.remove("is-firefox", "is-gecko", "is-mobile-profile");
@@ -315,6 +327,7 @@ export default function AnimationPreferencesProvider({ children }) {
     effectiveProfileMotion,
     effectiveVolcanoMode,
     effectiveVolcanoQuality,
+    effectiveVolcanoResolution,
     gpuTier,
     mediaState.isMobile,
     performanceMode,
@@ -347,6 +360,7 @@ export default function AnimationPreferencesProvider({ children }) {
     scenePreferences,
     effectiveVolcanoMode,
     effectiveVolcanoQuality,
+    effectiveVolcanoResolution,
     effectiveNavbarMotion,
     effectiveProfileMotion,
     setVolcanoMode: (mode) => {
@@ -356,6 +370,10 @@ export default function AnimationPreferencesProvider({ children }) {
     setVolcanoQuality: (quality) => {
       if (!VALID_VOLCANO_QUALITIES.has(quality)) return;
       setScenePreferencesState((current) => ({ ...current, volcanoQuality: quality }));
+    },
+    setVolcanoResolution: (resolution) => {
+      if (!VALID_VOLCANO_RESOLUTIONS.has(resolution)) return;
+      setScenePreferencesState((current) => ({ ...current, volcanoResolution: resolution }));
     },
     setVolcanoEffect: (effect, enabled) => {
       if (!(effect in DEFAULT_SCENE_PREFERENCES.volcanoEffects)) return;
@@ -396,6 +414,7 @@ export default function AnimationPreferencesProvider({ children }) {
     effectiveProfileMotion,
     effectiveVolcanoMode,
     effectiveVolcanoQuality,
+    effectiveVolcanoResolution,
     gpuTier,
     mediaState,
     paused,

@@ -14,6 +14,7 @@ const smokeTexture = read("src/rendering/volcanoSmokeTexture.js");
 const worker = read("src/workers/volcanoTexture.worker.js");
 const environment = read("public/scenes/abyss-volcano-environment.svg");
 const foreground = read("public/scenes/abyss-volcano-foreground.svg");
+const resolutionPolicy = read("src/animations/volcanoResolution.js");
 const packageJson = JSON.parse(read("package.json"));
 const errors = [];
 
@@ -94,8 +95,21 @@ for (const asset of [
   "public/scenes/abyss-volcano.svg",
   "public/scenes/abyss-volcano-environment.svg",
   "public/scenes/abyss-volcano-foreground.svg",
+  "public/scenes/volcano-raster/abyss-volcano-environment-4k.webp",
+  "public/scenes/volcano-raster/abyss-volcano-foreground-4k.webp",
+  "public/scenes/volcano-raster/abyss-volcano-environment-2k.webp",
+  "public/scenes/volcano-raster/abyss-volcano-foreground-2k.webp",
+  "public/scenes/volcano-raster/abyss-volcano-environment-fhd.webp",
+  "public/scenes/volcano-raster/abyss-volcano-foreground-fhd.webp",
 ]) {
   if (!fs.existsSync(path.join(root, asset))) errors.push(`Missing volcano fallback/environment asset: ${asset}.`);
+}
+if (!resolutionPolicy.includes('normalized === "auto" ? "4k" : normalized')
+  || !resolutionPolicy.includes('width: 5696')
+  || !resolutionPolicy.includes('width: 3840')
+  || !resolutionPolicy.includes('width: 2560')
+  || !resolutionPolicy.includes('width: 1920')) {
+  errors.push("Volcano resolution policy must keep Auto on 4K with Max/4K/2K/FHD source tiers.");
 }
 if (packageJson.dependencies?.three || packageJson.dependencies?.["@react-three/fiber"] || packageJson.dependencies?.["@react-three/rapier"]) {
   errors.push("Volcano simulation must remain dependency-free from Three/Rapier.");
