@@ -32,6 +32,19 @@ jobs:
       - name: Install documentation dependencies
         working-directory: documentation
         run: npm install --no-audit --no-fund
+      - name: Repair Linux native optional dependencies
+        working-directory: documentation
+        shell: bash
+        run: |
+          # npm/cli#4828 can leave a macOS-generated lockfile without Linux optional bindings.
+          # Install the exact native versions requested by the already-resolved parent packages.
+          npm install --no-save --ignore-scripts --no-audit --no-fund \
+            "@rolldown/binding-linux-x64-gnu@$(node -p 'require("./node_modules/rolldown/package.json").optionalDependencies["@rolldown/binding-linux-x64-gnu"]')" \
+            "@astrojs/compiler-binding-linux-x64-gnu@$(node -p 'require("./node_modules/@astrojs/compiler-binding/package.json").optionalDependencies["@astrojs/compiler-binding-linux-x64-gnu"]')" \
+            "@esbuild/linux-x64@$(node -p 'require("./node_modules/esbuild/package.json").optionalDependencies["@esbuild/linux-x64"]')" \
+            "@bruits/satteri-linux-x64-gnu@$(node -p 'require("./node_modules/satteri/package.json").optionalDependencies["@bruits/satteri-linux-x64-gnu"]')" \
+            "@pagefind/linux-x64@$(node -p 'require("./node_modules/pagefind/package.json").optionalDependencies["@pagefind/linux-x64"]')" \
+            "lightningcss-linux-x64-gnu@$(node -p 'require("./node_modules/lightningcss/package.json").optionalDependencies["lightningcss-linux-x64-gnu"]')"
       - name: Validate current-state documentation
         working-directory: documentation
         run: npm run check
