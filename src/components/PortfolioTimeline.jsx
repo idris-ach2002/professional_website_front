@@ -309,19 +309,26 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
       const stageRect = stage.getBoundingClientRect();
       stageGeometry.documentTop = stageRect.top + scrollTop;
       stageGeometry.height = stageRect.height;
+      const measuredHeights = new Array(cards.length);
       for (let index = 0; index < cards.length; index += 1) {
-        const card = cards[index];
-        const rect = card.getBoundingClientRect();
+        const rect = cards[index].getBoundingClientRect();
         const cached = cachedCardGeometry[index];
         cached.documentTop = rect.top + scrollTop;
         cached.height = rect.height;
-        // After the real card height has been measured once, let the browser
-        // skip style/layout/paint for distant card descendants while preserving
-        // the exact measured block size. Visible pixels and scroll geometry stay
-        // unchanged, but large shadows/transparencies no longer paint offscreen.
-        if (rect.height > 0 && "contentVisibility" in card.style) {
+        measuredHeights[index] = rect.height;
+      }
+
+      // Keep the measurement pass read-only. Writing content-visibility inside
+      // the loop above invalidates layout before the next getBoundingClientRect,
+      // which Firefox exposes as repeated synchronous reflows. Applying the
+      // exact same values only after every geometry read preserves rendering and
+      // scroll metrics while removing the read/write interleave.
+      for (let index = 0; index < cards.length; index += 1) {
+        const card = cards[index];
+        const height = measuredHeights[index];
+        if (height > 0 && "contentVisibility" in card.style) {
           card.style.contentVisibility = "auto";
-          card.style.setProperty("contain-intrinsic-size", `auto ${Math.ceil(rect.height)}px`);
+          card.style.setProperty("contain-intrinsic-size", `auto ${Math.ceil(height)}px`);
         }
       }
       geometryDirty = false;

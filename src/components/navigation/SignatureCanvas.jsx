@@ -265,7 +265,19 @@ function createFeatherGeometry(width, height) {
   const p1 = { x: 34 * sx, y: 38 * sy };
   const p2 = { x: 82 * sx, y: 8 * sy };
   const p3 = { x: 124 * sx, y: 4 * sy };
-  return { sx, sy, p0, p1, p2, p3 };
+  return { sx, sy, p0, p1, p2, p3, curveSamples: new Map() };
+}
+
+function getCurveSample(geometry, t) {
+  const cached = geometry.curveSamples.get(t);
+  if (cached) return cached;
+  const { p0, p1, p2, p3 } = geometry;
+  const sample = {
+    point: cubicBezierPoint(p0, p1, p2, p3, t),
+    tangent: cubicBezierTangent(p0, p1, p2, p3, t),
+  };
+  geometry.curveSamples.set(t, sample);
+  return sample;
 }
 
 function featherWidthAt(t, side) {
@@ -295,14 +307,16 @@ function resolveFeatherReleasePulse(time, reveal) {
 }
 
 function drawVaneRibbon(ctx, geometry, side, t0, t1, reveal, wave, pointerPressure, quality, index, contraction, specialDetach = 0) {
-  const { sx, sy, p0, p1, p2, p3 } = geometry;
+  const { sx, sy } = geometry;
   const localReveal = smoothstep(t0 - 0.14, t0 + 0.13, reveal);
   if (localReveal <= 0.001) return;
 
-  const a = cubicBezierPoint(p0, p1, p2, p3, t0);
-  const b = cubicBezierPoint(p0, p1, p2, p3, t1);
-  const tangentA = cubicBezierTangent(p0, p1, p2, p3, t0);
-  const tangentB = cubicBezierTangent(p0, p1, p2, p3, t1);
+  const sampleA = getCurveSample(geometry, t0);
+  const sampleB = getCurveSample(geometry, t1);
+  const a = sampleA.point;
+  const b = sampleB.point;
+  const tangentA = sampleA.tangent;
+  const tangentB = sampleB.tangent;
   const normalA = { x: -tangentA.y * side, y: tangentA.x * side };
   const normalB = { x: -tangentB.y * side, y: tangentB.x * side };
   const baseWidth = (quality === "full" ? 29.6 : 26.0) * Math.min(sx, sy);
@@ -384,7 +398,7 @@ function drawVaneRibbon(ctx, geometry, side, t0, t1, reveal, wave, pointerPressu
 
 function drawMicroFibers(ctx, geometry, state) {
   if (state.quality !== "full") return;
-  const { sx, sy, p0, p1, p2, p3 } = geometry;
+  const { sx, sy } = geometry;
   const fiberCount = 26;
 
   ctx.save();
@@ -395,8 +409,7 @@ function drawMicroFibers(ctx, geometry, state) {
     if (stagger <= 0.005) continue;
 
     const side = index % 2 === 0 ? -1 : 1;
-    const anchor = cubicBezierPoint(p0, p1, p2, p3, t);
-    const tangent = cubicBezierTangent(p0, p1, p2, p3, t);
+    const { point: anchor, tangent } = getCurveSample(geometry, t);
     const normal = { x: -tangent.y * side, y: tangent.x * side };
     const width = (20.5 * featherWidthAt(t, side)) * Math.min(sx, sy);
     const localWave = Math.sin(state.time * 0.002 + index * 0.73) * (0.45 + state.hover * 0.35);
@@ -428,7 +441,6 @@ function drawMicroFibers(ctx, geometry, state) {
 
 function drawFeatherSparks(ctx, geometry, sparks, state) {
   if (state.quality === "static") return;
-  const { p0, p1, p2, p3 } = geometry;
   const seconds = state.time * 0.001;
   const count = state.quality === "full" ? sparks.length : Math.min(5, sparks.length);
 
@@ -438,8 +450,7 @@ function drawFeatherSparks(ctx, geometry, sparks, state) {
     if (life < 0.58) continue;
     const activeLife = (life - 0.58) / 0.42;
     const fade = Math.sin(activeLife * Math.PI);
-    const anchor = cubicBezierPoint(p0, p1, p2, p3, spark.t);
-    const tangent = cubicBezierTangent(p0, p1, p2, p3, spark.t);
+    const { point: anchor, tangent } = getCurveSample(geometry, spark.t);
     const normal = { x: -tangent.y * spark.side, y: tangent.x * spark.side };
     const x = anchor.x + normal.x * spark.spread * activeLife + tangent.x * activeLife * 4;
     const y = anchor.y + normal.y * spark.spread * activeLife - spark.rise * activeLife;
@@ -501,10 +512,9 @@ function drawLooseFragment(ctx, pose, fragment, scaleUnit, alpha = 1) {
 }
 
 function resolveFragmentPose(fragment, geometry, specialEvent) {
-  const { sx, sy, p0, p1, p2, p3 } = geometry;
+  const { sx, sy } = geometry;
   const { elapsed } = specialEvent;
-  const anchor = cubicBezierPoint(p0, p1, p2, p3, fragment.t);
-  const tangent = cubicBezierTangent(p0, p1, p2, p3, fragment.t);
+  const { point: anchor, tangent } = getCurveSample(geometry, fragment.t);
   const normal = { x: -tangent.y * fragment.side, y: tangent.x * fragment.side };
   const startWidth = 16.5 * featherWidthAt(fragment.t, fragment.side) * Math.min(sx, sy);
   const start = {
@@ -627,8 +637,7 @@ function drawTransformationFragments(ctx, geometry, fragments, state) {
   }
 }
 
-function drawFeather(ctx, width, height, state, sparks, fragments) {
-  const geometry = createFeatherGeometry(width, height);
+function drawFeather(ctx, geometry, state, sparks, fragments) {
   const { p0, p1, p2, p3, sx, sy } = geometry;
   const featherReveal = easeOutQuint(clamp(state.reveal / 0.72, 0, 1));
   const ambientContraction = resolveFeatherContraction(state.time, state.reveal);
@@ -720,7 +729,7 @@ function drawFeather(ctx, width, height, state, sparks, fragments) {
   ctx.restore();
 }
 
-function drawSignature(ctx, width, height, particles, sparks, fragments, state) {
+function drawSignature(ctx, width, height, geometry, particles, sparks, fragments, state) {
   ctx.clearRect(0, 0, width, height);
 
   const specialEvent = resolveSpecialEvent(state.time, state.reveal, state.quality);
@@ -729,7 +738,7 @@ function drawSignature(ctx, width, height, particles, sparks, fragments, state) 
     ...frameState,
     hover: frameState.hover + (specialEvent.active ? specialEvent.detachAmount * 0.16 : 0),
   });
-  drawFeather(ctx, width, height, frameState, sparks, fragments);
+  drawFeather(ctx, geometry, frameState, sparks, fragments);
   return specialEvent;
 }
 
@@ -776,6 +785,7 @@ function SignatureCanvas({ name = "IDRIS" }) {
       left: 0,
       top: 0,
       readyPublished: false,
+      geometry: createFeatherGeometry(252, 62),
       renderedQuality: "",
       renderedEvent: "",
     };
@@ -798,6 +808,7 @@ function SignatureCanvas({ name = "IDRIS" }) {
       interaction.height = height;
       interaction.left = rect.left;
       interaction.top = rect.top;
+      interaction.geometry = createFeatherGeometry(width, height);
     };
 
     const scheduleResize = () => {
@@ -812,7 +823,7 @@ function SignatureCanvas({ name = "IDRIS" }) {
       const quality = currentQuality();
       interaction.hover += (interaction.hoverTarget - interaction.hover) * 0.105;
       interaction.pointerPressure += (interaction.pointerPressureTarget - interaction.pointerPressure) * 0.09;
-      const specialEvent = drawSignature(ctx, interaction.width, interaction.height, particles, sparks, fragments, {
+      const specialEvent = drawSignature(ctx, interaction.width, interaction.height, interaction.geometry, particles, sparks, fragments, {
         reveal,
         hover: interaction.hover,
         pointerX: interaction.pointerX,
