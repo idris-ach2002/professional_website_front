@@ -129,6 +129,11 @@ requireText(aquarium, "getScrollFrameSnapshot", "Aquarium world selection must c
 requireText(scrollCoordinator, "window.requestAnimationFrame(flush)", "Shared scroll coordinator must coalesce document scroll publication through one native RAF.");
 requireText(scrollCoordinator, 'window.addEventListener("scroll", handleScroll, { passive: true })', "Shared scroll coordinator must keep the document scroll listener passive.");
 requireText(scrollCoordinator, "const visualTop = window.visualViewport?.pageTop", "Shared scroll coordinator must prefer a layout-safe viewport scroll source before Element.scrollTop fallback.");
+requireText(scrollCoordinator, "const refreshMetrics = forceMetrics || metricsDirty || snapshot.version === 0", "Shared scroll coordinator must cache viewport metrics between resize invalidations.");
+const scrollSnapshot = scrollCoordinator.slice(scrollCoordinator.indexOf("function readSnapshot"), scrollCoordinator.indexOf("function flush"));
+if (!scrollSnapshot.includes(": snapshot.viewportWidth") || !scrollSnapshot.includes(": snapshot.viewportHeight")) {
+  errors.push("Shared scroll coordinator must reuse cached viewport dimensions on scroll-only frames.");
+}
 requireText(ocean, "global-ocean-depth-overlay", "Global ocean depth must use a dedicated compositor-local overlay.");
 if (ocean.includes("--global-ocean-depth") || ocean.includes("document.documentElement.style.setProperty")) {
   errors.push("Global ocean depth must not publish inherited style state on <html>.");

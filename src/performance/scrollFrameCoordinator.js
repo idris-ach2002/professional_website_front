@@ -27,12 +27,17 @@ function readScrollTop() {
 
 function readSnapshot(timestamp = performance.now(), forceMetrics = false) {
   const scrollingElement = document.scrollingElement ?? document.documentElement;
-  const viewportWidth = Math.max(1, window.visualViewport?.width ?? window.innerWidth ?? snapshot.viewportWidth ?? 1);
-  const viewportHeight = Math.max(1, window.visualViewport?.height ?? window.innerHeight ?? snapshot.viewportHeight ?? 1);
+  const refreshMetrics = forceMetrics || metricsDirty || snapshot.version === 0;
+  const viewportWidth = refreshMetrics
+    ? Math.max(1, window.visualViewport?.width ?? window.innerWidth ?? snapshot.viewportWidth ?? 1)
+    : snapshot.viewportWidth;
+  const viewportHeight = refreshMetrics
+    ? Math.max(1, window.visualViewport?.height ?? window.innerHeight ?? snapshot.viewportHeight ?? 1)
+    : snapshot.viewportHeight;
   const scrollTop = readScrollTop();
   const delta = scrollTop - snapshot.scrollTop;
   const direction = Math.abs(delta) >= 0.5 ? (delta > 0 ? "down" : "up") : snapshot.direction;
-  const scrollHeight = forceMetrics || metricsDirty || snapshot.version === 0
+  const scrollHeight = refreshMetrics
     ? Math.max(viewportHeight, scrollingElement?.scrollHeight ?? document.documentElement?.scrollHeight ?? viewportHeight)
     : snapshot.scrollHeight;
 
