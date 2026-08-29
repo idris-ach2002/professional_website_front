@@ -5,6 +5,19 @@ const STATION_GLOW_LAYOUT = Object.freeze(Array.from({ length: 14 }, (_, index) 
   row: Math.floor(index / 7),
   yJitter: Math.sin(index * 2.3) * 0.026,
 })));
+const PRESSURE_RAY_LAYOUT = Object.freeze(Array.from({ length: 7 }, (_, index) => Object.freeze({
+  x: 0.02 + index * 0.165,
+  y: 0.46 + (index % 2) * 0.08,
+  alpha: 0.075 + (index % 3) * 0.018,
+})));
+const MINERAL_VEIN_LAYOUT = Object.freeze(Array.from({ length: 7 }, (_, vein) => Object.freeze({
+  offset: vein - 3,
+  colorIndex: vein % 3,
+  lineWidth: 0.9 + (vein % 3) * 0.45,
+  sin1: Math.sin(vein + 1),
+  cos16: Math.cos(vein * 1.6),
+  sin22: Math.sin(vein * 2.2),
+})));
 function clamp01(value) {
   return Math.min(1, Math.max(0, value));
 }
@@ -43,31 +56,54 @@ function makeRandom(seed = 0x5219) {
 
 function createSceneParticles(count, seed) {
   const random = makeRandom(seed);
-  return Array.from({ length: count }, (_, index) => ({
-    x: random(),
-    y: random(),
-    size: 0.8 + random() * 3.2,
-    speed: 0.32 + random() * 1.25,
-    drift: (random() - 0.5) * 0.18,
-    phase: random() * Math.PI * 2,
-    layer: index % 3,
-    streakLayerScale: 0.55 + (index % 3) * 0.44,
-    streakAlphaBase: 0.15 + (index % 3) * 0.11,
-    stationWidth: 2 + (index % 3) * 2,
-  }));
+  return Array.from({ length: count }, (_, index) => {
+    const x = random();
+    const y = random();
+    const size = 0.8 + random() * 3.2;
+    const speed = 0.32 + random() * 1.25;
+    const drift = (random() - 0.5) * 0.18;
+    const phase = random() * Math.PI * 2;
+    const layer = index % 3;
+    return {
+      x,
+      y,
+      size,
+      speed,
+      drift,
+      phase,
+      layer,
+      streakLayerScale: 0.55 + layer * 0.44,
+      streakAlphaBase: 0.15 + layer * 0.11,
+      stationWidth: 2 + layer * 2,
+      seismicRadialBase: 0.12 + speed * 0.34,
+      seismicAngularBase: 0.9 + speed * 0.48,
+      seismicHeight: size * 0.62,
+      mineralThreshold: x * 0.30,
+      mineralBaseX: 0.43 + x * 0.14,
+    };
+  });
 }
 
 function createRockShards(count, seed) {
   const random = makeRandom(seed ^ 0x9914);
-  return Array.from({ length: count }, (_, index) => ({
-    side: index % 2 === 0 ? -1 : 1,
-    y: 0.04 + random() * 0.88,
-    width: 0.045 + random() * 0.12,
-    height: 0.05 + random() * 0.17,
-    depth: 0.45 + random() * 0.9,
-    skew: (random() - 0.5) * 0.8,
-    phase: random() * Math.PI * 2,
-  }));
+  return Array.from({ length: count }, (_, index) => {
+    const y = 0.04 + random() * 0.88;
+    const width = 0.045 + random() * 0.12;
+    const height = 0.05 + random() * 0.17;
+    const depth = 0.45 + random() * 0.9;
+    const skew = (random() - 0.5) * 0.8;
+    const phase = random() * Math.PI * 2;
+    return {
+      side: index % 2 === 0 ? -1 : 1,
+      y,
+      width,
+      height,
+      depth,
+      skew,
+      phase,
+      edgeSkew: 0.14 + skew * 0.12,
+    };
+  });
 }
 
 function resizeCanvas(canvas, runtimeQuality) {
@@ -166,14 +202,15 @@ function drawPressureDescent(context, viewport, progress, particles, reverse = f
   if (e < 1) {
     context.save();
     context.globalCompositeOperation = "screen";
-    for (let index = 0; index < 7; index += 1) {
-      const x = width * (0.02 + index * 0.165);
+    for (let index = 0; index < PRESSURE_RAY_LAYOUT.length; index += 1) {
+      const ray = PRESSURE_RAY_LAYOUT[index];
+      const x = width * ray.x;
       const narrowing = 1 - e * 0.82;
-      context.fillStyle = `rgba(219,252,255,${(1 - e) * (0.075 + (index % 3) * 0.018)})`;
+      context.fillStyle = `rgba(219,252,255,${(1 - e) * ray.alpha})`;
       context.beginPath();
       context.moveTo(x, -40);
-      context.lineTo(x + width * 0.05 * narrowing, height * (0.46 + index % 2 * 0.08));
-      context.lineTo(x + width * 0.13 * narrowing, height * (0.46 + index % 2 * 0.08));
+      context.lineTo(x + width * 0.05 * narrowing, height * ray.y);
+      context.lineTo(x + width * 0.13 * narrowing, height * ray.y);
       context.lineTo(x + width * 0.025, -40);
       context.closePath();
       context.fill();
@@ -251,7 +288,7 @@ function drawRockShards(context, viewport, shards, progress, heat = 0) {
     context.fillStyle = gradient;
     context.beginPath();
     context.moveTo(x, y);
-    context.lineTo(x + shard.side * w, y + h * (0.14 + shard.skew * 0.12));
+    context.lineTo(x + shard.side * w, y + h * shard.edgeSkew);
     context.lineTo(x + shard.side * w * 0.72, y + h);
     context.lineTo(x + shard.side * w * 0.12, y + h * 0.78);
     context.closePath();
@@ -345,12 +382,12 @@ function drawSeismicRift(context, viewport, progress, particles, shards, reverse
   }
 
   for (const particle of particles) {
-    const radial = 0.025 + fracture * (0.12 + particle.speed * 0.34);
-    const angle = particle.phase + p * (0.9 + particle.speed * 0.48);
+    const radial = 0.025 + fracture * particle.seismicRadialBase;
+    const angle = particle.phase + p * particle.seismicAngularBase;
     const x = crackX + Math.cos(angle) * width * radial;
     const y = height * 0.56 + Math.sin(angle) * height * radial * 0.72 - fracture * height * particle.speed * 0.15;
     context.fillStyle = particle.layer === 2 ? "rgba(255,162,71,.58)" : "rgba(133,151,152,.30)";
-    context.fillRect(x, y, particle.size * (1 + fracture * 0.8), particle.size * 0.62);
+    context.fillRect(x, y, particle.size * (1 + fracture * 0.8), particle.seismicHeight);
   }
 
   const pulse = Math.max(0, 1 - Math.abs(p - 0.76) / 0.105);
@@ -586,23 +623,23 @@ function drawMineralResonance(context, viewport, progress, particles, shards, re
   if (crack > 0) {
     context.save();
     context.lineCap = "round";
-    const veinColors = [
-      `rgba(252,216,120,${crack * 0.72})`,
-      `rgba(157,237,251,${crack * 0.66})`,
-      `rgba(184,153,249,${crack * 0.38})`,
-    ];
-    for (let vein = 0; vein < 7; vein += 1) {
-      const spread = (vein - 3) * width * 0.0105;
-      context.strokeStyle = veinColors[vein % veinColors.length];
-      context.lineWidth = 0.9 + (vein % 3) * 0.45;
-      context.shadowColor = veinColors[vein % veinColors.length];
+    const veinColor0 = `rgba(252,216,120,${crack * 0.72})`;
+    const veinColor1 = `rgba(157,237,251,${crack * 0.66})`;
+    const veinColor2 = `rgba(184,153,249,${crack * 0.38})`;
+    for (let vein = 0; vein < MINERAL_VEIN_LAYOUT.length; vein += 1) {
+      const layout = MINERAL_VEIN_LAYOUT[vein];
+      const spread = layout.offset * width * 0.0105;
+      const veinColor = layout.colorIndex === 0 ? veinColor0 : layout.colorIndex === 1 ? veinColor1 : veinColor2;
+      context.strokeStyle = veinColor;
+      context.lineWidth = layout.lineWidth;
+      context.shadowColor = veinColor;
       context.shadowBlur = 7 + crack * 11;
       const startX = width * 0.5 + spread;
       context.beginPath();
       context.moveTo(startX, height * 0.18);
-      context.lineTo(startX + width * 0.012 * Math.sin(vein + 1), height * 0.34);
-      context.lineTo(startX - width * 0.017 * Math.cos(vein * 1.6), height * 0.52);
-      context.lineTo(startX + width * 0.019 * Math.sin(vein * 2.2), height * 0.72);
+      context.lineTo(startX + width * 0.012 * layout.sin1, height * 0.34);
+      context.lineTo(startX - width * 0.017 * layout.cos16, height * 0.52);
+      context.lineTo(startX + width * 0.019 * layout.sin22, height * 0.72);
       context.lineTo(startX - width * 0.006, height * 0.90);
       context.stroke();
     }
@@ -610,9 +647,9 @@ function drawMineralResonance(context, viewport, progress, particles, shards, re
   }
 
   for (const particle of particles) {
-    const local = clamp01((crack - particle.x * 0.30) / 0.74);
+    const local = clamp01((crack - particle.mineralThreshold) / 0.74);
     if (local <= 0) continue;
-    const x = width * (0.43 + particle.x * 0.14) + Math.sin(particle.phase + p * 6) * width * 0.010;
+    const x = width * particle.mineralBaseX + Math.sin(particle.phase + p * 6) * width * 0.010;
     const y = particle.y * height;
     context.fillStyle = particle.layer === 2 ? `rgba(255,219,132,${local * 0.54})` : `rgba(176,241,249,${local * 0.36})`;
     context.beginPath();

@@ -1,21 +1,24 @@
 import { scheduleBackgroundTask } from "./runtimeScheduler.js";
 
 
-export function createOceanTransitionFramePump(worker, sceneToken) {
+export function createOceanTransitionFramePump(worker, sceneToken, callbacks = null) {
   let disposed = false;
   let inFlight = false;
-  let pendingFrame = null;
+  let inFlightProgress = 0;
+  let pendingProgress = null;
   let sequence = 0;
   const collectStats = import.meta.env.DEV;
   const stats = { requested: 0, sent: 0, rendered: 0, coalesced: 0, maxBacklog: 0 };
 
-  const sendFrame = (frame) => {
+  const sendFrame = (progress) => {
     inFlight = true;
+    inFlightProgress = progress;
     sequence += 1;
     if (collectStats) stats.sent += 1;
+    callbacks?.onBeforeSend?.(progress);
     worker.postMessage({
       type: "frame",
-      ...frame,
+      progress,
       sceneToken,
       sequence,
     });
@@ -27,32 +30,33 @@ export function createOceanTransitionFramePump(worker, sceneToken) {
 
     inFlight = false;
     if (collectStats) stats.rendered += 1;
-    if (disposed || !pendingFrame) return;
+    callbacks?.onRendered?.(inFlightProgress);
+    if (disposed || pendingProgress === null) return;
 
-    const nextFrame = pendingFrame;
-    pendingFrame = null;
-    sendFrame(nextFrame);
+    const nextProgress = pendingProgress;
+    pendingProgress = null;
+    sendFrame(nextProgress);
   };
 
   worker.addEventListener("message", handleMessage);
 
   return {
-    postFrame(frame) {
+    postFrame(progress) {
       if (disposed) return false;
       if (collectStats) stats.requested += 1;
       if (inFlight) {
         if (collectStats) {
-          if (pendingFrame) stats.coalesced += 1;
+          if (pendingProgress !== null) stats.coalesced += 1;
           stats.maxBacklog = Math.max(stats.maxBacklog, 1);
         }
-        pendingFrame = frame;
+        pendingProgress = progress;
         return false;
       }
-      sendFrame(frame);
+      sendFrame(progress);
       return true;
     },
     clearPending() {
-      pendingFrame = null;
+      pendingProgress = null;
     },
     getStats() {
       return { ...stats };
@@ -60,7 +64,7 @@ export function createOceanTransitionFramePump(worker, sceneToken) {
     dispose() {
       if (disposed) return;
       disposed = true;
-      pendingFrame = null;
+      pendingProgress = null;
       worker.removeEventListener("message", handleMessage);
     },
   };
@@ -93,7 +97,7 @@ export function scheduleOceanTransitionOffscreen(canvas, runtimeQuality, signal)
       return {
         worker,
         viewport,
-        createFramePump: (sceneToken) => createOceanTransitionFramePump(worker, sceneToken),
+        createFramePump: (sceneToken, callbacks) => createOceanTransitionFramePump(worker, sceneToken, callbacks),
       };
     } catch (error) {
       worker.terminate();

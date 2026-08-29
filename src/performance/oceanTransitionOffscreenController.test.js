@@ -101,11 +101,13 @@ describe("ocean transition OffscreenCanvas protocol", () => {
       listeners.forEach((listener) => listener({ data }));
     };
 
-    const pump = createOceanTransitionFramePump(worker, 42);
+    const onBeforeSend = vi.fn();
+    const onRendered = vi.fn();
+    const pump = createOceanTransitionFramePump(worker, 42, { onBeforeSend, onRendered });
 
-    expect(pump.postFrame({ progress: 0.1 })).toBe(true);
-    expect(pump.postFrame({ progress: 0.2 })).toBe(false);
-    expect(pump.postFrame({ progress: 0.3 })).toBe(false);
+    expect(pump.postFrame(0.1)).toBe(true);
+    expect(pump.postFrame(0.2)).toBe(false);
+    expect(pump.postFrame(0.3)).toBe(false);
 
     expect(worker.postMessage).toHaveBeenCalledTimes(1);
     expect(worker.postMessage.mock.calls[0][0]).toEqual({
@@ -114,11 +116,13 @@ describe("ocean transition OffscreenCanvas protocol", () => {
       sceneToken: 42,
       sequence: 1,
     });
+    expect(onBeforeSend).toHaveBeenCalledWith(0.1);
 
     emit({ type: "frame-rendered", sceneToken: 999, sequence: 1 });
     expect(worker.postMessage).toHaveBeenCalledTimes(1);
 
     emit({ type: "frame-rendered", sceneToken: 42, sequence: 1 });
+    expect(onRendered).toHaveBeenCalledWith(0.1);
     expect(worker.postMessage).toHaveBeenCalledTimes(2);
     expect(worker.postMessage.mock.calls[1][0]).toEqual({
       type: "frame",
@@ -126,12 +130,14 @@ describe("ocean transition OffscreenCanvas protocol", () => {
       sceneToken: 42,
       sequence: 2,
     });
+    expect(onBeforeSend).toHaveBeenLastCalledWith(0.3);
 
     emit({ type: "frame-rendered", sceneToken: 42, sequence: 2 });
+    expect(onRendered).toHaveBeenLastCalledWith(0.3);
     expect(worker.postMessage).toHaveBeenCalledTimes(2);
 
     pump.dispose();
-    expect(pump.postFrame({ progress: 0.4 })).toBe(false);
+    expect(pump.postFrame(0.4)).toBe(false);
     expect(worker.removeEventListener).toHaveBeenCalledTimes(1);
   });
 

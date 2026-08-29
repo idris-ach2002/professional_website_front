@@ -892,7 +892,11 @@ export default function GlobalAquarium({
         } else {
           stepMarinePopulation(agentsRef.current, delta, elapsedRef.current, biomeRef.current, danger);
         }
-        if (transitionProgress < 1 && previousAgentsRef.current.length) {
+        // The previous biome is fully masked for the entire cinematic. Keep
+        // the new biome simulation time-correct, but do not spend CPU stepping
+        // a population whose pixels are forced to opacity:0 and discarded at
+        // transition completion.
+        if (!cinematicRef.current && transitionProgress < 1 && previousAgentsRef.current.length) {
           stepMarinePopulation(previousAgentsRef.current, delta, elapsedRef.current, transition.from, danger);
         }
       }

@@ -77,13 +77,14 @@ export default function OceanMorphBackground({
 
     let lastGlobalPublish = 0;
     let lastDepth = Number.NaN;
+    let pendingDepth = Number.NaN;
+    let cinematicOpaque = document.documentElement.dataset.oceanCinematicOpaque === "true";
     let firstScrollFrame = true;
     const minGlobalInterval = 1000 / GLOBAL_DEPTH_PAINT_FPS;
     const toDepth = (progress) => clamp(Math.pow(progress * 1.5, 0.92), 0, 1);
 
-    const paintDepth = (progress, force = false) => {
+    const publishDepth = (depth, force = false) => {
       const now = performance.now();
-      const depth = Number(toDepth(progress).toFixed(4));
       if (depth === lastDepth && !force) return;
       lastDepth = depth;
       root.style.setProperty("--ocean-depth", String(depth));
@@ -95,6 +96,24 @@ export default function OceanMorphBackground({
       }
     };
 
+    const paintDepth = (progress, force = false) => {
+      const depth = Number(toDepth(progress).toFixed(4));
+      if (cinematicOpaque && !force) {
+        pendingDepth = depth;
+        return;
+      }
+      pendingDepth = Number.NaN;
+      publishDepth(depth, force);
+    };
+
+    const handleCinematicOpaque = (event) => {
+      cinematicOpaque = Boolean(event.detail?.opaque);
+      if (cinematicOpaque || !Number.isFinite(pendingDepth)) return;
+      const depth = pendingDepth;
+      pendingDepth = Number.NaN;
+      publishDepth(depth, true);
+    };
+
     // Phase 4: consume the shared document scroll snapshot. Navbar, Timeline and
     // the Aquarium use the same cached scroll position instead of independently
     // querying Element.scrollTop from separate RAF callbacks.
@@ -103,10 +122,12 @@ export default function OceanMorphBackground({
       paintDepth(progress, firstScrollFrame);
       firstScrollFrame = false;
     });
+    window.addEventListener("portfolio:ocean-cinematic-opaque", handleCinematicOpaque);
 
     return () => {
       animations.forEach((animation) => animation.kill());
       unsubscribeScrollFrame();
+      window.removeEventListener("portfolio:ocean-cinematic-opaque", handleCinematicOpaque);
     };
   }, [staticMode, depthOnly, performanceMode, runtimeQuality], {
     allowOnMobile: depthOnly,

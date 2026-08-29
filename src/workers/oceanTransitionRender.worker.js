@@ -15,6 +15,11 @@ let sceneToken = null;
 let particles = [];
 let shards = [];
 let transformDirty = true;
+const frameRenderedMessage = {
+  type: "frame-rendered",
+  sceneToken: null,
+  sequence: 0,
+};
 
 function applyViewport(next) {
   viewport = next ?? viewport;
@@ -68,11 +73,9 @@ self.onmessage = (event) => {
   if (message.type !== "frame") return;
 
   const acknowledgeFrame = () => {
-    self.postMessage({
-      type: "frame-rendered",
-      sceneToken: message.sceneToken,
-      sequence: message.sequence,
-    });
+    frameRenderedMessage.sceneToken = message.sceneToken;
+    frameRenderedMessage.sequence = message.sequence;
+    self.postMessage(frameRenderedMessage);
   };
 
   if (!context || !canvas || !scenePlan || message.sceneToken !== sceneToken) {

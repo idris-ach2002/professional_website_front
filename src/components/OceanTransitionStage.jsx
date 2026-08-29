@@ -114,10 +114,36 @@ export default function OceanTransitionStage({ reducedMotion = false, performanc
     let context = null;
     let particles = null;
     let shards = null;
+    let cinematicOpaque = false;
+
+    const publishCinematicOpaque = (nextOpaque) => {
+      const next = Boolean(nextOpaque);
+      if (next === cinematicOpaque) return;
+      cinematicOpaque = next;
+      if (next) document.documentElement.dataset.oceanCinematicOpaque = "true";
+      else delete document.documentElement.dataset.oceanCinematicOpaque;
+      window.dispatchEvent(new CustomEvent("portfolio:ocean-cinematic-opaque", {
+        detail: { opaque: next, key: enabledScene.key },
+      }));
+    };
+
+    const isOpaqueProgress = (progress) => sceneFade(progress) >= 1;
 
     const worker = workerRef.current;
     const useWorker = Boolean(workerOwnedCanvasRef.current && worker);
-    const framePump = useWorker ? workerFramePumpFactoryRef.current?.(enabledScene.token) : null;
+    const framePump = useWorker ? workerFramePumpFactoryRef.current?.(enabledScene.token, {
+      // Enter the hidden-work phase only after the Worker confirms that an
+      // actually rendered frame is fully opaque. Leave it immediately before
+      // the first translucent frame is posted, while the previous frame is
+      // still opaque. This keeps the visual contract exact even under Worker
+      // backpressure.
+      onBeforeSend: (progress) => {
+        if (cinematicOpaque && !isOpaqueProgress(progress)) publishCinematicOpaque(false);
+      },
+      onRendered: (progress) => {
+        if (!cinematicOpaque && isOpaqueProgress(progress)) publishCinematicOpaque(true);
+      },
+    }) : null;
     if (!useWorker) {
       context = canvas.getContext("2d", { alpha: true, desynchronized: true });
       if (!context) return undefined;
@@ -175,10 +201,11 @@ export default function OceanTransitionStage({ reducedMotion = false, performanc
       const viewport = viewportRef.current;
 
       if (useWorker) {
-        const frame = { progress };
-        if (framePump) framePump.postFrame(frame);
-        else worker.postMessage({ type: "frame", ...frame, sceneToken: enabledScene.token });
+        if (framePump) framePump.postFrame(progress);
+        else worker.postMessage({ type: "frame", progress, sceneToken: enabledScene.token });
       } else {
+        const opaque = isOpaqueProgress(progress);
+        if (cinematicOpaque && !opaque) publishCinematicOpaque(false);
         context.setTransform(viewport.dpr, 0, 0, viewport.dpr, 0, 0);
         context.clearRect(0, 0, viewport.width, viewport.height);
         context.globalAlpha = sceneFade(progress);
@@ -187,12 +214,15 @@ export default function OceanTransitionStage({ reducedMotion = false, performanc
         } finally {
           context.globalAlpha = 1;
         }
+        if (!cinematicOpaque && opaque) publishCinematicOpaque(true);
       }
 
       if (progress < 1) {
         rafRef.current = window.requestAnimationFrame(paint);
       } else {
         framePump?.clearPending();
+        framePump?.dispose();
+        publishCinematicOpaque(false);
         if (useWorker) worker.postMessage({ type: "clear" });
         else context.clearRect(0, 0, viewport.width, viewport.height);
         if (document.documentElement.dataset.oceanCinematic === enabledScene.key) delete document.documentElement.dataset.oceanCinematic;
@@ -208,6 +238,7 @@ export default function OceanTransitionStage({ reducedMotion = false, performanc
       window.visualViewport?.removeEventListener("resize", scheduleResize);
       window.cancelAnimationFrame(resizeFrame);
       framePump?.dispose();
+      publishCinematicOpaque(false);
       if (useWorker) worker.postMessage({ type: "clear" });
       if (document.documentElement.dataset.oceanCinematic === enabledScene.key) delete document.documentElement.dataset.oceanCinematic;
     };

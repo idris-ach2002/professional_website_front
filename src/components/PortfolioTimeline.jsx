@@ -184,6 +184,7 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
     let geometryDirty = true;
     let pendingCardSyncForce = false;
     let pendingGeometryMeasure = false;
+    let cinematicOpaque = document.documentElement.dataset.oceanCinematicOpaque === "true";
     let revealTimers = [];
     let requestedTargetIndex = -1;
     const visibleCards = new Map();
@@ -377,9 +378,14 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
     const scheduleCardSync = ({ force = false, remeasure = false } = {}) => {
       pendingCardSyncForce = pendingCardSyncForce || force;
       pendingGeometryMeasure = pendingGeometryMeasure || remeasure;
+      // During a fully opaque ocean cinematic no Timeline pixel can reach the
+      // screen. Keep the latest intent, but defer the geometry/layout pass
+      // until the transition is about to reveal the page again.
+      if (cinematicOpaque) return;
       if (scrollFrame) return;
       scrollFrame = window.requestAnimationFrame(() => {
         scrollFrame = 0;
+        if (cinematicOpaque) return;
         const nextForce = pendingCardSyncForce;
         const nextRemeasure = pendingGeometryMeasure;
         pendingCardSyncForce = false;
@@ -491,11 +497,19 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
       if (!lastTimestamp) lastTimestamp = timestamp;
       const deltaSeconds = clamp((timestamp - lastTimestamp) / 1000, 0, 0.05);
       lastTimestamp = timestamp;
-      const activeMetrics = metrics ?? measure();
 
       if (explorationDrone && !isMobile) {
         stepInspectionPilotInPlace(pilot, deltaSeconds, { mobile: false });
 
+        // Continue simulation while hidden so the first revealed frame uses
+        // the exact time-correct pilot state, but avoid DOM/compositor writes
+        // while a confirmed fully opaque cinematic frame covers the Timeline.
+        if (cinematicOpaque) {
+          frame = window.requestAnimationFrame(renderFrame);
+          return;
+        }
+
+        const activeMetrics = metrics ?? measure();
         const x = activeMetrics.sideMargin + activeMetrics.droneRangeX * pilot.x;
         const y = activeMetrics.droneRangeY * pilot.y;
         const transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0)`;
@@ -679,6 +693,12 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
     const cardObserver = new IntersectionObserver(
       (entries) => {
         syncTravelDirectionFromScroll();
+        if (cinematicOpaque) {
+          geometryDirty = true;
+          pendingGeometryMeasure = true;
+          pendingCardSyncForce = true;
+          return;
+        }
         entries.forEach((entry) => {
           const index = Number(entry.target.dataset.timelineCardIndex);
           const cardTop = Number(entry.boundingClientRect?.top);
@@ -710,12 +730,32 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
     };
 
     const scheduleMeasure = () => {
+      if (cinematicOpaque) {
+        geometryDirty = true;
+        pendingGeometryMeasure = true;
+        pendingCardSyncForce = true;
+        return;
+      }
       window.cancelAnimationFrame(resizeFrame);
       resizeFrame = window.requestAnimationFrame(() => {
         metrics = measure();
         geometryDirty = true;
         scheduleCardSync({ force: true, remeasure: true });
       });
+    };
+
+    const handleCinematicOpaque = (event) => {
+      const nextOpaque = Boolean(event.detail?.opaque);
+      if (nextOpaque === cinematicOpaque) return;
+      cinematicOpaque = nextOpaque;
+      if (cinematicOpaque) return;
+
+      // The transition stage publishes `opaque: false` before its first
+      // translucent Worker frame is submitted. Refresh once here so the first
+      // page pixel that can become visible is backed by current geometry.
+      metrics = measure();
+      geometryDirty = true;
+      scheduleCardSync({ force: true, remeasure: true });
     };
 
     const resizeObserver = typeof ResizeObserver !== "undefined"
@@ -728,6 +768,7 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
     cards.forEach((card) => resizeObserver?.observe(card));
     window.visualViewport?.addEventListener("resize", scheduleMeasure, { passive: true });
     document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("portfolio:ocean-cinematic-opaque", handleCinematicOpaque);
     scheduleCardSync({ force: true, remeasure: true });
 
     return () => {
@@ -744,6 +785,7 @@ export default function PortfolioTimeline({ timeline, experiences = [], performa
       window.cancelAnimationFrame(scrollFrame);
       window.visualViewport?.removeEventListener("resize", scheduleMeasure);
       document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("portfolio:ocean-cinematic-opaque", handleCinematicOpaque);
       delete root.dataset.timelineEntry;
       delete root.dataset.timelineReveal;
       delete root.dataset.timelineInspection;
