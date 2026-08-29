@@ -30,7 +30,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --include=optional
 
       - name: Lint, worker policy, leak detection, unit tests, coverage and build
         run: npm run ci:quality
@@ -73,7 +73,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --include=optional
 
       - name: Install Chromium and Firefox
         run: npx playwright install --with-deps chromium firefox
@@ -118,7 +118,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --include=optional
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
@@ -164,7 +164,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --include=optional
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
@@ -210,7 +210,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --include=optional
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
@@ -257,7 +257,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --include=optional
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
@@ -302,7 +302,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --include=optional
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
@@ -359,7 +359,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --include=optional
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
@@ -408,19 +408,21 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --include=optional
 
       - name: Validate production build environment
+        if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' && env.PUBLIC_API_BASE_URL != '' && env.VITE_PUBLIC_SITE_URL != ''
         run: npm run check:production-env
 
       - name: Build deployable snapshot from public backend
+        if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' && env.PUBLIC_API_BASE_URL != '' && env.VITE_PUBLIC_SITE_URL != ''
         run: npm run build
 
       - name: Deploy to Cloudflare
-        if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
+        if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' && env.PUBLIC_API_BASE_URL != '' && env.VITE_PUBLIC_SITE_URL != ''
         run: npm run cf:deploy
 
-      - name: Skip deployment without secrets
-        if: env.CLOUDFLARE_API_TOKEN == '' || env.CLOUDFLARE_ACCOUNT_ID == ''
+      - name: Skip deployment without complete production configuration
+        if: env.CLOUDFLARE_API_TOKEN == '' || env.CLOUDFLARE_ACCOUNT_ID == '' || env.PUBLIC_API_BASE_URL == '' || env.VITE_PUBLIC_SITE_URL == ''
         run: |
-          echo "Deployment skipped: Cloudflare secrets are not configured."
+          echo "Deployment skipped: Cloudflare secrets and production URLs must all be configured."

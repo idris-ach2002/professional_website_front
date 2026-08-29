@@ -28,7 +28,7 @@ jobs:
       - name: Install Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 22.22.3
       - name: Install documentation dependencies
         working-directory: documentation
         run: npm install --no-audit --no-fund

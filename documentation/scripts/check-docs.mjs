@@ -22,6 +22,24 @@ const contentFiles = walk(docsRoot).filter((file) => /\.(?:md|mdx)$/.test(file))
 const rootReadme = path.join(repoRoot, 'README.md');
 const filesToScan = [...contentFiles, rootReadme].filter(fs.existsSync);
 
+const astroConfigPath = path.resolve('astro.config.mjs');
+if (!fs.existsSync(astroConfigPath)) {
+  errors.push('configuration Astro manquante: astro.config.mjs');
+} else {
+  const astroConfig = fs.readFileSync(astroConfigPath, 'utf8');
+  if (/\beditLink\s*:\s*false\b/.test(astroConfig)) {
+    errors.push('Starlight: editLink=false n’est plus un schéma valide; omettre editLink ou fournir un objet');
+  }
+  const obsoleteAutogenerateGroup = astroConfig
+    .split('\n')
+    .some((line) => /\{\s*label\s*:/.test(line)
+      && /\bautogenerate\s*:/.test(line)
+      && !/\bitems\s*:/.test(line));
+  if (obsoleteAutogenerateGroup) {
+    errors.push('Starlight: un groupe autogénéré doit utiliser label + items: [{ autogenerate: ... }]');
+  }
+}
+
 // The route /v3/api-docs is a real current endpoint and is therefore excluded
 // from the project-generation marker rule by the slash look-behind.
 const forbidden = [

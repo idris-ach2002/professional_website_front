@@ -86,7 +86,7 @@ for (const viewport of VIEWPORTS) {
         reducedMotion: "no-preference",
       });
 
-      await openPortfolioContract(page, "fr");
+      await openPortfolioContract(page, "fr", { requireDirector: !viewport.compact });
 
       await expect(page.locator("html")).toHaveAttribute(
         "data-viewport",
@@ -158,7 +158,7 @@ for (const viewport of VIEWPORTS) {
         expect(Math.abs(profileGeometry.side.width - profileGeometry.main.width)).toBeLessThanOrEqual(2);
         expect(profileGeometry.mobilePortrait.x).toBeLessThan(profileGeometry.heading.x);
         expect(profileGeometry.mobilePortrait.width).toBeGreaterThanOrEqual(90);
-        expect(profileGeometry.mobilePortrait.width).toBeLessThanOrEqual(230);
+        expect(profileGeometry.mobilePortrait.width).toBeLessThanOrEqual(profileGeometry.main.width * 0.35 + 2);
         expect(profileGeometry.contacts.width).toBeGreaterThanOrEqual(profileGeometry.side.width - 2);
       } else if (viewport.width <= 1240) {
         expect(profileGeometry.mobilePortraitVisible).toBe(true);
@@ -365,11 +365,18 @@ test("@responsive la navbar desktop suit la section réellement courante", async
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await openPortfolioContract(page, "fr");
 
-  for (const target of ["#profile", "#skills", "#timeline", "#projects"]) {
+  const targets = ["#profile", "#skills", "#timeline", "#projects"];
+  for (const target of targets) {
     const section = page.locator(target).first();
     await expect(section).toBeVisible();
     await page.evaluate((selector) => {
-      document.querySelector(selector)?.scrollIntoView({ block: "start", behavior: "instant" });
+      const element = document.querySelector(selector);
+      if (!element) return;
+      const scrollingElement = document.scrollingElement ?? document.documentElement;
+      const probeOffset = Math.min(280, Math.max(128, window.innerHeight * 0.29));
+      const sectionTop = scrollingElement.scrollTop + element.getBoundingClientRect().top;
+      scrollingElement.scrollTop = Math.max(0, sectionTop - probeOffset + 8);
+      window.dispatchEvent(new Event("scroll"));
     }, target);
 
     const activeItem = page.locator(

@@ -25,4 +25,33 @@ describe("asset loading policy", () => {
     expect(policy.loading).toBe("eager");
     expect(policy.fetchPriority).toBe("high");
   });
+
+  test("le prefetch reste spéculatif seulement hors contrainte et les assets de fond restent low", () => {
+    const healthy = resolveAssetLoadingPolicy({
+      priority: ASSET_PRIORITIES.PREFETCH,
+      runtimeProfile: "high",
+      memoryState: "normal",
+    });
+    expect(healthy).toEqual({
+      loading: "lazy",
+      fetchPriority: "auto",
+      decoding: "async",
+      allowSpeculativePreload: true,
+    });
+
+    const constrained = resolveAssetLoadingPolicy({
+      priority: ASSET_PRIORITIES.PREFETCH,
+      effectiveType: "2g",
+    });
+    expect(constrained.fetchPriority).toBe("low");
+    expect(constrained.allowSpeculativePreload).toBe(false);
+
+    expect(resolveAssetLoadingPolicy()).toEqual({
+      loading: "lazy",
+      fetchPriority: "low",
+      decoding: "async",
+      allowSpeculativePreload: false,
+    });
+  });
+
 });

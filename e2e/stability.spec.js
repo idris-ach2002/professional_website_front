@@ -8,9 +8,13 @@ import { expectWorldBiome } from "./support/world-contract";
 test.describe.configure({ mode: "parallel", timeout: 75_000 });
 
 async function selectAnimationMode(page, label, expectedPreference) {
+  // The E2E fixture deliberately exposes a 2-core hardware floor so the
+  // adaptive runtime exercises its constrained-device contract. A user can
+  // still request full motion, but the effective performance profile must stay
+  // clamped to lite on that synthetic hosted-runner capability.
   const expectedPerformanceMode = {
     auto: "lite",
-    full: "full",
+    full: "lite",
     reduced: "lite",
     off: "ultra-lite",
   }[expectedPreference];
@@ -40,17 +44,23 @@ async function selectAnimationMode(page, label, expectedPreference) {
   );
 }
 
-async function presetAnimationRuntime(page, { preference, paused }) {
-  await page.addInitScript(({ nextPreference, nextPaused }) => {
+async function presetAnimationRuntime(page, { preference, paused, volcanoMode = null }) {
+  await page.addInitScript(({ nextPreference, nextPaused, nextVolcanoMode }) => {
     try {
       window.localStorage.setItem("portfolio-animation-preference", nextPreference);
       window.localStorage.setItem("portfolio-animation-paused", String(nextPaused));
+      if (nextVolcanoMode) {
+        window.localStorage.setItem("portfolio-animation-scenes-v1", JSON.stringify({
+          volcanoMode: nextVolcanoMode,
+        }));
+      }
     } catch {
       // Storage is optional in production; the hosted E2E origin supports it.
     }
   }, {
     nextPreference: preference,
     nextPaused: paused,
+    nextVolcanoMode: volcanoMode,
   });
 }
 
@@ -89,8 +99,9 @@ test("@stability supporte les changements rapides de modes d’animation", async
 test("@stability garde la Timeline cohérente sous une précondition d’animation contrôlée", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
 
-  // Précondition déterministe : le monde complet est monté mais les animations
-  // sont explicitement pausées avant le bootstrap. Aucun IntersectionObserver,
+  // Précondition déterministe : la préférence complète est demandée, puis
+  // le profil matériel E2E la plafonne à lite. Les animations sont explicitement
+  // pausées avant le bootstrap. Aucun IntersectionObserver,
   // scroll ou cadence de paint ne décide du résultat de ce contrat.
   await presetAnimationRuntime(page, { preference: "full", paused: true });
   await openPortfolioContract(page, "fr");
@@ -101,7 +112,7 @@ test("@stability garde la Timeline cohérente sous une précondition d’animati
   const submarine = timeline.locator(".timeline-submarine");
 
   await expect(page.locator("html")).toHaveAttribute("data-animation-preference", "full");
-  await expect(page.locator("html")).toHaveAttribute("data-performance-profile", "full");
+  await expect(page.locator("html")).toHaveAttribute("data-performance-profile", "lite");
   await expect(page.locator("html")).toHaveAttribute("data-animation-state", "paused");
 
   await expect(timeline).toBeAttached();
@@ -160,14 +171,17 @@ test("@stability résiste aux sauts de scroll et conserve une géométrie saine"
 test("@stability enchaîne les biomes du Living Ocean World sans dépendance au scroll", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
 
-  // Keep every full-world gate mounted while isolating World Director
-  // arbitration from the aquarium, volcano, transition and mine render loops.
+  // Keep every desktop World Director gate mounted while isolating its
+  // arbitration from the aquarium, transition and mine render loops. The
+  // deterministic 2-core E2E profile intentionally clamps full preference to lite,
+  // so explicitly request the static volcano: this preserves the caldera gates
+  // without re-enabling the GPU-heavy animated volcano runtime.
   // Active motion is covered independently by the Timeline and soak scenarios.
-  await presetAnimationRuntime(page, { preference: "full", paused: true });
+  await presetAnimationRuntime(page, { preference: "full", paused: true, volcanoMode: "static" });
   await openPortfolioContract(page, "fr");
 
   await expect(page.locator("html")).toHaveAttribute("data-animation-preference", "full");
-  await expect(page.locator("html")).toHaveAttribute("data-performance-profile", "full");
+  await expect(page.locator("html")).toHaveAttribute("data-performance-profile", "lite");
   await expect(page.locator("html")).toHaveAttribute("data-animation-state", "paused");
 
   await expect(page.locator(".ocean-world-canvas")).toBeAttached();

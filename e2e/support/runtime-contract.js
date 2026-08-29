@@ -209,12 +209,29 @@ export async function installRuntimeWatchdogContract(context) {
   });
 }
 
+export const DEFAULT_E2E_HARDWARE_CONCURRENCY = 2;
+
+export function resolveE2EHardwareConcurrency(value = process.env.E2E_HARDWARE_CONCURRENCY) {
+  const parsed = Number.parseInt(value ?? "", 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return DEFAULT_E2E_HARDWARE_CONCURRENCY;
+  return Math.min(64, parsed);
+}
+
 export async function forceHostedRunnerBrowserHardwareFloor(context) {
-  await context.addInitScript(() => {
+  const hardwareConcurrency = resolveE2EHardwareConcurrency();
+  const deviceMemoryGb = hardwareConcurrency >= 8 ? 8 : 4;
+  await context.addInitScript(({ logicalCpuCount, logicalMemoryGb }) => {
     Object.defineProperty(Navigator.prototype, "hardwareConcurrency", {
       configurable: true,
-      get: () => 2,
+      get: () => logicalCpuCount,
     });
+    Object.defineProperty(Navigator.prototype, "deviceMemory", {
+      configurable: true,
+      get: () => logicalMemoryGb,
+    });
+  }, {
+    logicalCpuCount: hardwareConcurrency,
+    logicalMemoryGb: deviceMemoryGb,
   });
 }
 

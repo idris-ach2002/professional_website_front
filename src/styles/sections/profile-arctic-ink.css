@@ -720,7 +720,7 @@ padding: 16px;
 border-radius: 22px;
 }
 .arctic-profile-main {
-grid-template-columns: minmax(96px, 36%) minmax(0, 1fr);
+grid-template-columns: minmax(96px, 35%) minmax(0, 1fr);
 column-gap: 14px;
 }
 .arctic-profile-name {

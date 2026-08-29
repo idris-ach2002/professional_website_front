@@ -20,6 +20,7 @@ const forbidMatch = (source, pattern, message) => {
 };
 
 const packageJson = JSON.parse(read("package.json"));
+const packageLock = JSON.parse(read("package-lock.json"));
 const playwright = read("playwright.config.js");
 const vite = read("vite.config.js");
 const setup = read("src/test/setup.js");
@@ -39,6 +40,7 @@ const mainThreadLab = read("e2e/main-thread-laboratory.spec.js");
 const mainThreadHelper = read("e2e/support/main-thread-laboratory.js");
 const workerPolicy = read("scripts/test-worker-policy.mjs");
 const runtimeEnv = read("scripts/check-runtime-env.mjs");
+const productionEnv = read("scripts/check-production-env.mjs");
 const artifact = read("scripts/e2e-build-artifact.mjs");
 const publicSnapshot = read("scripts/public-snapshot.mjs");
 const npmrc = read(".npmrc");
@@ -237,7 +239,9 @@ for (const contract of [
   'route.abort("blockedbyclient")',
   "installPublicApiContract",
   "forceHostedRunnerBrowserHardwareFloor",
-  'get: () => 2',
+  "DEFAULT_E2E_HARDWARE_CONCURRENCY = 2",
+  "E2E_HARDWARE_CONCURRENCY",
+  "get: () => logicalCpuCount",
   'page.on("pageerror"',
   'page.on("requestfailed"',
   'page.on("response"',
@@ -256,6 +260,13 @@ requireText(faultPolicy, "NS_BINDING_ABORTED", "Firefox cancellation must be cla
 requireText(faultPolicy, 'severity: "diagnostic"', "Browser cancellations must remain diagnostics, not fatal application faults.");
 requireText(faultPolicy, 'severity: "fatal"', "Unknown network failures must remain fatal.");
 requireText(fixtures, "{ auto: true }", "Runtime/network guard must be an automatic Playwright fixture.");
+for (const script of ["test:e2e:soak", "test:e2e:main-thread", "test:e2e:transparent-performance"]) {
+  requireText(
+    packageJson.scripts?.[script] ?? "",
+    "E2E_HARDWARE_CONCURRENCY=8",
+    `${script} must exercise a deterministic full-load browser capability profile.`,
+  );
+}
 requireText(fixtures, "testInfo.errors.length === 0", "Automatic fixture must preserve the primary test failure.");
 for (const contract of [
   "long-animation-frame",
@@ -367,6 +378,24 @@ requireText(faultPolicy, "classifyConsoleError", "Runtime fault policy must dist
 
 if (nvmrc !== "22.16.0") errors.push(`.nvmrc must pin 22.16.0; found ${nvmrc}.`);
 requireText(npmrc, "engine-strict=true", ".npmrc must reject unsupported Node/npm engines during npm ci.");
+const nativeBindingContracts = [
+  ["node_modules/rolldown", "node_modules/@rolldown/binding-linux-x64-gnu"],
+  ["node_modules/vite/node_modules/rolldown", "node_modules/vite/node_modules/@rolldown/binding-linux-x64-gnu"],
+];
+for (const [rolldownPath, bindingPath] of nativeBindingContracts) {
+  const rolldownVersion = packageLock.packages?.[rolldownPath]?.version;
+  const binding = packageLock.packages?.[bindingPath];
+  if (!rolldownVersion || !binding) {
+    errors.push(`package-lock must retain Linux x64 GNU Rolldown binding ${bindingPath}.`);
+    continue;
+  }
+  if (binding.version !== rolldownVersion) {
+    errors.push(`Rolldown Linux binding version mismatch: ${bindingPath}=${binding.version}, ${rolldownPath}=${rolldownVersion}.`);
+  }
+  if (!binding.optional || !binding.os?.includes("linux") || !binding.cpu?.includes("x64")) {
+    errors.push(`Rolldown Linux binding contract is incomplete for ${bindingPath}.`);
+  }
+}
 requireText(packageJson.engines?.node ?? "", ">=22.16 <23", "package engines must pin the Node 22 CI major.");
 requireText(packageJson.engines?.npm ?? "", ">=10.9 <11", "package engines must pin the npm 10 CI major.");
 requireText(packageJson.packageManager ?? "", "npm@10.9.2", "packageManager must document the CI npm toolchain.");
@@ -497,6 +526,22 @@ requireText(workflow, "npm run check:production-env", "Deploy must assert that n
 requireMatch(workflow, /concurrency:\s*[\s\S]*?group:\s*frontend-\$\{\{ github\.workflow \}\}-\$\{\{ github\.ref \}\}[\s\S]*?cancel-in-progress:\s*true/, "Workflow must cancel obsolete runs only within the same workflow/ref.");
 requireMatch(workflow, /soak:[\s\S]*?if:\s*github\.event_name == 'workflow_dispatch'/, "Soak must be manual/diagnostic and must not block routine push CI.");
 requireMatch(workflow, /deploy:[\s\S]*?needs:\s*verify/, "Production deployment must depend on the reliable freeze gate, not on diagnostic soak.");
+requireText(workflow, "npm ci --include=optional", "GitHub jobs must explicitly install optional native bindings required by Vite/Rolldown.");
+forbidMatch(workflow, /run:\s*npm ci\s*(?:\n|$)/, "GitHub application jobs must not omit optional native bindings during npm ci.");
+requireMatch(
+  workflow,
+  /Validate production build environment[\s\S]*?if:\s*env\.CLOUDFLARE_API_TOKEN != '' && env\.CLOUDFLARE_ACCOUNT_ID != '' && env\.PUBLIC_API_BASE_URL != '' && env\.VITE_PUBLIC_SITE_URL != ''[\s\S]*?npm run check:production-env/,
+  "Production environment validation must be skipped when Cloudflare credentials or production URLs are incomplete.",
+);
+requireMatch(
+  workflow,
+  /Build deployable snapshot from public backend[\s\S]*?if:\s*env\.CLOUDFLARE_API_TOKEN != '' && env\.CLOUDFLARE_ACCOUNT_ID != '' && env\.PUBLIC_API_BASE_URL != '' && env\.VITE_PUBLIC_SITE_URL != ''[\s\S]*?npm run build/,
+  "Production build must not run with incomplete Cloudflare/public URL configuration.",
+);
+requireText(workflow, "Skip deployment without complete production configuration", "Workflow must expose an explicit successful skip path for incomplete production configuration.");
+for (const key of ["PUBLIC_API_BASE_URL", "VITE_API_BASE_URL", "VITE_PUBLIC_SITE_URL", "STATIC_SNAPSHOT_REQUIRED"]) {
+  requireText(productionEnv, key, `Production environment contract must validate ${key}.`);
+}
 
 if (errors.length > 0) {
   console.error("Test architecture contract failed:\n");

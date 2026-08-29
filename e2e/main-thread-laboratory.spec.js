@@ -5,6 +5,7 @@ import {
   assertHermeticNetwork,
   assertNoRuntimeFaults,
   captureRuntimeFaults,
+  forceHostedRunnerBrowserHardwareFloor,
   installHermeticNetworkContract,
   installPublicApiContract,
   installRuntimeWatchdogContract,
@@ -351,7 +352,8 @@ async function collectLaboratoryRound(
   testInfo,
 ) {
   // browser.newContext() bypasses the automatic Playwright fixture. Reinstall
-  // the same hermetic network/API/runtime contracts before creating measured pages.
+  // the same hardware/network/API/runtime contracts before creating measured pages.
+  await forceHostedRunnerBrowserHardwareFloor(context);
   await installRuntimeWatchdogContract(context);
   const network = await installHermeticNetworkContract(context);
   await installPublicApiContract(context);

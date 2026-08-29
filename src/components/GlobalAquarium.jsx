@@ -603,7 +603,7 @@ export default function GlobalAquarium({
     let geometryDirty = true;
     let pendingGeometryMeasure = false;
 
-    const getScrollTop = () => getScrollFrameSnapshot().scrollTop;
+    const getScrollTop = (fresh = false) => getScrollFrameSnapshot(fresh ? { fresh: true } : undefined).scrollTop;
 
     const commitBiome = (nextBiome) => {
       if (!nextBiome || activeWorldDirectorOwner !== directorOwner) return;
@@ -649,9 +649,9 @@ export default function GlobalAquarium({
       return top < viewportHeight * 0.84 && bottom > 0;
     };
 
-    const selectViewportBiome = ({ remeasure = false } = {}) => {
+    const selectViewportBiome = ({ remeasure = false, freshScroll = false } = {}) => {
       if (remeasure || geometryDirty) measureWorldGeometry();
-      const scrollTop = getScrollTop();
+      const scrollTop = getScrollTop(freshScroll);
       outroVisibleRef.current = resolveOutroVisibility(scrollTop);
       const nextBiome = outroVisibleRef.current
         ? OCEAN_BIOMES.OUTRO
@@ -712,7 +712,10 @@ export default function GlobalAquarium({
     };
 
     const handleExplicitReconcile = () => {
-      selectViewportBiome();
+      // Explicit reconciliation is a synchronous correctness boundary. Consume
+      // the current scroll position rather than the coalesced frame snapshot so
+      // callers never observe a biome decision from the previous scroll frame.
+      selectViewportBiome({ freshScroll: true });
     };
 
     const resizeObserver = typeof ResizeObserver !== "undefined"

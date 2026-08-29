@@ -14,6 +14,7 @@ test("@vitals collecte les Web Vitals mobiles sans en faire une vérité fonctio
       inp: 0,
       lcpSupported: supportedEntryTypes.includes("largest-contentful-paint"),
       lcpSamples: 0,
+      eventTimingSupported: supportedEntryTypes.includes("event"),
       interactions: {},
       interactionDetails: {},
       sampleStart: 0,
@@ -67,7 +68,7 @@ test("@vitals collecte les Web Vitals mobiles sans en faire une vérité fonctio
     }
   });
 
-  await openPortfolioContract(page, "fr");
+  await openPortfolioContract(page, "fr", { requireDirector: false });
   await expect(page.getByRole("heading", { level: 1, name: "Développeur Java Full Stack" })).toBeVisible();
   await page.evaluate(async () => {
     await document.fonts?.ready;
@@ -153,14 +154,14 @@ test("@vitals collecte les Web Vitals mobiles sans en faire une vérité fonctio
   const headlessControl = page.locator("#__inp_headless_control");
   await headlessControl.click();
 
-  await expect.poll(
-    () => page.evaluate(
-      () => Object.keys(
-        window.__portfolioPerformance?.interactions ?? {},
-      ).length,
-    ),
-    { timeout: CONTRACT_TIMEOUT_MS, intervals: [50, 100, 250] },
-  ).toBeGreaterThan(0);
+  // EventTiming only reports interactions whose duration reaches Chromium's
+  // observable threshold. On very fast headless hosts (for example Apple
+  // Silicon), this synthetic control click can legitimately produce no entry.
+  // Give the observer a couple of rendered frames to deliver a qualifying
+  // sample, but keep absence of a sample diagnostic rather than functional.
+  await page.evaluate(() => new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(resolve));
+  }));
 
   const headlessControlMetrics = await page.evaluate(() => {
     const details = Object.values(
@@ -169,6 +170,7 @@ test("@vitals collecte les Web Vitals mobiles sans en faire une vérité fonctio
 
     return {
       inp: window.__portfolioPerformance.inp,
+      interactionSamples: Object.keys(window.__portfolioPerformance.interactions ?? {}).length,
       slowestInteraction: details[0] ?? null,
     };
   });
@@ -200,10 +202,9 @@ test("@vitals collecte les Web Vitals mobiles sans en faire une vérité fonctio
 
   await navigationButton.click();
   await expect(navigationButton).toHaveAttribute("aria-expanded", "true");
-  await expect.poll(
-    () => page.evaluate(() => Object.keys(window.__portfolioPerformance?.interactions ?? {}).length),
-    { timeout: CONTRACT_TIMEOUT_MS, intervals: [50, 100, 250] },
-  ).toBeGreaterThan(0);
+  await page.evaluate(() => new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(resolve));
+  }));
 
   const metrics = await page.evaluate(() => ({
     ...window.__portfolioPerformance,
@@ -240,7 +241,13 @@ test("@vitals collecte les Web Vitals mobiles sans en faire une vérité fonctio
   expect(metrics.lcpSupported).toBe(true);
   expect(metrics.lcpSamples).toBeGreaterThan(0);
   expect(metrics.lcp).toBeGreaterThan(0);
-  expect(metrics.interactionSamples).toBeGreaterThan(0);
+
+  if (metrics.eventTimingSupported && headlessControlMetrics.interactionSamples === 0) {
+    console.warn("[vitals][diagnostic] headless control click stayed below Chromium EventTiming's observable threshold");
+  }
+  if (metrics.eventTimingSupported && metrics.interactionSamples === 0) {
+    console.warn("[vitals][diagnostic] navbar click stayed below Chromium EventTiming's observable threshold");
+  }
 
   const diagnostics = [
     ["LCP", metrics.lcp, 2500],

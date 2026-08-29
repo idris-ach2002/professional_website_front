@@ -103,7 +103,7 @@ test("affiche la route 404", async ({ page }) => {
 
 test("ne provoque pas de débordement horizontal en mobile", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await openPortfolioContract(page, "fr");
+  await openPortfolioContract(page, "fr", { requireDirector: false });
   await expect(page.getByRole("heading", { level: 1, name: "Développeur Java Full Stack" })).toBeVisible();
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -134,7 +134,7 @@ test("utilise le fallback français quand l'API est indisponible", async ({ page
 test("expose les réglages d’animation dans le menu mobile", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  await openPortfolioContract(page, "fr");
+  await openPortfolioContract(page, "fr", { requireDirector: false });
 
   await page.getByRole("button", { name: "Plus d’options" }).click();
   const morePanel = page.getByRole("dialog", { name: "Plus" });

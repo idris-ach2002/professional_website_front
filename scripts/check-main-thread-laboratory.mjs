@@ -128,6 +128,7 @@ requireText(ocean, "subscribeScrollFrame", "Ocean depth must consume the shared 
 requireText(topNavigation, "subscribeScrollFrame", "Navbar active-section tracking must consume the shared scroll-frame publication.");
 requireText(timeline, "getScrollFrameSnapshot", "Timeline scroll geometry must consume the shared scroll-frame snapshot.");
 requireText(aquarium, "getScrollFrameSnapshot", "Aquarium world selection must consume the shared scroll-frame snapshot.");
+requireText(aquarium, "selectViewportBiome({ freshScroll: true })", "Explicit World Director reconciliation must consume the current scroll position instead of a stale coalesced snapshot.");
 requireText(scrollCoordinator, "window.requestAnimationFrame(flush)", "Shared scroll coordinator must coalesce document scroll publication through one native RAF.");
 requireText(scrollCoordinator, 'window.addEventListener("scroll", handleScroll, { passive: true })', "Shared scroll coordinator must keep the document scroll listener passive.");
 requireText(scrollCoordinator, "const visualTop = window.visualViewport?.pageTop", "Shared scroll coordinator must prefer a layout-safe viewport scroll source before Element.scrollTop fallback.");

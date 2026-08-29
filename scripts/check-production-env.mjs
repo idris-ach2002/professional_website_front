@@ -17,8 +17,14 @@ if (violations.length) {
   );
 }
 
-if (!process.env.PUBLIC_API_BASE_URL) {
-  throw new Error("Production build precondition violated: PUBLIC_API_BASE_URL is required.");
+const required = ["PUBLIC_API_BASE_URL", "VITE_API_BASE_URL", "VITE_PUBLIC_SITE_URL"];
+const missing = required.filter((key) => !String(process.env[key] ?? "").trim());
+if (missing.length) {
+  throw new Error(`Production build precondition violated: ${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} required.`);
 }
 
-console.log("Production build environment OK: no E2E profile leakage and PUBLIC_API_BASE_URL is configured.");
+if (process.env.STATIC_SNAPSHOT_REQUIRED !== "true") {
+  throw new Error("Production build precondition violated: STATIC_SNAPSHOT_REQUIRED=true is required for deployable snapshots.");
+}
+
+console.log("Production build environment OK: no E2E profile leakage, production URLs are configured and static snapshots are required.");

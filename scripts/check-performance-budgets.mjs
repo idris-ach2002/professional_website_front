@@ -11,6 +11,9 @@ const MAX_VOLCANO_SCENE = 32 * 1024;
 const MAX_VOLCANO_ENVIRONMENT = 16 * 1024;
 const MAX_PUBLIC_IMAGE = 400 * 1024;
 const MAX_PUBLIC_TOTAL = 230 * 1024;
+const MAX_VOLCANO_RASTER_TOTAL = 520 * 1024;
+const MAX_VOLCANO_RASTER_PAIR = Object.freeze({ "4k": 240 * 1024, "2k": 165 * 1024, fhd: 120 * 1024 });
+const VOLCANO_RASTER_DIR = join(PUBLIC, "scenes", "volcano-raster");
 
 let hasFailure = false;
 
@@ -109,9 +112,46 @@ if (distJs.some((path) => /vendor-three-/.test(path))) {
 }
 
 const publicFiles = filesRecursively(PUBLIC);
-const publicTotal = publicFiles.reduce((sum, path) => sum + statSync(path).size, 0);
+const volcanoRasterFiles = filesRecursively(VOLCANO_RASTER_DIR);
+const volcanoRasterSet = new Set(volcanoRasterFiles);
+const publicBaseFiles = publicFiles.filter((path) => !volcanoRasterSet.has(path));
+const publicTotal = publicBaseFiles.reduce((sum, path) => sum + statSync(path).size, 0);
 if (publicTotal > MAX_PUBLIC_TOTAL) {
-  fail(`public assets ${formatKb(publicTotal)} > ${formatKb(MAX_PUBLIC_TOTAL)}.`);
+  fail(`base public assets ${formatKb(publicTotal)} > ${formatKb(MAX_PUBLIC_TOTAL)}.`);
+}
+
+const expectedVolcanoRasterFiles = [
+  "abyss-volcano-environment-4k.webp",
+  "abyss-volcano-foreground-4k.webp",
+  "abyss-volcano-environment-2k.webp",
+  "abyss-volcano-foreground-2k.webp",
+  "abyss-volcano-environment-fhd.webp",
+  "abyss-volcano-foreground-fhd.webp",
+];
+const actualVolcanoRasterFiles = volcanoRasterFiles.map((path) => relative(VOLCANO_RASTER_DIR, path)).sort();
+const expectedVolcanoRasterSet = new Set(expectedVolcanoRasterFiles);
+for (const file of expectedVolcanoRasterFiles) {
+  const path = join(VOLCANO_RASTER_DIR, file);
+  if (!existsSync(path)) fail(`deferred volcano raster ${file} is missing.`);
+}
+for (const file of actualVolcanoRasterFiles) {
+  if (!expectedVolcanoRasterSet.has(file)) fail(`unexpected deferred volcano raster asset: ${file}.`);
+}
+if (actualVolcanoRasterFiles.length !== expectedVolcanoRasterFiles.length) {
+  fail(`deferred volcano raster pack must contain exactly ${expectedVolcanoRasterFiles.length} assets; found ${actualVolcanoRasterFiles.length}.`);
+}
+const volcanoRasterTotal = volcanoRasterFiles.reduce((sum, path) => sum + statSync(path).size, 0);
+if (volcanoRasterTotal > MAX_VOLCANO_RASTER_TOTAL) {
+  fail(`deferred volcano raster pack ${formatKb(volcanoRasterTotal)} > ${formatKb(MAX_VOLCANO_RASTER_TOTAL)}.`);
+}
+for (const resolution of ["4k", "2k", "fhd"]) {
+  const pair = volcanoRasterFiles.filter((path) => path.endsWith(`-${resolution}.webp`));
+  const pairSize = pair.reduce((sum, path) => sum + statSync(path).size, 0);
+  if (pair.length !== 2) {
+    fail(`deferred volcano ${resolution} pair must contain exactly 2 WebP assets.`);
+  } else if (pairSize > MAX_VOLCANO_RASTER_PAIR[resolution]) {
+    fail(`deferred volcano ${resolution} pair ${formatKb(pairSize)} > ${formatKb(MAX_VOLCANO_RASTER_PAIR[resolution])}.`);
+  }
 }
 
 const imagePattern = /\.(avif|gif|jpe?g|png|webp)$/i;
@@ -127,6 +167,6 @@ if (publicFiles.some((path) => path.includes(`${join("assets", "mock")}`))) {
 }
 
 if (!hasFailure) {
-  console.log(`Performance budgets OK: initial JS ${formatKb(initialBrotli)}, public ${formatKb(publicTotal)}.`);
+  console.log(`Performance budgets OK: initial JS ${formatKb(initialBrotli)}, base public ${formatKb(publicTotal)}, deferred volcano ${formatKb(volcanoRasterTotal)}.`);
 }
 console.log(`Initial JS closure: ${initialFiles.join(", ")}`);
