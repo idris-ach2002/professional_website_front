@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import useAnimationPreferences from "../../contexts/useAnimationPreferences";
 
 const DESKTOP_QUERY = "(min-width: 1241px)";
@@ -33,8 +33,10 @@ function resetPointerMaterial(item) {
   setStylePropertyIfChanged(item, "--nav-shift-y", "0px");
 }
 
-export default function usePremiumNavigationMotion(rootRef, activeSection) {
+export default function usePremiumNavigationMotion(rootRef, activeSection, structureVersion) {
   const { animationsEnabled, animationsPaused, performanceMode, effectiveNavbarMotion } = useAnimationPreferences();
+  const activeSectionRef = useRef(activeSection);
+  const controllerRef = useRef(null);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -55,7 +57,11 @@ export default function usePremiumNavigationMotion(rootRef, activeSection) {
 
     let resizeFrame = 0;
     let pointerFrame = 0;
-    let activeItem = findActiveItem(items, activeSection);
+    let pendingPointerItem = null;
+    let pendingPointerX = 0;
+    let pendingPointerY = 0;
+    let activeSectionValue = activeSectionRef.current;
+    let activeItem = findActiveItem(items, activeSectionValue);
     let pointedItem = null;
     let focusedItem = null;
     let rootRect = null;
@@ -69,16 +75,17 @@ export default function usePremiumNavigationMotion(rootRef, activeSection) {
       rootRect = root.getBoundingClientRect();
       for (const item of items) {
         const rect = item.getBoundingClientRect();
-        const shift = pointerShift.get(item) ?? { x: 0, y: 0 };
-        geometry.set(item, {
-          rect: {
-            left: rect.left - shift.x,
-            top: rect.top - shift.y,
-            width: rect.width,
-            height: rect.height,
-          },
-          accent: readAccent(item),
-        });
+        const shift = pointerShift.get(item);
+        let cached = geometry.get(item);
+        if (!cached) {
+          cached = { rect: { left: 0, top: 0, width: 0, height: 0 }, accent: DEFAULT_ACCENT };
+          geometry.set(item, cached);
+        }
+        cached.rect.left = rect.left - shift.x;
+        cached.rect.top = rect.top - shift.y;
+        cached.rect.width = rect.width;
+        cached.rect.height = rect.height;
+        cached.accent = readAccent(item);
       }
     };
 
@@ -121,33 +128,45 @@ export default function usePremiumNavigationMotion(rootRef, activeSection) {
       });
     };
 
+    const updateActiveSection = (nextSection) => {
+      if (nextSection === activeSectionValue) return;
+      activeSectionValue = nextSection;
+      activeItem = findActiveItem(items, nextSection);
+      syncLens({ instant: true });
+    };
+    const controller = { updateActiveSection };
+    controllerRef.current = controller;
+
     const updatePointerMaterial = (item, event) => {
       if (!canAnimate()) return;
-      if (pointerFrame) window.cancelAnimationFrame(pointerFrame);
-
-      const clientX = event.clientX;
-      const clientY = event.clientY;
+      pendingPointerItem = item;
+      pendingPointerX = event.clientX;
+      pendingPointerY = event.clientY;
+      if (pointerFrame) return;
       pointerFrame = window.requestAnimationFrame(() => {
         pointerFrame = 0;
-        let cached = geometry.get(item);
+        const targetItem = pendingPointerItem;
+        if (!targetItem) return;
+        let cached = geometry.get(targetItem);
         if (!cached) {
           refreshGeometry();
-          cached = geometry.get(item);
+          cached = geometry.get(targetItem);
         }
         const rect = cached?.rect;
         if (!rect?.width || !rect?.height) return;
 
-        const previousShift = pointerShift.get(item) ?? { x: 0, y: 0 };
-        const ratioX = clamp((clientX - (rect.left + previousShift.x)) / rect.width, 0, 1);
-        const ratioY = clamp((clientY - (rect.top + previousShift.y)) / rect.height, 0, 1);
+        const previousShift = pointerShift.get(targetItem);
+        const ratioX = clamp((pendingPointerX - (rect.left + previousShift.x)) / rect.width, 0, 1);
+        const ratioY = clamp((pendingPointerY - (rect.top + previousShift.y)) / rect.height, 0, 1);
         const shiftX = (ratioX - 0.5) * 2.4;
         const shiftY = (ratioY - 0.5) * 1.25;
-        pointerShift.set(item, { x: shiftX, y: shiftY });
+        previousShift.x = shiftX;
+        previousShift.y = shiftY;
 
-        setStylePropertyIfChanged(item, "--nav-pointer-x", `${ratioX * 100}%`);
-        setStylePropertyIfChanged(item, "--nav-pointer-y", `${ratioY * 100}%`);
-        setStylePropertyIfChanged(item, "--nav-shift-x", `${shiftX.toFixed(2)}px`);
-        setStylePropertyIfChanged(item, "--nav-shift-y", `${shiftY.toFixed(2)}px`);
+        setStylePropertyIfChanged(targetItem, "--nav-pointer-x", `${ratioX * 100}%`);
+        setStylePropertyIfChanged(targetItem, "--nav-pointer-y", `${ratioY * 100}%`);
+        setStylePropertyIfChanged(targetItem, "--nav-shift-x", `${shiftX.toFixed(2)}px`);
+        setStylePropertyIfChanged(targetItem, "--nav-shift-y", `${shiftY.toFixed(2)}px`);
       });
     };
 
@@ -156,7 +175,6 @@ export default function usePremiumNavigationMotion(rootRef, activeSection) {
     items.forEach((item) => {
       const surface = item.closest(".nav_menu-dropdown-toggle-v2") ?? item;
       resetPointerMaterial(item);
-      pointerShift.set(item, { x: 0, y: 0 });
 
       const onPointerEnter = () => {
         pointedItem = item;
@@ -168,7 +186,9 @@ export default function usePremiumNavigationMotion(rootRef, activeSection) {
         if (pointedItem === item) pointedItem = null;
         if (focusedItem !== item) {
           resetPointerMaterial(item);
-          pointerShift.set(item, { x: 0, y: 0 });
+          const shift = pointerShift.get(item);
+          shift.x = 0;
+          shift.y = 0;
         }
         syncLens();
       };
@@ -180,7 +200,9 @@ export default function usePremiumNavigationMotion(rootRef, activeSection) {
         if (focusedItem === item) focusedItem = null;
         if (pointedItem !== item) {
           resetPointerMaterial(item);
-          pointerShift.set(item, { x: 0, y: 0 });
+          const shift = pointerShift.get(item);
+          shift.x = 0;
+          shift.y = 0;
         }
         syncLens();
       };
@@ -201,14 +223,17 @@ export default function usePremiumNavigationMotion(rootRef, activeSection) {
         item.removeEventListener("focus", onFocus);
         item.removeEventListener("blur", onBlur);
         resetPointerMaterial(item);
-        pointerShift.set(item, { x: 0, y: 0 });
+        const shift = pointerShift.get(item);
+        shift.x = 0;
+        shift.y = 0;
       });
     });
 
     const onViewportChange = () => {
-      if (resizeFrame) window.cancelAnimationFrame(resizeFrame);
+      if (resizeFrame) return;
       resizeFrame = window.requestAnimationFrame(() => {
-        activeItem = findActiveItem(items, activeSection);
+        resizeFrame = 0;
+        activeItem = findActiveItem(items, activeSectionRef.current);
         refreshGeometry();
         syncLens({ instant: true });
       });
@@ -231,7 +256,14 @@ export default function usePremiumNavigationMotion(rootRef, activeSection) {
       reducedMotionMedia.removeEventListener?.("change", onViewportChange);
       if (resizeFrame) window.cancelAnimationFrame(resizeFrame);
       if (pointerFrame) window.cancelAnimationFrame(pointerFrame);
+      pendingPointerItem = null;
+      if (controllerRef.current === controller) controllerRef.current = null;
       lens.classList.remove("is-visible", "is-hovered", "is-instant");
     };
-  }, [activeSection, animationsEnabled, animationsPaused, performanceMode, effectiveNavbarMotion, rootRef]);
+  }, [animationsEnabled, animationsPaused, performanceMode, effectiveNavbarMotion, rootRef, structureVersion]);
+
+  useEffect(() => {
+    activeSectionRef.current = activeSection;
+    controllerRef.current?.updateActiveSection(activeSection);
+  }, [activeSection]);
 }

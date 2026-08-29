@@ -38,6 +38,9 @@ export default function usePremiumNavigationShellMotion(shellRef) {
 
     let pointerFrame = 0;
     let shellRect = shell.getBoundingClientRect();
+    let pendingPointerX = 0;
+    let pendingPointerY = 0;
+    let pendingReset = false;
 
     const refreshShellGeometry = () => {
       shellRect = shell.getBoundingClientRect();
@@ -45,16 +48,21 @@ export default function usePremiumNavigationShellMotion(shellRef) {
 
     const updatePointer = (event) => {
       if (!canAnimate()) return;
-      if (pointerFrame) window.cancelAnimationFrame(pointerFrame);
-
-      const clientX = event.clientX;
-      const clientY = event.clientY;
+      pendingPointerX = event.clientX;
+      pendingPointerY = event.clientY;
+      pendingReset = false;
+      if (pointerFrame) return;
       pointerFrame = window.requestAnimationFrame(() => {
+        pointerFrame = 0;
+        if (pendingReset) {
+          resetShellPointer(shell);
+          return;
+        }
         const rect = shellRect;
         if (!rect.width || !rect.height) return;
 
-        const ratioX = clamp((clientX - rect.left) / rect.width, 0, 1);
-        const ratioY = clamp((clientY - rect.top) / rect.height, 0, 1);
+        const ratioX = clamp((pendingPointerX - rect.left) / rect.width, 0, 1);
+        const ratioY = clamp((pendingPointerY - rect.top) / rect.height, 0, 1);
 
         setStylePropertyIfChanged(shell, "--nav-shell-pointer-x", `${(ratioX * 100).toFixed(2)}%`);
         setStylePropertyIfChanged(shell, "--nav-shell-pointer-y", `${(ratioY * 100).toFixed(2)}%`);
@@ -70,8 +78,12 @@ export default function usePremiumNavigationShellMotion(shellRef) {
     };
 
     const onPointerLeave = () => {
-      if (pointerFrame) window.cancelAnimationFrame(pointerFrame);
-      pointerFrame = window.requestAnimationFrame(() => resetShellPointer(shell));
+      pendingReset = true;
+      if (pointerFrame) return;
+      pointerFrame = window.requestAnimationFrame(() => {
+        pointerFrame = 0;
+        resetShellPointer(shell);
+      });
     };
 
     const onPreferenceChange = () => {
@@ -98,6 +110,7 @@ export default function usePremiumNavigationShellMotion(shellRef) {
       resizeObserver?.disconnect();
       window.removeEventListener("resize", refreshShellGeometry);
       if (pointerFrame) window.cancelAnimationFrame(pointerFrame);
+      pointerFrame = 0;
       resetShellPointer(shell);
     };
   }, [animationsEnabled, animationsPaused, performanceMode, effectiveNavbarMotion, shellRef]);

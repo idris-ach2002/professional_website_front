@@ -57,8 +57,9 @@ function flush(timestamp) {
   for (const subscriber of subscribers) subscriber(next);
 }
 
-function schedule({ metrics = false } = {}) {
+function schedule(options) {
   if (typeof window === "undefined") return;
+  const metrics = options?.metrics === true;
   metricsDirty = metricsDirty || metrics;
   if (frame) return;
   frame = window.requestAnimationFrame(flush);
@@ -100,8 +101,9 @@ function cleanupIfIdle() {
   frame = 0;
 }
 
-export function subscribeScrollFrame(listener, { immediate = true } = {}) {
+export function subscribeScrollFrame(listener, options) {
   if (typeof listener !== "function") return () => {};
+  const immediate = options?.immediate !== false;
   ensureListening();
   subscribers.add(listener);
   if (immediate) listener(snapshot.version ? snapshot : readSnapshot(performance.now(), true));
@@ -111,7 +113,9 @@ export function subscribeScrollFrame(listener, { immediate = true } = {}) {
   };
 }
 
-export function getScrollFrameSnapshot({ fresh = false, metrics = false } = {}) {
+export function getScrollFrameSnapshot(options) {
+  const fresh = options?.fresh === true;
+  const metrics = options?.metrics === true;
   if (typeof window === "undefined" || typeof document === "undefined") return snapshot;
   if (!listening) return readSnapshot(performance.now(), metrics || !snapshot.version);
   if (fresh || !snapshot.version || metrics) return readSnapshot(performance.now(), metrics);

@@ -34,7 +34,10 @@ if (!rates.ACTIVE_FRAME_RATE_FULL || !rates.ACTIVE_FRAME_RATE_BALANCED || !rates
   if (rates.REST_FRAME_RATE_BALANCED >= rates.ACTIVE_FRAME_RATE_BALANCED) failures.push("Balanced rest cadence must stay below active cadence.");
 }
 
-if (!signature.includes('["prepare", "shed", "assemble", "return"].includes(specialEvent.mode)')) {
+const hasHighMotionCadenceGuard = signature.includes('["prepare", "shed", "assemble", "return"].includes(specialEvent.mode)')
+  || (signature.includes('new Set(["prepare", "shed", "assemble", "return"])')
+    && signature.includes("HIGH_MOTION_EVENT_MODES.has(specialEvent.mode)"));
+if (!hasHighMotionCadenceGuard) {
   failures.push("SignatureCanvas must reserve high cadence for active transformation phases.");
 }
 if (!signature.includes("const targetFrameRate = highMotion")) {

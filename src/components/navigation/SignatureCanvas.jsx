@@ -16,6 +16,20 @@ const ACTIVE_FRAME_RATE_BALANCED = 42;
 const REST_FRAME_RATE_FULL = 36;
 const REST_FRAME_RATE_BALANCED = 24;
 const TAU = Math.PI * 2;
+const HIGH_MOTION_EVENT_MODES = new Set(["prepare", "shed", "assemble", "return"]);
+const LEFT_DETACH_ORDINAL = Object.freeze([-1, 0, -1, 1, -1, 2, -1, 3, -1]);
+const RIGHT_DETACH_ORDINAL = Object.freeze([-1, -1, 4, 5, -1, 6, 7, 8, -1]);
+const FRAGMENT_I_SLOTS = Object.freeze([
+  Object.freeze([96, 31.5, 0]),
+  Object.freeze([108, 31.5, 0]),
+  Object.freeze([120, 31.5, 0]),
+  Object.freeze([108, 38.5, Math.PI / 2]),
+  Object.freeze([108, 45.5, Math.PI / 2]),
+  Object.freeze([108, 52.2, Math.PI / 2]),
+  Object.freeze([96, 57, 0]),
+  Object.freeze([108, 57, 0]),
+  Object.freeze([120, 57, 0]),
+]);
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -173,11 +187,8 @@ function resolveSpecialEvent(time, reveal, quality) {
 
 function resolveRibbonDetach(specialEvent, segmentIndex, side) {
   if (!specialEvent.active) return 0;
-  const selected = side < 0
-    ? [1, 3, 5, 7].includes(segmentIndex)
-    : [2, 3, 5, 6, 7].includes(segmentIndex);
-  if (!selected) return 0;
-  const ordinal = side < 0 ? [1, 3, 5, 7].indexOf(segmentIndex) : 4 + [2, 3, 5, 6, 7].indexOf(segmentIndex);
+  const ordinal = (side < 0 ? LEFT_DETACH_ORDINAL : RIGHT_DETACH_ORDINAL)[segmentIndex] ?? -1;
+  if (ordinal < 0) return 0;
   const stagger = smoothstep(0.08 + ordinal * 0.055, 0.42 + ordinal * 0.045, specialEvent.detachAmount);
   return clamp(stagger, 0, 1);
 }
@@ -206,8 +217,8 @@ function drawCrossGlint(ctx, x, y, size, alpha, warm = false) {
   ctx.restore();
 }
 
-function drawAmbientDust(ctx, width, height, particles, state) {
-  const { time, hover, quality } = state;
+function drawAmbientDust(ctx, width, height, particles, state, hover = state.hover) {
+  const { time, quality } = state;
   const count = quality === "full" ? particles.length : Math.min(20, particles.length);
   const seconds = time * 0.001;
 
@@ -258,14 +269,54 @@ function drawAmbientDust(ctx, width, height, particles, state) {
   }
 }
 
-function createFeatherGeometry(width, height) {
+function createFeatherGeometry(width, height, sparks = [], fragments = []) {
   const sx = width / 252;
   const sy = height / 62;
   const p0 = { x: 7 * sx, y: 58 * sy };
   const p1 = { x: 34 * sx, y: 38 * sy };
   const p2 = { x: 82 * sx, y: 8 * sy };
   const p3 = { x: 124 * sx, y: 4 * sy };
-  return { sx, sy, p0, p1, p2, p3, curveSamples: new Map() };
+  const geometry = {
+    sx,
+    sy,
+    scaleUnit: Math.min(sx, sy),
+    p0,
+    p1,
+    p2,
+    p3,
+    curveSamples: new Map(),
+    ribbonProfiles: null,
+    fiberProfiles: null,
+    sparkProfiles: null,
+    fragmentProfiles: null,
+  };
+
+  const createRibbonProfiles = (segmentCount) => {
+    const profiles = [];
+    for (let index = 0; index < segmentCount; index += 1) {
+      const leftT0 = 0.07 + (index / segmentCount) * 0.84;
+      const leftT1 = Math.min(0.97, leftT0 + (0.84 / segmentCount) * 0.96);
+      profiles.push(createRibbonProfile(geometry, -1, leftT0, leftT1, index, index));
+      profiles.push(createRibbonProfile(
+        geometry,
+        1,
+        leftT0 + 0.012,
+        Math.min(0.98, leftT1 + 0.012),
+        index,
+        index + 11,
+      ));
+    }
+    return profiles;
+  };
+
+  geometry.ribbonProfiles = {
+    full: createRibbonProfiles(9),
+    balanced: createRibbonProfiles(7),
+  };
+  geometry.fiberProfiles = createFiberProfiles(geometry);
+  geometry.sparkProfiles = sparks.map((spark) => createSparkProfile(geometry, spark));
+  geometry.fragmentProfiles = fragments.map((fragment) => createFragmentProfile(geometry, fragment));
+  return geometry;
 }
 
 function getCurveSample(geometry, t) {
@@ -287,6 +338,98 @@ function featherWidthAt(t, side) {
   return body * shoulder * asymmetry;
 }
 
+function createRibbonProfile(geometry, side, t0, t1, segmentIndex, drawIndex) {
+  const sampleA = getCurveSample(geometry, t0);
+  const sampleB = getCurveSample(geometry, t1);
+  return {
+    side,
+    t0,
+    t1,
+    segmentIndex,
+    drawIndex,
+    a: sampleA.point,
+    b: sampleB.point,
+    tangentA: sampleA.tangent,
+    tangentB: sampleB.tangent,
+    normalAX: -sampleA.tangent.y * side,
+    normalAY: sampleA.tangent.x * side,
+    normalBX: -sampleB.tangent.y * side,
+    normalBY: sampleB.tangent.x * side,
+    widthFactorA: featherWidthAt(t0, side),
+    widthFactorB: featherWidthAt(t1, side),
+  };
+}
+
+function createFiberProfiles(geometry) {
+  const fiberCount = 26;
+  return Array.from({ length: fiberCount }, (_, index) => {
+    const t = 0.10 + (index / (fiberCount - 1)) * 0.82;
+    const side = index % 2 === 0 ? -1 : 1;
+    const { point: anchor, tangent } = getCurveSample(geometry, t);
+    return {
+      index,
+      t,
+      side,
+      anchor,
+      tangent,
+      normalX: -tangent.y * side,
+      normalY: tangent.x * side,
+      width: (20.5 * featherWidthAt(t, side)) * geometry.scaleUnit,
+      lengthFactor: lerp(0.72, 1, fract(index * 0.618)),
+      pressureFactor: 0.8 + t * 1.4,
+      contractionFactor: 0.28 + t * 0.22,
+      tangentPull: 2.4 + t * 2.2,
+    };
+  });
+}
+
+function createSparkProfile(geometry, spark) {
+  const { point: anchor, tangent } = getCurveSample(geometry, spark.t);
+  return {
+    anchor,
+    tangent,
+    normalX: -tangent.y * spark.side,
+    normalY: tangent.x * spark.side,
+  };
+}
+
+function createFragmentProfile(geometry, fragment) {
+  const { sx, sy, scaleUnit } = geometry;
+  const { point: anchor, tangent } = getCurveSample(geometry, fragment.t);
+  const normalX = -tangent.y * fragment.side;
+  const normalY = tangent.x * fragment.side;
+  const startWidth = 16.5 * featherWidthAt(fragment.t, fragment.side) * scaleUnit;
+  const start = {
+    x: anchor.x + normalX * startWidth * 0.92,
+    y: anchor.y + normalY * startWidth * 0.92,
+    angle: Math.atan2(normalY, normalX) + fragment.spin * 0.08,
+    scale: 0.9 + fragment.size * 0.12,
+  };
+  const landing = {
+    x: (48 + fragment.id * 9.4 + fragment.drift * 0.35) * sx,
+    y: (55.2 + (fragment.id % 2) * 1.15) * sy,
+    angle: fragment.spin * 0.42 + (fragment.id % 2 ? -0.10 : 0.10),
+    scale: 0.92,
+  };
+  const waveBaseY = 51.5 + Math.sin(fragment.id * 0.92) * 4.2;
+  const waveNextY = 51.5 + Math.sin((fragment.id + 0.3) * 0.92) * 4.2;
+  const wave = {
+    x: (57 + fragment.id * 8.8) * sx,
+    y: waveBaseY * sy,
+    angle: Math.atan2((waveNextY - waveBaseY) * sy, 4 * sx),
+    scale: 0.82,
+  };
+  const [ix, iy, ia] = FRAGMENT_I_SLOTS[fragment.id] ?? FRAGMENT_I_SLOTS[FRAGMENT_I_SLOTS.length - 1];
+  return {
+    start,
+    landing,
+    wave,
+    iPose: { x: ix * sx, y: iy * sy, angle: ia, scale: 0.76 },
+    detachedStart: 360 + fragment.delay * 0.68,
+    detachedEnd: 2_620 + fragment.delay * 0.18,
+  };
+}
+
 function resolveFeatherContraction(time, reveal) {
   if (reveal < 1) return 0.24 * (1 - reveal);
   const cycle = fract((time - INTRO_DURATION_MS) / FEATHER_CYCLE_MS);
@@ -306,36 +449,40 @@ function resolveFeatherReleasePulse(time, reveal) {
   return Math.sin(clamp(local, 0, 1) * Math.PI);
 }
 
-function drawVaneRibbon(ctx, geometry, side, t0, t1, reveal, wave, pointerPressure, quality, index, contraction, specialDetach = 0) {
+function drawVaneRibbon(ctx, geometry, profile, reveal, wave, pointerPressure, quality, contraction, specialDetach = 0) {
   const { sx, sy } = geometry;
+  const {
+    side,
+    t0,
+    t1,
+    drawIndex,
+    a,
+    b,
+    tangentA,
+    tangentB,
+    normalAX,
+    normalAY,
+    normalBX,
+    normalBY,
+    widthFactorA,
+    widthFactorB,
+  } = profile;
   const localReveal = smoothstep(t0 - 0.14, t0 + 0.13, reveal);
   if (localReveal <= 0.001) return;
 
-  const sampleA = getCurveSample(geometry, t0);
-  const sampleB = getCurveSample(geometry, t1);
-  const a = sampleA.point;
-  const b = sampleB.point;
-  const tangentA = sampleA.tangent;
-  const tangentB = sampleB.tangent;
-  const normalA = { x: -tangentA.y * side, y: tangentA.x * side };
-  const normalB = { x: -tangentB.y * side, y: tangentB.x * side };
-  const baseWidth = (quality === "full" ? 29.6 : 26.0) * Math.min(sx, sy);
-  const propagation = clamp(contraction + Math.sin((wave * 1.55) - index * 0.52 + side * 0.4) * 0.10 * contraction, 0, 0.92);
+  const baseWidth = (quality === "full" ? 29.6 : 26.0) * geometry.scaleUnit;
+  const propagation = clamp(contraction + Math.sin((wave * 1.55) - drawIndex * 0.52 + side * 0.4) * 0.10 * contraction, 0, 0.92);
   const foldA = 1 - propagation * (0.25 + t0 * 0.18);
   const foldB = 1 - propagation * (0.27 + t1 * 0.19);
-  const widthA = baseWidth * featherWidthAt(t0, side) * foldA;
-  const widthB = baseWidth * featherWidthAt(t1, side) * foldB;
-  const waveAmount = (Math.sin(wave + index * 0.58 + side * 0.7) * 0.9 + pointerPressure * (1.6 + t0 * 1.8)) * Math.min(sx, sy);
-  const tipA = {
-    x: a.x + normalA.x * (widthA + waveAmount) - tangentA.x * (2 + t0 * 4) * sx,
-    y: a.y + normalA.y * (widthA + waveAmount) - tangentA.y * (2 + t0 * 4) * sy,
-  };
-  const tipB = {
-    x: b.x + normalB.x * (widthB + waveAmount * 0.72) - tangentB.x * (3 + t1 * 4) * sx,
-    y: b.y + normalB.y * (widthB + waveAmount * 0.72) - tangentB.y * (3 + t1 * 4) * sy,
-  };
+  const widthA = baseWidth * widthFactorA * foldA;
+  const widthB = baseWidth * widthFactorB * foldB;
+  const waveAmount = (Math.sin(wave + drawIndex * 0.58 + side * 0.7) * 0.9 + pointerPressure * (1.6 + t0 * 1.8)) * geometry.scaleUnit;
+  const tipAX = a.x + normalAX * (widthA + waveAmount) - tangentA.x * (2 + t0 * 4) * sx;
+  const tipAY = a.y + normalAY * (widthA + waveAmount) - tangentA.y * (2 + t0 * 4) * sy;
+  const tipBX = b.x + normalBX * (widthB + waveAmount * 0.72) - tangentB.x * (3 + t1 * 4) * sx;
+  const tipBY = b.y + normalBY * (widthB + waveAmount * 0.72) - tangentB.y * (3 + t1 * 4) * sy;
 
-  const gradient = ctx.createLinearGradient(a.x, a.y, tipA.x, tipA.y);
+  const gradient = ctx.createLinearGradient(a.x, a.y, tipAX, tipAY);
   if (side < 0) {
     gradient.addColorStop(0, `rgba(91,132,166,${0.36 * localReveal})`);
     gradient.addColorStop(0.42, `rgba(154,190,217,${0.72 * localReveal})`);
@@ -354,20 +501,20 @@ function drawVaneRibbon(ctx, geometry, side, t0, t1, reveal, wave, pointerPressu
   ctx.beginPath();
   ctx.moveTo(a.x, a.y);
   ctx.quadraticCurveTo(
-    lerp(a.x, tipA.x, 0.62) + normalA.x * 1.2 * sx,
-    lerp(a.y, tipA.y, 0.62) + normalA.y * 1.2 * sy,
-    tipA.x,
-    tipA.y,
+    lerp(a.x, tipAX, 0.62) + normalAX * 1.2 * sx,
+    lerp(a.y, tipAY, 0.62) + normalAY * 1.2 * sy,
+    tipAX,
+    tipAY,
   );
   ctx.quadraticCurveTo(
-    lerp(tipA.x, tipB.x, 0.52) + tangentA.x * 1.8 * sx,
-    lerp(tipA.y, tipB.y, 0.52) + tangentA.y * 1.8 * sy,
-    tipB.x,
-    tipB.y,
+    lerp(tipAX, tipBX, 0.52) + tangentA.x * 1.8 * sx,
+    lerp(tipAY, tipBY, 0.52) + tangentA.y * 1.8 * sy,
+    tipBX,
+    tipBY,
   );
   ctx.quadraticCurveTo(
-    lerp(tipB.x, b.x, 0.62),
-    lerp(tipB.y, b.y, 0.62),
+    lerp(tipBX, b.x, 0.62),
+    lerp(tipBY, b.y, 0.62),
     b.x,
     b.y,
   );
@@ -387,74 +534,80 @@ function drawVaneRibbon(ctx, geometry, side, t0, t1, reveal, wave, pointerPressu
   ctx.beginPath();
   ctx.moveTo(a.x, a.y);
   ctx.quadraticCurveTo(
-    lerp(a.x, tipA.x, 0.6),
-    lerp(a.y, tipA.y, 0.6),
-    tipA.x,
-    tipA.y,
+    lerp(a.x, tipAX, 0.6),
+    lerp(a.y, tipAY, 0.6),
+    tipAX,
+    tipAY,
   );
   ctx.stroke();
   ctx.restore();
 }
 
-function drawMicroFibers(ctx, geometry, state) {
+function drawMicroFibers(ctx, geometry, state, reveal, featherContraction, specialFiberFade) {
   if (state.quality !== "full") return;
   const { sx, sy } = geometry;
-  const fiberCount = 26;
 
   ctx.save();
   ctx.lineCap = "round";
-  for (let index = 0; index < fiberCount; index += 1) {
-    const t = 0.10 + (index / (fiberCount - 1)) * 0.82;
-    const stagger = smoothstep(t - 0.18, t + 0.08, state.reveal);
+  for (const profile of geometry.fiberProfiles) {
+    const {
+      index,
+      t,
+      side,
+      anchor,
+      tangent,
+      normalX,
+      normalY,
+      width,
+      lengthFactor,
+      pressureFactor,
+      contractionFactor,
+      tangentPull,
+    } = profile;
+    const stagger = smoothstep(t - 0.18, t + 0.08, reveal);
     if (stagger <= 0.005) continue;
 
-    const side = index % 2 === 0 ? -1 : 1;
-    const { point: anchor, tangent } = getCurveSample(geometry, t);
-    const normal = { x: -tangent.y * side, y: tangent.x * side };
-    const width = (20.5 * featherWidthAt(t, side)) * Math.min(sx, sy);
     const localWave = Math.sin(state.time * 0.002 + index * 0.73) * (0.45 + state.hover * 0.35);
-    const pressure = state.pointerPressure * (0.8 + t * 1.4);
-    const propagation = clamp(state.featherContraction + Math.sin(state.time * 0.0031 - index * 0.48) * 0.11 * state.featherContraction, 0, 0.94);
-    const length = width * lerp(0.72, 1, fract(index * 0.618)) * (1 - propagation * (0.28 + t * 0.22));
-    const tip = {
-      x: anchor.x + normal.x * (length + localWave + pressure) - tangent.x * (2.4 + t * 2.2) * sx,
-      y: anchor.y + normal.y * (length + localWave + pressure) - tangent.y * (2.4 + t * 2.2) * sy,
-    };
+    const pressure = state.pointerPressure * pressureFactor;
+    const propagation = clamp(featherContraction + Math.sin(state.time * 0.0031 - index * 0.48) * 0.11 * featherContraction, 0, 0.94);
+    const length = width * lengthFactor * (1 - propagation * contractionFactor);
+    const tipX = anchor.x + normalX * (length + localWave + pressure) - tangent.x * tangentPull * sx;
+    const tipY = anchor.y + normalY * (length + localWave + pressure) - tangent.y * tangentPull * sy;
 
-    const fiberAlpha = state.specialFiberFade ?? 1;
+    const fiberAlpha = specialFiberFade;
     ctx.strokeStyle = side < 0
       ? `rgba(232,244,252,${(0.13 + stagger * 0.19) * fiberAlpha})`
       : `rgba(190,216,235,${(0.12 + stagger * 0.20) * fiberAlpha})`;
-    ctx.lineWidth = 0.38 * Math.min(sx, sy);
+    ctx.lineWidth = 0.38 * geometry.scaleUnit;
     ctx.beginPath();
     ctx.moveTo(anchor.x, anchor.y);
     ctx.quadraticCurveTo(
-      lerp(anchor.x, tip.x, 0.6) + normal.x * 0.55,
-      lerp(anchor.y, tip.y, 0.6) + normal.y * 0.55,
-      tip.x,
-      tip.y,
+      lerp(anchor.x, tipX, 0.6) + normalX * 0.55,
+      lerp(anchor.y, tipY, 0.6) + normalY * 0.55,
+      tipX,
+      tipY,
     );
     ctx.stroke();
   }
   ctx.restore();
 }
 
-function drawFeatherSparks(ctx, geometry, sparks, state) {
+function drawFeatherSparks(ctx, geometry, sparks, state, releasePulse) {
   if (state.quality === "static") return;
   const seconds = state.time * 0.001;
   const count = state.quality === "full" ? sparks.length : Math.min(5, sparks.length);
 
   for (let index = 0; index < count; index += 1) {
     const spark = sparks[index];
+    const profile = geometry.sparkProfiles[index];
     const life = fract((seconds * 0.075) + spark.phase);
     if (life < 0.58) continue;
     const activeLife = (life - 0.58) / 0.42;
     const fade = Math.sin(activeLife * Math.PI);
-    const { point: anchor, tangent } = getCurveSample(geometry, spark.t);
-    const normal = { x: -tangent.y * spark.side, y: tangent.x * spark.side };
-    const x = anchor.x + normal.x * spark.spread * activeLife + tangent.x * activeLife * 4;
-    const y = anchor.y + normal.y * spark.spread * activeLife - spark.rise * activeLife;
-    const releaseBoost = 0.55 + state.releasePulse * 1.15;
+    const { anchor, tangent, normalX, normalY } = profile;
+    const x = anchor.x + normalX * spark.spread * activeLife + tangent.x * activeLife * 4;
+    const y = anchor.y + normalY * spark.spread * activeLife - spark.rise * activeLife;
+    const releaseBoost = 0.55 + releasePulse * 1.15;
     const alpha = fade * (0.34 + state.hover * 0.16) * releaseBoost;
 
     const glow = ctx.createRadialGradient(x, y, 0, x, y, spark.radius * 4.5);
@@ -514,43 +667,15 @@ function drawLooseFragment(ctx, pose, fragment, scaleUnit, alpha = 1) {
 function resolveFragmentPose(fragment, geometry, specialEvent) {
   const { sx, sy } = geometry;
   const { elapsed } = specialEvent;
-  const { point: anchor, tangent } = getCurveSample(geometry, fragment.t);
-  const normal = { x: -tangent.y * fragment.side, y: tangent.x * fragment.side };
-  const startWidth = 16.5 * featherWidthAt(fragment.t, fragment.side) * Math.min(sx, sy);
-  const start = {
-    x: anchor.x + normal.x * startWidth * 0.92,
-    y: anchor.y + normal.y * startWidth * 0.92,
-    angle: Math.atan2(normal.y, normal.x) + fragment.spin * 0.08,
-    scale: 0.9 + fragment.size * 0.12,
-  };
-
-  const landing = {
-    x: (48 + fragment.id * 9.4 + fragment.drift * 0.35) * sx,
-    y: (55.2 + (fragment.id % 2) * 1.15) * sy,
-    angle: fragment.spin * 0.42 + (fragment.id % 2 ? -0.10 : 0.10),
-    scale: 0.92,
-  };
-
-  const waveX = (57 + fragment.id * 8.8) * sx;
-  const waveY = (51.5 + Math.sin(fragment.id * 0.92) * 4.2) * sy;
-  const waveNextY = 51.5 + Math.sin((fragment.id + 0.3) * 0.92) * 4.2;
-  const wave = {
-    x: waveX,
-    y: waveY,
-    angle: Math.atan2((waveNextY - (51.5 + Math.sin(fragment.id * 0.92) * 4.2)) * sy, 4 * sx),
-    scale: 0.82,
-  };
-
-  const iSlots = [
-    [96, 31.5, 0], [108, 31.5, 0], [120, 31.5, 0],
-    [108, 38.5, Math.PI / 2], [108, 45.5, Math.PI / 2], [108, 52.2, Math.PI / 2],
-    [96, 57, 0], [108, 57, 0], [120, 57, 0],
-  ];
-  const [ix, iy, ia] = iSlots[fragment.id] || iSlots[iSlots.length - 1];
-  const iPose = { x: ix * sx, y: iy * sy, angle: ia, scale: 0.76 };
-
-  const detachedStart = 360 + fragment.delay * 0.68;
-  const detachedEnd = 2_620 + fragment.delay * 0.18;
+  const profile = geometry.fragmentProfiles[fragment.id];
+  const {
+    start,
+    landing,
+    wave,
+    iPose,
+    detachedStart,
+    detachedEnd,
+  } = profile;
   const fallProgress = smoothstep(detachedStart, detachedEnd, elapsed);
   if (fallProgress < 1) {
     const t = easeInOutCubic(fallProgress);
@@ -603,8 +728,8 @@ function resolveFragmentPose(fragment, geometry, specialEvent) {
   return { ...start, alpha: 0 };
 }
 
-function drawTransformationFragments(ctx, geometry, fragments, state) {
-  const { specialEvent, quality } = state;
+function drawTransformationFragments(ctx, geometry, fragments, state, specialEvent) {
+  const { quality } = state;
   if (!specialEvent.active || quality === "static") return;
   const scaleUnit = Math.min(geometry.sx, geometry.sy);
   const count = quality === "full" ? fragments.length : Math.min(7, fragments.length);
@@ -637,12 +762,12 @@ function drawTransformationFragments(ctx, geometry, fragments, state) {
   }
 }
 
-function drawFeather(ctx, geometry, state, sparks, fragments) {
+function drawFeather(ctx, geometry, state, specialEvent, sparks, fragments) {
   const { p0, p1, p2, p3, sx, sy } = geometry;
   const featherReveal = easeOutQuint(clamp(state.reveal / 0.72, 0, 1));
   const ambientContraction = resolveFeatherContraction(state.time, state.reveal);
-  const featherContraction = Math.max(ambientContraction, state.specialEvent?.contractionBoost || 0);
-  const releasePulse = Math.max(resolveFeatherReleasePulse(state.time, state.reveal), state.specialEvent?.energyPulse || 0);
+  const featherContraction = Math.max(ambientContraction, specialEvent.contractionBoost || 0);
+  const releasePulse = Math.max(resolveFeatherReleasePulse(state.time, state.reveal), specialEvent.energyPulse || 0);
   const breath = 1 + Math.sin(state.time * 0.00074) * 0.009;
   const sway = Math.sin(state.time * 0.00093) * (0.42 + state.hover * 0.34);
   const rotation = (sway + state.pointerPressure * 0.52) * Math.PI / 180;
@@ -666,23 +791,31 @@ function drawFeather(ctx, geometry, state, sparks, fragments) {
   ctx.arc(p0.x + 4 * sx, p0.y - 1 * sy, 19 * Math.min(sx, sy), 0, TAU);
   ctx.fill();
 
-  const segmentCount = state.quality === "full" ? 9 : 7;
   const wave = state.time * 0.00165;
-  for (let index = 0; index < segmentCount; index += 1) {
-    const t0 = 0.07 + (index / segmentCount) * 0.84;
-    const t1 = Math.min(0.97, t0 + (0.84 / segmentCount) * 0.96);
-    const leftDetach = resolveRibbonDetach(state.specialEvent, index, -1);
-    const rightDetach = resolveRibbonDetach(state.specialEvent, index, 1);
-    drawVaneRibbon(ctx, geometry, -1, t0, t1, featherReveal, wave, state.pointerPressure, state.quality, index, featherContraction, leftDetach);
-    drawVaneRibbon(ctx, geometry, 1, t0 + 0.012, Math.min(0.98, t1 + 0.012), featherReveal, wave * 1.03, state.pointerPressure, state.quality, index + 11, featherContraction, rightDetach);
+  const ribbonProfiles = state.quality === "full" ? geometry.ribbonProfiles.full : geometry.ribbonProfiles.balanced;
+  for (const profile of ribbonProfiles) {
+    const detach = resolveRibbonDetach(specialEvent, profile.segmentIndex, profile.side);
+    drawVaneRibbon(
+      ctx,
+      geometry,
+      profile,
+      featherReveal,
+      profile.side < 0 ? wave : wave * 1.03,
+      state.pointerPressure,
+      state.quality,
+      featherContraction,
+      detach,
+    );
   }
 
-  drawMicroFibers(ctx, geometry, {
-    ...state,
-    reveal: featherReveal,
+  drawMicroFibers(
+    ctx,
+    geometry,
+    state,
+    featherReveal,
     featherContraction,
-    specialFiberFade: 1 - (state.specialEvent?.detachAmount || 0) * 0.58,
-  });
+    1 - specialEvent.detachAmount * 0.58,
+  );
 
   const stemGradient = ctx.createLinearGradient(p0.x, p0.y, p3.x, p3.y);
   stemGradient.addColorStop(0, "rgba(45,85,119,0.97)");
@@ -724,26 +857,28 @@ function drawFeather(ctx, geometry, state, sparks, fragments) {
     ctx.fill();
   }
 
-  drawFeatherSparks(ctx, geometry, sparks, { ...state, releasePulse });
-  drawTransformationFragments(ctx, geometry, fragments, state);
+  drawFeatherSparks(ctx, geometry, sparks, state, releasePulse);
+  drawTransformationFragments(ctx, geometry, fragments, state, specialEvent);
   ctx.restore();
 }
 
-function drawSignature(ctx, width, height, geometry, particles, sparks, fragments, state) {
+function drawSignature(ctx, width, height, geometry, particles, sparks, fragments, state, specialEvent) {
   ctx.clearRect(0, 0, width, height);
 
-  const specialEvent = resolveSpecialEvent(state.time, state.reveal, state.quality);
-  const frameState = { ...state, specialEvent };
-  drawAmbientDust(ctx, width, height, particles, {
-    ...frameState,
-    hover: frameState.hover + (specialEvent.active ? specialEvent.detachAmount * 0.16 : 0),
-  });
-  drawFeather(ctx, geometry, frameState, sparks, fragments);
+  drawAmbientDust(
+    ctx,
+    width,
+    height,
+    particles,
+    state,
+    state.hover + (specialEvent.active ? specialEvent.detachAmount * 0.16 : 0),
+  );
+  drawFeather(ctx, geometry, state, specialEvent, sparks, fragments);
   return specialEvent;
 }
 
 function resolveQuality(performanceMode, canMove) {
-  if (!canMove || ["lite", "ultra-lite"].includes(performanceMode)) return "static";
+  if (!canMove || performanceMode === "lite" || performanceMode === "ultra-lite") return "static";
   if (performanceMode === "balanced") return "balanced";
   return "full";
 }
@@ -785,7 +920,16 @@ function SignatureCanvas({ name = "IDRIS" }) {
       left: 0,
       top: 0,
       readyPublished: false,
-      geometry: createFeatherGeometry(252, 62),
+      geometry: createFeatherGeometry(252, 62, sparks, fragments),
+      renderState: {
+        reveal: 1,
+        hover: 0,
+        pointerX: 0.38,
+        pointerY: 0.5,
+        pointerPressure: 0,
+        time: 0,
+        quality: "full",
+      },
       renderedQuality: "",
       renderedEvent: "",
     };
@@ -808,7 +952,7 @@ function SignatureCanvas({ name = "IDRIS" }) {
       interaction.height = height;
       interaction.left = rect.left;
       interaction.top = rect.top;
-      interaction.geometry = createFeatherGeometry(width, height);
+      interaction.geometry = createFeatherGeometry(width, height, sparks, fragments);
     };
 
     const scheduleResize = () => {
@@ -819,19 +963,30 @@ function SignatureCanvas({ name = "IDRIS" }) {
       });
     };
 
-    const renderFrame = (time, reveal = 1) => {
-      const quality = currentQuality();
+    const renderFrame = (time, reveal = 1, resolvedSpecialEvent = null, resolvedQuality = null) => {
+      const quality = resolvedQuality ?? currentQuality();
       interaction.hover += (interaction.hoverTarget - interaction.hover) * 0.105;
       interaction.pointerPressure += (interaction.pointerPressureTarget - interaction.pointerPressure) * 0.09;
-      const specialEvent = drawSignature(ctx, interaction.width, interaction.height, interaction.geometry, particles, sparks, fragments, {
-        reveal,
-        hover: interaction.hover,
-        pointerX: interaction.pointerX,
-        pointerY: interaction.pointerY,
-        pointerPressure: interaction.pointerPressure,
-        time,
-        quality,
-      });
+      const renderState = interaction.renderState;
+      renderState.reveal = reveal;
+      renderState.hover = interaction.hover;
+      renderState.pointerX = interaction.pointerX;
+      renderState.pointerY = interaction.pointerY;
+      renderState.pointerPressure = interaction.pointerPressure;
+      renderState.time = time;
+      renderState.quality = quality;
+      const specialEvent = resolvedSpecialEvent ?? resolveSpecialEvent(time, reveal, quality);
+      drawSignature(
+        ctx,
+        interaction.width,
+        interaction.height,
+        interaction.geometry,
+        particles,
+        sparks,
+        fragments,
+        renderState,
+        specialEvent,
+      );
       if (!interaction.readyPublished) {
         interaction.readyPublished = true;
         host.dataset.canvasReady = "true";
@@ -886,7 +1041,7 @@ function SignatureCanvas({ name = "IDRIS" }) {
         || Math.abs(interaction.pointerPressure - interaction.pointerPressureTarget) > 0.01;
       const highMotion = elapsed < INTRO_DURATION_MS
         || interactionActive
-        || ["prepare", "shed", "assemble", "return"].includes(specialEvent.mode);
+        || HIGH_MOTION_EVENT_MODES.has(specialEvent.mode);
       const targetFrameRate = highMotion
         ? (quality === "full" ? ACTIVE_FRAME_RATE_FULL : ACTIVE_FRAME_RATE_BALANCED)
         : (quality === "full" ? REST_FRAME_RATE_FULL : REST_FRAME_RATE_BALANCED);
@@ -894,7 +1049,7 @@ function SignatureCanvas({ name = "IDRIS" }) {
       const elapsedSincePaint = now - interaction.lastFrame;
       if (!interaction.lastFrame || elapsedSincePaint >= frameInterval) {
         interaction.lastFrame = now;
-        renderFrame(elapsed, introReveal);
+        renderFrame(elapsed, introReveal, specialEvent, quality);
         scheduleAnimation(frameInterval);
       } else {
         scheduleAnimation(frameInterval - elapsedSincePaint);

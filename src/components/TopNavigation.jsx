@@ -2,6 +2,7 @@ import {
   Suspense,
   lazy,
   memo,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -318,8 +319,67 @@ const MegaMenuItem = memo(function MegaMenuItem({ item, isHomePath, profile, own
   );
 });
 
+const DesktopPrimaryVisual = memo(function DesktopPrimaryVisual({ group }) {
+  return (
+    <>
+      <i className="nav_primary-surface nav_primary-surface--idle" aria-hidden="true" />
+      <i className="nav_primary-surface nav_primary-surface--hover" aria-hidden="true" />
+      <i className="nav_primary-surface nav_primary-surface--active" aria-hidden="true" />
+      <span className="nav_primary-icon">
+        <i className="nav_primary-icon-shadow nav_primary-icon-shadow--hover" aria-hidden="true" />
+        <i className="nav_primary-icon-shadow nav_primary-icon-shadow--active" aria-hidden="true" />
+        <span className="nav_primary-icon-glyph nav_primary-icon-glyph--base"><Icon type={group.icon} /></span>
+        <span className="nav_primary-icon-glyph nav_primary-icon-glyph--active" aria-hidden="true"><Icon type={group.icon} /></span>
+      </span>
+      <span className="nav_primary-label">
+        <span className="nav_primary-label-layer nav_primary-label-layer--base">{group.label}</span>
+        <span className="nav_primary-label-layer nav_primary-label-layer--active" aria-hidden="true">{group.label}</span>
+      </span>
+      <svg viewBox="0 0 16 16" className="nav_menu-dropdown-arrow" aria-hidden="true">
+        <path d="M4.4 6.2 8 9.8l3.6-3.6" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </>
+  );
+});
+
+const DesktopDropdownMenu = memo(function DesktopDropdownMenu({ group, isHomePath, owner, profile, localizedPath, onNavigate }) {
+  return (
+    <nav className="dropdown-list-v2 w-dropdown-list" aria-label={group.label}>
+      <div className="dropdown-inside-wrap">
+        <div className="dropdown-wrap">
+          {group.sections.map((section, sectionIndex) => (
+            <div className="dropdown-column" key={`${group.label}-${section.eyebrow}`}>
+              <div className="dropdown-list-heading hide-tablet">{section.eyebrow}</div>
+              {section.items.map((item) => (
+                <MegaMenuItem
+                  key={`${group.label}-${section.eyebrow}-${item.label}`}
+                  item={item}
+                  isHomePath={isHomePath}
+                  owner={owner}
+                  profile={profile}
+                  localizedPath={localizedPath}
+                  onNavigate={onNavigate}
+                />
+              ))}
+              {sectionIndex < group.sections.length - 1 ? <span className="dropdown-column-rule" aria-hidden="true" /> : null}
+            </div>
+          ))}
+        </div>
+      </div>
+    </nav>
+  );
+});
+
 const DesktopDropdown = memo(function DesktopDropdown({ group, open, setActive, isHomePath, owner, profile, localizedPath, sectionActive }) {
   const [dormant, setDormant] = useState(() => !open);
+  const closeMenu = useCallback(() => setActive(null), [setActive]);
+  const openMenu = useCallback(() => {
+    setDormant(false);
+    setActive(group.label);
+  }, [group.label, setActive]);
+  const handleBlur = useCallback((event) => {
+    if (!event.currentTarget.contains(event.relatedTarget)) closeMenu();
+  }, [closeMenu]);
 
   useEffect(() => {
     if (open) return undefined;
@@ -333,20 +393,10 @@ const DesktopDropdown = memo(function DesktopDropdown({ group, open, setActive, 
       data-delay="200"
       data-hover="true"
       className={className}
-      onMouseEnter={() => {
-        setDormant(false);
-        setActive(group.label);
-      }}
-      onMouseLeave={() => setActive(null)}
-      onFocus={() => {
-        setDormant(false);
-        setActive(group.label);
-      }}
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) {
-          setActive(null);
-        }
-      }}
+      onMouseEnter={openMenu}
+      onMouseLeave={closeMenu}
+      onFocus={openMenu}
+      onBlur={handleBlur}
     >
       <a
         href={resolveSectionHref(group.href, isHomePath, localizedPath)}
@@ -354,49 +404,19 @@ const DesktopDropdown = memo(function DesktopDropdown({ group, open, setActive, 
         data-nav-primary
         data-nav-section={group.label}
         aria-expanded={open}
-        onClick={() => setActive(null)}
+        onClick={closeMenu}
       >
-        <i className="nav_primary-surface nav_primary-surface--idle" aria-hidden="true" />
-        <i className="nav_primary-surface nav_primary-surface--hover" aria-hidden="true" />
-        <i className="nav_primary-surface nav_primary-surface--active" aria-hidden="true" />
-        <span className="nav_primary-icon">
-          <i className="nav_primary-icon-shadow nav_primary-icon-shadow--hover" aria-hidden="true" />
-          <i className="nav_primary-icon-shadow nav_primary-icon-shadow--active" aria-hidden="true" />
-          <span className="nav_primary-icon-glyph nav_primary-icon-glyph--base"><Icon type={group.icon} /></span>
-          <span className="nav_primary-icon-glyph nav_primary-icon-glyph--active" aria-hidden="true"><Icon type={group.icon} /></span>
-        </span>
-        <span className="nav_primary-label">
-          <span className="nav_primary-label-layer nav_primary-label-layer--base">{group.label}</span>
-          <span className="nav_primary-label-layer nav_primary-label-layer--active" aria-hidden="true">{group.label}</span>
-        </span>
-        <svg viewBox="0 0 16 16" className="nav_menu-dropdown-arrow" aria-hidden="true">
-          <path d="M4.4 6.2 8 9.8l3.6-3.6" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <DesktopPrimaryVisual group={group} />
       </a>
 
-      <nav className="dropdown-list-v2 w-dropdown-list" aria-label={group.label}>
-        <div className="dropdown-inside-wrap">
-          <div className="dropdown-wrap">
-            {group.sections.map((section, sectionIndex) => (
-              <div className="dropdown-column" key={`${group.label}-${section.eyebrow}`}>
-                <div className="dropdown-list-heading hide-tablet">{section.eyebrow}</div>
-                {section.items.map((item) => (
-                  <MegaMenuItem
-                    key={`${group.label}-${section.eyebrow}-${item.label}`}
-                    item={item}
-                    isHomePath={isHomePath}
-                    owner={owner}
-                    profile={profile}
-                    localizedPath={localizedPath}
-                    onNavigate={() => setActive(null)}
-                  />
-                ))}
-                {sectionIndex < group.sections.length - 1 ? <span className="dropdown-column-rule" aria-hidden="true" /> : null}
-              </div>
-            ))}
-          </div>
-        </div>
-      </nav>
+      <DesktopDropdownMenu
+        group={group}
+        isHomePath={isHomePath}
+        owner={owner}
+        profile={profile}
+        localizedPath={localizedPath}
+        onNavigate={closeMenu}
+      />
     </div>
   );
 });
@@ -680,7 +700,7 @@ function TopNavigation({ owner }) {
   }, [groups, location.pathname]);
   const activeSection = routeSection ?? observedSection ?? groups[0]?.label ?? null;
 
-  usePremiumNavigationMotion(desktopMenuRef, activeSection);
+  usePremiumNavigationMotion(desktopMenuRef, activeSection, groups);
   usePremiumNavigationShellMotion(desktopShellRef);
 
   useEffect(() => {
