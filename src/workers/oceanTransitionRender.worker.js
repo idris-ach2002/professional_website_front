@@ -21,6 +21,12 @@ const frameRenderedMessage = {
   sequence: 0,
 };
 
+function acknowledgeFrame(message) {
+  frameRenderedMessage.sceneToken = message.sceneToken;
+  frameRenderedMessage.sequence = message.sequence;
+  self.postMessage(frameRenderedMessage);
+}
+
 function applyViewport(next) {
   viewport = next ?? viewport;
   if (!canvas) return;
@@ -72,14 +78,8 @@ self.onmessage = (event) => {
   }
   if (message.type !== "frame") return;
 
-  const acknowledgeFrame = () => {
-    frameRenderedMessage.sceneToken = message.sceneToken;
-    frameRenderedMessage.sequence = message.sequence;
-    self.postMessage(frameRenderedMessage);
-  };
-
   if (!context || !canvas || !scenePlan || message.sceneToken !== sceneToken) {
-    acknowledgeFrame();
+    acknowledgeFrame(message);
     return;
   }
 
@@ -96,6 +96,6 @@ self.onmessage = (event) => {
       context.globalAlpha = 1;
     }
   } finally {
-    acknowledgeFrame();
+    acknowledgeFrame(message);
   }
 };

@@ -73,17 +73,24 @@ export default function ViewportStability() {
       }
     };
 
+    let fullUpdatePending = false;
+
+    const publishViewportTop = () => {
+      const viewportTop = `${Math.round(visualViewport?.offsetTop ?? 0)}px`;
+      publishStyle("--visual-viewport-top", "top", viewportTop);
+    };
+
     const update = () => {
       frame = 0;
+      fullUpdatePending = false;
       const viewportWidth = `${Math.round(visualViewport?.width ?? window.innerWidth)}px`;
       const viewportHeight = `${Math.round(visualViewport?.height ?? window.innerHeight)}px`;
-      const viewportTop = `${Math.round(visualViewport?.offsetTop ?? 0)}px`;
       const viewportScale = String(visualViewport?.scale ?? 1);
       const viewportMode = compactQuery.matches ? "compact" : "wide";
 
       publishStyle("--visual-viewport-width", "width", viewportWidth);
       publishStyle("--visual-viewport-height", "height", viewportHeight);
-      publishStyle("--visual-viewport-top", "top", viewportTop);
+      publishViewportTop();
       publishStyle("--visual-viewport-scale", "scale", viewportScale);
       if (published.mode !== viewportMode) {
         published.mode = viewportMode;
@@ -91,9 +98,29 @@ export default function ViewportStability() {
       }
     };
 
+    const flushScheduledUpdate = () => {
+      if (fullUpdatePending) {
+        update();
+        return;
+      }
+      frame = 0;
+      publishViewportTop();
+    };
+
     const scheduleUpdate = () => {
+      fullUpdatePending = true;
       if (frame) return;
-      frame = window.requestAnimationFrame(update);
+      frame = window.requestAnimationFrame(flushScheduledUpdate);
+    };
+
+    const scheduleVisualScrollUpdate = () => {
+      // visualViewport scroll does not change width/height/scale. On a wide,
+      // unzoomed viewport offsetTop is also stable at zero, so scheduling a
+      // layout-sensitive read on every document scroll only creates forced
+      // reflows. Compact/mobile and zoomed viewports keep the exact old path.
+      if (!compactQuery.matches && published.scale === "1") return;
+      if (frame) return;
+      frame = window.requestAnimationFrame(flushScheduledUpdate);
     };
 
     const mutationObserver = typeof MutationObserver !== "undefined"
@@ -109,7 +136,7 @@ export default function ViewportStability() {
     window.addEventListener("resize", scheduleUpdate, { passive: true });
     window.addEventListener("orientationchange", scheduleUpdate, { passive: true });
     visualViewport?.addEventListener("resize", scheduleUpdate, { passive: true });
-    visualViewport?.addEventListener("scroll", scheduleUpdate, { passive: true });
+    visualViewport?.addEventListener("scroll", scheduleVisualScrollUpdate, { passive: true });
     compactQuery.addEventListener?.("change", scheduleUpdate);
 
     return () => {
@@ -118,7 +145,7 @@ export default function ViewportStability() {
       window.removeEventListener("resize", scheduleUpdate);
       window.removeEventListener("orientationchange", scheduleUpdate);
       visualViewport?.removeEventListener("resize", scheduleUpdate);
-      visualViewport?.removeEventListener("scroll", scheduleUpdate);
+      visualViewport?.removeEventListener("scroll", scheduleVisualScrollUpdate);
       compactQuery.removeEventListener?.("change", scheduleUpdate);
       delete root.dataset.viewport;
       for (const target of targets) {

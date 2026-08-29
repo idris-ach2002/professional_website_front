@@ -45,7 +45,6 @@ import {
 } from "../performance/volcanoWorkerProtocol";
 
 const VOLCANO_ENVIRONMENT_PATH = "/scenes/abyss-volcano-environment.svg";
-const VOLCANO_FOREGROUND_PATH = "/scenes/abyss-volcano-foreground.svg";
 
 function resolveDpr(performanceMode, runtimeQuality, budgetCap = Infinity) {
   const deviceDpr = typeof window === "undefined" ? 1 : window.devicePixelRatio || 1;
@@ -223,8 +222,6 @@ export default function UnderwaterVolcanoField({
 
   const rootRef = useRef(null);
   const stageRef = useRef(null);
-  const environmentImageRef = useRef(null);
-  const foregroundImageRef = useRef(null);
   const webglCanvasRef = useRef(null);
   const particleCanvasRef = useRef(null);
   const debrisCanvasRef = useRef(null);
@@ -357,16 +354,6 @@ export default function UnderwaterVolcanoField({
     const root = rootRef.current;
     if (!root) return undefined;
 
-    const prewarmVectorImages = () => {
-      // Decode the exact DOM-owned SVG resources while the section is still in
-      // its 1100px preload zone. No alternate bitmap/resolution is introduced;
-      // this simply moves Firefox's first decode work away from the reveal.
-      for (const image of [environmentImageRef.current, foregroundImageRef.current]) {
-        if (!image || typeof image.decode !== "function") continue;
-        image.decode().catch(() => {});
-      }
-    };
-
     // Runtime diagnostics are DOM-owned. Keeping these attributes outside JSX
     // prevents React rerenders from overwriting Worker/pulse state.
     root.dataset.volcanoCanvasRenderer = root.dataset.volcanoCanvasRenderer || "main";
@@ -376,7 +363,6 @@ export default function UnderwaterVolcanoField({
       ([entry]) => {
         window.clearTimeout(unmountTimerRef.current);
         if (entry.isIntersecting) {
-          prewarmVectorImages();
           if (supportsVolcanoOffscreenRendering()) {
             scheduleUserVisibleTask(() => setSceneReady(true)).catch(() => setSceneReady(true));
             return;
@@ -812,7 +798,6 @@ export default function UnderwaterVolcanoField({
       <div ref={stageRef} className="volcano-field-stage" aria-hidden="true">
         <div className="volcano-light-rays" />
         <img
-          ref={environmentImageRef}
           className="volcano-environment-vector"
           src={VOLCANO_ENVIRONMENT_PATH}
           alt=""
@@ -831,9 +816,8 @@ export default function UnderwaterVolcanoField({
           )}
         </div>
         <img
-          ref={foregroundImageRef}
           className="volcano-foreground-vector"
-          src={VOLCANO_FOREGROUND_PATH}
+          src="/scenes/abyss-volcano-foreground.svg"
           alt=""
           loading="lazy"
           decoding="async"

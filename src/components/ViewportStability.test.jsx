@@ -9,14 +9,14 @@ class VisualViewportMock extends EventTarget {
   scale = 1;
 }
 
-function installViewport() {
+function installViewport(compact = true) {
   const visualViewport = new VisualViewportMock();
   Object.defineProperty(window, "visualViewport", {
     configurable: true,
     value: visualViewport,
   });
   window.matchMedia.mockReturnValue({
-    matches: true,
+    matches: compact,
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
   });
@@ -115,6 +115,39 @@ describe("ViewportStability", () => {
     unmount();
     expect(document.documentElement).not.toHaveAttribute("data-viewport");
     expect(nav.style.getPropertyValue("--visual-viewport-height")).toBe("");
+  });
+
+
+  it("ignore le scroll visualViewport large non zoomé mais le conserve sous zoom", () => {
+    const raf = installControlledRaf();
+    const visualViewport = installViewport(false);
+    const nav = document.createElement("nav");
+    nav.className = "nav_fixed nav_fixed--portfolio";
+    nav.dataset.viewportTest = "true";
+    document.body.appendChild(nav);
+
+    const { unmount } = render(<ViewportStability />);
+    expect(document.documentElement).toHaveAttribute("data-viewport", "wide");
+
+    visualViewport.offsetTop = 18;
+    visualViewport.dispatchEvent(new Event("scroll"));
+    expect(raf.pending()).toBe(0);
+    expect(nav.style.getPropertyValue("--visual-viewport-top")).toBe("12px");
+
+    visualViewport.scale = 1.25;
+    visualViewport.dispatchEvent(new Event("resize"));
+    expect(raf.pending()).toBe(1);
+    act(() => raf.flush());
+    expect(nav.style.getPropertyValue("--visual-viewport-scale")).toBe("1.25");
+    expect(nav.style.getPropertyValue("--visual-viewport-top")).toBe("18px");
+
+    visualViewport.offsetTop = 24;
+    visualViewport.dispatchEvent(new Event("scroll"));
+    expect(raf.pending()).toBe(1);
+    act(() => raf.flush());
+    expect(nav.style.getPropertyValue("--visual-viewport-top")).toBe("24px");
+
+    unmount();
   });
 
   it("ne republie pas quand le visual viewport est inchangé et hydrate les cibles tardives", async () => {

@@ -122,6 +122,8 @@ const aquariumSelect = aquarium.slice(aquarium.indexOf("const selectViewportBiom
 if (aquariumSelect.includes("getBoundingClientRect")) errors.push("World Director selection hot path must remain layout-free.");
 requireText(viewport, "VIEWPORT_TARGET_SELECTOR", "Viewport values must be scoped to their real consumers.");
 if (viewport.includes("root.style.setProperty")) errors.push("Viewport geometry must not publish inherited custom properties on <html>.");
+requireText(viewport, 'if (!compactQuery.matches && published.scale === "1") return;', "Wide unzoomed visual-viewport scroll must not schedule layout-sensitive viewport reads.");
+requireText(viewport, "publishViewportTop", "Visual viewport scroll updates must publish only the changing offset instead of rereading all viewport metrics.");
 requireText(ocean, "subscribeScrollFrame", "Ocean depth must consume the shared scroll-frame publication.");
 requireText(topNavigation, "subscribeScrollFrame", "Navbar active-section tracking must consume the shared scroll-frame publication.");
 requireText(timeline, "getScrollFrameSnapshot", "Timeline scroll geometry must consume the shared scroll-frame snapshot.");
