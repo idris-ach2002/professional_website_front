@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createGpuTimerQuery } from "../../engineering/gpuProfiler";
 import ObservabilityGuide from "./ObservabilityGuide";
 import { VisibilityGate } from "../../visibility/ItemVisibilityContext";
@@ -675,7 +675,7 @@ function bundledPath(start, end, bundled) {
   return `M ${start[0]} ${start[1]} L ${startBus} ${start[1]} C ${middle} ${start[1]}, ${middle} ${end[1]}, ${endBus} ${end[1]} L ${end[0]} ${end[1]}`;
 }
 
-function GraphLinks({ links, positions, compact, activeTrace = null, scope = "all", highlightedEdges = new Set(), bundleEdges = true, renderMode = "architecture" }) {
+const GraphLinks = memo(function GraphLinks({ links, positions, compact, activeTrace = null, scope = "all", highlightedEdges = new Set(), bundleEdges = true, renderMode = "architecture" }) {
   const gradientId = compact ? "graph-flow-compact" : "graph-flow-full";
   const flowColor = { request: "#51e1c1", publish: "#b196ff", deploy: "#55bdf0" };
   return (
@@ -702,7 +702,32 @@ function GraphLinks({ links, positions, compact, activeTrace = null, scope = "al
       })}
     </svg>
   );
-}
+});
+
+const GraphEdgeLabels = memo(function GraphEdgeLabels({ links, positions, scope, highlightedEdges, renderMode, onSelectEdge }) {
+  return (
+    <div className="architecture-edge-label-layer">
+      {links.map((link, index) => {
+        const start = positions[link.source] ?? [50, 50];
+        const end = positions[link.target] ?? [50, 50];
+        const flow = scope !== "all" && link.flows?.includes(scope) ? scope : (link.flows?.[0] ?? "request");
+        const highlighted = highlightedEdges.has(edgeKey(link));
+        const runtimeDimmed = renderMode === "runtime" && !link.active;
+        return (
+          <button
+            type="button"
+            key={`${link.source}-${link.target}-${index}`}
+            className={`flow-${flow}${link.active ? " is-active" : ""}${highlighted ? " is-path-highlighted" : ""}${runtimeDimmed ? " is-runtime-dimmed" : ""}`}
+            style={{ left: `${(start[0] + end[0]) / 2}%`, top: `${(start[1] + end[1]) / 2}%` }}
+            onClick={() => onSelectEdge(link)}
+          >
+            {link.channel}
+          </button>
+        );
+      })}
+    </div>
+  );
+});
 
 function ArchitectureMobileFlow({ nodes, snapshot, liveSample, onSelect, onExplore }) {
   const flowGroups = [
@@ -1086,6 +1111,11 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
     setSearch("");
   };
 
+  const selectEdge = useCallback((link) => {
+    setSelectedId(null);
+    setSelectedEdge(link);
+  }, []);
+
   const nodeIsDimmed = (node) => {
     if (scope !== "all" && !compact && !activeNodeIds.has(node.id)) return true;
     if (renderMode === "runtime" && !runtimeNodeIds.has(node.id)) return true;
@@ -1188,14 +1218,14 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
           </div>}
           {!compact && showCommunities && <div className="architecture-layer-labels" aria-hidden="true"><span>Exécution client</span><span>Application serveur</span><span>Données & asynchrone</span><span>Livraison backend</span></div>}
           <GraphLinks links={scopeLinks} positions={positions} compact={compact} activeTrace={activeTrace} scope={scope} highlightedEdges={highlightedEdges} bundleEdges={bundleEdges} renderMode={renderMode} />
-          {!compact && showLabels && <div className="architecture-edge-label-layer">{scopeLinks.map((link, index) => {
-            const start = positions[link.source] ?? [50, 50];
-            const end = positions[link.target] ?? [50, 50];
-            const flow = scope !== "all" && link.flows?.includes(scope) ? scope : (link.flows?.[0] ?? "request");
-            const highlighted = highlightedEdges.has(edgeKey(link));
-            const runtimeDimmed = renderMode === "runtime" && !link.active;
-            return <button type="button" key={`${link.source}-${link.target}-${index}`} className={`flow-${flow}${link.active ? " is-active" : ""}${highlighted ? " is-path-highlighted" : ""}${runtimeDimmed ? " is-runtime-dimmed" : ""}`} style={{ left: `${(start[0] + end[0]) / 2}%`, top: `${(start[1] + end[1]) / 2}%` }} onClick={() => { setSelectedId(null); setSelectedEdge(link); }}>{link.channel}</button>;
-          })}</div>}
+          {!compact && showLabels && <GraphEdgeLabels
+            links={scopeLinks}
+            positions={positions}
+            scope={scope}
+            highlightedEdges={highlightedEdges}
+            renderMode={renderMode}
+            onSelectEdge={selectEdge}
+          />}
           {!isAppViewport && !compact && <ArchitectureCanvas nodes={nodes} links={scopeLinks} positions={positions} sample={liveSample} onStatus={setWebglStatus} showParticles={showParticles} paintStyle={canvasStyle} />}
           <div className="architecture-node-layer">
             {nodes.map((node) => {
