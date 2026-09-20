@@ -30,7 +30,7 @@ for (const fragment of [
 }
 if (source.includes("unsafe-eval")) errors.push("unsafe-eval must never be allowed");
 if (/connect-src[^;]*\shttps:(?:\s|;)/.test(source)) errors.push("connect-src must not allow arbitrary HTTPS origins");
-if (!source.includes("https://professional-website-hozo.onrender.com")) errors.push("production backend origin must be explicit in connect-src");
+if (!source.includes("https://api.idris-achabou.fit")) errors.push("production backend origin must be explicit in connect-src");
 if (errors.length) {
   console.error("Security headers FAILED:\n" + errors.map((error) => `- ${error}`).join("\n"));
   process.exit(1);
