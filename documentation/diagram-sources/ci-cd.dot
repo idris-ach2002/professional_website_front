@@ -10,7 +10,7 @@ digraph G {
   fc [label="Cloudflare deploy\nWrangler"];
   bq [label="Backend verify\nhygiène · architecture · tests PostgreSQL · package"];
   bj [label="JAR artifact"];
-  br [label="Render deploy hook"];
+  br [label="Heroku deploy"];
   prod [label="Production\nCloudflare + Render + PostgreSQL + Cloudinary"];
 
   push -> fq -> fg -> fb -> fc -> prod;

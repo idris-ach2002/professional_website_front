@@ -14,10 +14,10 @@ digraph G {
   user [label="Navigateur", fillcolor="#103b4d", color="#3cc6e8"];
   git -> {frontci backci docci};
   frontci -> cf [label="deploy frontend"];
-  backci -> render [label="deploy hook"];
+  backci -> heroku [label="Heroku deploy"];
   user -> cf [label="HTTPS"];
-  user -> render [label="API HTTPS"];
-  render -> aiven [label="JDBC/TLS"];
+  user -> heroku [label="API HTTPS"];
+  heroku -> aiven [label="JDBC/TLS"];
   render -> cloudinary [label="API"];
   render -> translate [label="réseau serveur"];
 }

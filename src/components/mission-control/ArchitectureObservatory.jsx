@@ -22,8 +22,8 @@ const NODES = Object.freeze([
   { id: "outbox", technology: "Transactional Outbox", role: "Événements persistés", layer: "asynchrone", community: "back", status: "waiting", detail: "Enregistre l’événement dans la même transaction que la donnée métier afin d’éviter les publications perdues." },
   { id: "jobs", technology: "Background Jobs", role: "Scheduler · retries", layer: "asynchrone", community: "back", status: "waiting", detail: "Exécute les tâches longues, reprises et opérations différées avec statut, progression et nombre de tentatives." },
   { id: "backRepo", technology: "GitHub Back", role: "professional_website", layer: "livraison", community: "back", status: "configured", detail: "Dépôt source du backend Spring Boot. Sa chaîne de livraison est indépendante de celle du frontend." },
-  { id: "backCi", technology: "CI Back", role: "Tests · Maven · Docker", layer: "livraison", community: "back", status: "configured", detail: "Valide le backend puis construit l’image Docker destinée à l’environnement Render." },
-  { id: "docker", technology: "Docker / Render", role: "API déployée", layer: "livraison", community: "back", status: "configured", detail: "Exécute l’application Spring Boot en production et relie l’API aux services de données." },
+  { id: "backCi", technology: "CI Back", role: "Tests · Maven · Docker", layer: "livraison", community: "back", status: "configured", detail: "Valide le backend puis construit l’image Docker destinée à l’environnement Heroku." },
+  { id: "docker", technology: "Docker / Heroku", role: "API déployée", layer: "livraison", community: "back", status: "configured", detail: "Exécute l’application Spring Boot en production et relie l’API aux services de données." },
 ]);
 
 const LINKS = Object.freeze([
@@ -1214,7 +1214,7 @@ export default function ArchitectureObservatory({ snapshot, liveSample, activeTr
         <div id="architecture-system-stage" className="architecture-stage" data-canvas-shade={canvasShade} ref={stageRef} style={canvasStyle}>
           {!compact && showCommunities && <div className="architecture-community-layer" aria-hidden="true">
             <div className="architecture-community is-front"><span>COMMUNAUTÉ FRONTEND</span><strong>professional_website_front</strong><small>React · Vite · Cloudflare · CI frontend</small></div>
-            <div className="architecture-community is-back"><span>COMMUNAUTÉ BACKEND</span><strong>professional_website</strong><small>Spring Boot · PostgreSQL · jobs · Docker / Render</small></div>
+            <div className="architecture-community is-back"><span>COMMUNAUTÉ BACKEND</span><strong>professional_website</strong><small>Spring Boot · PostgreSQL · jobs · Docker / Heroku</small></div>
           </div>}
           {!compact && showCommunities && <div className="architecture-layer-labels" aria-hidden="true"><span>Exécution client</span><span>Application serveur</span><span>Données & asynchrone</span><span>Livraison backend</span></div>}
           <GraphLinks links={scopeLinks} positions={positions} compact={compact} activeTrace={activeTrace} scope={scope} highlightedEdges={highlightedEdges} bundleEdges={bundleEdges} renderMode={renderMode} />

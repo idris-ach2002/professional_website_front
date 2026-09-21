@@ -16,7 +16,7 @@ sidebar:
 | Service | Responsabilité |
 |---|---|
 | Cloudflare | DNS/TLS du domaine public et distribution des assets du frontend via Workers Assets. |
-| Render | Exécution du conteneur Spring Boot et déclenchement de déploiement backend. |
+| Heroku | Exécution du conteneur Spring Boot et déclenchement de déploiement backend. |
 | PostgreSQL managé | Persistence relationnelle du contenu, analytics, traductions, jobs, outbox, audits et télémétrie. |
 | Cloudinary | Stockage distant des médias administrés et génération d’URLs publiques. |
 | LibreTranslate | Service privé appelé uniquement par le backend pour preview et traduction automatique. |
@@ -28,4 +28,4 @@ Le navigateur ne contacte jamais PostgreSQL, Cloudinary avec des credentials sec
 
 ## Domaine et TLS
 
-La configuration backend accepte le domaine public et l’origine Workers configurée. Cloudflare termine TLS pour le frontend ; Render expose le backend en HTTPS. Les cookies de session sont configurés pour un contexte HTTPS cross-origin.
+La configuration backend accepte le domaine public et l’origine Workers configurée. Cloudflare termine TLS pour le frontend ; Heroku expose le backend en HTTPS. Les cookies de session sont configurés pour un contexte HTTPS cross-origin.

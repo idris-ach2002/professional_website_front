@@ -7,8 +7,8 @@ description: Répartition des variables publiques, secrets serveur et secrets CI
 | Catégorie | Exemple | Emplacement |
 |---|---|---|
 | Variables frontend publiques | URL API, URL publique du site, identifiants de build | Build Vite / GitHub Actions |
-| Secrets backend | datasource, compte administrateur, hash analytics, Cloudinary | Render / environnement serveur |
-| Secrets de delivery | credentials Cloudflare, deploy hook Render | GitHub Secrets |
+| Secrets backend | datasource, compte administrateur, hash analytics, Cloudinary | Heroku / environnement serveur |
+| Secrets de delivery | credentials Cloudflare, Heroku deploy | GitHub Secrets |
 
 ## Règle frontend
 

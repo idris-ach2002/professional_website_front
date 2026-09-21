@@ -1,5 +1,5 @@
 ---
-title: Render
+title: Heroku
 description: Exécution Docker du backend et intégration au pipeline de production.
 sidebar:
   order: 3
@@ -10,7 +10,7 @@ Le backend utilise un Dockerfile multi-stage : compilation avec le Maven Wrapper
 
 ## Déploiement
 
-Après validation du backend, GitHub Actions peut appeler un deploy hook Render. Le dépôt ne publie donc pas directement un secret d’API dans le code. L’environnement de production fournit la datasource PostgreSQL, les credentials administrateur, CORS, stockage, traduction et limites de concurrence.
+Après validation du backend, GitHub Actions peut appeler un Heroku deploy. Le dépôt ne publie donc pas directement un secret d’API dans le code. L’environnement de production fournit la datasource PostgreSQL, les credentials administrateur, CORS, stockage, traduction et limites de concurrence.
 
 ## Santé
 
